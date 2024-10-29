@@ -276,6 +276,39 @@ Use https://github.com/jakearchibald/idb-keyval for IndexedDB storage.
 
 Use Signal effects for storing and retrieving data from IndexedDB.
 
+
+The schema of data in storage will be.
+
+```typescript
+export type DatabaseBlueprintType = 'blueprint' | 'blueprint_book' | 'upgrade_planner' | 'deconstruction_planner'
+
+export interface DatabaseBlueprintIcon {
+    type?: string  // Defaults to 'item' if not specified
+    name: string
+}
+
+export interface DatabaseBlueprint {
+    // Storage metadata
+    createdOn: number
+    lastUpdatedOn: number
+
+    // Raw data
+    data: string           // The raw blueprint string
+
+    // Parsed metadata
+    type: DatabaseBlueprintType
+    label?: string
+    description?: string
+    gameVersion: string    // Parsed from version number
+    icons: DatabaseBlueprintIcon[] // 0-4 icons
+
+    // Mod feature usage
+    usesSpaceAge: boolean
+    usesQuality: boolean
+    usesElevatedRails: boolean
+}
+```
+
 ### CSS
 
 The style should be consistent with the video game menus, and https://factorio.com/. The CSS from factorio.com is in the attachment `factorio.css`. Our CSS should be embedded in the single html file. The attachment `Factorio.html` is the html content of factorio.com and should help with context about how CSS is applied to elements.
