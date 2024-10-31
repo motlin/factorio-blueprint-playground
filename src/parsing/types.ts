@@ -104,7 +104,7 @@ interface CommonFields {
     label?: string
     description?: string
     icons?: Icon[]
-    version: bigint
+    version: number
 }
 
 interface ControlBehavior {

@@ -1,0 +1,43 @@
+{
+  "upgrade_planner": {
+    "settings": {
+      "mappers": [
+        {
+          "from": {
+            "type": "entity",
+            "name": "underground-belt"
+          },
+          "to": {
+            "type": "entity",
+            "name": "fast-underground-belt"
+          },
+          "index": 0
+        },
+        {
+          "from": {
+            "type": "entity",
+            "name": "splitter"
+          },
+          "to": {
+            "type": "entity",
+            "name": "fast-splitter"
+          },
+          "index": 4
+        },
+        {
+          "from": {
+            "type": "entity",
+            "name": "transport-belt"
+          },
+          "to": {
+            "type": "entity",
+            "name": "fast-transport-belt"
+          },
+          "index": 8
+        }
+      ]
+    },
+    "item": "upgrade-planner",
+    "version": 73014509569
+  }
+}

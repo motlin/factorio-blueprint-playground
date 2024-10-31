@@ -206,7 +206,9 @@ These requirements apply to all panels.
 
 Game versions are embedded in blueprints as 64-bit numbers. They need to be split into 4 chunks of 16-bits each, and then turned into a four-part version number like 1.2.3.4.
 
-Due to JavaScript's number precision limitations with large integers, version parsing must use BigInt operations to correctly handle the bitwise operations. For example, the version number 562949954076673 should parse to "2.0.10.1" and requires BigInt operations to parse correctly.
+Due to JavaScript's number precision limitations with large integers, the version must be converted from a number to a BitInt before splitting into chunks.
+
+For example, the version number 562949954076673 should parse to "2.0.10.1" and requires BigInt operations to parse correctly.
 
 ### Icons and URLs
 
@@ -242,6 +244,11 @@ The attachment `factorio-rich-text.txt` contains the information from the Factor
 All blueprint labels and descriptions can contain rich text. We should parse the rich text and display it in a readable format. For example, `[color=blue][font=default-bold]example[/font][/color]` should display as "example" in blue and bold.
 
 Images, like `[item=red-wire]` should become img tags with the appropriate image, like `<img src="https://www.factorio.school/icons/item/red-wire.png">`.
+
+The Factorio is somewhat out of date. There are additional icons supported now in rich text including quality and planets.
+
+`[quality=legendary][quality=epic][quality=rare][quality=uncommon][quality=normal]`
+`[planet=fulgora]`
 
 ### Game features
 
@@ -311,7 +318,7 @@ export interface DatabaseBlueprint {
 
 ### CSS
 
-The style should be consistent with the video game menus, and https://factorio.com/. The CSS from factorio.com is in the attachment `factorio.css`. Our CSS should be embedded in the single html file. The attachment `Factorio.html` is the html content of factorio.com and should help with context about how CSS is applied to elements.
+The style should be consistent with the video game menus, and https://factorio.com/. The CSS from factorio.com is in the attachment `factorio.css`. The attachment `Factorio.html` is the html content of factorio.com and should help with context about how CSS is applied to elements.
 
 Since we are trying to closely copy factorio.com's style, we will use `<div style={{ ... }}>` for styling rather than using class names.
 
@@ -333,26 +340,38 @@ Phase 1: Project Setup
 * Set up the router configuration
   * https://tanstack.com/router/latest/docs/framework/react/quick-start#configure-the-vite-plugin
   * https://tanstack.com/router/latest/docs/framework/react/devtools
+    * src/routes/__root.tsx
+      * Check import.meta.env.PROD
+      * Lazy load TanStackRouterDevtools
   * / for the main blueprint playground
+    * createLazyFileRoute
+    * BlueprintPlayground component
   * /history to view and manage blueprint history
+    * Also createLazyFileRoute
+    * History component
 * Signals and IndexedDB storage
-* Add initial CSS based on Factorio.com styles
+  * Types for stored blueprints in src/storage/blueprints.ts
+  * Date.now() as the indexdb key
+  * blueprintStorage methods add, update, get, remove, list, which delegate to idb-keyval's set, set, get, del, and entries respectively.
 
 Phase 2: Core Blueprint Parsing
 
 Implement core blueprint parsing logic:
 
+* Read example blueprints and write typescript types for deserialized blueprints in src/parsing/types.ts
 * Deserialize a blueprint to JSON
 * Serialize a blueprint from JSON
-* Take the json for a nested blueprint within a blueprint book, add metadata to make it a valid root blueprint, and serialize it
 
 Phase 3: Basic UI Implementation
 
 * Create components that match Factorio.com style
   * panel
-  * panel-inset-dark
-  * panel-inset-light
+  * inset-dark
+  * inset-light
   * background (for the entire page) that panels float on top of
+  * button-green-right
+  * button-red
+  * plain gray rectangle buttons
 * Implement header with blueprint input textarea
 * Ability to dismiss/close panels
 
