@@ -6,3 +6,6 @@ rebase:
 
 push:
     git push --force-with-lease origin main
+
+dump-tree:
+    dump-tree --ignore test/fixtures --ignore .vite > ../factorio-blueprint-playground.txt
