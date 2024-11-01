@@ -14,11 +14,12 @@ export const CollapsiblePanel = ({
 
     return (
         <Panel>
+            <h2>{title}</h2>
+
             <button
                 onClick={() => setIsExpanded(!isExpanded)}
                 className="flex flex-space-between w100p text-left yellow bold p8 clickable"
             >
-                <span>{title}</span>
                 <span className="text-center">{isExpanded ? '−' : '+'}</span>
             </button>
             {isExpanded && (

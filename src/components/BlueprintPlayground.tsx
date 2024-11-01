@@ -1,16 +1,20 @@
-import { signal } from '@preact/signals'
-import { deserializeBlueprint } from '../parsing/blueprintParser'
-import type { BlueprintString } from '../parsing/types'
-import { ErrorAlert, Panel, Textarea } from "./ui"
-import { BasicInfoPanel } from './BasicInfoPanel'
+import {signal} from '@preact/signals'
+import {deserializeBlueprint} from '../parsing/blueprintParser'
+import type {BlueprintString} from '../parsing/types'
+import {ErrorAlert, Panel, Textarea} from "./ui"
+import {BasicInfoPanel} from './BasicInfoPanel'
 
 // Local UI state signals
 const errorSignal = signal<string | null>(null)
 const parseStateSignal = signal<'idle' | 'parsing' | 'success' | 'error'>('idle')
 const currentBlueprintSignal = signal<BlueprintString | null>(null)
+const pastedTextSignal = signal<string>('')
 
 export function BlueprintPlayground() {
     const handleBlueprintPaste = async (value: string) => {
+        // Update pasted text
+        pastedTextSignal.value = value
+
         // Handle empty input
         if (!value.trim()) {
             currentBlueprintSignal.value = null
@@ -29,14 +33,6 @@ export function BlueprintPlayground() {
         try {
             errorSignal.value = null
             const parsed = deserializeBlueprint(value.trim())
-
-            console.log('Parsed blueprint structure:', {
-                hasBlueprint: !!parsed.blueprint,
-                hasBlueprintBook: !!parsed.blueprint_book,
-                hasUpgradePlanner: !!parsed.upgrade_planner,
-                hasDeconstructionPlanner: !!parsed.deconstruction_planner
-            })
-
             currentBlueprintSignal.value = parsed
             parseStateSignal.value = 'success'
             console.log('Parsed blueprint:', parsed)
@@ -59,7 +55,7 @@ export function BlueprintPlayground() {
                 <Textarea
                     placeholder="Paste your blueprint here..."
                     onChange={handleBlueprintPaste}
-                    value=""
+                    value={pastedTextSignal.value}
                     rows={3}
                 />
 
@@ -70,10 +66,21 @@ export function BlueprintPlayground() {
                     </div>
                 )}
 
-                <ErrorAlert error={errorSignal.value} />
+                <ErrorAlert error={errorSignal.value}/>
             </Panel>
 
-            <BasicInfoPanel blueprint={currentBlueprintSignal.value} />
+            <div className="panels2">
+                {/* Left side */}
+                <div>
+                    {currentBlueprintSignal.value && (
+                        <BasicInfoPanel blueprint={currentBlueprintSignal.value}/>
+                    )}
+                </div>
+
+                {/* Right side */}
+                <div>
+                </div>
+            </div>
         </div>
     )
 }

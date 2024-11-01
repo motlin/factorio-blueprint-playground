@@ -23,11 +23,3 @@ export const FactorioIcon = ({ icon, size = 32 }: FactorioIconProps) => {
         />
     );
 };
-
-export const IconsList = ({ icons }: { icons: DatabaseBlueprintIcon[] }) => (
-    <div className="flex flex-items-center">
-        {icons.map((icon, index) => (
-            <FactorioIcon key={index} icon={icon} />
-        ))}
-    </div>
-);
