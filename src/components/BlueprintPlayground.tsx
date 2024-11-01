@@ -1,76 +1,79 @@
-import {useState} from 'react'
-import {createLazyFileRoute} from '@tanstack/react-router'
-import {deserializeBlueprint} from '../parsing/blueprintParser'
-import {addBlueprint} from '../state/blueprint'
-import type {DatabaseBlueprintType} from '../storage/blueprints'
-import {Background, ErrorAlert, Panel, Textarea} from "./ui";
+import { signal } from '@preact/signals'
+import { deserializeBlueprint } from '../parsing/blueprintParser'
+import type { BlueprintString } from '../parsing/types'
+import { ErrorAlert, Panel, Textarea } from "./ui"
+import { BasicInfoPanel } from './BasicInfoPanel'
 
-function getBlueprintType(data: any): DatabaseBlueprintType {
-    if (data.blueprint) return 'blueprint'
-    if (data.blueprint_book) return 'blueprint_book'
-    if (data.upgrade_planner) return 'upgrade_planner'
-    if (data.deconstruction_planner) return 'deconstruction_planner'
-    throw new Error('Invalid blueprint type')
-}
+// Local UI state signals
+const errorSignal = signal<string | null>(null)
+const parseStateSignal = signal<'idle' | 'parsing' | 'success' | 'error'>('idle')
+const currentBlueprintSignal = signal<BlueprintString | null>(null)
 
-function BlueprintPlayground() {
-    const [error, setError] = useState<string | null>(null)
-
+export function BlueprintPlayground() {
     const handleBlueprintPaste = async (value: string) => {
+        // Handle empty input
+        if (!value.trim()) {
+            currentBlueprintSignal.value = null
+            errorSignal.value = null
+            parseStateSignal.value = 'idle'
+            return
+        }
+
+        console.log('Parsing blueprint...', {
+            length: value.length,
+            preview: value.slice(0, 50) + '...'
+        })
+
+        parseStateSignal.value = 'parsing'
+
         try {
-            setError(null)
+            errorSignal.value = null
             const parsed = deserializeBlueprint(value.trim())
 
-            // Get the content based on type
-            const type = getBlueprintType(parsed)
-            const content = parsed[type]
-
-            // Extract metadata
-            const blueprint = await addBlueprint(value, {
-                type,
-                label: content.label,
-                description: content.description,
-                gameVersion: content.version.toString(),
-                icons: (content.icons || []).map(icon => ({
-                    type: icon.signal.type,
-                    name: icon.signal.name
-                })),
-                usesSpaceAge: false, // TODO: Implement detection
-                usesQuality: false,  // TODO: Implement detection
-                usesElevatedRails: false // TODO: Implement detection
+            console.log('Parsed blueprint structure:', {
+                hasBlueprint: !!parsed.blueprint,
+                hasBlueprintBook: !!parsed.blueprint_book,
+                hasUpgradePlanner: !!parsed.upgrade_planner,
+                hasDeconstructionPlanner: !!parsed.deconstruction_planner
             })
 
-            console.log('Parsed blueprint:', blueprint)
+            currentBlueprintSignal.value = parsed
+            parseStateSignal.value = 'success'
+            console.log('Parsed blueprint:', parsed)
+
         } catch (err) {
             console.error('Failed to parse blueprint:', err)
-            setError(err.message)
+            errorSignal.value = err.message
+            parseStateSignal.value = 'error'
+            currentBlueprintSignal.value = null
         }
     }
 
     return (
         <div className="container">
-            <h1 style={{
-                color: '#ffe6c0',
-                fontSize: '130%',
-                fontWeight: 'bold',
-                marginBottom: '12px'
-            }}>
+            <h1>
                 Factorio Blueprint Playground
             </h1>
 
-            <Panel>
+            <Panel title="Blueprint Input">
                 <Textarea
                     placeholder="Paste your blueprint here..."
                     onChange={handleBlueprintPaste}
                     value=""
                     rows={3}
                 />
-                <ErrorAlert error={error} />
+
+                {/* Parse state indicator */}
+                {parseStateSignal.value === 'parsing' && (
+                    <div className="text-center p8 blue">
+                        Parsing blueprint...
+                    </div>
+                )}
+
+                <ErrorAlert error={errorSignal.value} />
             </Panel>
+
+            <BasicInfoPanel blueprint={currentBlueprintSignal.value} />
         </div>
     )
 }
-
-export const Route = createLazyFileRoute('/')({
-    component: BlueprintPlayground
-})
