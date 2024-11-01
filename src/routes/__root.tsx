@@ -1,5 +1,6 @@
 import { Suspense, lazy } from 'react'
 import { createRootRoute, Link, Outlet } from '@tanstack/react-router'
+import {Background, Panel} from "../components/ui";
 
 const TanStackRouterDevtools = import.meta.env.PROD
   ? () => null // Render nothing in production
@@ -11,20 +12,54 @@ const TanStackRouterDevtools = import.meta.env.PROD
 
 export const Route = createRootRoute({
     component: () => (
-        <>
-      <div className="p-2 flex gap-2">
-        <Link to="/" className="[&.active]:font-bold">
+    <Background>
+      <Panel>
+        <nav style={{
+          display: 'flex',
+          gap: '8px',
+          alignItems: 'center'
+        }}>
+          <Link
+            to="/"
+            style={{
+              color: '#7dcaed',
+              textDecoration: 'none'
+            }}
+            activeProps={{
+              style: {
+                color: '#ffe6c0',
+                fontWeight: 'bold'
+              }
+            }}
+          >
                     Blueprint Playground
-                </Link>{' '}
-        <Link to="/history" className="[&.active]:font-bold">
-                    History
-                </Link>
-            </div>
-            <hr />
+          </Link>
+          <span style={{ color: '#7dcaed' }}>|</span>
+          <Link
+            to="/history"
+            style={{
+              color: '#7dcaed',
+              textDecoration: 'none'
+            }}
+            activeProps={{
+              style: {
+                  color: '#ffe6c0',
+                  fontWeight: 'bold'
+              }
+            }}
+          >
+              History
+          </Link>
+        </nav>
+      </Panel>
+
+        <div style={{ marginTop: '12px' }}>
             <Outlet />
-      <Suspense>
+        </div>
+
+        <Suspense>
             <TanStackRouterDevtools />
-      </Suspense>
-        </>
+        </Suspense>
+    </Background>
     ),
 })

@@ -283,7 +283,6 @@ Use https://github.com/jakearchibald/idb-keyval for IndexedDB storage.
 
 Use Signal effects for storing and retrieving data from IndexedDB.
 
-
 The schema of data in storage will be.
 
 ```typescript
@@ -372,6 +371,7 @@ Phase 3: Basic UI Implementation
   * button-green-right
   * button-red
   * plain gray rectangle buttons
+* Use the basic components in the placeholder routes for the main page and history page
 * Implement header with blueprint input textarea
 * Ability to dismiss/close panels
 
