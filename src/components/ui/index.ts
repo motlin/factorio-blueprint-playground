@@ -4,6 +4,8 @@ export { Button } from './Button'
 export { Textarea } from './Textarea'
 export { CollapsiblePanel } from './CollapsiblePanel'
 export { ButtonGreen } from './ButtonGreen'
+export { InsetLight } from './InsetLight'
+export { InsetDark } from './InsetDark'
 
 export type { PanelProps } from './Panel'
 export type { BackgroundProps } from './Background'
