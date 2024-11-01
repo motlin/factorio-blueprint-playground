@@ -1,5 +1,5 @@
 import React from "react";
-import {Panel} from "./Panel.tsx";
+import {Panel} from "./Panel";
 
 export const CollapsiblePanel = ({
                                      title,
@@ -16,26 +16,13 @@ export const CollapsiblePanel = ({
         <Panel>
             <button
                 onClick={() => setIsExpanded(!isExpanded)}
-                style={{
-                    width: '100%',
-                    textAlign: 'left',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '8px 0',
-                    background: 'none',
-                    border: 'none',
-                    color: '#ffe6c0',
-                    cursor: 'pointer',
-                    fontSize: '116%',
-                    fontWeight: 'bold'
-                }}
+                className="flex flex-space-between w100p text-left yellow bold p8 clickable"
             >
                 <span>{title}</span>
-                <span style={{fontSize: '21px'}}>{isExpanded ? '−' : '+'}</span>
+                <span className="text-center">{isExpanded ? '−' : '+'}</span>
             </button>
             {isExpanded && (
-                <div style={{marginTop: '16px'}}>
+                <div className="mt16">
                     {children}
                 </div>
             )}

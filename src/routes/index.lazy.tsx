@@ -57,14 +57,7 @@ function BlueprintPlayground() {
           rows={3}
         />
         {error && (
-          <div style={{
-            marginTop: '16px',
-            padding: '16px',
-            backgroundColor: '#552929',
-            border: '1px solid #c35353',
-            borderRadius: '4px',
-            color: '#ff5555'
-          }}>
+         <div className="panel alert alert-error mt16">
             {error}
     </div>
         )}
