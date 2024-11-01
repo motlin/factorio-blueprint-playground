@@ -1,5 +1,5 @@
-import { createLazyFileRoute } from '@tanstack/react-router'
-import {Panel} from "../components/ui";
+import {createLazyFileRoute} from '@tanstack/react-router'
+import {InsetDark, InsetLight, Panel} from "../components/ui"
 
 export const Route = createLazyFileRoute('/history')({
   component: History,
@@ -8,12 +8,15 @@ export const Route = createLazyFileRoute('/history')({
 function History() {
   return (
     <Panel title="Blueprint History">
-      <div style={{
-        color: '#fff',
-        lineHeight: 1.25
-      }}>
-        Your previously viewed blueprints will appear here.
-      </div>
+      <InsetLight>
+        This panel will show your previously viewed blueprints. Each blueprint will be
+        shown with its label, icons, and when you last viewed it. You'll be able to
+        quickly reopen blueprints or download selections as a new blueprint book.
+      </InsetLight>
+
+      <InsetDark>
+        No blueprints in history yet. Paste a blueprint in the playground to get started!
+      </InsetDark>
     </Panel>
   )
 }
