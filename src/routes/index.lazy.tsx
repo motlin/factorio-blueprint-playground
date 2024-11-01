@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { deserializeBlueprint } from '../parsing/blueprintParser'
 import { addBlueprint } from '../state/blueprint'
 import type { DatabaseBlueprintType } from '../storage/blueprints'
-import {Panel, Textarea} from "../components/ui";
+import {ErrorAlert, Panel, Textarea} from "../components/ui";
 
 function getBlueprintType(data: any): DatabaseBlueprintType {
   if (data.blueprint) return 'blueprint'
@@ -56,11 +56,7 @@ function BlueprintPlayground() {
           value=""
           rows={3}
         />
-        {error && (
-         <div className="panel alert alert-error mt16">
-            {error}
-    </div>
-        )}
+        <ErrorAlert error={error} />
       </Panel>
     </>
   )

@@ -3,7 +3,7 @@ import {createLazyFileRoute} from '@tanstack/react-router'
 import {deserializeBlueprint} from '../parsing/blueprintParser'
 import {addBlueprint} from '../state/blueprint'
 import type {DatabaseBlueprintType} from '../storage/blueprints'
-import {Background, Panel, Textarea} from "./ui";
+import {Background, ErrorAlert, Panel, Textarea} from "./ui";
 
 function getBlueprintType(data: any): DatabaseBlueprintType {
     if (data.blueprint) return 'blueprint'
@@ -48,7 +48,7 @@ function BlueprintPlayground() {
     }
 
     return (
-        <Background>
+        <div className="container">
             <h1 style={{
                 color: '#ffe6c0',
                 fontSize: '130%',
@@ -65,13 +65,9 @@ function BlueprintPlayground() {
                     value=""
                     rows={3}
                 />
-                {error && (
-                    <div className="panel alert alert-error mt16">
-                        {error}
-                    </div>
-                )}
+                <ErrorAlert error={error} />
             </Panel>
-        </Background>
+        </div>
     )
 }
 
