@@ -1,8 +1,9 @@
-import type { BlueprintString } from '../parsing/types';
-import { Version } from './Version';
-import { FactorioIcon } from './FactorioIcon';
-import { RichText } from './RichText';
-import {CollapsiblePanel, Panel} from './ui';
+import type {BlueprintString} from '../parsing/types';
+import {Version} from './Version';
+import {FactorioIcon} from './FactorioIcon';
+import {RichText} from './RichText';
+import {Panel} from './ui';
+import {getBlueprintContent} from "../parsing/blueprintUtils.ts";
 
 interface InfoRowProps {
     label: string;
@@ -20,28 +21,8 @@ const InfoRow = ({label, children, hidden = false}: InfoRowProps) => {
     );
 };
 
-function getBlueprintContent(blueprint: BlueprintString) {
-    if (blueprint.blueprint) return {
-        label: 'Blueprint',
-        content: blueprint.blueprint
-    }
-    if (blueprint.blueprint_book) return {
-        label: 'Blueprint Book',
-        content: blueprint.blueprint_book
-    }
-    if (blueprint.upgrade_planner) return {
-        label: 'Upgrade Planner',
-        content: blueprint.upgrade_planner
-    }
-    if (blueprint.deconstruction_planner) return {
-        label: 'Deconstruction Planner',
-        content: blueprint.deconstruction_planner
-    }
-    throw new Error('Invalid blueprint type')
-}
-
 export const BasicInfoPanel = ({ blueprint }: { blueprint: BlueprintString }) => {
-    const {label, content } = getBlueprintContent(blueprint)
+    const content = getBlueprintContent(blueprint)
 
     return (
         <Panel title="Basic Information">

@@ -1,23 +1,52 @@
-import {signal} from '@preact/signals'
-import {deserializeBlueprint} from '../parsing/blueprintParser'
+import { signal, effect } from '@preact/signals'
 import type {BlueprintString} from '../parsing/types'
 import {ErrorAlert, Panel, Textarea} from "./ui"
 import {BasicInfoPanel} from './BasicInfoPanel'
+import BlueprintTree, { rootBlueprintSignal, selectedBlueprintPathSignal } from './BlueprintTree'
+import { deserializeBlueprint, extractBlueprint } from '../parsing/blueprintParser'
 
 // Local UI state signals
 const errorSignal = signal<string | null>(null)
 const parseStateSignal = signal<'idle' | 'parsing' | 'success' | 'error'>('idle')
-const currentBlueprintSignal = signal<BlueprintString | null>(null)
+const selectedBlueprintSignal = signal<BlueprintString | null>(null)
 const pastedTextSignal = signal<string>('')
 
 export function BlueprintPlayground() {
+    // Effect to update selected blueprint when path changes
+    effect(() => {
+        const root = rootBlueprintSignal.value
+        const path = selectedBlueprintPathSignal.value
+
+        if (!root || !path) {
+            selectedBlueprintSignal.value = null
+            return
+        }
+
+        try {
+            // For single blueprints, just use the root
+            if (root.blueprint) {
+                selectedBlueprintSignal.value = root
+                return
+            }
+
+            // For blueprint books, extract the selected blueprint
+            const extracted = extractBlueprint(root, path)
+            selectedBlueprintSignal.value = extracted
+        } catch (err) {
+            console.error('Failed to extract blueprint:', err)
+            selectedBlueprintSignal.value = null
+        }
+    })
+
     const handleBlueprintPaste = async (value: string) => {
         // Update pasted text
         pastedTextSignal.value = value
 
         // Handle empty input
         if (!value.trim()) {
-            currentBlueprintSignal.value = null
+            rootBlueprintSignal.value = null
+            selectedBlueprintPathSignal.value = null
+            selectedBlueprintSignal.value = null
             errorSignal.value = null
             parseStateSignal.value = 'idle'
             return
@@ -33,7 +62,15 @@ export function BlueprintPlayground() {
         try {
             errorSignal.value = null
             const parsed = deserializeBlueprint(value.trim())
-            currentBlueprintSignal.value = parsed
+            rootBlueprintSignal.value = parsed
+
+            // For plain blueprints, select them immediately
+            if (parsed.blueprint) {
+                selectedBlueprintPathSignal.value = "1"
+            } else {
+                selectedBlueprintPathSignal.value = null
+            }
+
             parseStateSignal.value = 'success'
             console.log('Parsed blueprint:', parsed)
 
@@ -41,7 +78,9 @@ export function BlueprintPlayground() {
             console.error('Failed to parse blueprint:', err)
             errorSignal.value = err.message
             parseStateSignal.value = 'error'
-            currentBlueprintSignal.value = null
+            rootBlueprintSignal.value = null
+            selectedBlueprintPathSignal.value = null
+            selectedBlueprintSignal.value = null
         }
     }
 
@@ -52,11 +91,12 @@ export function BlueprintPlayground() {
             </h1>
 
             <Panel title="Blueprint Input">
-                <Textarea
+                <textarea
                     placeholder="Paste your blueprint here..."
-                    onChange={handleBlueprintPaste}
+                    onChange={(e) => handleBlueprintPaste(e.target.value)}
                     value={pastedTextSignal.value}
                     rows={3}
+                    className="w100p"
                 />
 
                 {/* Parse state indicator */}
@@ -72,15 +112,22 @@ export function BlueprintPlayground() {
             <div className="panels2">
                 {/* Left side */}
                 <div>
-                    {currentBlueprintSignal.value && (
-                        <BasicInfoPanel blueprint={currentBlueprintSignal.value}/>
+                    {rootBlueprintSignal.value?.blueprint_book && (
+                        <Panel title="Blueprint Tree">
+                            <BlueprintTree />
+                        </Panel>
                     )}
                 </div>
 
                 {/* Right side */}
                 <div>
+                    {selectedBlueprintSignal.value && (
+                        <BasicInfoPanel blueprint={selectedBlueprintSignal.value}/>
+                    )}
                 </div>
             </div>
         </div>
     )
 }
+
+export default BlueprintPlayground

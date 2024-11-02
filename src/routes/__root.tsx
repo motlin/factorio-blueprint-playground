@@ -9,7 +9,23 @@ const TanStackRouterDevtools = import.meta.env.PROD
         })),
     )
 
+interface RouteError {
+    message: string;
+    status?: number;
+}
+
+function ErrorComponent({ error }: { error: RouteError }) {
+    return (
+        <div className="panel alert alert-error">
+            <h2>Error</h2>
+            <p>{error.message}</p>
+            {error.status && <p>Status: {error.status}</p>}
+        </div>
+    );
+}
+
 export const Route = createRootRoute({
+    errorComponent: ErrorComponent,
     component: () => (
         <div>
             <div className="top-bar">
