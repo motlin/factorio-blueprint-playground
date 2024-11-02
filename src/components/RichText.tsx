@@ -1,7 +1,6 @@
 import React from 'react';
-import {FactorioIcon} from "./FactorioIcon.tsx";
+import { FactorioIcon } from "./FactorioIcon";
 
-// Map of named colors to hex values
 const COLOR_MAP: Record<string, string> = {
     'red': '#eb5c5f',
     'green': '#5eb663',
@@ -22,12 +21,6 @@ interface StyledTextProps {
     bold?: boolean;
 }
 
-interface GameIcon {
-    type: string;
-    name: string;
-    quality?: string;
-}
-
 const StyledText = ({ text, color, bold }: StyledTextProps) => (
     <span
         style={{
@@ -39,39 +32,7 @@ const StyledText = ({ text, color, bold }: StyledTextProps) => (
   </span>
 );
 
-const GameIconImage = ({ icon }: { icon: GameIcon }) => {
-    let urlType = icon.type;
-    // Remap 'virtual' type to 'virtual-signal' for URL
-    if (urlType === 'virtual') {
-        urlType = 'virtual-signal';
-    }
-
-    return (
-        <span className="richtext-icon">
-            <img
-                src={`https://www.factorio.school/icons/${urlType}/${icon.name}.png`}
-                alt={`${icon.type}: ${icon.name}`}
-                title={`${icon.type}: ${icon.name}`}
-                className="icon"
-                style={{ width: '1em', height: '1em' }}
-            />
-            {icon.quality && (
-                <img
-                    src={`https://www.factorio.school/icons/virtual-signal/signal-${icon.quality}.png`}
-                    alt={icon.quality}
-                    title={icon.quality}
-                    className="quality"
-                />
-            )}
-        </span>
-    );
-};
-
-interface RichTextProps {
-    text: string;
-}
-
-export const RichText = ({ text }: RichTextProps) => {
+export const RichText = ({ text }: { text: string }) => {
     if (!text) return null;
 
     const parts: React.ReactNode[] = [];
@@ -79,8 +40,9 @@ export const RichText = ({ text }: RichTextProps) => {
     let currentColor: string | undefined;
     let isBold = false;
 
-    // Combined regex for all supported tags
-    const tagRegex = /\[(color=([^\]]+)|font=([^\]]+)|(\/?)(color|font)|(?:item|fluid|virtual-signal|entity|technology|recipe|achievement|quality)=([^\]]+))\]/g;
+    // Enhanced regex that captures quality parameter
+    const tagRegex = /\[((?:color|font)=([^\]]+)|(?:\/?(?:color|font))|(?:img|item|fluid|virtual-signal|entity|technology|recipe|item-group|tile|achievement|quality|gps|special-item|armor|train|train-stop|tooltip|planet)=([^,\]]+)(?:,quality=([^,\]]+))?)\]/g;
+
     let match;
 
     while ((match = tagRegex.exec(text)) !== null) {
@@ -96,30 +58,58 @@ export const RichText = ({ text }: RichTextProps) => {
             );
         }
 
-        // Process tag
         if (match[2]) {
-            // Color start tag
+            // Color/font start tag
+            if (match[1].startsWith('color=')) {
             currentColor = match[2];
+            } else if (match[1].startsWith('font=')) {
+                isBold = match[2].includes('bold');
+            }
+        } else if (match[1] === '/color' || match[1] === '/font') {
+            // End tags
+            if (match[1] === '/color') currentColor = undefined;
+            if (match[1] === '/font') isBold = false;
         } else if (match[3]) {
-            // Font start tag
-            isBold = match[3].includes('bold');
-        } else if (match[4] === '/') {
-            // End tag
-            if (match[5] === 'color') currentColor = undefined;
-            if (match[5] === 'font') isBold = false;
-        } else if (match[6]) {
-            // Game icon tag
-            const type = match[0].substring(1, match[0].indexOf('='));
-            const name = match[6];
+            // Game icon or special tag
+            const type = match[1].split('=')[0];
+            const value = match[3];
+            const quality = match[4]; // Capture quality parameter if present
+
+            switch (type) {
+                case 'item':
+                case 'fluid':
+                case 'virtual-signal':
+                case 'entity':
+                case 'technology':
+                case 'recipe':
+                case 'item-group':
+                case 'tile':
+                case 'achievement':
+                case 'quality':
+                case 'planet':
             parts.push(
                 <FactorioIcon
                     key={parts.length}
                     icon={{
                         type,
-                        name,
+                                name: value,
+                                quality: quality
                     }}
                 />
             );
+                    break;
+                // We could add special handling for gps, special-item, armor, train, etc. here
+                default:
+                    // For unhandled tags, just render them as text
+                    parts.push(
+                        <StyledText
+                            key={parts.length}
+                            text={match[0]}
+                            color={currentColor}
+                            bold={isBold}
+                        />
+                    );
+            }
         }
 
         currentIndex = match.index + match[0].length;
