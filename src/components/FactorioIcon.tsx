@@ -19,12 +19,7 @@ export const FactorioIcon = ({ icon, size = 32 }: FactorioIconProps) => {
             src={`https://www.factorio.school/icons/${urlType}/${icon.name}.png`}
             alt={icon.name}
             title={`${type}: ${icon.name}`}
-            className="mr2 vertical-align-middle"
-            style={{
-                width: size,
-                height: size,
-                objectFit: 'contain'
-            }}
+            className={`factorio-icon mr2 vertical-align-middle`}
         />
     );
 };

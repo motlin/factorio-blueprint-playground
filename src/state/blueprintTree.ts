@@ -13,26 +13,19 @@ effect(() => {
     const root = rootBlueprintSignal.value
     const path = selectedBlueprintPathSignal.value
 
+    console.log("Blueprint tree effect:", { root: !!root, path })
+
     if (!root) {
         selectedBlueprintSignal.value = null
         return
     }
 
     try {
-        // For single blueprints, just use the root
         if (!path) {
-            // This is the key fix - if no path is selected but we have a blueprint,
-            // select it automatically
-            if (root.blueprint) {
-                selectedBlueprintPathSignal.value = "1"
-                selectedBlueprintSignal.value = root
-            } else {
-                selectedBlueprintSignal.value = null
-            }
+            selectedBlueprintSignal.value = root
             return
         }
 
-        // For blueprint books, extract the selected blueprint
         const extracted = extractBlueprint(root, path)
         selectedBlueprintSignal.value = extracted
     } catch (err) {

@@ -5,15 +5,6 @@ import {InsetLight} from './ui'
 import {rootBlueprintSignal, selectedBlueprintPathSignal} from '../state/blueprintTree'
 import {getBlueprintContent, getBlueprintType} from "../parsing/blueprintUtils.ts";
 
-
- // Darker color for better visibility
-const SEPARATOR_STYLE = {
-    width: '1px',
-    height: `24px`,
-    backgroundColor: '#666',
-    margin: '0 8px'
-}
-
 interface TreeRowProps {
     path: string
     blueprint: BlueprintString
@@ -25,15 +16,11 @@ const TreeRow = ({ path, blueprint, indentLevel }: TreeRowProps) => {
     const type = getBlueprintType(blueprint)
     const isSelected = selectedBlueprintPathSignal.value === path
 
-    // Container for the entire row
     return (
         <div
-            className={`flex flex-items-center p2 blueprint-tree-row ${isSelected ? 'panel-hole active' : ''} clickable`}
+            className={`blueprint-tree-row flex  clickable ${isSelected ? 'selected' : ''}`}
             style={{
-                marginLeft: `${indentLevel * 32}px`,
-                marginRight: '4px',
-                borderRadius: '4px',
-                transition: 'background-color 0.15s ease'
+                paddingLeft: `${indentLevel * 32}px`,
             }}
             onClick={() => selectedBlueprintPathSignal.value = path}
         >
@@ -45,12 +32,10 @@ const TreeRow = ({ path, blueprint, indentLevel }: TreeRowProps) => {
                     }}
                     size={24}
                 />
-                <div style={SEPARATOR_STYLE} />
+                <div className="blueprint-tree-separator" />
             </div>
 
-            {/* Blueprint icons with separator */}
             <div className="flex flex-items-center">
-                {/* Show up to 4 icons, using icon slots 0-3 */}
                 {[0,1,2,3].map(i => {
                     const icon = content.icons?.[i]
                     return icon ? (
@@ -63,27 +48,13 @@ const TreeRow = ({ path, blueprint, indentLevel }: TreeRowProps) => {
                             size={24}
                     />
                     ) : (
-                        // Placeholder to maintain spacing
-                        <div
-                            key={i}
-                            style={{
-                                width: 24,
-                                height: 24,
-                                margin: '0 2px'
-                            }}
-                        />
+                        <div key={i} className="blueprint-tree-icon-placeholder" />
                     )
                 })}
-                <div style={SEPARATOR_STYLE} />
+                <div className="blueprint-tree-separator" />
             </div>
 
-            {/* Label */}
-            <div style={{
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                flex: 1
-            }}>
+            <div className="blueprint-tree-label">
                     <RichText text={content.label || ''}/>
                 </div>
         </div>
@@ -94,11 +65,9 @@ export function BlueprintTree() {
     const blueprint = rootBlueprintSignal.value
     if (!blueprint?.blueprint_book?.blueprints) return null
 
-    // Recursively render blueprint book contents
     function renderNode(node: BlueprintString, path: string, level: number): JSX.Element[] {
         const rows = []
 
-        // Add this node
         rows.push(
             <TreeRow
                 key={path}
@@ -108,7 +77,6 @@ export function BlueprintTree() {
             />
         )
 
-        // Recursively add children if this is a book
         if (node.blueprint_book?.blueprints) {
             node.blueprint_book.blueprints.forEach((child, index) => {
                 const childPath = path ? `${path}.${index + 1}` : (index + 1).toString()

@@ -3085,3 +3085,58 @@ a.download i {
 .blueprint-tree-row:hover {
     background-color: #414040;
 }
+
+.factorio-icon {
+    object-fit: contain;
+    width: 32px;
+    height: 32px;
+}
+
+.blueprint-tree-row {
+    margin-right: 4px;
+    border-radius: 4px;
+    transition: background-color 0.15s ease;
+    padding: 2px 0;
+}
+
+.blueprint-tree-row:hover {
+    background-color: #e39827;
+    box-shadow: inset 0px 9px 2px -8px #fff,
+    inset 0px 8px 4px -8px #000,
+    inset 0px -8px 4px -8px #000,
+    inset 0px -9px 2px -8px #432400,
+    0px 0px 4px 0px #000,
+    inset 0px 0px 4px 2px #f9b44b;
+}
+
+.blueprint-tree-row.selected {
+    background-color: #f1be64;
+    box-shadow: inset 0px 10px 2px -8px #000,
+    inset 0px 9px 2px -8px #000,
+    inset 8px 0px 4px -8px #563a10,
+    inset -8px 0px 4px -8px #563a10,
+    inset 0px 9px 2px -8px #563a10,
+    inset 0px -9px 2px -8px #563a10,
+    inset 0px -8.5px 0px -8px #563a10,
+    0px 0px 4px 0px #000;
+}
+
+.blueprint-tree-separator {
+    width: 1px;
+    height: 24px;
+    background-color: #666;
+    margin: 0 8px;
+}
+
+.blueprint-tree-icon-placeholder {
+    width: 24px;
+    height: 24px;
+    margin: 0 2px 0 0;
+}
+
+.blueprint-tree-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+}
