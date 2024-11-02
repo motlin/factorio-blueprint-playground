@@ -1,3 +1,7 @@
+import React from 'react';
+import {FactorioIcon} from "./FactorioIcon.tsx";
+
+// Map of named colors to hex values
 const COLOR_MAP: Record<string, string> = {
     'red': '#eb5c5f',
     'green': '#5eb663',
@@ -18,6 +22,12 @@ interface StyledTextProps {
     bold?: boolean;
 }
 
+interface GameIcon {
+    type: string;
+    name: string;
+    quality?: string;
+}
+
 const StyledText = ({ text, color, bold }: StyledTextProps) => (
     <span
         style={{
@@ -29,21 +39,48 @@ const StyledText = ({ text, color, bold }: StyledTextProps) => (
   </span>
 );
 
+const GameIconImage = ({ icon }: { icon: GameIcon }) => {
+    let urlType = icon.type;
+    // Remap 'virtual' type to 'virtual-signal' for URL
+    if (urlType === 'virtual') {
+        urlType = 'virtual-signal';
+    }
+
+    return (
+        <span className="richtext-icon">
+            <img
+                src={`https://www.factorio.school/icons/${urlType}/${icon.name}.png`}
+                alt={`${icon.type}: ${icon.name}`}
+                title={`${icon.type}: ${icon.name}`}
+                className="icon"
+                style={{ width: '1em', height: '1em' }}
+            />
+            {icon.quality && (
+                <img
+                    src={`https://www.factorio.school/icons/virtual-signal/signal-${icon.quality}.png`}
+                    alt={icon.quality}
+                    title={icon.quality}
+                    className="quality"
+                />
+            )}
+        </span>
+    );
+};
+
 interface RichTextProps {
     text: string;
 }
 
 export const RichText = ({ text }: RichTextProps) => {
-    // Early return for empty text
     if (!text) return null;
 
-    const parts = [];
+    const parts: React.ReactNode[] = [];
     let currentIndex = 0;
     let currentColor: string | undefined;
     let isBold = false;
 
-    // Regex for Factorio rich text tags
-    const tagRegex = /\[(color=([^\]]+)|font=([^\]]+)|(\/?)(color|font))\]/g;
+    // Combined regex for all supported tags
+    const tagRegex = /\[(color=([^\]]+)|font=([^\]]+)|(\/?)(color|font)|(?:item|fluid|virtual-signal|entity|technology|recipe|achievement|quality)=([^\]]+))\]/g;
     let match;
 
     while ((match = tagRegex.exec(text)) !== null) {
@@ -59,7 +96,7 @@ export const RichText = ({ text }: RichTextProps) => {
             );
         }
 
-        // Process the tag
+        // Process tag
         if (match[2]) {
             // Color start tag
             currentColor = match[2];
@@ -70,6 +107,19 @@ export const RichText = ({ text }: RichTextProps) => {
             // End tag
             if (match[5] === 'color') currentColor = undefined;
             if (match[5] === 'font') isBold = false;
+        } else if (match[6]) {
+            // Game icon tag
+            const type = match[0].substring(1, match[0].indexOf('='));
+            const name = match[6];
+            parts.push(
+                <FactorioIcon
+                    key={parts.length}
+                    icon={{
+                        type,
+                        name,
+                    }}
+                />
+            );
         }
 
         currentIndex = match.index + match[0].length;
