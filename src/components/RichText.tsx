@@ -107,6 +107,21 @@ export const RichText = ({ text }: { text: string }) => {
             const quality = match[4]; // Capture quality parameter if present
 
             switch (type) {
+                case 'img': {
+                    // Parse path format "type/name"
+                    const [imgType, imgName] = value.split('/');
+                    parts.push(
+                        <FactorioIcon
+                            key={parts.length}
+                            icon={{
+                                type: imgType,
+                                name: imgName,
+                                quality: quality
+                            }}
+                        />
+                    );
+                    break;
+                }
                 case 'item':
                 case 'fluid':
                 case 'virtual-signal':
