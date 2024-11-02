@@ -1,13 +1,9 @@
-import { signal } from '@preact/signals'
-import type { BlueprintString } from '../parsing/types'
-import { FactorioIcon } from './FactorioIcon'
-import { RichText } from './RichText'
-import { InsetLight } from './ui'
-import { getBlueprintContent, getBlueprintType } from '../parsing/blueprintUtils'
-
-// Global signals for blueprint state
-export const rootBlueprintSignal = signal<BlueprintString | null>(null)
-export const selectedBlueprintPathSignal = signal<string | null>(null)
+import type {BlueprintString} from '../parsing/types'
+import {FactorioIcon} from './FactorioIcon'
+import {RichText} from './RichText'
+import {InsetLight} from './ui'
+import {rootBlueprintSignal, selectedBlueprintPathSignal} from '../state/blueprintTree'
+import {getBlueprintContent, getBlueprintType} from "../parsing/blueprintUtils.ts";
 
 interface TreeRowProps {
     path: string
@@ -20,6 +16,9 @@ const TreeRow = ({ path, blueprint, indentLevel }: TreeRowProps) => {
     const type = getBlueprintType(blueprint)
     const isSelected = selectedBlueprintPathSignal.value === path
 
+    // Only show type icon for upgrade/deconstruction planners
+    const showTypeIcon = type === 'upgrade-planner' || type === 'deconstruction-planner'
+
     return (
         <div
             className={`flex flex-items-center p2 ${isSelected ? 'panel-hole active' : ''} clickable`}
@@ -31,13 +30,15 @@ const TreeRow = ({ path, blueprint, indentLevel }: TreeRowProps) => {
             }}
             onClick={() => selectedBlueprintPathSignal.value = path}
         >
-            <FactorioIcon
-                icon={{
-                    type: 'item',
-                    name: type
-                }}
-                size={24}
-            />
+            {showTypeIcon && (
+                <FactorioIcon
+                    icon={{
+                        type: 'item',
+                        name: type
+                    }}
+                    size={24}
+                />
+            )}
 
             {content.icons?.map((icon, index) => (
                 <FactorioIcon
@@ -51,8 +52,10 @@ const TreeRow = ({ path, blueprint, indentLevel }: TreeRowProps) => {
             ))}
 
             <span className="ml8">
-        <RichText text={content.label || ''} />
-      </span>
+                <div style={{overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>
+                    <RichText text={content.label || ''}/>
+                </div>
+            </span>
         </div>
     )
 }
@@ -60,17 +63,6 @@ const TreeRow = ({ path, blueprint, indentLevel }: TreeRowProps) => {
 export function BlueprintTree() {
     const blueprint = rootBlueprintSignal.value
     if (!blueprint) return null;
-
-    // Skip showing the root blueprint book node if this is a plain blueprint
-    if (blueprint.blueprint) {
-        return (
-            <TreeRow
-                path="1"
-                blueprint={blueprint}
-                indentLevel={0}
-            />
-        )
-    }
 
     if (!blueprint.blueprint_book?.blueprints) {
         return null
@@ -93,16 +85,13 @@ export function BlueprintTree() {
         // Recursively add children if this is a book
         if (node.blueprint_book?.blueprints) {
             node.blueprint_book.blueprints.forEach((child, index) => {
-                const childPath = `${path}.${index + 1}`
-                rows.push(
-                    ...renderNode(
-                        child.blueprint || child.blueprint_book || child.upgrade_planner || child.deconstruction_planner
+                const childPath = path ? `${path}.${index + 1}` : (index + 1).toString()
+                const childNode = child.blueprint || child.blueprint_book ||
+                                child.upgrade_planner || child.deconstruction_planner
                             ? child as BlueprintString
-                            : { blueprint: child },
-                        childPath,
-                        level + 1
-                    )
-                )
+                    : { blueprint: child }
+
+                rows.push(...renderNode(childNode, childPath, level + 1))
             })
         }
 
@@ -111,13 +100,7 @@ export function BlueprintTree() {
 
     return (
         <InsetLight>
-            {blueprint.blueprint_book.blueprints.map((child, index) => {
-                const path = (index + 1).toString()
-                const childBlueprint = child.blueprint || child.blueprint_book || child.upgrade_planner || child.deconstruction_planner
-                    ? child as BlueprintString
-                    : { blueprint: child }
-                return renderNode(childBlueprint, path, 0)
-            })}
+            {renderNode(blueprint, "", 0)}
         </InsetLight>
     )
 }
