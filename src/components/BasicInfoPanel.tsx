@@ -1,3 +1,4 @@
+import { memo } from 'preact/compat';
 import type {BlueprintString} from '../parsing/types';
 import {Version} from './Version';
 import {FactorioIcon} from './FactorioIcon';
@@ -21,7 +22,7 @@ const InfoRow = ({label, children, hidden = false}: InfoRowProps) => {
     );
 };
 
-export const BasicInfoPanel = ({ blueprint }: { blueprint: BlueprintString }) => {
+export const BasicInfoPanel = memo(({ blueprint }: { blueprint: BlueprintString }) => {
     const content = getBlueprintContent(blueprint)
 
     return (
@@ -65,4 +66,4 @@ export const BasicInfoPanel = ({ blueprint }: { blueprint: BlueprintString }) =>
             </dl>
         </Panel>
     );
-}
+})
