@@ -3075,3 +3075,13 @@ a.download i {
         font-size: 90%
     }
 }
+
+/* Make all icons in tree and rich text consistent size */
+.blueprint-tree img {
+    width: 24px;
+    height: 24px;
+}
+
+.blueprint-tree-row:hover {
+    background-color: #414040;
+}
