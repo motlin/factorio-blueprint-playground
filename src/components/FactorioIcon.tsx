@@ -6,12 +6,17 @@ export interface FactorioIconProps {
 }
 
 export const FactorioIcon = ({ icon, size = 32 }: FactorioIconProps) => {
-    // Default to item type if not specified
-    const type = icon.type || 'item';
+    let type = icon.type || 'item';
+    let urlType = icon.type || 'item';
+
+    // Remap 'virtual' type to 'virtual-signal' for URL
+    if (urlType === 'virtual') {
+        urlType = 'virtual-signal';
+    }
 
     return (
         <img
-            src={`https://www.factorio.school/icons/${type}/${icon.name}.png`}
+            src={`https://www.factorio.school/icons/${urlType}/${icon.name}.png`}
             alt={icon.name}
             title={`${type}: ${icon.name}`}
             className="mr2 vertical-align-middle"
