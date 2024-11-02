@@ -348,6 +348,10 @@ Phase 1: Project Setup
   * /history to view and manage blueprint history
     * Also createLazyFileRoute
     * History component
+* Set up development tooling
+  * Add justfile for common commands
+  * Add dump-tree command to make it easier to work with LLMs
+  * Turn on StrictMode
 * Signals and IndexedDB storage
   * Types for stored blueprints in src/storage/blueprints.ts
   * Date.now() as the indexdb key
@@ -355,11 +359,20 @@ Phase 1: Project Setup
 
 Phase 2: Core Blueprint Parsing
 
-Implement core blueprint parsing logic:
-
 * Read example blueprints and write typescript types for deserialized blueprints in src/parsing/types.ts
 * Deserialize a blueprint to JSON
 * Serialize a blueprint from JSON
+* Add compression settings matching Factorio's requirements
+
+```typescript
+export interface CompressionSettings {
+    raw: false               // Must be false - Factorio requires zlib headers
+    windowBits: 15           // Must be 15 - Factorio requires max window size (32K)
+    strategy: 0              // Must be 0 - Factorio requires default strategy
+    level: number            // Must be 8 or 9
+    memLevel: number         // Must be 4-9 inclusive
+}
+```
 
 Phase 3: Basic UI Implementation
 
@@ -380,8 +393,14 @@ Phase 4: Panel Implementation (Left Side)
 * Implement version number component
 * Implement Factorio Icon component
 * Implement Rich Text component
+  * Add JSX tests
 * Implement Basic Information panel
 * Implement Blueprint Tree panel
+  * Support recursive blueprint book structure
+  * Add visual hierarchy with indentation
+  * Support blueprint selection
+  * Add separators between blueprint type, blueprint's 4 icons, and label
+  * Optimize rendering with memoization
 
 Phase 5: Panel Implementation (Right Side)
 
