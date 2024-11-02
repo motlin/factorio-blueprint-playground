@@ -15,6 +15,37 @@ const COLOR_MAP: Record<string, string> = {
     'acid': '#80ff00',
 };
 
+function parseColor(color: string): string | undefined {
+    // Handle empty/undefined
+    if (!color) return undefined;
+
+    // Handle named colors
+    const namedColor = COLOR_MAP[color.toLowerCase()];
+    if (namedColor) return namedColor;
+
+    // Handle hex colors (#rrggbb or #rgb)
+    if (color.startsWith('#')) return color;
+
+    // Handle rgb values
+    const parts = color.split(',').map(part => part.trim());
+    if (parts.length === 3) {
+        // Try parsing as 0-1 range first
+        const rgb01 = parts.map(n => parseFloat(n));
+        if (rgb01.every(n => !isNaN(n) && n >= 0 && n <= 1)) {
+            return `rgb(${rgb01.map(n => Math.round(n * 255)).join(',')})`;
+        }
+
+        // Try parsing as 0-255 range
+        const rgb255 = parts.map(n => parseInt(n));
+        if (rgb255.every(n => !isNaN(n) && n >= 0 && n <= 255)) {
+            return `rgb(${rgb255.join(',')})`;
+        }
+    }
+
+    // Return as-is if no other format matches
+    return color;
+}
+
 interface StyledTextProps {
     text: string;
     color?: string;
@@ -24,7 +55,7 @@ interface StyledTextProps {
 const StyledText = ({ text, color, bold }: StyledTextProps) => (
     <span
         style={{
-            color: COLOR_MAP[color?.toLowerCase()] || color,
+            color: parseColor(color),
             fontWeight: bold ? 'bold' : 'normal',
         }}
     >
