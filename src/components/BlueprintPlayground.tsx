@@ -11,6 +11,7 @@ import {
     selectedBlueprintPathSignal,
     selectedBlueprintSignal
 } from '../state/blueprintTree'
+import {JsonPanel} from "./JsonPanel.tsx";
 
 // Local UI state signals
 const errorSignal = signal<string | null>(null)
@@ -77,6 +78,11 @@ export function BlueprintPlayground() {
                         <>
                             <BasicInfoPanel blueprint={selectedBlueprintSignal.value}/>
                             <BlueprintInfoPanels blueprint={selectedBlueprintSignal.value}/>
+                            <JsonPanel
+                                rootBlueprint={rootBlueprintSignal.value}
+                                selectedBlueprint={selectedBlueprintSignal.value}
+                                selectedPath={selectedBlueprintPathSignal.value}
+                            />
                         </>
                     )}
                 </div>
