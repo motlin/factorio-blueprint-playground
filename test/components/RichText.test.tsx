@@ -98,6 +98,45 @@ describe('RichText', () => {
         expect(img?.getAttribute('src')).toBe('https://www.factorio.school/icons/space-location/gleba.png')
     })
 
+    // Test planet/space-location tags
+    describe('space location tags', () => {
+        it('renders space location tags correctly', () => {
+            const { container } = render(
+                <RichText text="[space-location=solar-system-edge] [space-location=shattered-planet]" />
+            )
+
+            const imgs = container.querySelectorAll('img')
+            expect(imgs.length).toBe(2)
+
+            // Check first icon
+            const firstIcon = imgs[0]
+            expect(firstIcon.getAttribute('src')).toBe(
+                'https://www.factorio.school/icons/space-location/solar-system-edge.png'
+            )
+            expect(firstIcon.getAttribute('title')).toBe('space-location: solar-system-edge')
+
+            // Check second icon
+            const secondIcon = imgs[1]
+            expect(secondIcon.getAttribute('src')).toBe(
+                'https://www.factorio.school/icons/space-location/shattered-planet.png'
+            )
+            expect(secondIcon.getAttribute('title')).toBe('space-location: shattered-planet')
+        })
+
+        it('renders planet tags as space-location icons', () => {
+            const { container } = render(
+                <RichText text="[planet=solar-system-edge]" />
+            )
+
+            const img = container.querySelector('img')
+            expect(img).toBeTruthy()
+            expect(img?.getAttribute('src')).toBe(
+                'https://www.factorio.school/icons/space-location/solar-system-edge.png'
+            )
+            expect(img?.getAttribute('title')).toBe('planet: solar-system-edge')
+        })
+    })
+
     // Test virtual signal tags
     it('renders virtual signal tags correctly', () => {
         const { container } = render(<RichText text="[virtual-signal=signal-any-quality]" />)

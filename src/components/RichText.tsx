@@ -72,7 +72,7 @@ export const RichText = ({ text }: { text: string }) => {
     let isBold = false;
 
     // Enhanced regex that captures quality parameter
-    const tagRegex = /\[((?:color|font)=([^\]]+)|(?:\/?(?:color|font))|(?:img|item|fluid|virtual-signal|entity|technology|recipe|item-group|tile|achievement|quality|gps|special-item|armor|train|train-stop|tooltip|planet)=([^,\]]+)(?:,quality=([^,\]]+))?)\]/g;
+    const tagRegex = /\[((?:color|font)=([^\]]+)|(?:\/?(?:color|font))|(?:img|item|fluid|virtual-signal|entity|technology|recipe|item-group|tile|achievement|quality|gps|special-item|armor|train|train-stop|tooltip|planet|space-location)=([^,\]]+)(?:,quality=([^,\]]+))?)\]/g;
 
     let match;
 
@@ -104,7 +104,7 @@ export const RichText = ({ text }: { text: string }) => {
             // Game icon or special tag
             const type = match[1].split('=')[0];
             const value = match[3];
-            const quality = match[4]; // Capture quality parameter if present
+            const quality = match[4];
 
             switch (type) {
                 case 'img': {
@@ -133,6 +133,7 @@ export const RichText = ({ text }: { text: string }) => {
                 case 'achievement':
                 case 'quality':
                 case 'planet':
+                case 'space-location':
             parts.push(
                 <FactorioIcon
                     key={parts.length}
