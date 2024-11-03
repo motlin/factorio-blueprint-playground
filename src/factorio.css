@@ -3164,3 +3164,14 @@ a.download i {
     width: 50%;
     height: 50%;
 }
+
+/* Add these to the factorio.css file */
+table td, table th {
+    border: 1px solid #232223;
+    padding: 4px;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}

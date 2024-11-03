@@ -1,6 +1,7 @@
 import {signal} from '@preact/signals'
 import {ErrorAlert, Panel} from "./ui"
 import {BasicInfoPanel} from './BasicInfoPanel'
+import {BlueprintInfoPanels} from './BlueprintInfoPanels'
 import BlueprintTree from './BlueprintTree'
 import {deserializeBlueprint} from '../parsing/blueprintParser'
 import {
@@ -9,6 +10,7 @@ import {
     selectedBlueprintPathSignal,
     selectedBlueprintSignal
 } from '../state/blueprintTree'
+
 // Local UI state signals
 const errorSignal = signal<string | null>(null)
 const pastedTextSignal = signal<string>('')
@@ -71,7 +73,10 @@ export function BlueprintPlayground() {
                 {/* Right side */}
                 <div>
                     {selectedBlueprintSignal.value && (
-                        <BasicInfoPanel blueprint={selectedBlueprintSignal.value}/>
+                        <>
+                            <BasicInfoPanel blueprint={selectedBlueprintSignal.value}/>
+                            <BlueprintInfoPanels blueprint={selectedBlueprintSignal.value}/>
+                        </>
                     )}
                 </div>
             </div>
