@@ -1,5 +1,5 @@
 import {memo} from 'preact/compat'
-import {InsetLight, Panel} from './ui'
+import {Panel} from './ui'
 import {FactorioIcon} from './FactorioIcon'
 import type {BlueprintString, Parameter} from '../parsing/types'
 import {getBlueprintContent} from '../parsing/blueprintUtils'
@@ -14,41 +14,28 @@ function countItems<T>(items: T[], getKey: (item: T) => string) {
     return counts
 }
 
-// Table component for showing icon, count, name
-function CountTable({ items }: { items: Array<{ icon: any, count: number, name: string }> }) {
+// Multi-column list component for showing icon, name, count
+function ItemList({ items }: { items: Array<{ icon: any, count: number, name: string }> }) {
     if (!items?.length) {
-        return (
-            <div className="text-center p8">
-                None
-            </div>
-        )
+        return <div className="spreadsheet-container text-center">None</div>
     }
 
     return (
-        <InsetLight>
-            <table className="w100p">
-                <thead>
-                <tr>
-                        <th style={{padding: '2px', textAlign: 'left'}}></th>
-                        <th style={{padding: '2px', textAlign: 'right'}}>Count</th>
-                        <th style={{padding: '2px', textAlign: 'left'}}>Name</th>
-                </tr>
-                </thead>
-                <tbody>
-                {items.map(({icon, count, name}) => (
-                    <tr key={`${icon.type}-${icon.name}`}>
-                        <td className="p2">
-                            <FactorioIcon icon={icon} size={24}/>
-                        </td>
-                        <td className="p2" style={{textAlign: 'right'}}>{count}</td>
-                        <td className="p2">
-                            {name}
-                        </td>
-                    </tr>
-                ))}
-                </tbody>
-            </table>
-        </InsetLight>
+        <div className="spreadsheet-container">
+            {items.map(({icon, count, name}) => (
+                <div key={`${icon.type}-${icon.name}`} className="spreadsheet-row">
+                    <div className="spreadsheet-cell" style={{flexShrink: 0}}>
+                        <FactorioIcon icon={icon} />
+                    </div>
+                    <div className="spreadsheet-cell" style={{flexGrow: 1}}>
+                        {name}
+                </div>
+                    <div className="spreadsheet-cell" style={{width: '80px', textAlign: 'right'}}>
+                        {count}
+                    </div>
+                </div>
+            ))}
+        </div>
     )
 }
 
@@ -60,7 +47,7 @@ export const ContentsPanel = memo(({blueprint}: { blueprint: BlueprintString }) 
     // Count entities by name
     const entityCounts = countItems(content.entities || [], entity => entity.name)
     const entityItems = Array.from(entityCounts.entries()).map(([name, count]) => ({
-        icon: { type: 'entity', name },
+        icon: {type: 'entity', name},
         count,
         name
     }))
@@ -88,19 +75,19 @@ export const ContentsPanel = memo(({blueprint}: { blueprint: BlueprintString }) 
         <>
             {entityItems.length > 0 && (
                 <Panel title="Entities">
-                    <CountTable items={entityItems} />
+                    <ItemList items={entityItems} />
                 </Panel>
             )}
 
             {recipeItems.length > 0 && (
                 <Panel title="Recipes">
-                    <CountTable items={recipeItems} />
+                    <ItemList items={recipeItems} />
                 </Panel>
             )}
 
             {tileItems.length > 0 && (
                 <Panel title="Tiles">
-                    <CountTable items={tileItems} />
+                    <ItemList items={tileItems} />
                 </Panel>
             )}
         </>
@@ -114,97 +101,110 @@ export const ParametersPanel = memo(({ blueprint }: { blueprint: BlueprintString
 
     return (
         <Panel title="Parameters">
-            <InsetLight>
+            <div className="spreadsheet-container">
                 {content.parameters.map((param: Parameter, index: number) => (
-                    <div key={index} className="flex justify-between p2">
-                        <div className="font-bold">{param.name}</div>
-                        <div>
-                            {param.type === 'id' && (
-                                <div>
-                                    <div>ID: {param.id}</div>
-                                    {param['quality-condition'] && (
-                                        <div>
-                                            Quality: {param['quality-condition'].quality} {param['quality-condition'].comparator}
+                    <div key={index} className="spreadsheet-row">
+                        <div className="spreadsheet-cell" style={{width: '20%'}}>
+                            {param.name}
                                         </div>
-                                    )}
-                                </div>
-                            )}
-                            {param.type === 'number' && (
-                                <div>Value: {param.number}</div>
-                            )}
+                        <div className="spreadsheet-cell" style={{width: '15%'}}>
+                            {param.type === 'id' ? 'ID' : 'Value'}
                         </div>
+                        <div className="spreadsheet-cell" style={{flexGrow: 1}}>
+                            {param.type === 'id' ? param.id : param.number}
+                        </div>
+                        {param.type === 'id' && param['quality-condition'] && (
+                            <div className="spreadsheet-cell" style={{width: '30%'}}>
+                                Quality: {param['quality-condition'].quality} {param['quality-condition'].comparator}
+                    </div>
+                        )}
                     </div>
                 ))}
-            </InsetLight>
+            </div>
         </Panel>
     )
 })
 
 // Upgrade Planner Panel
-export const UpgradePlannerPanel = memo(({ blueprint }: { blueprint: BlueprintString }) => {
+export const UpgradePlannerPanel = memo(({blueprint}: { blueprint: BlueprintString }) => {
     const content = blueprint.upgrade_planner
     if (!content?.settings?.mappers) return null
 
     return (
         <Panel title="Upgrade Mappings">
-            <InsetLight>
+            <div className="spreadsheet-container">
                 {content.settings.mappers
                     .sort((a, b) => a.index - b.index)
                     .map((mapping, index) => (
-                        <div key={index} className="flex items-center gap-4 p2">
-                            {mapping.from && (
-                                <FactorioIcon
-                                    icon={{
-                                        type: mapping.from.type,
-                                        name: mapping.from.name
-                                    }}
-                                    size={24}
-                                />
-                            )}
-                            <div>→</div>
+                        <div key={index} className="spreadsheet-row">
+                            <div className="spreadsheet-cell" style={{flexGrow: 1}}>
+                                {mapping.from && (
+                                    <FactorioIcon
+                                        icon={{
+                                            type: mapping.from.type,
+                                            name: mapping.from.name
+                                        }}
+                                        size={24}
+                                    />
+                                )}
+                            </div>
+                            <div className="spreadsheet-cell" style={{width: '40px', textAlign: 'center'}}>
+                                →
+                            </div>
+                            <div className="spreadsheet-cell" style={{flexGrow: 1}}>
                             {mapping.to && (
-                                <FactorioIcon
-                                    icon={{
-                                        type: mapping.to.type,
-                                        name: mapping.to.name
-                                    }}
-                                    size={24}
-                                />
-                            )}
+                                    <FactorioIcon
+                                        icon={{
+                                            type: mapping.to.type,
+                                            name: mapping.to.name
+                                        }}
+                                        size={24}
+                                    />
+                                )}
+                            </div>
                         </div>
                     ))}
-            </InsetLight>
+            </div>
         </Panel>
     )
 })
 
 // Deconstruction Planner Panel
-export const DeconstructionPlannerPanel = memo(({ blueprint }: { blueprint: BlueprintString }) => {
+export const DeconstructionPlannerPanel = memo(({blueprint}: { blueprint: BlueprintString }) => {
     const content = blueprint.deconstruction_planner
     if (!content?.settings) return null
 
     return (
         <Panel title="Deconstruction Settings">
-            <InsetLight>
+            <div className="spreadsheet-container">
                 {content.settings.trees_and_rocks_only && (
-                    <div className="p2">
-                        Only trees and rocks will be marked for deconstruction
+                    <div className="spreadsheet-row">
+                        <div className="spreadsheet-cell" style={{width: '20%'}}>Mode</div>
+                        <div className="spreadsheet-cell" style={{flexGrow: 1}}>
+                            Only trees and rocks will be marked for deconstruction
+                        </div>
                     </div>
                 )}
-
-                <div className="p2">
-                    Tile Selection: {content.settings.tile_selection_mode === 2 ?
-                    'Never deconstruct tiles' :
-                    'Always deconstruct tiles'
-                }
+                <div className="spreadsheet-row">
+                    <div className="spreadsheet-cell" style={{width: '20%'}}>
+                        Tile Selection
+                    </div>
+                    <div className="spreadsheet-cell" style={{flexGrow: 1}}>
+                        {content.settings.tile_selection_mode === 2 ?
+                            'Never deconstruct tiles' :
+                            'Always deconstruct tiles'
+                        }
+                    </div>
                 </div>
-
                 {content.settings.entity_filters?.length > 0 && (
-                    <div className="mt-4">
-                        <div className="font-bold mb-2">Entity Filters:</div>
-                        <div className="flex flex-wrap gap2">
+                    <div className="spreadsheet-row">
+                        <div className="spreadsheet-cell" style={{width: '20%'}}>
+                            Entity Filters
+                        </div>
+                        <div className="spreadsheet-cell" style={{flexGrow: 1}}>
+                            <div className="flex flex-wrap">
                             {content.settings.entity_filters.map((filter, index) => (
-                                <div key={index} className="flex items-center gap2">
+                                    <div key={index} className="flex mb8 mr8">
                                     <FactorioIcon
                                         icon={{
                                             type: 'entity',
@@ -212,30 +212,31 @@ export const DeconstructionPlannerPanel = memo(({ blueprint }: { blueprint: Blue
                                         }}
                                         size={24}
                                     />
-                                    <span>{filter.name}</span>
+                                    <span className="ml8">{filter.name}</span>
                                 </div>
                             ))}
                         </div>
                     </div>
+                    </div>
                 )}
-            </InsetLight>
+            </div>
         </Panel>
     )
 })
 
 // Main wrapper component that shows the appropriate panels
-export const BlueprintInfoPanels = memo(({ blueprint }: { blueprint: BlueprintString }) => {
+export const BlueprintInfoPanels = memo(({blueprint}: { blueprint: BlueprintString }) => {
     if (!blueprint) return null
 
     return (
         <>
             {/* Show parameters panel if parameters exist */}
-            <ParametersPanel blueprint={blueprint} />
+            <ParametersPanel blueprint={blueprint}/>
 
             {/* Show type-specific panels */}
-            {blueprint.blueprint && <ContentsPanel blueprint={blueprint} />}
-            {blueprint.upgrade_planner && <UpgradePlannerPanel blueprint={blueprint} />}
-            {blueprint.deconstruction_planner && <DeconstructionPlannerPanel blueprint={blueprint} />}
+            {blueprint.blueprint && <ContentsPanel blueprint={blueprint}/>}
+            {blueprint.upgrade_planner && <UpgradePlannerPanel blueprint={blueprint}/>}
+            {blueprint.deconstruction_planner && <DeconstructionPlannerPanel blueprint={blueprint}/>}
         </>
     )
 })
