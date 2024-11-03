@@ -15,6 +15,7 @@
     "@tanstack/react-router": "^1.77.6",
     "@tanstack/router": "^0.0.1-beta.53",
     "idb-keyval": "^6.2.1",
+    "lucide-react": "^0.454.0",
     "pako": "^2.1.0",
     "preact": "^10.24.3"
   },

@@ -12,7 +12,8 @@ export const ButtonGreen = ({
     <button
         onClick={onClick}
         disabled={disabled}
-        className={`button-green ${disabled ? 'disabled' : ''}`}
+        className={`button-green-right ${disabled ? 'disabled' : ''}`}
+        style={{display: 'inline-flex', alignItems: 'center'}}
     >
         {children}
     </button>

@@ -3,6 +3,7 @@ import {Panel, ButtonGreen, InsetLight} from './ui';
 import { serializeBlueprint } from '../parsing/blueprintParser';
 import type { BlueprintString } from '../parsing/types';
 import { getBlueprintContent } from '../parsing/blueprintUtils';
+import { ClipboardCopy, FileJson, Download } from 'lucide-react';
 
 interface ExportPanelProps {
     rootBlueprint: BlueprintString | null;
@@ -10,7 +11,6 @@ interface ExportPanelProps {
     selectedPath: string | null;
 }
 
-// Helper function to generate filename
 function getFilename(blueprint: BlueprintString, path: string | null): string {
     const content = getBlueprintContent(blueprint);
 
@@ -27,7 +27,6 @@ function getFilename(blueprint: BlueprintString, path: string | null): string {
     return base;
 }
 
-// Helper function to safely copy text to clipboard
 async function copyToClipboard(text: string) {
     try {
         await navigator.clipboard.writeText(text);
@@ -48,7 +47,6 @@ async function copyToClipboard(text: string) {
     }
 }
 
-// Helper function to download data as a file
 function downloadFile(filename: string, data: string) {
     const blob = new Blob([data], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -64,57 +62,73 @@ function downloadFile(filename: string, data: string) {
 export const JsonPanel = memo(({ rootBlueprint, selectedBlueprint, selectedPath }: ExportPanelProps) => {
     if (!rootBlueprint) return null;
 
-    // Handler for copying blueprint string
     const handleCopyString = async (blueprint: BlueprintString) => {
         const str = serializeBlueprint(blueprint);
         await copyToClipboard(str);
     };
 
-    // Handler for copying JSON
     const handleCopyJSON = async (blueprint: BlueprintString) => {
         const json = JSON.stringify(blueprint, null, 2);
         await copyToClipboard(json);
     };
 
-    // Handler for downloading JSON
     const handleDownloadJSON = (blueprint: BlueprintString, path: string | null) => {
         const json = JSON.stringify(blueprint, null, 2);
         const filename = getFilename(blueprint, path) + '.json';
         downloadFile(filename, json);
     };
 
+    const ButtonWithIcon = ({icon: Icon, text, onClick}: { icon: any, text: string, onClick: () => void }) => (
+        <ButtonGreen onClick={onClick}>
+            <Icon size={18} className="mr8"/>
+            {text}
+        </ButtonGreen>
+    );
+
     return (
         <Panel title="Export Blueprint">
             {/* Root blueprint actions */}
             <InsetLight>
                 <h3>Root Blueprint</h3>
-                <div className="flex flex-wrap">
-                    <ButtonGreen onClick={() => handleCopyString(rootBlueprint)}>
-                        Copy String
-                    </ButtonGreen>
-                    <ButtonGreen onClick={() => handleCopyJSON(rootBlueprint)} >
-                        Copy JSON
-                    </ButtonGreen>
-                    <ButtonGreen onClick={() => handleDownloadJSON(rootBlueprint, null)} >
-                        Download JSON
-                    </ButtonGreen>
+                <div className="flex-space-between">
+                    <ButtonWithIcon
+                        icon={ClipboardCopy}
+                        text="Copy String"
+                        onClick={() => handleCopyString(rootBlueprint)}
+                    />
+                    <ButtonWithIcon
+                        icon={FileJson}
+                        text="Copy JSON"
+                        onClick={() => handleCopyJSON(rootBlueprint)}
+                    />
+                    <ButtonWithIcon
+                        icon={Download}
+                        text="Download JSON"
+                        onClick={() => handleDownloadJSON(rootBlueprint, null)}
+                    />
                 </div>
             </InsetLight>
 
-            {/* Selected blueprint actions (only show if different from root) */}
+            {/* Selected blueprint actions */}
             {selectedBlueprint && selectedBlueprint !== rootBlueprint && (
                 <InsetLight>
                     <h3>Selected Blueprint</h3>
-                    <div className="flex flex-wrap">
-                        <ButtonGreen onClick={() => handleCopyString(selectedBlueprint)} >
-                            Copy String
-                        </ButtonGreen>
-                        <ButtonGreen onClick={() => handleCopyJSON(selectedBlueprint)} >
-                            Copy JSON
-                        </ButtonGreen>
-                        <ButtonGreen onClick={() => handleDownloadJSON(selectedBlueprint, selectedPath)} >
-                            Download JSON
-                        </ButtonGreen>
+                    <div className="flex-space-between">
+                        <ButtonWithIcon
+                            icon={ClipboardCopy}
+                            text="Copy String"
+                            onClick={() => handleCopyString(selectedBlueprint)}
+                        />
+                        <ButtonWithIcon
+                            icon={FileJson}
+                            text="Copy JSON"
+                            onClick={() => handleCopyJSON(selectedBlueprint)}
+                        />
+                        <ButtonWithIcon
+                            icon={Download}
+                            text="Download JSON"
+                            onClick={() => handleDownloadJSON(selectedBlueprint, selectedPath)}
+                        />
                     </div>
                 </InsetLight>
             )}
