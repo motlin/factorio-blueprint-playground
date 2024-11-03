@@ -3,6 +3,7 @@ import {Panel} from './ui'
 import {FactorioIcon} from './FactorioIcon'
 import type {BlueprintString, Parameter} from '../parsing/types'
 import {getBlueprintContent} from '../parsing/blueprintUtils'
+import {Spreadsheet, Row, Cell} from './spreadsheet'
 
 // Count occurrences of items in an array
 function countItems<T>(items: T[], getKey: (item: T) => string) {
@@ -16,26 +17,22 @@ function countItems<T>(items: T[], getKey: (item: T) => string) {
 
 // Multi-column list component for showing icon, name, count
 function ItemList({ items }: { items: Array<{ icon: any, count: number, name: string }> }) {
-    if (!items?.length) {
-        return <div className="spreadsheet-container text-center">None</div>
-    }
-
     return (
-        <div className="spreadsheet-container">
+        <Spreadsheet>
             {items.map(({icon, count, name}) => (
-                <div key={`${icon.type}-${icon.name}`} className="spreadsheet-row">
-                    <div className="spreadsheet-cell" style={{flexShrink: 0}}>
+                <Row key={`${icon.type}-${icon.name}`}>
+                    <Cell shrink>
                         <FactorioIcon icon={icon} />
-                    </div>
-                    <div className="spreadsheet-cell" style={{flexGrow: 1}}>
+                    </Cell>
+                    <Cell grow>
                         {name}
-                </div>
-                    <div className="spreadsheet-cell" style={{width: '80px', textAlign: 'right'}}>
+                    </Cell>
+                    <Cell width="80px" align="right">
                         {count}
-                    </div>
-                </div>
+                    </Cell>
+                </Row>
             ))}
-        </div>
+        </Spreadsheet>
     )
 }
 
@@ -101,26 +98,26 @@ export const ParametersPanel = memo(({ blueprint }: { blueprint: BlueprintString
 
     return (
         <Panel title="Parameters">
-            <div className="spreadsheet-container">
+            <Spreadsheet>
                 {content.parameters.map((param: Parameter, index: number) => (
-                    <div key={index} className="spreadsheet-row">
-                        <div className="spreadsheet-cell" style={{width: '20%'}}>
+                    <Row key={index}>
+                        <Cell width="20%">
                             {param.name}
-                                        </div>
-                        <div className="spreadsheet-cell" style={{width: '15%'}}>
+                        </Cell>
+                        <Cell width="15%">
                             {param.type === 'id' ? 'ID' : 'Value'}
-                        </div>
-                        <div className="spreadsheet-cell" style={{flexGrow: 1}}>
+                        </Cell>
+                        <Cell grow>
                             {param.type === 'id' ? param.id : param.number}
-                        </div>
+                        </Cell>
                         {param.type === 'id' && param['quality-condition'] && (
-                            <div className="spreadsheet-cell" style={{width: '30%'}}>
+                            <Cell width="30%">
                                 Quality: {param['quality-condition'].quality} {param['quality-condition'].comparator}
-                    </div>
+                            </Cell>
                         )}
-                    </div>
+                    </Row>
                 ))}
-            </div>
+            </Spreadsheet>
         </Panel>
     )
 })
@@ -132,12 +129,12 @@ export const UpgradePlannerPanel = memo(({blueprint}: { blueprint: BlueprintStri
 
     return (
         <Panel title="Upgrade Mappings">
-            <div className="spreadsheet-container">
+            <Spreadsheet>
                 {content.settings.mappers
                     .sort((a, b) => a.index - b.index)
                     .map((mapping, index) => (
-                        <div key={index} className="spreadsheet-row">
-                            <div className="spreadsheet-cell" style={{flexGrow: 1}}>
+                        <Row key={index}>
+                            <Cell grow>
                                 {mapping.from && (
                                     <FactorioIcon
                                         icon={{
@@ -147,11 +144,11 @@ export const UpgradePlannerPanel = memo(({blueprint}: { blueprint: BlueprintStri
                                         size={24}
                                     />
                                 )}
-                            </div>
-                            <div className="spreadsheet-cell" style={{width: '40px', textAlign: 'center'}}>
+                            </Cell>
+                            <Cell width="40px" align="center">
                                 →
-                            </div>
-                            <div className="spreadsheet-cell" style={{flexGrow: 1}}>
+                            </Cell>
+                            <Cell grow>
                             {mapping.to && (
                                     <FactorioIcon
                                         icon={{
@@ -161,10 +158,10 @@ export const UpgradePlannerPanel = memo(({blueprint}: { blueprint: BlueprintStri
                                         size={24}
                                     />
                                 )}
-                            </div>
-                        </div>
+                            </Cell>
+                        </Row>
                     ))}
-            </div>
+            </Spreadsheet>
         </Panel>
     )
 })
@@ -176,32 +173,32 @@ export const DeconstructionPlannerPanel = memo(({blueprint}: { blueprint: Bluepr
 
     return (
         <Panel title="Deconstruction Settings">
-            <div className="spreadsheet-container">
+            <Spreadsheet>
                 {content.settings.trees_and_rocks_only && (
-                    <div className="spreadsheet-row">
-                        <div className="spreadsheet-cell" style={{width: '20%'}}>Mode</div>
-                        <div className="spreadsheet-cell" style={{flexGrow: 1}}>
+                    <Row>
+                        <Cell width="20%">Mode</Cell>
+                        <Cell grow>
                             Only trees and rocks will be marked for deconstruction
-                        </div>
-                    </div>
+                        </Cell>
+                    </Row>
                 )}
-                <div className="spreadsheet-row">
-                    <div className="spreadsheet-cell" style={{width: '20%'}}>
+                <Row>
+                    <Cell width="20%">
                         Tile Selection
-                    </div>
-                    <div className="spreadsheet-cell" style={{flexGrow: 1}}>
+                    </Cell>
+                    <Cell grow>
                         {content.settings.tile_selection_mode === 2 ?
                             'Never deconstruct tiles' :
                             'Always deconstruct tiles'
                         }
-                    </div>
-                </div>
+                    </Cell>
+                </Row>
                 {content.settings.entity_filters?.length > 0 && (
-                    <div className="spreadsheet-row">
-                        <div className="spreadsheet-cell" style={{width: '20%'}}>
+                    <Row>
+                        <Cell width="20%">
                             Entity Filters
-                        </div>
-                        <div className="spreadsheet-cell" style={{flexGrow: 1}}>
+                        </Cell>
+                        <Cell grow>
                             <div className="flex flex-wrap">
                             {content.settings.entity_filters.map((filter, index) => (
                                     <div key={index} className="flex mb8 mr8">
@@ -216,10 +213,10 @@ export const DeconstructionPlannerPanel = memo(({blueprint}: { blueprint: Bluepr
                                 </div>
                             ))}
                         </div>
-                    </div>
-                    </div>
+                        </Cell>
+                    </Row>
                 )}
-            </div>
+            </Spreadsheet>
         </Panel>
     )
 })
