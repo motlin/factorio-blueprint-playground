@@ -3165,7 +3165,7 @@ a.download i {
     height: 50%;
 }
 
-/* Add these to the factorio.css file */
+/* Container styles */
 .spreadsheet-container {
     border: 0;
     background-color: #313031;
@@ -3177,11 +3177,14 @@ a.download i {
     padding: 2px;
 }
 
+/* Row styles */
 .spreadsheet-row {
     display: flex;
     width: 100%;
+    min-height: 40px; /* Ensure consistent minimum height for rows */
 }
 
+/* Cell styles */
 .spreadsheet-cell {
     margin-bottom: 2px;
     padding: 8px;
@@ -3191,4 +3194,35 @@ a.download i {
     -2px 0px 2px -2px #000,
     2px 0px 2px -2px #000,
     0px 2px 2px -2px #000;
+    display: flex;
+    align-items: center; /* Vertically center content */
+    flex: 1; /* Allow cells to grow */
+}
+
+/* Fixed-width cells */
+.spreadsheet-cell-fixed {
+    flex: 0 0 auto; /* Don't grow or shrink */
+}
+
+/* Icon container styles */
+.spreadsheet-icon-container {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Consistent spacing between icons */
+}
+
+/* Icon styles */
+.spreadsheet-cell .factorio-icon {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0; /* Prevent icon squishing */
+    vertical-align: middle;
+}
+
+/* Multiple icon wrapper */
+.spreadsheet-multi-icon {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
 }

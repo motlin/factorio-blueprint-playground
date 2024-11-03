@@ -3,7 +3,7 @@ import {Panel} from './ui'
 import {FactorioIcon} from './FactorioIcon'
 import type {BlueprintString, Parameter} from '../parsing/types'
 import {getBlueprintContent} from '../parsing/blueprintUtils'
-import {Spreadsheet, Row, Cell} from './spreadsheet'
+import {Cell, IconCell, Row, Spreadsheet, TextCell} from './spreadsheet'
 
 // Count occurrences of items in an array
 function countItems<T>(items: T[], getKey: (item: T) => string) {
@@ -21,15 +21,9 @@ function ItemList({ items }: { items: Array<{ icon: any, count: number, name: st
         <Spreadsheet>
             {items.map(({icon, count, name}) => (
                 <Row key={`${icon.type}-${icon.name}`}>
-                    <Cell shrink>
-                        <FactorioIcon icon={icon} />
-                    </Cell>
-                    <Cell grow>
-                        {name}
-                    </Cell>
-                    <Cell width="80px" align="right">
-                        {count}
-                    </Cell>
+                    <IconCell icon={icon} />
+                    <TextCell grow>{name}</TextCell>
+                    <TextCell width="80px" align="right" grow={false}>{count}</TextCell>
                 </Row>
             ))}
         </Spreadsheet>
