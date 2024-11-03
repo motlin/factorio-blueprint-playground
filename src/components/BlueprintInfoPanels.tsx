@@ -4,7 +4,7 @@ import {FactorioIcon} from './FactorioIcon'
 import type {BlueprintString, Parameter} from '../parsing/types'
 import {getBlueprintContent} from '../parsing/blueprintUtils'
 import {Cell, IconCell, Row, Spreadsheet, TextCell} from './spreadsheet'
-import ParametersList from "./ParametersList.tsx";
+import {ParametersPanel} from "./ParametersPanel.tsx";
 
 // Count occurrences of items in an array
 function countItems<T>(items: T[], getKey: (item: T) => string) {
@@ -86,17 +86,6 @@ export const ContentsPanel = memo(({blueprint}: { blueprint: BlueprintString }) 
     )
 })
 
-// Parameters Panel
-export const ParametersPanel = memo(({ blueprint }: { blueprint: BlueprintString }) => {
-    const content = getBlueprintContent(blueprint)
-    if (!content.parameters?.length) return null;
-
-    return (
-        <Panel title="Parameters">
-            <ParametersList parameters={content.parameters} />
-        </Panel>
-    );
-});
 // Upgrade Planner Panel
 export const UpgradePlannerPanel = memo(({blueprint}: { blueprint: BlueprintString }) => {
     const content = blueprint.upgrade_planner
@@ -202,9 +191,6 @@ export const BlueprintInfoPanels = memo(({blueprint}: { blueprint: BlueprintStri
 
     return (
         <>
-            {/* Show parameters panel if parameters exist */}
-            <ParametersPanel blueprint={blueprint}/>
-
             {/* Show type-specific panels */}
             {blueprint.blueprint && <ContentsPanel blueprint={blueprint}/>}
             {blueprint.upgrade_planner && <UpgradePlannerPanel blueprint={blueprint}/>}

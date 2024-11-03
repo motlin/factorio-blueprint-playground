@@ -2,6 +2,7 @@ import {signal} from '@preact/signals'
 import {ErrorAlert, Panel} from "./ui"
 import {BasicInfoPanel} from './BasicInfoPanel'
 import {BlueprintInfoPanels} from './BlueprintInfoPanels'
+import { ParametersPanel } from './ParametersPanel'
 import BlueprintTree from './BlueprintTree'
 import {deserializeBlueprint} from '../parsing/blueprintParser'
 import {
@@ -80,6 +81,11 @@ export function BlueprintPlayground() {
                     )}
                 </div>
             </div>
+
+            {/* Full-width parameters panel at bottom */}
+            {selectedBlueprintSignal.value && (
+                <ParametersPanel blueprint={selectedBlueprintSignal.value} />
+            )}
         </div>
     )
 }
