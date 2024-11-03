@@ -4,6 +4,7 @@ import {FactorioIcon} from './FactorioIcon'
 import type {BlueprintString, Parameter} from '../parsing/types'
 import {getBlueprintContent} from '../parsing/blueprintUtils'
 import {Cell, IconCell, Row, Spreadsheet, TextCell} from './spreadsheet'
+import ParametersList from "./ParametersList.tsx";
 
 // Count occurrences of items in an array
 function countItems<T>(items: T[], getKey: (item: T) => string) {
@@ -88,77 +89,14 @@ export const ContentsPanel = memo(({blueprint}: { blueprint: BlueprintString }) 
 // Parameters Panel
 export const ParametersPanel = memo(({ blueprint }: { blueprint: BlueprintString }) => {
     const content = getBlueprintContent(blueprint)
-    if (!content.parameters?.length) return null
-
-    // Helper to determine the icon type from parameter ID
-    function getIconFromParameterId(id: string): { type?: string, name: string } {
-        if (id.startsWith('parameter-')) {
-            return {
-                type: 'item',
-                name: id
-            }
-        }
-
-        // Virtual signals use virtual-signal type
-        if (id.startsWith('signal-')) {
-            return {
-                type: 'virtual-signal',
-                name: id
-            }
-        }
-
-        // Default to item type for other cases
-        return {
-            type: 'item',
-            name: id
-        }
-    }
+    if (!content.parameters?.length) return null;
 
     return (
         <Panel title="Parameters">
-            <Spreadsheet>
-                {content.parameters.map((param: Parameter, index: number) => (
-                    <Row key={index}>
-                        <TextCell width="120px" grow={false}>
-                            {param.name}
-                        </TextCell>
-                        <TextCell width="60px" grow={false}>
-                            {param.type === 'id' ? 'ID' : 'Value'}
-                        </TextCell>
-                        <Cell grow={false}>
-                            {param.type === 'id' && param.id ? (
-                                <div className="flex flex-items-center">
-                                    <FactorioIcon
-                                        icon={getIconFromParameterId(param.id)}
-                                        size={24}
-                                    />
-                                    <span className="ml8">{param.id}</span>
-                                </div>
-                            ) : param.number}
-                        </Cell>
-                        {param.type === 'id' && param['quality-condition'] && (
-                            <TextCell width="120px" grow={false}>
-                                <div className="flex flex-items-center">
-                                    <FactorioIcon
-                                        icon={{
-                                            type: 'quality',
-                                            name: param['quality-condition'].quality
-                                        }}
-                                        size={24}
-                                    />
-                                    <span className="ml8">{param['quality-condition'].comparator}</span>
-                                </div>
-                            </TextCell>
-                        )}
-                        {/* Empty flexible cell to fill remaining space */}
-                        <Cell grow />
-                    </Row>
-                ))}
-            </Spreadsheet>
+            <ParametersList parameters={content.parameters} />
         </Panel>
-    )
-})
-
+    );
+});
 // Upgrade Planner Panel
 export const UpgradePlannerPanel = memo(({blueprint}: { blueprint: BlueprintString }) => {
     const content = blueprint.upgrade_planner

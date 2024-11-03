@@ -164,20 +164,28 @@ This panel is only displayed when the blueprint contains parameters. Parameters 
 ]
 ```
 
-The panel should show:
-- Parameter name
-- For ID type parameters:
-  - The parameter ID
-  - Quality conditions if present
-- For number type parameters:
-  - The numeric value
+Each row of the panel should show:
+* the label `Name:`
+* the name in a text input
+* the label `Value:`
+* the value, either a `FactorioIcon` or a constant number
+* a checkbox ticked or unticked, then the label `Parameter`
+* if the value was a constant number, then:
+  * the label `Variable:`
+  * a text input with the variable
+  * a checkbox ticket or unticked, then the label `Formula:`
+  * a text input with the formula
+* otherwise if the value was an icon
+  * the label `Ingredient of:`
+  * the `FactorioIcon` of the parameter that it's an icon of, which is like a number of a previous row
+  * a label of the number, like `#1`
+
+When parameters are present, the usesParameters flag in metadata should be set to true.
 
 Parameter IDs can be referenced elsewhere in the blueprint, particularly in:
 - Recipe fields as "parameter-0", "parameter-1", etc.
 - Circuit conditions
 - Other settings that accept signals or recipes
-
-When parameters are present, the usesParameters flag in metadata should be set to true.
 
 ### Json panel
 
