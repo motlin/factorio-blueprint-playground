@@ -20,7 +20,7 @@ const TreeRow = memo(({ path, blueprint, indentLevel, isSelected }: TreeRowProps
 
     return (
         <div
-            className={`blueprint-tree-row flex  clickable ${isSelected ? 'selected' : ''}`}
+            className={`tree-row flex clickable ${isSelected ? 'selected' : ''}`}
             style={{
                 paddingLeft: `${indentLevel * 32}px`,
             }}
@@ -28,13 +28,10 @@ const TreeRow = memo(({ path, blueprint, indentLevel, isSelected }: TreeRowProps
         >
             <div className="flex flex-items-center">
                 <FactorioIcon
-                    icon={{
-                        type: 'item',
-                        name: type
-                    }}
-                    size={24}
+                    type="item"
+                    name={type}
                 />
-                <div className="blueprint-tree-separator" />
+                <div className="separator" />
             </div>
 
             <div className="flex flex-items-center">
@@ -43,20 +40,17 @@ const TreeRow = memo(({ path, blueprint, indentLevel, isSelected }: TreeRowProps
                     return icon ? (
                     <FactorioIcon
                             key={i}
-                        icon={{
-                            type: icon.signal.type,
-                            name: icon.signal.name
-                        }}
-                            size={24}
+                            type={icon.signal.type}
+                            name={icon.signal.name}
                     />
                     ) : (
-                        <div key={i} className="blueprint-tree-icon-placeholder" />
+                        <div key={i} className="placeholder" />
                     )
                 })}
-                <div className="blueprint-tree-separator" />
+                <div className="separator" />
             </div>
 
-            <div className="blueprint-tree-label">
+            <div className="label">
                     <RichText text={content.label || ''}/>
                 </div>
         </div>

@@ -28,10 +28,10 @@ describe('RichText', () => {
     it('renders items with quality correctly', () => {
         const { container } = render(<RichText text="[item=iron-plate,quality=normal]" />)
 
-        const wrapper = container.querySelector('.richtext-icon')
+        const wrapper = container.querySelector('.factorio-icon-group')
         expect(wrapper).toBeTruthy()
 
-        const mainIcon = wrapper?.querySelector('.icon')
+        const mainIcon = wrapper?.querySelector('.factorio-icon')
         expect(mainIcon?.getAttribute('src')).toBe('https://www.factorio.school/icons/item/iron-plate.png')
 
         const qualityIcon = wrapper?.querySelector('.quality')
@@ -42,10 +42,10 @@ describe('RichText', () => {
     it('renders entities with quality correctly', () => {
         const { container } = render(<RichText text="[entity=small-biter,quality=uncommon]" />)
 
-        const wrapper = container.querySelector('.richtext-icon')
+        const wrapper = container.querySelector('.factorio-icon-group')
         expect(wrapper).toBeTruthy()
 
-        const mainIcon = wrapper?.querySelector('.icon')
+        const mainIcon = wrapper?.querySelector('.factorio-icon')
         expect(mainIcon?.getAttribute('src')).toBe('https://www.factorio.school/icons/entity/small-biter.png')
 
         const qualityIcon = wrapper?.querySelector('.quality')
@@ -197,7 +197,8 @@ describe('RichText', () => {
         const { container } = render(<RichText text={complexText} />)
 
         // Should have the item icon with quality
-        expect(container.querySelector('.richtext-icon')).toBeTruthy()
+        const wrapper = container.querySelector('.factorio-icon-group')
+        expect(wrapper).toBeTruthy()
 
         // Should have colored text
         const colorSpan = container.querySelector('span[style*="color"]')

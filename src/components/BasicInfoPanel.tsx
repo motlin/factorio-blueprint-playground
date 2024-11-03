@@ -27,14 +27,11 @@ export const BasicInfoPanel = memo(({ blueprint }: { blueprint: BlueprintString 
 
     return (
         <Panel title="Basic Information">
-            <dl className="panel-hole">
+            <dl className="panel-hole basic-info">
                 <InfoRow label="Type">
                     <FactorioIcon
-                        icon={{
-                            type: 'item',
-                            name: content.item
-                        }}
-                        size={24}
+                        type="item"
+                        name={content.item}
                     />
                 </InfoRow>
 
@@ -51,10 +48,8 @@ export const BasicInfoPanel = memo(({ blueprint }: { blueprint: BlueprintString 
                         {content.icons?.map((icon, index) => (
                             <FactorioIcon
                                 key={index}
-                                icon={{
-                                    type: icon.signal.type,
-                                    name: icon.signal.name
-                                }}
+                                type={icon.signal.type}
+                                name={icon.signal.name}
                             />
                         ))}
                     </div>

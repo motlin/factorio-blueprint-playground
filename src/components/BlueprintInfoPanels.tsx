@@ -101,11 +101,8 @@ export const UpgradePlannerPanel = memo(({blueprint}: { blueprint: BlueprintStri
                             <Cell grow>
                                 {mapping.from && (
                                     <FactorioIcon
-                                        icon={{
-                                            type: mapping.from.type,
-                                            name: mapping.from.name
-                                        }}
-                                        size={24}
+                                        type={mapping.from.type}
+                                        name={mapping.from.name}
                                     />
                                 )}
                             </Cell>
@@ -114,13 +111,10 @@ export const UpgradePlannerPanel = memo(({blueprint}: { blueprint: BlueprintStri
                             </Cell>
                             <Cell grow>
                             {mapping.to && (
-                                    <FactorioIcon
-                                        icon={{
-                                            type: mapping.to.type,
-                                            name: mapping.to.name
-                                        }}
-                                        size={24}
-                                    />
+                                <FactorioIcon
+                                    type={mapping.to.type}
+                                    name={mapping.to.name}
+                                />
                                 )}
                             </Cell>
                         </Row>
@@ -167,11 +161,8 @@ export const DeconstructionPlannerPanel = memo(({blueprint}: { blueprint: Bluepr
                             {content.settings.entity_filters.map((filter, index) => (
                                     <div key={index} className="flex mb8 mr8">
                                     <FactorioIcon
-                                        icon={{
-                                            type: 'entity',
-                                            name: filter.name
-                                        }}
-                                        size={24}
+                                        type="entity"
+                                        name={filter.name}
                                     />
                                     <span className="ml8">{filter.name}</span>
                                 </div>

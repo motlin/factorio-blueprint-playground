@@ -1,14 +1,10 @@
-import React from 'react';
+interface FactorioIconProps {
+    type?: string;
+    name: string;
+    quality?: string;
+}
 
-// Enhanced FactorioIcon component that can handle quality overlays
-export const FactorioIcon = ({ icon, size = 32 }: {
-    icon: {
-        type?: string;
-        name: string;
-        quality?: string;
-    };
-    size?: number;
-}) => {
+export const FactorioIcon = (icon: FactorioIconProps) => {
     let type = icon.type || 'item';
     let urlType = icon.type || 'item';
 
@@ -18,12 +14,12 @@ export const FactorioIcon = ({ icon, size = 32 }: {
         urlType = 'space-location';
     }
 
-    // If we have a quality, render in a container with the quality overlay
+    // If we have a quality, render in a div that itself is a factorio-icon
     if (icon.quality) {
         return (
-            <div className="richtext-icon" style={{ height: `${size}px` }}>
+            <div className="factorio-icon-group">
                 <img
-                    className="icon"
+                    className='factorio-icon'
                     src={`https://www.factorio.school/icons/${urlType}/${icon.name}.png`}
                     alt={icon.name}
                     title={`${type}: ${icon.name}`}
@@ -41,11 +37,10 @@ export const FactorioIcon = ({ icon, size = 32 }: {
     // Without quality, render just the icon
     return (
         <img
+            className="factorio-icon"
             src={`https://www.factorio.school/icons/${urlType}/${icon.name}.png`}
             alt={icon.name}
             title={`${type}: ${icon.name}`}
-            className="factorio-icon mr2 vertical-align-middle"
-            style={{ width: size, height: size }}
         />
     );
 };

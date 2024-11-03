@@ -113,11 +113,9 @@ export const RichText = ({ text }: { text: string }) => {
                     parts.push(
                         <FactorioIcon
                             key={parts.length}
-                            icon={{
-                                type: imgType,
-                                name: imgName,
-                                quality: quality
-                            }}
+                            type={imgType}
+                            name={imgName}
+                            quality={quality}
                         />
                     );
                     break;
@@ -137,11 +135,9 @@ export const RichText = ({ text }: { text: string }) => {
             parts.push(
                 <FactorioIcon
                     key={parts.length}
-                    icon={{
-                        type,
-                                name: value,
-                                quality: quality
-                    }}
+                            type={type}
+                            name={value}
+                            quality={quality}
                 />
             );
                     break;
@@ -174,5 +170,5 @@ export const RichText = ({ text }: { text: string }) => {
         );
     }
 
-    return <>{parts}</>;
+    return <div className="richtext">{parts}</div>;
 };

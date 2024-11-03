@@ -6,11 +6,11 @@ interface IconCellProps {
     label?: string;
 }
 
-export const IconCell = ({ icon, size = 32, label }: IconCellProps) => {
+export const IconCell = ({ icon, label }: IconCellProps) => {
     return (
         <div className="spreadsheet-cell spreadsheet-cell-fixed">
             <div className="spreadsheet-icon-container">
-                <FactorioIcon icon={icon} size={size} />
+                <FactorioIcon type={icon.type} name={icon.name} quality={icon.quality} />
                 {label && <span>{label}</span>}
             </div>
         </div>
