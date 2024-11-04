@@ -1,9 +1,11 @@
 import {signal} from '@preact/signals'
-import {ErrorAlert, Panel} from "./ui"
+import { ErrorAlert, Panel } from './ui'
 import {BasicInfoPanel} from './BasicInfoPanel'
 import {BlueprintInfoPanels} from './BlueprintInfoPanels'
 import {ParametersPanel} from './ParametersPanel'
-import BlueprintTree from './BlueprintTree'
+import { BlueprintTree } from './BlueprintTree'
+import { JsonPanel } from './JsonPanel'
+import { BlueprintSourceHandler } from './BlueprintSourceHandler'
 import {deserializeBlueprint} from '../parsing/blueprintParser'
 import {
     resetBlueprintTree,
@@ -11,17 +13,12 @@ import {
     selectedBlueprintPathSignal,
     selectedBlueprintSignal
 } from '../state/blueprintTree'
-import {JsonPanel} from "./JsonPanel.tsx";
 
-// Local UI state signals
+// Local UI state signal
 const errorSignal = signal<string | null>(null)
-const pastedTextSignal = signal<string>('')
 
 export function BlueprintPlayground() {
     const handleBlueprintPaste = async (value: string) => {
-        // Update pasted text
-        pastedTextSignal.value = value
-
         // Handle empty input
         if (!value.trim()) {
             resetBlueprintTree()
@@ -47,10 +44,6 @@ export function BlueprintPlayground() {
         }
     }
 
-    const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        const target = e.target as HTMLTextAreaElement;
-        handleBlueprintPaste(target.value);
-    };
     return (
         <div className="container">
             <h1>
@@ -58,14 +51,7 @@ export function BlueprintPlayground() {
             </h1>
 
             <Panel title="Blueprint Input">
-                <textarea
-                    placeholder="Paste your blueprint here..."
-                    onChange={handleTextareaChange}
-                    value={pastedTextSignal.value}
-                    rows={3}
-                    className="w100p"
-                />
-
+                <BlueprintSourceHandler onBlueprintString={handleBlueprintPaste} />
                 <ErrorAlert error={errorSignal.value}/>
             </Panel>
 

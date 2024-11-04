@@ -15,6 +15,11 @@ interface RouteError {
     status?: number;
 }
 
+export interface RootSearchSchema {
+    data?: string
+    source?: string
+}
+
 function ErrorComponent({ error }: { error: RouteError }) {
     return (
         <div className="panel alert alert-error">
@@ -37,6 +42,12 @@ const DevTools = () => {
 }
 
 export const Route = createRootRoute({
+    validateSearch: (search: Record<string, unknown>): RootSearchSchema => {
+        return {
+            data: search.data as string | undefined,
+            source: search.source as string | undefined,
+        }
+    },
     errorComponent: ErrorComponent,
     component: () => (
         <div>
