@@ -35,19 +35,20 @@ const TreeRow = memo(({ path, blueprint, indentLevel, isSelected }: TreeRowProps
             </div>
 
             <div className="flex flex-items-center">
-                {[0,1,2,3].map(i => {
-                    const icon = icons[i];
+                {[1, 2, 3, 4].map(index => {
+                    // Find icon with matching index
+                    const icon = icons.find(icon => icon.index === index);
                     return icon ? (
                         <FactorioIcon
-                            key={i}
+                            key={index}
                             type={icon.signal.type}
                             name={icon.signal.name}
                         />
                     ) : (
-                        <div key={i} className="placeholder" />
+                        <div key={index} className="placeholder"/>
                     );
                 })}
-                <div className="separator" />
+                <div className="separator"/>
             </div>
 
             <div className="label">

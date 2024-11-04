@@ -43,13 +43,18 @@ export const BasicInfoPanel = memo(({ blueprint }: { blueprint: BlueprintString 
 
                 <InfoRow label="Icons" hidden={!icons?.length}>
                     <div className="flex flex-items-center">
-                        {icons?.map((icon, index) => (
-                            <FactorioIcon
-                                key={index}
-                                type={icon.signal.type}
-                                name={icon.signal.name}
-                            />
-                        ))}
+                        {[1, 2, 3, 4].map(index => {
+                            const icon = icons?.find(icon => icon.index === index);
+                            return icon ? (
+                                <FactorioIcon
+                                    key={index}
+                                    type={icon.signal.type}
+                                    name={icon.signal.name}
+                                />
+                            ) : (
+                                <div key={index} className="placeholder"/>
+                            );
+                        })}
                     </div>
                 </InfoRow>
 
