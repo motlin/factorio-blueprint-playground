@@ -1,5 +1,6 @@
 import React from 'react';
 import { FactorioIcon } from "./FactorioIcon";
+import {Quality, SignalType} from "../parsing/types.ts";
 
 const COLOR_MAP: Record<string, string> = {
     'red': '#eb5c5f',
@@ -15,7 +16,7 @@ const COLOR_MAP: Record<string, string> = {
     'acid': '#80ff00',
 };
 
-function parseColor(color: string): string | undefined {
+function parseColor(color?: string): string | undefined {
     // Handle empty/undefined
     if (!color) return undefined;
 
@@ -63,7 +64,7 @@ const StyledText = ({ text, color, bold }: StyledTextProps) => (
   </span>
 );
 
-export const RichText = ({ text }: { text: string }) => {
+export const RichText = ({ text }: { text?: string }) => {
     if (!text) return null;
 
     const parts: React.ReactNode[] = [];
@@ -113,9 +114,9 @@ export const RichText = ({ text }: { text: string }) => {
                     parts.push(
                         <FactorioIcon
                             key={parts.length}
-                            type={imgType}
+                            type={imgType as SignalType}
                             name={imgName}
-                            quality={quality}
+                            quality={quality as Quality}
                         />
                     );
                     break;
@@ -135,9 +136,9 @@ export const RichText = ({ text }: { text: string }) => {
             parts.push(
                 <FactorioIcon
                     key={parts.length}
-                            type={type}
-                            name={value}
-                            quality={quality}
+                    type={type}
+                    name={value}
+                    quality={quality as Quality}
                 />
             );
                     break;

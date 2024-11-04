@@ -2,7 +2,7 @@ import {signal} from '@preact/signals'
 import {ErrorAlert, Panel} from "./ui"
 import {BasicInfoPanel} from './BasicInfoPanel'
 import {BlueprintInfoPanels} from './BlueprintInfoPanels'
-import { ParametersPanel } from './ParametersPanel'
+import {ParametersPanel} from './ParametersPanel'
 import BlueprintTree from './BlueprintTree'
 import {deserializeBlueprint} from '../parsing/blueprintParser'
 import {
@@ -32,18 +32,25 @@ export function BlueprintPlayground() {
 
         try {
             errorSignal.value = null
-            const parsed = deserializeBlueprint(value.trim())
-            rootBlueprintSignal.value = parsed
+            rootBlueprintSignal.value = deserializeBlueprint(value.trim())
 
             // Always select root with empty string path
             selectedBlueprintPathSignal.value = ""
-        } catch (err) {
+        } catch (err: unknown) {
             console.error('Failed to parse blueprint:', err)
-            errorSignal.value = err.message
+            if (err instanceof Error) {
+                errorSignal.value = err.message
+            } else {
+                errorSignal.value = String(err)
+            }
             resetBlueprintTree()
         }
     }
 
+    const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        const target = e.target as HTMLTextAreaElement;
+        handleBlueprintPaste(target.value);
+    };
     return (
         <div className="container">
             <h1>
@@ -53,7 +60,7 @@ export function BlueprintPlayground() {
             <Panel title="Blueprint Input">
                 <textarea
                     placeholder="Paste your blueprint here..."
-                    onChange={(e) => handleBlueprintPaste(e.target.value)}
+                    onChange={handleTextareaChange}
                     value={pastedTextSignal.value}
                     rows={3}
                     className="w100p"
@@ -67,7 +74,7 @@ export function BlueprintPlayground() {
                 <div>
                     {rootBlueprintSignal.value?.blueprint_book && (
                         <Panel title="Blueprint Tree">
-                            <BlueprintTree />
+                            <BlueprintTree/>
                         </Panel>
                     )}
                 </div>
@@ -89,9 +96,7 @@ export function BlueprintPlayground() {
             </div>
 
             {/* Full-width parameters panel at bottom */}
-            {selectedBlueprintSignal.value && (
-                <ParametersPanel blueprint={selectedBlueprintSignal.value} />
-            )}
+            <ParametersPanel blueprintString={selectedBlueprintSignal.value}/>
         </div>
     )
 }

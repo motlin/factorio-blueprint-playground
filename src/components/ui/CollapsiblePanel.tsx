@@ -1,15 +1,17 @@
 import React from "react";
 import {Panel} from "./Panel";
 
+export interface CollapsiblePanelProps {
+    title: string;
+    children: React.ReactNode;
+    defaultExpanded?: boolean;
+}
+
 export const CollapsiblePanel = ({
                                      title,
                                      children,
                                      defaultExpanded = false
-                                 }: {
-    title: string
-    children: React.ReactNode
-    defaultExpanded?: boolean
-}) => {
+                                 }: CollapsiblePanelProps) => {
     const [isExpanded, setIsExpanded] = React.useState(defaultExpanded);
 
     return (

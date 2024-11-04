@@ -20,12 +20,16 @@ type VirtualSignalName =
     | 'signal-item-parameter' | 'signal-fuel-parameter' | 'signal-pink' | 'signal-yellow'
     | 'shape-horizontal'
 
+export type SignalType = 'item' | 'fluid' | 'virtual' | 'entity' | 'technology' | 'recipe' |
+    'item-group' | 'tile' | 'virtual-signal' | 'achievement' | 'equipment' |
+    'planet' | 'quality' | 'utility' | 'space-location';
+
+export type Quality = 'normal' | 'uncommon' | 'rare' | 'epic' | 'legendary' | undefined;
+
 export interface SignalID {
-    type?: 'item' | 'fluid' | 'virtual' | 'entity' | 'technology' | 'recipe' |
-           'item-group' | 'tile' | 'virtual-signal' | 'achievement' | 'equipment' |
-           'planet' | 'quality' | 'utility' | 'space-location'  // Defaults to "item" if not specified
+    type?: SignalType  // Defaults to "item" if not specified
     name: string | VirtualSignalName
-    quality?: 'normal' | 'uncommon' | 'rare' | 'epic' | 'legendary'
+    quality?: Quality
 }
 
 export interface Icon {
@@ -36,7 +40,7 @@ export interface Icon {
 interface NetworkPorts {
     red: boolean
     green: boolean
-        }
+}
 
 interface CircuitCondition {
     first_signal?: SignalID
@@ -63,14 +67,14 @@ interface DeciderCombinatorConditions {
 }
 
 interface ArithmeticCondition {
-        first_signal: SignalID
-        second_signal?: SignalID
-        second_constant?: number
+    first_signal: SignalID
+    second_signal?: SignalID
+    second_constant?: number
     operation: '+' | '-' | '*' | '/' | '^' | '%' | '<<' | '>>' | 'AND' | 'OR' | 'XOR'
-        output_signal: SignalID
+    output_signal: SignalID
     first_signal_networks?: NetworkPorts
     second_signal_networks?: NetworkPorts
-    }
+}
 
 interface DisplayPanelParameter {
     condition: {
@@ -81,11 +85,11 @@ interface DisplayPanelParameter {
     icon?: SignalID
 }
 
-interface Filter {
+export interface Filter {
     index: number
     name: string
     type?: string
-    quality?: string
+    quality?: Quality
     comparator?: string // '=' | '≠' | '>' | '<' | '≥' | '≤'
     count?: number
     max_count?: number
@@ -98,13 +102,6 @@ interface SectionFilters {
     active?: boolean
 }
 
-// Common fields across all blueprint types
-interface CommonFields {
-    item: string
-    label?: string
-    description?: string
-    version: number
-}
 
 interface ControlBehavior {
     // Circuit network conditions
@@ -174,7 +171,7 @@ export interface Entity {
     direction?: number  // 0, 2, 4, 6 = North, East, South, West
     control_behavior?: ControlBehavior
     recipe?: string
-    recipe_quality?: string
+    recipe_quality?: Quality
     request_filters?: {
         sections: SectionFilters[]
         request_from_buffers?: boolean
@@ -201,9 +198,10 @@ export interface Entity {
     priority?: number
     station?: string
     text?: string  // For display panels
+    quality?: Quality
 }
 
-interface Wire {
+export interface Wire {
     entity_number: number
     circuit_id: number
 }
@@ -230,7 +228,7 @@ export interface Tile {
     name: string
 }
 
-interface Parameter {
+export interface Parameter {
     type: 'id' | 'number'
     name: string
     id?: string
@@ -239,14 +237,23 @@ interface Parameter {
     formula?: string
     dependent?: boolean
     'quality-condition'?: {
-        quality: string
+        quality: Quality
         comparator: string
     }
     'ingredient-of'?: string
 }
 
+// Common fields across all blueprint types
+interface CommonFields {
+    item: string
+    label?: string
+    version: number
+}
+
 export interface Blueprint extends CommonFields {
     item: 'blueprint'
+    description?: string
+    icons?: Icon[]
     entities?: Entity[]
     tiles?: Tile[]
     schedules?: Schedule[]
@@ -259,13 +266,12 @@ export interface Blueprint extends CommonFields {
 }
 
 interface DeconstructionSettings {
+    description?: string    // Added these metadata fields that can appear
+    icons?: Icon[]
     entity_filters?: Filter[]
     tile_filters?: Filter[]  // Added this
     tile_selection_mode?: 1 | 2 | 3  // 1=default, 2=never, 3=always
     trees_and_rocks_only?: boolean
-    description?: string    // Added these metadata fields that can appear
-    label?: string         // in settings for some reason
-    icons?: Icon[]
 }
 
 export interface DeconstructionPlanner extends CommonFields {
@@ -280,10 +286,9 @@ interface UpgradeMapping {
 }
 
 interface UpgradeSettings {
-    mappers: UpgradeMapping[]
     description?: string
-    label?: string
     icons?: Icon[]
+    mappers: UpgradeMapping[]
 }
 
 export interface UpgradePlanner extends CommonFields {
@@ -298,6 +303,9 @@ export interface BlueprintStringWithIndex extends BlueprintString {
 // Referenced interfaces for context
 export interface BlueprintBook extends CommonFields {
     item: 'blueprint-book'
+    label?: string
+    description?: string
+    icons?: Icon[]
     blueprints: Array<BlueprintStringWithIndex>
     active_index?: number
 }
@@ -310,7 +318,7 @@ export interface BlueprintString {
 }
 
 // Controlling trains
-interface StopBehavior {
+export interface StopBehavior {
     circuit_enabled?: boolean;
     logistic_condition?: CircuitCondition;
     read_from_train?: boolean;
@@ -321,7 +329,7 @@ interface StopBehavior {
 }
 
 // For stations
-interface Station {
+export interface Station {
     station?: string;
     color?: {
         r: number;
@@ -331,7 +339,7 @@ interface Station {
     };
 }
 
-interface DisplayPanel extends Entity {
+export interface DisplayPanel extends Entity {
     text?: string;
     icon?: SignalID;
     always_show?: boolean;

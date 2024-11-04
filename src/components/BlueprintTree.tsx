@@ -17,7 +17,9 @@ interface TreeRowProps {
 // Memoize the tree row component
 const TreeRow = memo(({ path, blueprint, indentLevel, isSelected }: TreeRowProps) => {
     const wrapper = new BlueprintWrapper(blueprint);
-    const { type, label, icons } = wrapper.getInfo();
+    const type = wrapper.getType();
+    const label = wrapper.getLabel();
+    const icons = wrapper.getIcons() || [];
 
     return (
         <div
@@ -53,7 +55,7 @@ const TreeRow = memo(({ path, blueprint, indentLevel, isSelected }: TreeRowProps
             </div>
 
             <div className="label">
-                <RichText text={label || ''} />
+                <RichText text={label} />
             </div>
         </div>
     )

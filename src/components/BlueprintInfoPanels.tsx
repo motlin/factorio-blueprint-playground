@@ -1,8 +1,14 @@
 import {memo} from 'preact/compat'
 import {Panel} from './ui'
 import {FactorioIcon} from './FactorioIcon'
-import type {Blueprint, BlueprintString, DeconstructionPlanner, Entity, Tile, Filter, UpgradePlanner} from '../parsing/types'
-import {getBlueprintContent} from '../parsing/blueprintUtils'
+import type {
+    BlueprintString,
+    DeconstructionPlanner,
+    Entity,
+    Filter,
+    Tile,
+    UpgradePlanner
+} from '../parsing/types'
 import {Cell, IconCell, Row, Spreadsheet, TextCell} from './spreadsheet'
 import {BlueprintWrapper} from "../parsing/BlueprintWrapper";
 
@@ -49,21 +55,38 @@ function ItemPanel({ title, items, type }: { title: string, items: Map<string, n
     )
 }
 
-// Content Panels
-export const ContentsPanel = memo(({blueprint}: { blueprint: BlueprintString }) => {
-    const content = getBlueprintContent(blueprint)
+interface PanelProps {
+    blueprint: BlueprintString;
+}
+
+export const ContentsPanel = memo(({blueprint}: PanelProps) => {
+    const blueprintContent = blueprint.blueprint;
 
     // Type guard to ensure we're working with a Blueprint type
-    if (!('entities' in content)) return null;
-
-    const blueprintContent = content as Blueprint;
+    if (!blueprintContent) return null;
 
     if (!blueprintContent.entities?.length && !blueprintContent.tiles?.length) return null;
 
-    const getKey1 = (entity: Entity) => ({name: entity.name, quality: entity.quality});
-    const entityCounts = countItems(blueprintContent.entities || [], getKey1);
-    const tileCounts = countItems(blueprintContent.tiles || [], (tile: Tile) => ({name: tile.name, quality: tile.quality}));
-    const recipeCounts = countItems(blueprintContent.entities || [], (entity: Entity) => ({name: entity.recipe, quality: entity.recipe_quality}));
+    const getEntityKey = (entity: Entity) => ({name: entity.name, quality: entity.quality});
+
+    const getTileKey = (tile: Tile) => ({
+        name: tile.name,
+        quality: undefined
+    });
+
+    const getRecipeKey = (entity: Entity) => {
+        if (!entity.recipe) {
+            return undefined;
+        }
+        return {
+            name: entity.recipe,
+            quality: entity.recipe_quality
+        };
+    };
+
+    const entityCounts = countItems(blueprintContent.entities || [], getEntityKey);
+    const tileCounts = countItems(blueprintContent.tiles || [], getTileKey);
+    const recipeCounts = countItems(blueprintContent.entities || [], getRecipeKey);
 
     return (
         <>
@@ -168,7 +191,7 @@ export const DeconstructionPlannerPanel = memo(({blueprint}: { blueprint: Bluepr
                     </Cell>
                 </Row>
 
-                {settings.entity_filters?.length > 0 && (
+                {settings?.entity_filters && settings?.entity_filters.length > 0 && (
                     <Row>
                         <Cell width="20%">
                             Entity Filters
@@ -178,12 +201,12 @@ export const DeconstructionPlannerPanel = memo(({blueprint}: { blueprint: Bluepr
                                 {settings.entity_filters
                                     .sort((a, b) => a.index - b.index)
                                     .map((filter, index) => (
-                                    <div key={index} className="flex mb8 mr8">
-                                    <FactorioIcon
-                                        type="entity"
-                                        name={filter.name}
+                                        <div key={index} className="flex mb8 mr8">
+                                            <FactorioIcon
+                                                type="entity"
+                                                name={filter.name}
                                                 quality={filter.quality}
-                                    />
+                                            />
                                             <span className="ml8">
                                                 {filter.name}
                                                 {formatFilterText(filter)}
@@ -195,7 +218,7 @@ export const DeconstructionPlannerPanel = memo(({blueprint}: { blueprint: Bluepr
                     </Row>
                 )}
 
-                {settings.tile_filters?.length > 0 && (
+                {settings?.tile_filters && settings?.tile_filters.length > 0 && (
                     <Row>
                         <Cell width="20%">Tile Filters</Cell>
                         <Cell grow>

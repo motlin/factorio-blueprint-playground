@@ -1,11 +1,11 @@
-import {deflate, InflateOptions} from 'pako'
+import {deflate, DeflateFunctionOptions} from 'pako'
 
-export interface CompressionSettings {
-    raw: false               // Must be false - Factorio requires zlib headers
+export interface CompressionSettings extends DeflateFunctionOptions {
+    level: 8 | 9;            // Must be 8 or 9
     windowBits: 15           // Must be 15 - Factorio requires max window size (32K)
-    strategy: 0              // Must be 0 - Factorio requires default strategy
-    level: number            // Must be 8 or 9
     memLevel: number         // Must be 4-9 inclusive
+    strategy: pako.constants.Z_DEFAULT_STRATEGY // Must be 0 - Factorio requires default strategy
+    raw: false               // Must be false - Factorio requires zlib headers
 }
 
 // Compression level (8 or 9)

@@ -16,32 +16,25 @@ export class BlueprintError extends Error {
  * Takes a blueprint string and returns the parsed JSON data
  */
 export function deserializeBlueprint(blueprintString: string): BlueprintString {
-    try {
-        // Validate prefix
-        if (!blueprintString.startsWith('0')) {
-            throw new BlueprintError(
-                `Unknown blueprint format: string does not start with '0' (starts with '${blueprintString[0] || ''}')`
-            )
-        }
-
-        // Decode base64 to bytes
-        const base64String = blueprintString.slice(1)
-        const bytes = Uint8Array.from(atob(base64String), c => c.charCodeAt(0))
-
-        // Decompress the bytes using zlib (pako)
-        const decompressedStr = inflate(bytes, {to: 'string'})
-
-        // Parse the JSON
-        const parsed: BlueprintString = JSON.parse(decompressedStr.trim())
-        validateBlueprintData(parsed)
-
-        return parsed
-    } catch (err) {
-        if (err instanceof BlueprintError) {
-            throw err
-        }
-        throw new BlueprintError(`Failed to parse blueprint: ${err.message}`, {cause: err})
+    // Validate prefix
+    if (!blueprintString.startsWith('0')) {
+        throw new BlueprintError(
+            `Unknown blueprint format: string does not start with '0' (starts with '${blueprintString[0] || ''}')`
+        )
     }
+
+    // Decode base64 to bytes
+    const base64String = blueprintString.slice(1)
+    const bytes = Uint8Array.from(atob(base64String), c => c.charCodeAt(0))
+
+    // Decompress the bytes using zlib (pako)
+    const decompressedStr = inflate(bytes, {to: 'string'})
+
+    // Parse the JSON
+    const parsed: BlueprintString = JSON.parse(decompressedStr.trim())
+    validateBlueprintData(parsed)
+
+    return parsed
 }
 
 /**

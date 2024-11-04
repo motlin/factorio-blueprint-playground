@@ -1,9 +1,9 @@
-import { memo } from 'preact/compat';
-import {Panel, ButtonGreen, InsetLight} from './ui';
-import { serializeBlueprint } from '../parsing/blueprintParser';
-import type { BlueprintString } from '../parsing/types';
-import { getBlueprintContent } from '../parsing/blueprintUtils';
-import { ClipboardCopy, FileJson, Download } from 'lucide-react';
+import {memo} from 'preact/compat';
+import {ButtonGreen, InsetLight, Panel} from './ui';
+import {serializeBlueprint} from '../parsing/blueprintParser';
+import type {BlueprintString} from '../parsing/types';
+import {ClipboardCopy, Download, FileJson} from 'lucide-react';
+import {BlueprintWrapper} from "../parsing/BlueprintWrapper.ts";
 
 interface ExportPanelProps {
     rootBlueprint: BlueprintString | null;
@@ -12,11 +12,13 @@ interface ExportPanelProps {
 }
 
 function getFilename(blueprint: BlueprintString, path: string | null): string {
-    const content = getBlueprintContent(blueprint);
+    const wrapper = new BlueprintWrapper(blueprint);
+    const label = wrapper.getLabel();
+
 
     // Use label if available, fallback to "blueprint"
-    let base = content.label
-        ? content.label.replace(/[^a-zA-Z0-9-_]/g, '-')
+    let base = label
+        ? label.replace(/[^a-zA-Z0-9-_]/g, '-')
         : 'blueprint';
 
     // Add path suffix if it exists

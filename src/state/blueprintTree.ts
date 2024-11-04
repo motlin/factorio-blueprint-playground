@@ -1,5 +1,5 @@
 // src/state/blueprintTree.ts
-import { signal, computed, effect, batch } from '@preact/signals'
+import { signal, computed, batch } from '@preact/signals'
 import type { BlueprintString } from '../parsing/types'
 import { extractBlueprint } from '../parsing/blueprintParser'
 
