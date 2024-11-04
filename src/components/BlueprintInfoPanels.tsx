@@ -7,27 +7,45 @@ import {Cell, IconCell, Row, Spreadsheet, TextCell} from './spreadsheet'
 import {BlueprintWrapper} from "../parsing/BlueprintWrapper";
 
 // Count occurrences of items in an array
-function countItems<T>(items: T[], getKey: (item: T) => string) {
+function countItems<T>(items: T[], getKey: (item: T) => string | undefined) {
     const counts = new Map<string, number>()
     for (const item of items) {
-        const key = getKey(item)
+        const key: string | undefined = getKey(item)
+        if (!key) continue;
         counts.set(key, (counts.get(key) || 0) + 1)
     }
     return counts
 }
 
+function mapToSortedArray(
+    counts: Map<string, number>
+) {
+    return Array.from(counts.entries())
+        .map(([name, count]) => ({
+            name,
+            count,
+        }))
+        .sort((a, b) => b.count - a.count) // Sort by count in descending order
+}
+
 // Multi-column list component for showing icon, name, count
-function ItemList({ items }: { items: Array<{ icon: any, count: number, name: string }> }) {
+function ItemPanel({ title, items, type }: { title: string, items: Map<string, number>, type: string}) {
+    if (!items.size) return null;
+
+    const sortedItems = mapToSortedArray(items)
+
     return (
-        <Spreadsheet>
-            {items.map(({icon, count, name}) => (
-                <Row key={`${icon.type}-${icon.name}`}>
-                    <IconCell icon={icon} />
-                    <TextCell grow>{name}</TextCell>
-                    <TextCell width="80px" align="right" grow={false}>{count}</TextCell>
-                </Row>
-            ))}
-        </Spreadsheet>
+        <Panel title={title}>
+            <Spreadsheet>
+                {sortedItems.map(({name, count}) => (
+                    <Row key={`${type}-${name}`}>
+                        <IconCell icon={{type, name}}/>
+                        <TextCell grow>{name}</TextCell>
+                        <TextCell width="80px" align="right" grow={false}>{count}</TextCell>
+                    </Row>
+                ))}
+            </Spreadsheet>
+        </Panel>
     )
 }
 
@@ -42,52 +60,15 @@ export const ContentsPanel = memo(({blueprint}: { blueprint: BlueprintString }) 
 
     if (!blueprintContent.entities?.length && !blueprintContent.tiles?.length) return null;
 
-    // Count entities by name
     const entityCounts = countItems(blueprintContent.entities || [], (entity: Entity) => entity.name)
-    const entityItems = Array.from(entityCounts.entries()).map(([name, count]) => ({
-        icon: {type: 'entity', name},
-        count,
-        name
-    }))
-
-    // Count tiles by name
     const tileCounts = countItems(blueprintContent.tiles || [], (tile: Tile) => tile.name)
-    const tileItems = Array.from(tileCounts.entries()).map(([name, count]) => ({
-        icon: { type: 'tile', name },
-        count,
-        name
-    }))
-
-    // Get all unique recipes
-    const recipes = new Set<string>()
-    blueprintContent.entities?.forEach((entity: Entity) => {
-        if (entity.recipe) recipes.add(entity.recipe)
-    })
-    const recipeItems = Array.from(recipes).map(name => ({
-        icon: { type: 'recipe', name },
-        count: 1,
-        name
-    }))
+    const recipeCounts = countItems(blueprintContent.entities || [], (entity: Entity) => entity.recipe)
 
     return (
         <>
-            {entityItems.length > 0 && (
-                <Panel title="Entities">
-                    <ItemList items={entityItems} />
-                </Panel>
-            )}
-
-            {recipeItems.length > 0 && (
-                <Panel title="Recipes">
-                    <ItemList items={recipeItems} />
-                </Panel>
-            )}
-
-            {tileItems.length > 0 && (
-                <Panel title="Tiles">
-                    <ItemList items={tileItems} />
-                </Panel>
-            )}
+            <ItemPanel title="Entities" items={entityCounts} type={'entity'}/>
+            <ItemPanel title="Recipes" items={recipeCounts} type={'recipe'}/>
+            <ItemPanel title="Tiles" items={tileCounts} type={'tile'}/>
         </>
     )
 })
