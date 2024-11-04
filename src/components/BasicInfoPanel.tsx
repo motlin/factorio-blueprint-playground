@@ -50,6 +50,7 @@ export const BasicInfoPanel = memo(({ blueprint }: { blueprint: BlueprintString 
                                     key={index}
                                     type={icon.signal.type}
                                     name={icon.signal.name}
+                                    quality={icon.signal.quality}
                                 />
                             ) : (
                                 <div key={index} className="placeholder"/>
