@@ -1,7 +1,7 @@
 import {memo} from 'preact/compat'
 import {Panel} from './ui'
 import {FactorioIcon} from './FactorioIcon'
-import type {BlueprintString, DeconstructionPlanner, Parameter, UpgradePlanner} from '../parsing/types'
+import type {BlueprintString, DeconstructionPlanner, UpgradePlanner} from '../parsing/types'
 import {getBlueprintContent} from '../parsing/blueprintUtils'
 import {Cell, IconCell, Row, Spreadsheet, TextCell} from './spreadsheet'
 import {BlueprintWrapper} from "../parsing/BlueprintWrapper";

@@ -1,10 +1,6 @@
-interface FactorioIconProps {
-    type?: string;
-    name: string;
-    quality?: string;
-}
+import {SignalID} from "../parsing/types.ts";
 
-export const FactorioIcon = (icon: FactorioIconProps) => {
+export const FactorioIcon = (icon: SignalID) => {
     let type = icon.type || 'item';
     let urlType = icon.type || 'item';
 

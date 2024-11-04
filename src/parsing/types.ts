@@ -20,15 +20,15 @@ type VirtualSignalName =
     | 'signal-item-parameter' | 'signal-fuel-parameter' | 'signal-pink' | 'signal-yellow'
     | 'shape-horizontal'
 
-interface SignalID {
+export interface SignalID {
     type?: 'item' | 'fluid' | 'virtual' | 'entity' | 'technology' | 'recipe' |
            'item-group' | 'tile' | 'virtual-signal' | 'achievement' | 'equipment' |
-           'planet' | 'quality' | 'utility'  // Defaults to "item" if not specified
+           'planet' | 'quality' | 'utility' | 'space-location'  // Defaults to "item" if not specified
     name: string | VirtualSignalName
     quality?: 'normal' | 'uncommon' | 'rare' | 'epic' | 'legendary'
 }
 
-interface Icon {
+export interface Icon {
     signal: SignalID
     index: number  // 1-based index, max 4 icons
 }
