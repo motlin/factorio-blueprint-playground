@@ -167,7 +167,7 @@ interface ItemStack {
     }
 }
 
-interface Entity {
+export interface Entity {
     entity_number: number
     name: string
     position: Position
@@ -225,7 +225,7 @@ interface Schedule {
     }
 }
 
-interface Tile {
+export interface Tile {
     position: Position
     name: string
 }

@@ -1,7 +1,7 @@
 import {memo} from 'preact/compat'
 import {Panel} from './ui'
 import {FactorioIcon} from './FactorioIcon'
-import type {BlueprintString, DeconstructionPlanner, UpgradePlanner} from '../parsing/types'
+import type {Blueprint, BlueprintString, DeconstructionPlanner, Entity, Tile, UpgradePlanner} from '../parsing/types'
 import {getBlueprintContent} from '../parsing/blueprintUtils'
 import {Cell, IconCell, Row, Spreadsheet, TextCell} from './spreadsheet'
 import {BlueprintWrapper} from "../parsing/BlueprintWrapper";
@@ -34,10 +34,16 @@ function ItemList({ items }: { items: Array<{ icon: any, count: number, name: st
 // Content Panels
 export const ContentsPanel = memo(({blueprint}: { blueprint: BlueprintString }) => {
     const content = getBlueprintContent(blueprint)
-    if (!content.entities?.length && !content.tiles?.length) return null
+
+    // Type guard to ensure we're working with a Blueprint type
+    if (!('entities' in content)) return null;
+
+    const blueprintContent = content as Blueprint;
+
+    if (!blueprintContent.entities?.length && !blueprintContent.tiles?.length) return null;
 
     // Count entities by name
-    const entityCounts = countItems(content.entities || [], entity => entity.name)
+    const entityCounts = countItems(blueprintContent.entities || [], (entity: Entity) => entity.name)
     const entityItems = Array.from(entityCounts.entries()).map(([name, count]) => ({
         icon: {type: 'entity', name},
         count,
@@ -45,7 +51,7 @@ export const ContentsPanel = memo(({blueprint}: { blueprint: BlueprintString }) 
     }))
 
     // Count tiles by name
-    const tileCounts = countItems(content.tiles || [], tile => tile.name)
+    const tileCounts = countItems(blueprintContent.tiles || [], (tile: Tile) => tile.name)
     const tileItems = Array.from(tileCounts.entries()).map(([name, count]) => ({
         icon: { type: 'tile', name },
         count,
@@ -54,7 +60,7 @@ export const ContentsPanel = memo(({blueprint}: { blueprint: BlueprintString }) 
 
     // Get all unique recipes
     const recipes = new Set<string>()
-    content.entities?.forEach(entity => {
+    blueprintContent.entities?.forEach((entity: Entity) => {
         if (entity.recipe) recipes.add(entity.recipe)
     })
     const recipeItems = Array.from(recipes).map(name => ({

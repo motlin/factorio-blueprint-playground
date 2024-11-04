@@ -3,9 +3,12 @@ import type {BlueprintString} from './types'
 import {compressBlueprint, CompressionSettings, DEFAULT_COMPRESSION_SETTINGS} from './compressionSettings'
 
 export class BlueprintError extends Error {
-    constructor(message: string, options?: { cause?: Error }) {
-        super(message, options)
-        this.name = 'BlueprintError'
+    constructor(message: string, options?: ErrorOptions) {
+        super(message);
+        this.name = 'BlueprintError';
+        if (options?.cause) {
+            this.cause = options.cause;
+        }
     }
 }
 
@@ -93,11 +96,16 @@ export function extractBlueprint(
         }
 
         return current
-    } catch (err) {
+    } catch (err: unknown) {
         if (err instanceof BlueprintError) {
-            throw err
+            throw err;
         }
-        throw new BlueprintError(`Failed to extract blueprint: ${err.message}`, {cause: err})
+        // Check if err is Error-like
+        if (err instanceof Error) {
+            throw new BlueprintError(`Failed to extract blueprint: ${err.message}`, {cause: err});
+        }
+        // Fallback for unknown error types
+        throw new BlueprintError('Failed to extract blueprint: Unknown error');
     }
 }
 

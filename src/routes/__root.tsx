@@ -1,5 +1,6 @@
 import {lazy, Suspense} from 'react'
 import {createRootRoute, Link, Outlet} from '@tanstack/react-router'
+import type { ComponentType } from 'preact';
 
 const TanStackRouterDevtools = import.meta.env.PROD
     ? () => null // Render nothing in production
@@ -22,6 +23,17 @@ function ErrorComponent({ error }: { error: RouteError }) {
             {error.status && <p>Status: {error.status}</p>}
         </div>
     );
+}
+
+// Create a wrapper component to handle the type union
+const DevTools = () => {
+    if (import.meta.env.PROD) {
+        return null;
+    }
+
+    // Use empty props object type since we don't need the specific options type
+    const DevToolsComponent = TanStackRouterDevtools as ComponentType<{}>;
+    return <DevToolsComponent />;
 }
 
 export const Route = createRootRoute({
@@ -58,8 +70,8 @@ export const Route = createRootRoute({
                 <Outlet/>
             </div>
 
-            <Suspense>
-                <TanStackRouterDevtools/>
+            <Suspense fallback={null}>
+                <DevTools />
             </Suspense>
         </div>
     ),
