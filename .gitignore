@@ -24,3 +24,5 @@ dist-ssr
 *.sw?
 
 /.vite/
+/tsconfig.app.tsbuildinfo
+/tsconfig.node.tsbuildinfo
