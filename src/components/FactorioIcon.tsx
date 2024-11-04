@@ -16,13 +16,13 @@ export const FactorioIcon = (icon: SignalID) => {
             <div className="factorio-icon-group">
                 <img
                     className='factorio-icon'
-                    src={`https://www.factorio.school/icons/${urlType}/${icon.name}.png`}
+                    src={`/icons/${urlType}/${icon.name}.png`}
                     alt={icon.name}
                     title={`${type}: ${icon.name}`}
                 />
                 <img
                     className="quality"
-                    src={`https://www.factorio.school/icons/quality/${icon.quality}.png`}
+                    src={`/icons/quality/${icon.quality}.png`}
                     alt={icon.quality}
                     title={`Quality: ${icon.quality}`}
                 />
@@ -34,7 +34,7 @@ export const FactorioIcon = (icon: SignalID) => {
     return (
         <img
             className="factorio-icon"
-            src={`https://www.factorio.school/icons/${urlType}/${icon.name}.png`}
+            src={`/icons/${urlType}/${icon.name}.png`}
             alt={icon.name}
             title={`${type}: ${icon.name}`}
         />
