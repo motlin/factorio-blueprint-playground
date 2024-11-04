@@ -1,5 +1,6 @@
 import {memo} from 'preact/compat';
-import type {BlueprintString} from '../parsing/types'
+import {JSX} from 'preact';
+import {BlueprintString, BlueprintStringWithIndex} from '../parsing/types'
 import {FactorioIcon} from './FactorioIcon'
 import {RichText} from './RichText'
 import {InsetLight} from './ui'
@@ -74,7 +75,7 @@ export const BlueprintTree = memo(() => {
     if (!blueprint?.blueprint_book?.blueprints) return null
 
     function renderNode(node: BlueprintString, path: string, level: number): JSX.Element[] {
-        const rows = []
+        const rows: JSX.Element[] = []
 
         rows.push(
             <TreeRow
@@ -87,14 +88,9 @@ export const BlueprintTree = memo(() => {
         )
 
         if (node.blueprint_book?.blueprints) {
-            node.blueprint_book.blueprints.forEach((child, index) => {
+            node.blueprint_book.blueprints.forEach((child: BlueprintStringWithIndex, index) => {
                 const childPath = path ? `${path}.${index + 1}` : (index + 1).toString()
-                const childNode = child.blueprint || child.blueprint_book ||
-                                child.upgrade_planner || child.deconstruction_planner
-                            ? child as BlueprintString
-                    : { blueprint: child }
-
-                rows.push(...renderNode(childNode, childPath, level + 1))
+                rows.push(...renderNode(child, childPath, level + 1))
             })
         }
 

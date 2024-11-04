@@ -291,15 +291,14 @@ export interface UpgradePlanner extends CommonFields {
     settings: UpgradeSettings
 }
 
+export interface BlueprintStringWithIndex extends BlueprintString {
+    index: number
+}
+
+// Referenced interfaces for context
 export interface BlueprintBook extends CommonFields {
     item: 'blueprint-book'
-    blueprints: Array<{
-        index: number
-        blueprint?: Blueprint
-        blueprint_book?: BlueprintBook
-        upgrade_planner?: UpgradePlanner
-        deconstruction_planner?: DeconstructionPlanner
-    }>
+    blueprints: Array<BlueprintStringWithIndex>
     active_index?: number
 }
 
