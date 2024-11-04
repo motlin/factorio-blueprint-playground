@@ -1,28 +1,28 @@
 import {memo} from 'preact/compat'
 import {Panel} from './ui'
 import {FactorioIcon} from './FactorioIcon'
-import type {Blueprint, BlueprintString, DeconstructionPlanner, Entity, Tile, UpgradePlanner} from '../parsing/types'
+import type {Blueprint, BlueprintString, DeconstructionPlanner, Entity, Tile, Filter, UpgradePlanner} from '../parsing/types'
 import {getBlueprintContent} from '../parsing/blueprintUtils'
 import {Cell, IconCell, Row, Spreadsheet, TextCell} from './spreadsheet'
 import {BlueprintWrapper} from "../parsing/BlueprintWrapper";
 
-// Count occurrences of items in an array
-function countItems<T>(items: T[], getKey: (item: T) => string | undefined) {
+// Count occurrences of items in an array, including quality
+function countItems<T>(items: T[], getKey: (item: T) => {name: string, quality?: string} | undefined) {
     const counts = new Map<string, number>()
     for (const item of items) {
-        const key: string | undefined = getKey(item)
-        if (!key) continue;
+        const keyObj = getKey(item)
+        if (!keyObj) continue;
+
+        const key = JSON.stringify(keyObj)
         counts.set(key, (counts.get(key) || 0) + 1)
     }
     return counts
 }
 
-function mapToSortedArray(
-    counts: Map<string, number>
-) {
+function mapToSortedArray(counts: Map<string, number>) {
     return Array.from(counts.entries())
-        .map(([name, count]) => ({
-            name,
+        .map(([key, count]) => ({
+            ...JSON.parse(key),
             count,
         }))
         .sort((a, b) => b.count - a.count) // Sort by count in descending order
@@ -37,9 +37,9 @@ function ItemPanel({ title, items, type }: { title: string, items: Map<string, n
     return (
         <Panel title={title}>
             <Spreadsheet>
-                {sortedItems.map(({name, count}) => (
-                    <Row key={`${type}-${name}`}>
-                        <IconCell icon={{type, name}}/>
+                {sortedItems.map(({name, quality, count}) => (
+                    <Row key={JSON.stringify({type, name, quality})}>
+                        <IconCell icon={{type, name, quality}}/>
                         <TextCell grow>{name}</TextCell>
                         <TextCell width="80px" align="right" grow={false}>{count}</TextCell>
                     </Row>
@@ -60,9 +60,10 @@ export const ContentsPanel = memo(({blueprint}: { blueprint: BlueprintString }) 
 
     if (!blueprintContent.entities?.length && !blueprintContent.tiles?.length) return null;
 
-    const entityCounts = countItems(blueprintContent.entities || [], (entity: Entity) => entity.name)
-    const tileCounts = countItems(blueprintContent.tiles || [], (tile: Tile) => tile.name)
-    const recipeCounts = countItems(blueprintContent.entities || [], (entity: Entity) => entity.recipe)
+    const getKey1 = (entity: Entity) => ({name: entity.name, quality: entity.quality});
+    const entityCounts = countItems(blueprintContent.entities || [], getKey1);
+    const tileCounts = countItems(blueprintContent.tiles || [], (tile: Tile) => ({name: tile.name, quality: tile.quality}));
+    const recipeCounts = countItems(blueprintContent.entities || [], (entity: Entity) => ({name: entity.recipe, quality: entity.recipe_quality}));
 
     return (
         <>
@@ -96,6 +97,7 @@ export const UpgradePlannerPanel = memo(({blueprint}: { blueprint: BlueprintStri
                                     <FactorioIcon
                                         type={mapping.from.type}
                                         name={mapping.from.name}
+                                            quality={mapping.from.quality}
                                     />
                                 )}
                             </Cell>
@@ -107,6 +109,7 @@ export const UpgradePlannerPanel = memo(({blueprint}: { blueprint: BlueprintStri
                                 <FactorioIcon
                                     type={mapping.to.type}
                                     name={mapping.to.name}
+                                            quality={mapping.to.quality}
                                 />
                                 )}
                             </Cell>
@@ -114,8 +117,16 @@ export const UpgradePlannerPanel = memo(({blueprint}: { blueprint: BlueprintStri
                     ))}
             </Spreadsheet>
         </Panel>
-    )
-})
+    );
+});
+
+// Helper to format filter display text
+function formatFilterText(filter: Filter): string {
+    const parts: string[] = [];
+    if (filter.quality) parts.push(filter.quality);
+    if (filter.comparator) parts.push(filter.comparator);
+    return parts.length > 0 ? ` (${parts.join(' ')})` : '';
+}
 
 // Deconstruction Planner Panel
 export const DeconstructionPlannerPanel = memo(({blueprint}: { blueprint: BlueprintString }) => {
@@ -171,11 +182,11 @@ export const DeconstructionPlannerPanel = memo(({blueprint}: { blueprint: Bluepr
                                     <FactorioIcon
                                         type="entity"
                                         name={filter.name}
+                                                quality={filter.quality}
                                     />
                                             <span className="ml8">
                                                 {filter.name}
-                                                {filter.quality && ` (${filter.quality})`}
-                                                {filter.comparator && ` ${filter.comparator}`}
+                                                {formatFilterText(filter)}
                                             </span>
                                         </div>
                                     ))}
@@ -196,8 +207,12 @@ export const DeconstructionPlannerPanel = memo(({blueprint}: { blueprint: Bluepr
                                             <FactorioIcon
                                                 type="tile"
                                                 name={filter.name}
+                                                quality={filter.quality}
                                             />
-                                    <span className="ml8">{filter.name}</span>
+                                            <span className="ml8">
+                                                {filter.name}
+                                                {formatFilterText(filter)}
+                                            </span>
                                 </div>
                             ))}
                         </div>
@@ -206,8 +221,8 @@ export const DeconstructionPlannerPanel = memo(({blueprint}: { blueprint: Bluepr
                 )}
             </Spreadsheet>
         </Panel>
-    )
-})
+    );
+});
 
 // Main wrapper component that shows the appropriate panels
 export const BlueprintInfoPanels = memo(({blueprint}: { blueprint: BlueprintString }) => {
