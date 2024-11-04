@@ -82,11 +82,11 @@ interface DisplayPanelParameter {
 }
 
 interface Filter {
-        index: number
+    index: number
     name: string
     type?: string
     quality?: string
-    comparator?: string
+    comparator?: string // '=' | '≠' | '>' | '<' | '≥' | '≤'
     count?: number
     max_count?: number
 }
@@ -103,7 +103,6 @@ interface CommonFields {
     item: string
     label?: string
     description?: string
-    icons?: Icon[]
     version: number
 }
 
@@ -259,26 +258,37 @@ export interface Blueprint extends CommonFields {
     absolute_snapping?: boolean
 }
 
+interface DeconstructionSettings {
+    entity_filters?: Filter[]
+    tile_filters?: Filter[]  // Added this
+    tile_selection_mode?: 1 | 2 | 3  // 1=default, 2=never, 3=always
+    trees_and_rocks_only?: boolean
+    description?: string    // Added these metadata fields that can appear
+    label?: string         // in settings for some reason
+    icons?: Icon[]
+}
+
+export interface DeconstructionPlanner extends CommonFields {
+    item: 'deconstruction-planner'
+    settings: DeconstructionSettings
+}
+
 interface UpgradeMapping {
     from?: SignalID
     to?: SignalID
     index: number
 }
 
-export interface UpgradePlanner extends CommonFields {
-    item: 'upgrade-planner'
-    settings: {
-        mappers: UpgradeMapping[]
-    }
+interface UpgradeSettings {
+    mappers: UpgradeMapping[]
+    description?: string
+    label?: string
+    icons?: Icon[]
 }
 
-export interface DeconstructionPlanner extends CommonFields {
-    item: 'deconstruction-planner'
-    settings: {
-        entity_filters?: Filter[]
-        tile_selection_mode?: 2 | 3  // 2="Never deconstruct tiles", 3="Always deconstruct tiles"
-        trees_and_rocks_only?: boolean
-    }
+export interface UpgradePlanner extends CommonFields {
+    item: 'upgrade-planner'
+    settings: UpgradeSettings
 }
 
 export interface BlueprintBook extends CommonFields {

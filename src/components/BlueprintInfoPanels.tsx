@@ -1,10 +1,10 @@
 import {memo} from 'preact/compat'
 import {Panel} from './ui'
 import {FactorioIcon} from './FactorioIcon'
-import type {BlueprintString, Parameter} from '../parsing/types'
+import type {BlueprintString, DeconstructionPlanner, Parameter, UpgradePlanner} from '../parsing/types'
 import {getBlueprintContent} from '../parsing/blueprintUtils'
 import {Cell, IconCell, Row, Spreadsheet, TextCell} from './spreadsheet'
-import {ParametersPanel} from "./ParametersPanel.tsx";
+import {BlueprintWrapper} from "../parsing/BlueprintWrapper";
 
 // Count occurrences of items in an array
 function countItems<T>(items: T[], getKey: (item: T) => string) {
@@ -88,13 +88,19 @@ export const ContentsPanel = memo(({blueprint}: { blueprint: BlueprintString }) 
 
 // Upgrade Planner Panel
 export const UpgradePlannerPanel = memo(({blueprint}: { blueprint: BlueprintString }) => {
-    const content = blueprint.upgrade_planner
-    if (!content?.settings?.mappers) return null
+    const wrapper = new BlueprintWrapper(blueprint);
+    const { content } = wrapper.getInfo();
+
+    // Type guard to ensure we're working with an upgrade planner
+    if (!('upgrade_planner' in blueprint)) return null;
+
+    const { settings } = content as UpgradePlanner;
+    if (!settings?.mappers?.length) return null;
 
     return (
         <Panel title="Upgrade Mappings">
             <Spreadsheet>
-                {content.settings.mappers
+                {settings.mappers
                     .sort((a, b) => a.index - b.index)
                     .map((mapping, index) => (
                         <Row key={index}>
@@ -126,13 +132,28 @@ export const UpgradePlannerPanel = memo(({blueprint}: { blueprint: BlueprintStri
 
 // Deconstruction Planner Panel
 export const DeconstructionPlannerPanel = memo(({blueprint}: { blueprint: BlueprintString }) => {
-    const content = blueprint.deconstruction_planner
-    if (!content?.settings) return null
+    const wrapper = new BlueprintWrapper(blueprint);
+    const { content } = wrapper.getInfo();
+
+    // Type guard to ensure we're working with a deconstruction planner
+    if (!('deconstruction_planner' in blueprint)) return null;
+
+    const { settings } = content as DeconstructionPlanner;
+    if (!settings) return null;
+
+    const getTileSelectionText = (mode?: number) => {
+        switch (mode) {
+            case 1: return 'Default tile behavior';
+            case 2: return 'Never deconstruct tiles';
+            case 3: return 'Always deconstruct tiles';
+            default: return 'Default tile behavior';
+        }
+    };
 
     return (
         <Panel title="Deconstruction Settings">
             <Spreadsheet>
-                {content.settings.trees_and_rocks_only && (
+                {settings.trees_and_rocks_only && (
                     <Row>
                         <Cell width="20%">Mode</Cell>
                         <Cell grow>
@@ -145,25 +166,50 @@ export const DeconstructionPlannerPanel = memo(({blueprint}: { blueprint: Bluepr
                         Tile Selection
                     </Cell>
                     <Cell grow>
-                        {content.settings.tile_selection_mode === 2 ?
-                            'Never deconstruct tiles' :
-                            'Always deconstruct tiles'
-                        }
+                        {getTileSelectionText(settings.tile_selection_mode)}
                     </Cell>
                 </Row>
-                {content.settings.entity_filters?.length > 0 && (
+
+                {settings.entity_filters?.length > 0 && (
                     <Row>
                         <Cell width="20%">
                             Entity Filters
                         </Cell>
                         <Cell grow>
                             <div className="flex flex-wrap">
-                            {content.settings.entity_filters.map((filter, index) => (
+                                {settings.entity_filters
+                                    .sort((a, b) => a.index - b.index)
+                                    .map((filter, index) => (
                                     <div key={index} className="flex mb8 mr8">
                                     <FactorioIcon
                                         type="entity"
                                         name={filter.name}
                                     />
+                                            <span className="ml8">
+                                                {filter.name}
+                                                {filter.quality && ` (${filter.quality})`}
+                                                {filter.comparator && ` ${filter.comparator}`}
+                                            </span>
+                                        </div>
+                                    ))}
+                            </div>
+                        </Cell>
+                    </Row>
+                )}
+
+                {settings.tile_filters?.length > 0 && (
+                    <Row>
+                        <Cell width="20%">Tile Filters</Cell>
+                        <Cell grow>
+                            <div className="flex flex-wrap">
+                                {settings.tile_filters
+                                    .sort((a, b) => a.index - b.index)
+                                    .map((filter, index) => (
+                                        <div key={index} className="flex mb8 mr8">
+                                            <FactorioIcon
+                                                type="tile"
+                                                name={filter.name}
+                                            />
                                     <span className="ml8">{filter.name}</span>
                                 </div>
                             ))}

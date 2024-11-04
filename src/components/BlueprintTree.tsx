@@ -1,10 +1,10 @@
-import { memo } from 'preact/compat';
+import {memo} from 'preact/compat';
 import type {BlueprintString} from '../parsing/types'
 import {FactorioIcon} from './FactorioIcon'
 import {RichText} from './RichText'
 import {InsetLight} from './ui'
-import { rootBlueprintSignal, selectedBlueprintPathSignal, selectBlueprintPath } from '../state/blueprintTree'
-import { getBlueprintContent, getBlueprintType } from "../parsing/blueprintUtils"
+import {rootBlueprintSignal, selectBlueprintPath, selectedBlueprintPathSignal} from '../state/blueprintTree'
+import {BlueprintWrapper} from "../parsing/BlueprintWrapper";
 
 interface TreeRowProps {
     path: string
@@ -15,8 +15,8 @@ interface TreeRowProps {
 
 // Memoize the tree row component
 const TreeRow = memo(({ path, blueprint, indentLevel, isSelected }: TreeRowProps) => {
-    const content = getBlueprintContent(blueprint)
-    const type = getBlueprintType(blueprint)
+    const wrapper = new BlueprintWrapper(blueprint);
+    const { type, label, icons } = wrapper.getInfo();
 
     return (
         <div
@@ -36,23 +36,23 @@ const TreeRow = memo(({ path, blueprint, indentLevel, isSelected }: TreeRowProps
 
             <div className="flex flex-items-center">
                 {[0,1,2,3].map(i => {
-                    const icon = content.icons?.[i]
+                    const icon = icons[i];
                     return icon ? (
-                    <FactorioIcon
+                        <FactorioIcon
                             key={i}
                             type={icon.signal.type}
                             name={icon.signal.name}
-                    />
+                        />
                     ) : (
                         <div key={i} className="placeholder" />
-                    )
+                    );
                 })}
                 <div className="separator" />
             </div>
 
             <div className="label">
-                    <RichText text={content.label || ''}/>
-                </div>
+                <RichText text={label || ''} />
+            </div>
         </div>
     )
 }, (prevProps, nextProps) => {

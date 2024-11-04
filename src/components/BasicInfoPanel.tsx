@@ -1,10 +1,10 @@
-import { memo } from 'preact/compat';
+import {memo} from 'preact/compat';
 import type {BlueprintString} from '../parsing/types';
 import {Version} from './Version';
 import {FactorioIcon} from './FactorioIcon';
 import {RichText} from './RichText';
 import {Panel} from './ui';
-import {getBlueprintContent} from "../parsing/blueprintUtils.ts";
+import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
 
 interface InfoRowProps {
     label: string;
@@ -23,29 +23,27 @@ const InfoRow = ({label, children, hidden = false}: InfoRowProps) => {
 };
 
 export const BasicInfoPanel = memo(({ blueprint }: { blueprint: BlueprintString }) => {
-    const content = getBlueprintContent(blueprint)
+    const wrapper = new BlueprintWrapper(blueprint);
+    const { type, label, description, icons, version } = wrapper.getInfo();
 
     return (
         <Panel title="Basic Information">
             <dl className="panel-hole basic-info">
                 <InfoRow label="Type">
-                    <FactorioIcon
-                        type="item"
-                        name={content.item}
-                    />
+                    <FactorioIcon type="item" name={type} />
                 </InfoRow>
 
-                <InfoRow label="Label" hidden={!content.label}>
-                    <RichText text={content.label || ''}/>
+                <InfoRow label="Label" hidden={!label}>
+                    <RichText text={label || ''} />
                 </InfoRow>
 
-                <InfoRow label="Description" hidden={!content.description}>
-                    <RichText text={content.description || ''}/>
+                <InfoRow label="Description" hidden={!description}>
+                    <RichText text={description || ''} />
                 </InfoRow>
 
-                <InfoRow label="Icons" hidden={!content.icons?.length}>
+                <InfoRow label="Icons" hidden={!icons?.length}>
                     <div className="flex flex-items-center">
-                        {content.icons?.map((icon, index) => (
+                        {icons?.map((icon, index) => (
                             <FactorioIcon
                                 key={index}
                                 type={icon.signal.type}
@@ -56,9 +54,9 @@ export const BasicInfoPanel = memo(({ blueprint }: { blueprint: BlueprintString 
                 </InfoRow>
 
                 <InfoRow label="Game Version">
-                    <Version number={content.version}/>
+                    <Version number={version} />
                 </InfoRow>
             </dl>
         </Panel>
     );
-})
+});
