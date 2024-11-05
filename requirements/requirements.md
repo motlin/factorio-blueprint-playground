@@ -327,7 +327,12 @@ export interface DatabaseBlueprint {
 
 The style should be consistent with the video game menus, and https://factorio.com/. The CSS from factorio.com is in the attachment `factorio.css`. The attachment `Factorio.html` is the html content of factorio.com and should help with context about how CSS is applied to elements.
 
-Since we are trying to closely copy factorio.com's style, we will use `<div style={{ ... }}>` for styling rather than using class names.
+Since we are trying to closely copy factorio.com's style, we will use similar element structure and identical class names as theirs.
+
+### Code Style
+
+* Comments go above the code they describe, never at the end of a line
+* Always use semi-colons
 
 ## Plan
 
@@ -364,6 +369,11 @@ Phase 1: Project Setup
   * Types for stored blueprints in src/storage/blueprints.ts
   * Date.now() as the indexdb key
   * blueprintStorage methods add, update, get, remove, list, which delegate to idb-keyval's set, set, get, del, and entries respectively.
+* Add development tooling
+  * Configure Vitest for testing
+  * Add test setup with jsdom and testing-library
+* Set up GitHub Actions
+  * Add pull request workflow for testing and building
 
 Phase 2: Core Blueprint Parsing
 
@@ -373,14 +383,23 @@ Phase 2: Core Blueprint Parsing
 * Add compression settings matching Factorio's requirements
 
 ```typescript
-export interface CompressionSettings {
-    raw: false               // Must be false - Factorio requires zlib headers
-    windowBits: 15           // Must be 15 - Factorio requires max window size (32K)
-    strategy: 0              // Must be 0 - Factorio requires default strategy
-    level: number            // Must be 8 or 9
-    memLevel: number         // Must be 4-9 inclusive
+export interface CompressionSettings extends DeflateFunctionOptions {
+  level: 8 | 9;            // Must be 8 or 9
+  windowBits: 15           // Must be 15 - Factorio requires max window size (32K)
+  memLevel: number         // Must be 4-9 inclusive
+  strategy: pako.constants.Z_DEFAULT_STRATEGY // Must be 0 - Factorio requires default strategy
+  raw: false               // Must be false - Factorio requires zlib headers
 }
 ```
+
+* 
+* Add BlueprintWrapper class for unified blueprint handling
+* Add comprehensive testing for blueprint parsing
+  * Blueprint roundtrip tests
+  * Compression settings tests
+  * Parser edge case tests
+* Add version number parsing utility
+* Add path-based blueprint extraction for books
 
 Phase 3: Basic UI Implementation
 
@@ -395,11 +414,17 @@ Phase 3: Basic UI Implementation
 * Use the basic components in the placeholder routes for the main page and history page
 * Implement header with blueprint input textarea
 * Ability to dismiss/close panels
+* Add URL-based blueprint loading
+  * Support direct blueprint strings in URL
+  * Support factorio.school and factorioprints.com URLs
 
 Phase 4: Panel Implementation (Left Side)
 
 * Implement version number component
 * Implement Factorio Icon component
+  * Support old icon types (item, fluid, virtual-signal, etc.) and new icon types (planet, space-location, quality, etc.)
+  * Add quality overlay support, where the quality icon is displayed at 66% scale on the bottom left of the main icon.
+  * Serve icons from local public directory
 * Implement Rich Text component
   * Add JSX tests
 * Implement Basic Information panel
@@ -413,11 +438,20 @@ Phase 4: Panel Implementation (Left Side)
 Phase 5: Panel Implementation (Right Side)
 
 * Implement Summary panel
-* Implement Contents panel with tables
+* Implement Contents panel
+  * Add table-like component system with Spreadsheet, Row, and Cell
+  * Support item counting and sort the table by counts
+  * Support quality, with each entity/quality pair appearing on its own row
 * Implement Upgrade Planner panel
+  * Add support for quality parameters
+  * Add mapping visualization, with from, arrow, and to in 3 Cells
 * Implement Deconstruction Planner panel
 * Implement Parameters panel
 * Implement JSON panel with copy/download functionality
+* Implement JSON panels with copy/download functionality
+  * One panel for root blueprint, and one for selected blueprint
+  * There is always a selected blueprint, even if it's the root blueprint that was just pasted, or the only blueprint
+  * Support Copy String, Copy JSON, and Download String
 
 Phase 6: Advanced Features
 
