@@ -19,7 +19,7 @@ const SOURCES: Record<string, SourceConfig> = {
     },
     'factorioprints.com': {
         pattern: /factorioprints\.com\/view\/([^\/\s]+)/,
-        getUrl: (match) => `https://factorio-blueprints.firebaseio.com/blueprints/${match[1]}.json`,
+        getUrl: (match) => `https://facorio-blueprints.firebaseio.com/blueprints/${match[1]}.json`,
         extractBlueprint: (data) => {
             if (!data || !data.blueprint) {
                 throw new Error('Invalid blueprint data from Factorio Prints');
@@ -63,7 +63,14 @@ export const BlueprintSourceHandler = ({onBlueprintString}: BlueprintSourceHandl
                     throw new Error(`Failed to fetch blueprint: ${response.statusText}`)
                 }
                 const data = await response.json()
-                const blueprint = SOURCES['factorio.school'].extractBlueprint(data)
+                const sourceType = search.source?.includes('factorio.school') ? 'factorio.school' : 'factorioprints.com'
+                const blueprint = SOURCES[sourceType].extractBlueprint(data)
+
+                // Guard against undefined/null blueprint
+                if (!blueprint) {
+                    throw new Error('Failed to extract blueprint data')
+                }
+
                 textValueSignal.value = blueprint
                 onBlueprintString(blueprint)
             } catch (err) {
@@ -87,10 +94,11 @@ export const BlueprintSourceHandler = ({onBlueprintString}: BlueprintSourceHandl
             const match = value.match(config.pattern)
             if (match) {
                 // Update URL to use source parameter
-                const sourceUrl = config.getUrl(match)
                 navigate({
+                    to: '/',
                     search: (prev) => ({
-                        source: encodeURIComponent(sourceUrl),
+                        ...prev,
+                        source: encodeURIComponent(config.getUrl(match)),
                         data: undefined
                     })
                 })
@@ -101,14 +109,21 @@ export const BlueprintSourceHandler = ({onBlueprintString}: BlueprintSourceHandl
         // If it's not a source URL, treat it as a blueprint string
         if (value) {
             navigate({
+                to: '/',
                 search: (prev) => ({
+                    ...prev,
                     data: value,
                     source: undefined
                 })
             })
         } else {
             navigate({
-                search: () => ({})
+                to: '/',
+                search: (prev) => ({
+                    ...prev,
+                    data: undefined,
+                    source: undefined
+                })
             })
         }
 
