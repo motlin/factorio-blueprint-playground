@@ -3,6 +3,17 @@ import {InsetDark, Panel} from './ui';
 import {FactorioIcon} from './FactorioIcon';
 import {BlueprintString, Parameter, SignalType} from '../parsing/types';
 
+// Helper function to detect if a string looks like a signal ID
+function detectSignalType(id: string): { type: SignalType, name: string } {
+    // Common virtual signals start with "signal-"
+    if (id.startsWith('signal-')) {
+        return { type: 'virtual-signal', name: id };
+    }
+
+    // Default to item type for unknown cases
+    return { type: 'item', name: id };
+}
+
 interface ParameterRowProps {
     param: Parameter;
     parameters: Parameter[];
@@ -20,6 +31,11 @@ const ParameterRow = ({ param, parameters }: ParameterRowProps) => {
     const ingredientOf = param['ingredient-of'];
     const ingredientOfParam = findIngredientParam(ingredientOf);
 
+    // For icon parameters, detect correct type
+    const iconInfo = param.type === 'id' && param.id
+        ? detectSignalType(param.id)
+        : null;
+
     return (
         <div className="flex flex-items-center p4" style={{ minHeight: '48px' }}>
             {/* Name field */}
@@ -36,11 +52,11 @@ const ParameterRow = ({ param, parameters }: ParameterRowProps) => {
             {/* Value field - either icon or number */}
             <div className="flex flex-items-center mr8" style={{ minWidth: '120px' }}>
                 <label className="mr2">Value:</label>
-                {param.type === 'id' ? (
+                {param.type === 'id' && iconInfo ? (
                     <span className="flex flex-items-center">
             <FactorioIcon
-                type='item'
-                name={param.id || ''}
+                type={iconInfo.type}
+                name={iconInfo.name}
             />
           </span>
                 ) : (
@@ -97,11 +113,15 @@ const ParameterRow = ({ param, parameters }: ParameterRowProps) => {
                 <div className="flex flex-items-center">
                     <label className="mr2">Ingredient of:</label>
                     <span className="flex flex-items-center">
+                        {ingredientOfParam?.type === 'id' && ingredientOfParam.id ? (
+                            // For ingredient references, use the type from the referenced parameter
             <FactorioIcon
-                type='item'
-                name={`parameter-${ingredientOfParam ? parameters.indexOf(ingredientOfParam) + 1 : ''}`}
+                                {...detectSignalType(ingredientOfParam.id)}
             />
-            <span className="ml2">#{parameters.indexOf(ingredientOfParam || parameters[0]) + 1}</span>
+                        ) : (
+                            // If referencing a number parameter, show the parameter number
+                            <span>#{parameters.indexOf(ingredientOfParam || parameters[0]) + 1}</span>
+                        )}
           </span>
                 </div>
             ) : null}
