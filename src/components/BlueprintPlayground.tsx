@@ -4,7 +4,7 @@ import {BasicInfoPanel} from './BasicInfoPanel'
 import {BlueprintInfoPanels} from './BlueprintInfoPanels'
 import {ParametersPanel} from './ParametersPanel'
 import { BlueprintTree } from './BlueprintTree'
-import { JsonPanel } from './JsonPanel'
+import { RootJsonPanel } from './RootJsonPanel.tsx'
 import { BlueprintSourceHandler } from './BlueprintSourceHandler'
 import {deserializeBlueprint} from '../parsing/blueprintParser'
 import {
@@ -13,6 +13,7 @@ import {
     selectedBlueprintPathSignal,
     selectedBlueprintSignal
 } from '../state/blueprintTree'
+import {SelectedJsonPanel} from "./SelectedJsonPanel.tsx";
 
 // Local UI state signal
 const errorSignal = signal<string | null>(null)
@@ -65,6 +66,9 @@ export function BlueprintPlayground() {
             <div className="panels2">
                 {/* Left side */}
                 <div>
+                    <RootJsonPanel
+                        rootBlueprint={rootBlueprintSignal.value}
+                    />
                     {rootBlueprintSignal.value?.blueprint_book && (
                         <Panel title="Blueprint Tree">
                             <BlueprintTree/>
@@ -76,13 +80,13 @@ export function BlueprintPlayground() {
                 <div>
                     {selectedBlueprintSignal.value && (
                         <>
-                            <BasicInfoPanel blueprint={selectedBlueprintSignal.value}/>
-                            <BlueprintInfoPanels blueprint={selectedBlueprintSignal.value}/>
-                            <JsonPanel
+                            <SelectedJsonPanel
                                 rootBlueprint={rootBlueprintSignal.value}
                                 selectedBlueprint={selectedBlueprintSignal.value}
                                 selectedPath={selectedBlueprintPathSignal.value}
                             />
+                            <BasicInfoPanel blueprint={selectedBlueprintSignal.value}/>
+                            <BlueprintInfoPanels blueprint={selectedBlueprintSignal.value}/>
                         </>
                     )}
                 </div>

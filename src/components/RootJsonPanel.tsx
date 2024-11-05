@@ -7,8 +7,6 @@ import {BlueprintWrapper} from "../parsing/BlueprintWrapper.ts";
 
 interface ExportPanelProps {
     rootBlueprint: BlueprintString | null;
-    selectedBlueprint: BlueprintString | null;
-    selectedPath: string | null;
 }
 
 function getFilename(blueprint: BlueprintString, path: string | null): string {
@@ -61,7 +59,7 @@ function downloadFile(filename: string, data: string) {
     URL.revokeObjectURL(url);
 }
 
-export const JsonPanel = memo(({ rootBlueprint, selectedBlueprint, selectedPath }: ExportPanelProps) => {
+export const RootJsonPanel = memo(({ rootBlueprint }: ExportPanelProps) => {
     if (!rootBlueprint) return null;
 
     const handleCopyString = async (blueprint: BlueprintString) => {
@@ -110,30 +108,6 @@ export const JsonPanel = memo(({ rootBlueprint, selectedBlueprint, selectedPath 
                     />
                 </div>
             </InsetLight>
-
-            {/* Selected blueprint actions */}
-            {selectedBlueprint && selectedBlueprint !== rootBlueprint && (
-                <InsetLight>
-                    <h3>Selected Blueprint</h3>
-                    <div className="flex-space-between">
-                        <ButtonWithIcon
-                            icon={ClipboardCopy}
-                            text="Copy String"
-                            onClick={() => handleCopyString(selectedBlueprint)}
-                        />
-                        <ButtonWithIcon
-                            icon={FileJson}
-                            text="Copy JSON"
-                            onClick={() => handleCopyJSON(selectedBlueprint)}
-                        />
-                        <ButtonWithIcon
-                            icon={Download}
-                            text="Download JSON"
-                            onClick={() => handleDownloadJSON(selectedBlueprint, selectedPath)}
-                        />
-                    </div>
-                </InsetLight>
-            )}
         </Panel>
     );
 });
