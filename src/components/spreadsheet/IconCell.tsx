@@ -1,4 +1,4 @@
-import {FactorioIcon} from "../FactorioIcon.tsx";
+import {FactorioIcon} from '../FactorioIcon.tsx';
 
 interface IconCellProps {
     icon: any;

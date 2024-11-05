@@ -1,9 +1,9 @@
-import {createLazyFileRoute} from '@tanstack/react-router'
-import {InsetDark, InsetLight, Panel} from "../components/ui"
+import {createLazyFileRoute} from '@tanstack/react-router';
+import {InsetDark, InsetLight, Panel} from '../components/ui';
 
 export const Route = createLazyFileRoute('/history')({
   component: History,
-})
+});
 
 function History() {
   return (
@@ -18,5 +18,5 @@ function History() {
         No blueprints in history yet. Paste a blueprint in the playground to get started!
       </InsetDark>
     </Panel>
-  )
+  );
 }

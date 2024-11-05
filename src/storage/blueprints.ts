@@ -1,4 +1,4 @@
-import {entries, get, set, del} from 'idb-keyval'
+import {entries, get, set, del} from 'idb-keyval';
 
 export type DatabaseBlueprintType = 'blueprint' | 'blueprint_book' | 'upgrade_planner' | 'deconstruction_planner'
 
@@ -30,42 +30,42 @@ export interface DatabaseBlueprint {
 
 export const blueprintStorage = {
     async add(data: string, parsedMetadata: Omit<DatabaseBlueprint, 'createdOn' | 'lastUpdatedOn'>) {
-        const now = Date.now()
+        const now = Date.now();
         const blueprint: DatabaseBlueprint = {
             createdOn: now,
             lastUpdatedOn: now,
             ...parsedMetadata,
             data
-        }
-        await set(now.toString(), blueprint)
-        return blueprint
+        };
+        await set(now.toString(), blueprint);
+        return blueprint;
     },
 
     async update(createdOn: number, changes: Partial<Omit<DatabaseBlueprint, 'createdOn'>>) {
-        const blueprint = await this.get(createdOn)
-        if (!blueprint) return null
+        const blueprint = await this.get(createdOn);
+        if (!blueprint) return null;
 
         const updated = {
             ...blueprint,
             ...changes,
             lastUpdatedOn: Date.now()
-        }
-        await set(createdOn.toString(), updated)
-        return updated
+        };
+        await set(createdOn.toString(), updated);
+        return updated;
     },
 
     async get(createdOn: number) {
-        return get<DatabaseBlueprint>(createdOn.toString())
+        return get<DatabaseBlueprint>(createdOn.toString());
     },
 
     async remove(createdOn: number) {
-        await del(createdOn.toString())
+        await del(createdOn.toString());
     },
 
     async list() {
-        const allEntries = await entries<string, DatabaseBlueprint>()
+        const allEntries = await entries<string, DatabaseBlueprint>();
         return allEntries
             .map(([_, blueprint]) => blueprint)
-            .sort((a, b) => b.lastUpdatedOn - a.lastUpdatedOn)
+            .sort((a, b) => b.lastUpdatedOn - a.lastUpdatedOn);
     }
-}
+};

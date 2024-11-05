@@ -1,5 +1,5 @@
 // src/parsing/BlueprintWrapper.ts
-import type { BlueprintString, Blueprint, BlueprintBook, UpgradePlanner, DeconstructionPlanner, Icon } from './types'
+import type { BlueprintString, Blueprint, BlueprintBook, UpgradePlanner, DeconstructionPlanner, Icon } from './types';
 
 export interface BlueprintInfo {
     type: 'blueprint' | 'blueprint-book' | 'upgrade-planner' | 'deconstruction-planner'

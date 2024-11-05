@@ -1,6 +1,6 @@
-import {inflate} from 'pako'
-import type {BlueprintString} from './types'
-import {compressBlueprint, CompressionSettings, DEFAULT_COMPRESSION_SETTINGS} from './compressionSettings'
+import {inflate} from 'pako';
+import type {BlueprintString} from './types';
+import {compressBlueprint, CompressionSettings, DEFAULT_COMPRESSION_SETTINGS} from './compressionSettings';
 
 export class BlueprintError extends Error {
     constructor(message: string, options?: ErrorOptions) {
@@ -20,21 +20,21 @@ export function deserializeBlueprint(blueprintString: string): BlueprintString {
     if (!blueprintString.startsWith('0')) {
         throw new BlueprintError(
             `Unknown blueprint format: string does not start with '0' (starts with '${blueprintString[0] || ''}')`
-        )
+        );
     }
 
     // Decode base64 to bytes
-    const base64String = blueprintString.slice(1)
-    const bytes = Uint8Array.from(atob(base64String), c => c.charCodeAt(0))
+    const base64String = blueprintString.slice(1);
+    const bytes = Uint8Array.from(atob(base64String), c => c.charCodeAt(0));
 
     // Decompress the bytes using zlib (pako)
-    const decompressedStr = inflate(bytes, {to: 'string'})
+    const decompressedStr = inflate(bytes, {to: 'string'});
 
     // Parse the JSON
-    const parsed: BlueprintString = JSON.parse(decompressedStr.trim())
-    validateBlueprintData(parsed)
+    const parsed: BlueprintString = JSON.parse(decompressedStr.trim());
+    validateBlueprintData(parsed);
 
-    return parsed
+    return parsed;
 }
 
 /**
@@ -44,10 +44,10 @@ export function serializeBlueprint(
     data: BlueprintString,
     settings: CompressionSettings = DEFAULT_COMPRESSION_SETTINGS
 ): string {
-    validateBlueprintData(data)
+    validateBlueprintData(data);
 
-    const jsonStr = JSON.stringify(data).trim()
-    const compressed = compressBlueprint(jsonStr, settings)
+    const jsonStr = JSON.stringify(data).trim();
+    const compressed = compressBlueprint(jsonStr, settings);
 
     // Convert to base64 and add version prefix
     return '0' + btoa(compressed.reduce(function (data, byte) {
@@ -63,32 +63,32 @@ export function extractBlueprint(
     path: string
 ): BlueprintString {
     try {
-        const parts = path.split('.')
-        let current = blueprint
-        let traversedPath = ''
+        const parts = path.split('.');
+        let current = blueprint;
+        let traversedPath = '';
 
         // Navigate through the path
         for (const part of parts) {
-            const index = parseInt(part) - 1
-            traversedPath += (traversedPath ? '.' : '') + part
+            const index = parseInt(part) - 1;
+            traversedPath += (traversedPath ? '.' : '') + part;
 
             if (!current.blueprint_book?.blueprints) {
                 throw new BlueprintError(
                     `Invalid path ${path}: no blueprint book at ${traversedPath}`
-                )
+                );
             }
 
-            const child = current.blueprint_book.blueprints[index]
+            const child = current.blueprint_book.blueprints[index];
             if (!child) {
                 throw new BlueprintError(
                     `Invalid path ${path}: no child at index ${part} (${traversedPath})`
-                )
+                );
             }
 
-            current = child
+            current = child;
         }
 
-        return current
+        return current;
     } catch (err: unknown) {
         if (err instanceof BlueprintError) {
             throw err;
@@ -104,7 +104,7 @@ export function extractBlueprint(
 
 function validateBlueprintData(data: BlueprintString): void {
     if (!data) {
-        throw new BlueprintError('Blueprint data is empty')
+        throw new BlueprintError('Blueprint data is empty');
     }
 
     // Check for exactly one valid root property
@@ -113,34 +113,34 @@ function validateBlueprintData(data: BlueprintString): void {
         'blueprint_book',
         'upgrade_planner',
         'deconstruction_planner'
-    ] as const
+    ] as const;
 
-    const foundTypes = validRootTypes.filter(type => type in data)
+    const foundTypes = validRootTypes.filter(type => type in data);
 
     if (foundTypes.length === 0) {
         throw new BlueprintError(
             'Invalid blueprint: missing required root property. ' +
             `Expected one of: ${validRootTypes.join(', ')}`
-        )
+        );
     }
 
     if (foundTypes.length > 1) {
         throw new BlueprintError(
             'Invalid blueprint: multiple root properties found. ' +
             `Found: ${foundTypes.join(', ')}, but expected exactly one`
-        )
+        );
     }
 
     // Validate specific blueprint type
-    const type = foundTypes[0]
-    const content = data[type]
+    const type = foundTypes[0];
+    const content = data[type];
 
     // Common validation for item field
     if (typeof content?.item !== 'string') {
         throw new BlueprintError(
             `Invalid ${type}: missing or invalid 'item' field. ` +
             'Expected string value'
-        )
+        );
     }
 
     // Validate version field exists and is a number
@@ -148,7 +148,7 @@ function validateBlueprintData(data: BlueprintString): void {
         throw new BlueprintError(
             `Invalid ${type}: missing or invalid 'version' field. ` +
             'Expected number value'
-        )
+        );
     }
 
     // Type-specific validation
@@ -156,53 +156,53 @@ function validateBlueprintData(data: BlueprintString): void {
         case 'blueprint':
             if (content.item !== 'blueprint') {
                 throw new BlueprintError(
-                    `Invalid blueprint: incorrect item type. ` +
+                    'Invalid blueprint: incorrect item type. ' +
                     `Expected 'blueprint', got '${content.item}'`
-                )
+                );
             }
-            break
+            break;
 
         case 'blueprint_book':
             if (content.item !== 'blueprint-book') {
                 throw new BlueprintError(
-                    `Invalid blueprint book: incorrect item type. ` +
+                    'Invalid blueprint book: incorrect item type. ' +
                     `Expected 'blueprint-book', got '${content.item}'`
-                )
+                );
             }
             if (!Array.isArray(content.blueprints)) {
                 throw new BlueprintError(
                     'Invalid blueprint book: missing or invalid blueprints array'
-                )
+                );
             }
-            break
+            break;
 
         case 'upgrade_planner':
             if (content.item !== 'upgrade-planner') {
                 throw new BlueprintError(
-                    `Invalid upgrade planner: incorrect item type. ` +
+                    'Invalid upgrade planner: incorrect item type. ' +
                     `Expected 'upgrade-planner', got '${content.item}'`
-                )
+                );
             }
             if (!content.settings?.mappers) {
                 throw new BlueprintError(
                     'Invalid upgrade planner: missing or invalid settings.mappers'
-                )
+                );
             }
-            break
+            break;
 
         case 'deconstruction_planner':
             if (content.item !== 'deconstruction-planner') {
                 throw new BlueprintError(
-                    `Invalid deconstruction planner: incorrect item type. ` +
+                    'Invalid deconstruction planner: incorrect item type. ' +
                     `Expected 'deconstruction-planner', got '${content.item}'`
-                )
+                );
             }
             if (!content.settings) {
                 throw new BlueprintError(
                     'Invalid deconstruction planner: missing settings'
-                )
+                );
             }
-            break
+            break;
     }
 }
 
@@ -210,18 +210,18 @@ function validateBlueprintData(data: BlueprintString): void {
  * Parse a version number into a string like "1.2.3.4"
  */
 export function parseVersion(versionNumber: number): string {
-    const version: bigint = BigInt(versionNumber)
-    const parts = []
+    const version: bigint = BigInt(versionNumber);
+    const parts = [];
     for (let i = 0; i < 4; i++) {
         // Extract each 16-bit chunk
-        const part = Number((version >> BigInt(48 - i * 16)) & BigInt(0xFFFF))
-        parts.push(part)
+        const part = Number((version >> BigInt(48 - i * 16)) & BigInt(0xFFFF));
+        parts.push(part);
     }
 
     // Remove trailing zeros
     while (parts.length > 1 && parts[parts.length - 1] === 0) {
-        parts.pop()
+        parts.pop();
     }
 
-    return parts.join('.')
+    return parts.join('.');
 }

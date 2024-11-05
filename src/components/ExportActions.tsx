@@ -1,6 +1,6 @@
 import { memo } from 'preact/compat';
 import { BlueprintString } from '../parsing/types';
-import { BlueprintWrapper } from "../parsing/BlueprintWrapper";
+import { BlueprintWrapper } from '../parsing/BlueprintWrapper';
 import { serializeBlueprint } from '../parsing/blueprintParser';
 import { ButtonGreen } from './ui';
 import { ClipboardCopy, Download, FileJson } from 'lucide-react';

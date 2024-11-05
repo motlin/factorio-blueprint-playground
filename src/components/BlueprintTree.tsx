@@ -1,11 +1,11 @@
 import {memo} from 'preact/compat';
 import {JSX} from 'preact';
-import {BlueprintString, BlueprintStringWithIndex} from '../parsing/types'
-import {FactorioIcon} from './FactorioIcon'
-import {RichText} from './RichText'
-import {InsetLight} from './ui'
-import {rootBlueprintSignal, selectBlueprintPath, selectedBlueprintPathSignal} from '../state/blueprintTree'
-import {BlueprintWrapper} from "../parsing/BlueprintWrapper";
+import {BlueprintString, BlueprintStringWithIndex} from '../parsing/types';
+import {FactorioIcon} from './FactorioIcon';
+import {RichText} from './RichText';
+import {InsetLight} from './ui';
+import {rootBlueprintSignal, selectBlueprintPath, selectedBlueprintPathSignal} from '../state/blueprintTree';
+import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
 
 interface TreeRowProps {
     path: string
@@ -58,7 +58,7 @@ const TreeRow = memo(({ path, blueprint, indentLevel, isSelected }: TreeRowProps
                 <RichText text={label} />
             </div>
         </div>
-    )
+    );
 }, (prevProps, nextProps) => {
     // Custom comparison function for memo
     return (
@@ -66,18 +66,18 @@ const TreeRow = memo(({ path, blueprint, indentLevel, isSelected }: TreeRowProps
         prevProps.isSelected === nextProps.isSelected &&
         prevProps.indentLevel === nextProps.indentLevel &&
         prevProps.blueprint === nextProps.blueprint
-    )
-})
+    );
+});
 
 // Memoize the entire tree component
 export const BlueprintTree = memo(() => {
-    const blueprint = rootBlueprintSignal.value
-    const selectedPath = selectedBlueprintPathSignal.value
+    const blueprint = rootBlueprintSignal.value;
+    const selectedPath = selectedBlueprintPathSignal.value;
 
-    if (!blueprint?.blueprint_book?.blueprints) return null
+    if (!blueprint?.blueprint_book?.blueprints) return null;
 
     function renderNode(node: BlueprintString, path: string, level: number): JSX.Element[] {
-        const rows: JSX.Element[] = []
+        const rows: JSX.Element[] = [];
 
         rows.push(
             <TreeRow
@@ -87,25 +87,25 @@ export const BlueprintTree = memo(() => {
                 indentLevel={level}
                 isSelected={selectedPath === path}
             />
-        )
+        );
 
         if (node.blueprint_book?.blueprints) {
             node.blueprint_book.blueprints.forEach((child: BlueprintStringWithIndex, index) => {
-                const childPath = path ? `${path}.${index + 1}` : (index + 1).toString()
-                rows.push(...renderNode(child, childPath, level + 1))
-            })
+                const childPath = path ? `${path}.${index + 1}` : (index + 1).toString();
+                rows.push(...renderNode(child, childPath, level + 1));
+            });
         }
 
-        return rows
+        return rows;
     }
 
     return (
         <div className="blueprint-tree">
             <InsetLight>
-                {renderNode(blueprint, "", 0)}
+                {renderNode(blueprint, '', 0)}
             </InsetLight>
         </div>
-    )
-})
+    );
+});
 
-export default BlueprintTree
+export default BlueprintTree;

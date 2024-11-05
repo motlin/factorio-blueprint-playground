@@ -1,5 +1,5 @@
-import React from "react";
-import {Panel} from "./Panel";
+import React from 'react';
+import {Panel} from './Panel';
 
 export interface CollapsiblePanelProps {
     title: string;

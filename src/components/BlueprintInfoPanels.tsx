@@ -1,6 +1,6 @@
-import {memo} from 'preact/compat'
-import {Panel} from './ui'
-import {FactorioIcon} from './FactorioIcon'
+import {memo} from 'preact/compat';
+import {Panel} from './ui';
+import {FactorioIcon} from './FactorioIcon';
 import type {
     BlueprintString,
     DeconstructionPlanner,
@@ -8,21 +8,21 @@ import type {
     Filter,
     Tile,
     UpgradePlanner
-} from '../parsing/types'
-import {Cell, IconCell, Row, Spreadsheet, TextCell} from './spreadsheet'
-import {BlueprintWrapper} from "../parsing/BlueprintWrapper";
+} from '../parsing/types';
+import {Cell, IconCell, Row, Spreadsheet, TextCell} from './spreadsheet';
+import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
 
 // Count occurrences of items in an array, including quality
 function countItems<T>(items: T[], getKey: (item: T) => {name: string, quality?: string} | undefined) {
-    const counts = new Map<string, number>()
+    const counts = new Map<string, number>();
     for (const item of items) {
-        const keyObj = getKey(item)
+        const keyObj = getKey(item);
         if (!keyObj) continue;
 
-        const key = JSON.stringify(keyObj)
-        counts.set(key, (counts.get(key) || 0) + 1)
+        const key = JSON.stringify(keyObj);
+        counts.set(key, (counts.get(key) || 0) + 1);
     }
-    return counts
+    return counts;
 }
 
 function mapToSortedArray(counts: Map<string, number>) {
@@ -31,14 +31,14 @@ function mapToSortedArray(counts: Map<string, number>) {
             ...JSON.parse(key),
             count,
         }))
-        .sort((a, b) => b.count - a.count) // Sort by count in descending order
+        .sort((a, b) => b.count - a.count); // Sort by count in descending order
 }
 
 // Multi-column list component for showing icon, name, count
 function ItemPanel({ title, items, type }: { title: string, items: Map<string, number>, type: string}) {
     if (!items.size) return null;
 
-    const sortedItems = mapToSortedArray(items)
+    const sortedItems = mapToSortedArray(items);
 
     return (
         <Panel title={title}>
@@ -52,7 +52,7 @@ function ItemPanel({ title, items, type }: { title: string, items: Map<string, n
                 ))}
             </Spreadsheet>
         </Panel>
-    )
+    );
 }
 
 interface PanelProps {
@@ -94,8 +94,8 @@ export const ContentsPanel = memo(({blueprint}: PanelProps) => {
             <ItemPanel title="Recipes" items={recipeCounts} type={'recipe'}/>
             <ItemPanel title="Tiles" items={tileCounts} type={'tile'}/>
         </>
-    )
-})
+    );
+});
 
 // Upgrade Planner Panel
 export const UpgradePlannerPanel = memo(({blueprint}: { blueprint: BlueprintString }) => {
@@ -249,7 +249,7 @@ export const DeconstructionPlannerPanel = memo(({blueprint}: { blueprint: Bluepr
 
 // Main wrapper component that shows the appropriate panels
 export const BlueprintInfoPanels = memo(({blueprint}: { blueprint: BlueprintString }) => {
-    if (!blueprint) return null
+    if (!blueprint) return null;
 
     return (
         <>
@@ -258,5 +258,5 @@ export const BlueprintInfoPanels = memo(({blueprint}: { blueprint: BlueprintStri
             {blueprint.upgrade_planner && <UpgradePlannerPanel blueprint={blueprint}/>}
             {blueprint.deconstruction_planner && <DeconstructionPlannerPanel blueprint={blueprint}/>}
         </>
-    )
-})
+    );
+});
