@@ -3,12 +3,13 @@ import {useNavigate, useSearch} from '@tanstack/react-router'
 import {useEffect} from 'preact/hooks'
 import type {JSX} from 'preact'
 import type {RootSearchSchema} from '../routes/__root'
+import { deserializeBlueprint } from '../parsing/blueprintParser'
 
 // Blueprint source configuration
 interface SourceConfig {
     pattern: RegExp
-    displayUrl: (match: RegExpMatchArray) => string  // URL to show in browser
-    apiUrl: (match: RegExpMatchArray) => string      // Actual API endpoint to fetch from
+    displayUrl: (match: RegExpMatchArray) => string
+    apiUrl: (match: RegExpMatchArray) => string
     extractBlueprint: (data: any) => string
 }
 
@@ -32,6 +33,9 @@ const SOURCES: Record<string, SourceConfig> = {
     },
 }
 
+// URL safe length limit (leaving room for other parameters)
+const URL_SAFE_LENGTH = 2000;
+
 // Get API URL from display URL
 const getApiUrl = (displayUrl: string): string | null => {
     for (const config of Object.values(SOURCES)) {
@@ -53,10 +57,21 @@ const getSourceConfig = (displayUrl: string): SourceConfig | null => {
     return null
 }
 
+// Check if a string is a valid blueprint
+const isValidBlueprint = (value: string): boolean => {
+    try {
+        deserializeBlueprint(value)
+        return true
+    } catch (err) {
+        return false
+    }
+}
+
 // Signals for component state
 const loadingSignal = signal(false)
 const errorSignal = signal<string | null>(null)
 const textValueSignal = signal('')
+const lastFetchedSourceSignal = signal<string | undefined>(undefined);
 
 export interface BlueprintSourceHandlerProps {
     onBlueprintString: (value: string) => void
@@ -68,7 +83,7 @@ export const BlueprintSourceHandler = ({onBlueprintString}: BlueprintSourceHandl
 
     // Handle direct blueprint string from URL
     useEffect(() => {
-        if (search.data) {
+        if (search.data && textValueSignal.value !== search.data) {
             textValueSignal.value = search.data
             onBlueprintString(search.data)
         }
@@ -77,6 +92,7 @@ export const BlueprintSourceHandler = ({onBlueprintString}: BlueprintSourceHandl
     // Handle source URL parameter
     useEffect(() => {
         if (!search.source) return
+        if (search.source === lastFetchedSourceSignal.value) return
 
         const fetchBlueprint = async () => {
             loadingSignal.value = true
@@ -90,6 +106,7 @@ export const BlueprintSourceHandler = ({onBlueprintString}: BlueprintSourceHandl
                     throw new Error('Invalid blueprint URL')
                 }
 
+                lastFetchedSourceSignal.value = search.source || undefined;
                 const response = await fetch(apiUrl)
                 if (!response.ok) {
                     throw new Error(`Failed to fetch blueprint: ${response.statusText}`)
@@ -103,10 +120,21 @@ export const BlueprintSourceHandler = ({onBlueprintString}: BlueprintSourceHandl
                     throw new Error('Failed to extract blueprint data')
                 }
 
+                // Validate the blueprint
+                if (!isValidBlueprint(blueprint)) {
+                    throw new Error('Invalid blueprint format')
+                }
+
                 textValueSignal.value = blueprint
                 onBlueprintString(blueprint)
             } catch (err) {
                 errorSignal.value = err instanceof Error ? err.message : 'Failed to fetch blueprint'
+                // Clear the URL on error
+                navigate({
+                    to: '/',
+                    search: (prev) => ({ ...prev, source: undefined, data: undefined }),
+                    replace: true
+                })
             } finally {
                 loadingSignal.value = false
             }
@@ -120,6 +148,17 @@ export const BlueprintSourceHandler = ({onBlueprintString}: BlueprintSourceHandl
         const target = e.target as HTMLTextAreaElement
         const value = target.value
         textValueSignal.value = value
+
+        // If input is empty, clear URL params
+        if (!value) {
+            navigate({
+                to: '/',
+                search: (prev) => ({ ...prev, source: undefined, data: undefined }),
+                replace: true
+            })
+            onBlueprintString('')
+            return
+        }
 
         // Check if the input matches any source patterns
         for (const [_, config] of Object.entries(SOURCES)) {
@@ -138,8 +177,8 @@ export const BlueprintSourceHandler = ({onBlueprintString}: BlueprintSourceHandl
             }
         }
 
-        // If it's not a source URL, treat it as a blueprint string
-        if (value) {
+        // If it's a valid blueprint string and under URL length limit, update URL
+        if (isValidBlueprint(value) && value.length < URL_SAFE_LENGTH) {
             navigate({
                 to: '/',
                 search: (prev) => ({
@@ -149,13 +188,15 @@ export const BlueprintSourceHandler = ({onBlueprintString}: BlueprintSourceHandl
                 })
             })
         } else {
+            // Clear URL params for invalid/long data
             navigate({
                 to: '/',
                 search: (prev) => ({
                     ...prev,
-                    data: undefined,
-                    source: undefined
-                })
+                    source: undefined,
+                    data: undefined
+                }),
+                replace: true
             })
         }
 
