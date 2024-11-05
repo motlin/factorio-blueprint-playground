@@ -19,6 +19,13 @@ const errorSignal = signal<string | null>(null)
 
 export function BlueprintPlayground() {
     const handleBlueprintPaste = async (value: string) => {
+    // Guard against undefined/null value
+    if (!value) {
+        resetBlueprintTree()
+        errorSignal.value = null
+        return
+    }
+
         // Handle empty input
         if (!value.trim()) {
             resetBlueprintTree()
