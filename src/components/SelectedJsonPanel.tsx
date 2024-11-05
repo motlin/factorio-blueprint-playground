@@ -74,10 +74,10 @@ export const SelectedJsonPanel = memo(({ rootBlueprint, selectedBlueprint, selec
         await copyToClipboard(json);
     };
 
-    const handleDownloadJSON = (blueprint: BlueprintString, path: string | null) => {
-        const json = JSON.stringify(blueprint, null, 2);
-        const filename = getFilename(blueprint, path) + '.json';
-        downloadFile(filename, json);
+    const handleDownloadString = (blueprint: BlueprintString, path: string | null) => {
+        const str = serializeBlueprint(blueprint);
+        const filename = getFilename(blueprint, path) + '.txt';
+        downloadFile(filename, str);
     };
 
     const ButtonWithIcon = ({icon: Icon, text, onClick}: { icon: any, text: string, onClick: () => void }) => (
@@ -105,8 +105,8 @@ export const SelectedJsonPanel = memo(({ rootBlueprint, selectedBlueprint, selec
                         />
                         <ButtonWithIcon
                             icon={Download}
-                            text="Download JSON"
-                            onClick={() => handleDownloadJSON(selectedBlueprint, selectedPath)}
+    text="Download String"
+    onClick={() => handleDownloadString(selectedBlueprint, selectedPath)}
                         />
                     </div>
                 </InsetLight>
