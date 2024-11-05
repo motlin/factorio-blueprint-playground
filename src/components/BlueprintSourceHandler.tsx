@@ -7,26 +7,50 @@ import type {RootSearchSchema} from '../routes/__root'
 // Blueprint source configuration
 interface SourceConfig {
     pattern: RegExp
-    getUrl: (match: RegExpMatchArray) => string
+    displayUrl: (match: RegExpMatchArray) => string  // URL to show in browser
+    apiUrl: (match: RegExpMatchArray) => string      // Actual API endpoint to fetch from
     extractBlueprint: (data: any) => string
 }
 
 const SOURCES: Record<string, SourceConfig> = {
     'factorio.school': {
         pattern: /factorio\.school\/view\/([^\/\s]+)/,
-        getUrl: (match) => `https://www.factorio.school/api/blueprint/${match[1]}`,
+        displayUrl: (match) => `https://www.factorio.school/view/${match[1]}`,
+        apiUrl: (match) => `https://www.factorio.school/api/blueprint/${match[1]}`,
         extractBlueprint: (data) => data.blueprintString.blueprintString
     },
     'factorioprints.com': {
         pattern: /factorioprints\.com\/view\/([^\/\s]+)/,
-        getUrl: (match) => `https://facorio-blueprints.firebaseio.com/blueprints/${match[1]}.json`,
+        displayUrl: (match) => `https://factorioprints.com/view/${match[1]}`,
+        apiUrl: (match) => `https://facorio-blueprints.firebaseio.com/blueprints/${match[1]}.json`,
         extractBlueprint: (data) => {
-            if (!data || !data.blueprint) {
+            if (!data || !data.blueprintString) {
                 throw new Error('Invalid blueprint data from Factorio Prints');
             }
-            return data.blueprint;
+            return data.blueprintString;
         }
     },
+}
+
+// Get API URL from display URL
+const getApiUrl = (displayUrl: string): string | null => {
+    for (const config of Object.values(SOURCES)) {
+        const match = displayUrl.match(config.pattern)
+        if (match) {
+            return config.apiUrl(match)
+        }
+    }
+    return null
+}
+
+// Get source config from display URL
+const getSourceConfig = (displayUrl: string): SourceConfig | null => {
+    for (const config of Object.values(SOURCES)) {
+        if (config.pattern.test(displayUrl)) {
+            return config
+        }
+    }
+    return null
 }
 
 // Signals for component state
@@ -58,13 +82,21 @@ export const BlueprintSourceHandler = ({onBlueprintString}: BlueprintSourceHandl
             loadingSignal.value = true
             errorSignal.value = null
             try {
-                const response = await fetch(decodeURIComponent(search.source!))
+                const displayUrl = decodeURIComponent(search.source!)
+                const apiUrl = getApiUrl(displayUrl)
+                const sourceConfig = getSourceConfig(displayUrl)
+
+                if (!apiUrl || !sourceConfig) {
+                    throw new Error('Invalid blueprint URL')
+                }
+
+                const response = await fetch(apiUrl)
                 if (!response.ok) {
                     throw new Error(`Failed to fetch blueprint: ${response.statusText}`)
                 }
+
                 const data = await response.json()
-                const sourceType = search.source?.includes('factorio.school') ? 'factorio.school' : 'factorioprints.com'
-                const blueprint = SOURCES[sourceType].extractBlueprint(data)
+                const blueprint = sourceConfig.extractBlueprint(data)
 
                 // Guard against undefined/null blueprint
                 if (!blueprint) {
@@ -93,12 +125,12 @@ export const BlueprintSourceHandler = ({onBlueprintString}: BlueprintSourceHandl
         for (const [_, config] of Object.entries(SOURCES)) {
             const match = value.match(config.pattern)
             if (match) {
-                // Update URL to use source parameter
+                // Update URL to use source parameter with the display URL
                 navigate({
                     to: '/',
                     search: (prev) => ({
                         ...prev,
-                        source: encodeURIComponent(config.getUrl(match)),
+                        source: encodeURIComponent(config.displayUrl(match)),
                         data: undefined
                     })
                 })
@@ -133,7 +165,7 @@ export const BlueprintSourceHandler = ({onBlueprintString}: BlueprintSourceHandl
     return (
         <div>
             <textarea
-                placeholder="Paste your blueprint here..."
+                placeholder="Paste blueprint or url here..."
                 onChange={handleChange}
                 value={textValueSignal.value}
                 rows={3}
