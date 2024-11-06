@@ -1,6 +1,6 @@
-import {lazy, Suspense} from 'react'
-import {createRootRoute, Link, Outlet} from '@tanstack/react-router'
+import {createRootRoute, Link, Outlet} from '@tanstack/react-router';
 import type { ComponentType } from 'preact';
+import {lazy, Suspense} from 'react';
 
 const TanStackRouterDevtools = import.meta.env.PROD
     ? () => null // Render nothing in production
@@ -8,7 +8,7 @@ const TanStackRouterDevtools = import.meta.env.PROD
         import('@tanstack/router-devtools').then((res) => ({
             default: res.TanStackRouterDevtools,
         })),
-    )
+    );
 
 interface RouteError {
     message: string;
@@ -37,28 +37,28 @@ const DevTools = () => {
     }
 
     // Use empty props object type since we don't need the specific options type
-    const DevToolsComponent = TanStackRouterDevtools as ComponentType<{}>;
+    const DevToolsComponent = TanStackRouterDevtools as ComponentType;
     return <DevToolsComponent />;
-}
+};
 
 export const Route = createRootRoute({
     validateSearch: (search: Record<string, unknown>): RootSearchSchema => {
         return {
             data: search.data as string | undefined,
             source: search.source as string | undefined,
-        }
+        };
     },
     errorComponent: ErrorComponent,
     component: () => (
         <div>
             <div className="top-bar">
-                <div className='top-bar-inner'>
+                <div className="top-bar-inner">
                     <nav className="flex flex-items-baseline p8">
                         <Link
                             to="/"
                             className="blue nowrap fs110"
                             activeProps={{
-                                className: 'yellow bold'
+                                className: 'yellow bold',
                             }}
                         >
                             Blueprint Playground
@@ -68,7 +68,7 @@ export const Route = createRootRoute({
                             to="/history"
                             className="blue nowrap fs110"
                             activeProps={{
-                                className: 'yellow bold'
+                                className: 'yellow bold',
                             }}
                         >
                             History
@@ -86,4 +86,4 @@ export const Route = createRootRoute({
             </Suspense>
         </div>
     ),
-})
+});

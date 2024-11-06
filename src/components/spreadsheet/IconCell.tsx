@@ -1,4 +1,4 @@
-import {FactorioIcon} from "../FactorioIcon.tsx";
+import {FactorioIcon} from '../FactorioIcon.tsx';
 
 interface IconCellProps {
     icon: any;
@@ -16,4 +16,3 @@ export const IconCell = ({ icon, label }: IconCellProps) => {
         </div>
     );
 };
-

@@ -18,4 +18,3 @@ export const Spreadsheet = ({ children, emptyText = 'None' }: SpreadsheetProps) 
         </div>
     );
 };
-

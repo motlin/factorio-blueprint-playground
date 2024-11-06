@@ -1,7 +1,7 @@
-import {SignalID} from "../parsing/types.ts";
+import {SignalID} from '../parsing/types.ts';
 
 export const FactorioIcon = (icon: SignalID) => {
-    let type = icon.type || 'item';
+    const type = icon.type || 'item';
     let urlType = icon.type || 'item';
 
     if (urlType === 'virtual') {
@@ -15,7 +15,7 @@ export const FactorioIcon = (icon: SignalID) => {
         return (
             <div className="factorio-icon-group">
                 <img
-                    className='factorio-icon'
+                    className="factorio-icon"
                     src={`/icons/${urlType}/${icon.name}.png`}
                     alt={icon.name}
                     title={`${type}: ${icon.name}`}

@@ -11,13 +11,13 @@ export const Cell = ({
                          grow = false,
                          shrink = false,
                          width,
-                         align = 'left'
+                         align = 'left',
                      }: CellProps) => {
     const style: React.CSSProperties = {
         flexGrow: grow ? 1 : 0,
         flexShrink: shrink ? 1 : 0,
         width,
-        textAlign: align
+        textAlign: align,
     };
 
     return (

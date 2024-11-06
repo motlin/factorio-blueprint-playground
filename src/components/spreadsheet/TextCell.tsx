@@ -12,7 +12,7 @@ export const TextCell = ({ children, width, align = 'left', grow = true }: TextC
             style={{
                 width,
                 textAlign: align,
-                justifyContent: align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start'
+                justifyContent: align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start',
             }}
         >
             {children}

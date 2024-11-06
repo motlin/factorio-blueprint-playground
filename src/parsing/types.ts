@@ -102,7 +102,6 @@ interface SectionFilters {
     active?: boolean
 }
 
-
 interface ControlBehavior {
     // Circuit network conditions
     circuit_enabled?: boolean
@@ -157,10 +156,10 @@ interface ItemStack {
         name: string
     }
     items: {
-        in_inventory: Array<{
+        in_inventory: {
             inventory: number
             stack: number
-        }>
+        }[]
     }
 }
 
@@ -208,12 +207,12 @@ export interface Wire {
 
 interface ScheduleRecord {
     station: string
-    wait_conditions: Array<{
+    wait_conditions: {
         compare_type: 'and' | 'or'
         type: string
         condition?: CircuitCondition
         ticks?: number
-    }>
+    }[]
 }
 
 interface Schedule {
@@ -306,7 +305,7 @@ export interface BlueprintBook extends CommonFields {
     label?: string
     description?: string
     icons?: Icon[]
-    blueprints: Array<BlueprintStringWithIndex>
+    blueprints: BlueprintStringWithIndex[]
     active_index?: number
 }
 

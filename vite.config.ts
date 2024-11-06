@@ -1,6 +1,6 @@
-import { defineConfig } from 'vite'
-import preact from '@preact/preset-vite'
-import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
+import preact from '@preact/preset-vite';
+import {TanStackRouterVite} from '@tanstack/router-plugin/vite';
+import {defineConfig} from 'vite';
 
 export default defineConfig({
     plugins: [
@@ -12,5 +12,5 @@ export default defineConfig({
     ],
     build: {
         target: 'esnext',
-    }
-})
+    },
+});
