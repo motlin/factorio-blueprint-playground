@@ -118,13 +118,17 @@ export const UpgradePlannerPanel = memo(({blueprint}: { blueprint: BlueprintStri
                     .map((mapping, index) => (
                         <Row key={index}>
                             <Cell grow>
-                                <FactorioIcon icon={mapping.from}/>
+                                <div style={{margin: "auto"}}>
+                                    <FactorioIcon icon={mapping.from}/>
+                                </div>
                             </Cell>
                             <Cell width="40px" align="center">
                                 →
                             </Cell>
                             <Cell grow>
-                                <FactorioIcon icon={mapping.to}/>
+                                <div style={{margin: "auto"}}>
+                                    <FactorioIcon icon={mapping.to}/>
+                                </div>
                             </Cell>
                         </Row>
                     ))}
