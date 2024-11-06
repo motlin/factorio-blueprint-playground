@@ -4,7 +4,6 @@ import type {JSX} from 'preact';
 import { useEffect, useRef } from 'preact/hooks';
 
 import { deserializeBlueprint } from '../parsing/blueprintParser';
-import type {RootSearchSchema} from '../routes/__root';
 
 // Blueprint source configuration
 interface SourceConfig {

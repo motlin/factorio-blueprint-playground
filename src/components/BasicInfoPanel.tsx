@@ -1,7 +1,7 @@
 import {memo} from 'preact/compat';
 
 import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
-import type {BlueprintString} from '../parsing/types';
+import type {BlueprintString, Icon} from '../parsing/types';
 
 import {FactorioIcon} from './FactorioIcon';
 import {RichText} from './RichText';
@@ -28,11 +28,19 @@ export const BasicInfoPanel = memo(({ blueprint }: { blueprint: BlueprintString 
     const wrapper = new BlueprintWrapper(blueprint);
     const { type, label, description, icons, version } = wrapper.getInfo();
 
+    function getIconElement(index: number, icon?: Icon) {
+        if (icon) {
+            return <FactorioIcon key={index} icon={icon.signal} />;
+        }
+
+        return <div key={index} className="placeholder" />;
+    }
+
     return (
         <Panel title="Basic Information">
             <dl className="panel-hole basic-info">
                 <InfoRow label="Type">
-                    <FactorioIcon type="item" name={type} />
+                    <FactorioIcon icon={{type: 'item', name: type}} />
                 </InfoRow>
 
                 <InfoRow label="Label" hidden={!label}>
@@ -47,16 +55,7 @@ export const BasicInfoPanel = memo(({ blueprint }: { blueprint: BlueprintString 
                     <div className="flex flex-items-center">
                         {[1, 2, 3, 4].map(index => {
                             const icon = icons?.find(icon => icon.index === index);
-                            return icon ? (
-                                <FactorioIcon
-                                    key={index}
-                                    type={icon.signal.type}
-                                    name={icon.signal.name}
-                                    quality={icon.signal.quality}
-                                />
-                            ) : (
-                                <div key={index} className="placeholder"/>
-                            );
+                            return getIconElement(index, icon);
                         })}
                     </div>
                 </InfoRow>

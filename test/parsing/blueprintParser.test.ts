@@ -7,8 +7,6 @@ import {
     serializeBlueprint
 } from '../../src/parsing/blueprintParser'
 import type {BlueprintString} from '../../src/parsing/types'
-import {readFixtureFile} from '../fixtures/utils'
-import {TEST_CASES, type TestCase} from './types'
 
 describe('blueprintParser', () => {
     describe('deserializeBlueprint', () => {

@@ -13,7 +13,7 @@ function testBlueprintRoundtrip(name: string) {
         const blueprintStr = readFixtureFile(stringPath)
         const jsonText = readFixtureFile(jsonPath)
         const deserialized = deserializeBlueprint(blueprintStr)
-        const expectedJson: BlueprintString = JSON.parse(jsonText)
+        const expectedJson = JSON.parse(jsonText) as BlueprintString
 
         try {
             expect(deserialized).toEqual(expectedJson)
@@ -36,7 +36,7 @@ function testBlueprintRoundtrip(name: string) {
     // JSON roundtrip
     it(`can roundtrip ${name} blueprint through json`, () => {
         const jsonText = readFixtureFile(jsonPath)
-        const originalJson: BlueprintString = JSON.parse(jsonText)
+        const originalJson = JSON.parse(jsonText) as BlueprintString
         const encoded = serializeBlueprint(originalJson)
         const decoded = deserializeBlueprint(encoded)
         expect(decoded).toEqual(originalJson)
@@ -47,7 +47,7 @@ function testBlueprintRoundtrip(name: string) {
         const blueprintStr = readFixtureFile(stringPath)
         const jsonText = readFixtureFile(jsonPath)
         const fromString = deserializeBlueprint(blueprintStr)
-        const fromJson: BlueprintString = JSON.parse(jsonText)
+        const fromJson = JSON.parse(jsonText) as BlueprintString
         expect(fromString).toEqual(fromJson)
     })
 }

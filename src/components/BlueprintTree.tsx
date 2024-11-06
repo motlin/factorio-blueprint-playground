@@ -2,7 +2,7 @@ import {JSX} from 'preact';
 import {memo} from 'preact/compat';
 
 import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
-import {BlueprintString, BlueprintStringWithIndex} from '../parsing/types';
+import {BlueprintString, BlueprintStringWithIndex, Icon} from '../parsing/types';
 import {rootBlueprintSignal, selectBlueprintPath, selectedBlueprintPathSignal} from '../state/blueprintTree';
 
 import {FactorioIcon} from './FactorioIcon';
@@ -21,7 +21,15 @@ const TreeRow = memo(({ path, blueprint, indentLevel, isSelected }: TreeRowProps
     const wrapper = new BlueprintWrapper(blueprint);
     const type = wrapper.getType();
     const label = wrapper.getLabel();
-    const icons = wrapper.getIcons() || [];
+    const icons = wrapper.getIcons();
+
+    function getIconElement(index: number, icon?: Icon) {
+        if (icon) {
+            return <FactorioIcon key={index} icon={icon.signal}/>;
+        }
+
+        return <div key={index} className="placeholder"/>;
+    }
 
     return (
         <div
@@ -32,10 +40,7 @@ const TreeRow = memo(({ path, blueprint, indentLevel, isSelected }: TreeRowProps
             onClick={() => { selectBlueprintPath(path); }}
         >
             <div className="flex flex-items-center">
-                <FactorioIcon
-                    type="item"
-                    name={type}
-                />
+                <FactorioIcon icon={{type: 'item', name: type}} />
                 <div className="separator" />
             </div>
 
@@ -43,15 +48,7 @@ const TreeRow = memo(({ path, blueprint, indentLevel, isSelected }: TreeRowProps
                 {[1, 2, 3, 4].map(index => {
                     // Find icon with matching index
                     const icon = icons.find(icon => icon.index === index);
-                    return icon ? (
-                        <FactorioIcon
-                            key={index}
-                            type={icon.signal.type}
-                            name={icon.signal.name}
-                        />
-                    ) : (
-                        <div key={index} className="placeholder"/>
-                    );
+                    return getIconElement(index, icon);
                 })}
                 <div className="separator"/>
             </div>
@@ -93,7 +90,8 @@ export const BlueprintTree = memo(() => {
 
         if (node.blueprint_book?.blueprints) {
             node.blueprint_book.blueprints.forEach((child: BlueprintStringWithIndex, index) => {
-                const childPath = path ? `${path}.${index + 1}` : (index + 1).toString();
+                const nextIndex = (index + 1).toString();
+                const childPath = path ? `${path}.${nextIndex}` : nextIndex;
                 rows.push(...renderNode(child, childPath, level + 1));
             });
         }

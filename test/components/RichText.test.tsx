@@ -11,7 +11,7 @@ describe('RichText', () => {
     })
 
     it('handles null input', () => {
-        // @ts-ignore - Testing null input
+        // @ts-expect-error Testing null input explicitly
         const { container } = render(<RichText text={null} />)
         expect(container.firstChild).toBe(null)
     })
@@ -149,26 +149,26 @@ describe('RichText', () => {
         it('handles named colors', () => {
             const { container } = render(<RichText text="[color=red]Red text[/color]" />)
             const span = container.querySelector('span')
-            expect(span?.style.color).toBe('rgb(235, 92, 95)') // #eb5c5f
+            expect(span instanceof HTMLElement && span.style.color).toBe('rgb(235, 92, 95)') // #eb5c5f
             expect(span?.textContent).toBe('Red text')
         })
 
         it('handles RGB values 0-1', () => {
             const { container } = render(<RichText text="[color=1,0,0]Red text[/color]" />)
             const span = container.querySelector('span')
-            expect(span?.style.color).toBe('rgb(255, 0, 0)')
+            expect(span instanceof HTMLElement && span.style.color).toBe('rgb(255, 0, 0)')
         })
 
         it('handles RGB values 0-255', () => {
             const { container } = render(<RichText text="[color=255,0,0]Red text[/color]" />)
             const span = container.querySelector('span')
-            expect(span?.style.color).toBe('rgb(255, 0, 0)')
+            expect(span instanceof HTMLElement && span.style.color).toBe('rgb(255, 0, 0)')
         })
 
         it('handles hex colors', () => {
             const { container } = render(<RichText text="[color=#ff0000]Red text[/color]" />)
             const span = container.querySelector('span')
-            expect(span?.style.color).toBe('rgb(255, 0, 0)')
+            expect(span instanceof HTMLElement && span.style.color).toBe('rgb(255, 0, 0)')
         })
     })
 
@@ -176,7 +176,7 @@ describe('RichText', () => {
     it('renders bold font correctly', () => {
         const { container } = render(<RichText text="[font=default-bold]Bold text[/font]" />)
         const span = container.querySelector('span')
-        expect(span?.style.fontWeight).toBe('bold')
+        expect(span instanceof HTMLElement && span.style.fontWeight).toBe('bold')
         expect(span?.textContent).toBe('Bold text')
     })
 
@@ -186,8 +186,8 @@ describe('RichText', () => {
             <RichText text="[color=red][font=default-bold]Bold red text[/font][/color]" />
         )
         const span = container.querySelector('span')
-        expect(span?.style.color).toBe('rgb(235, 92, 95)') // #eb5c5f
-        expect(span?.style.fontWeight).toBe('bold')
+        expect(span instanceof HTMLElement && span.style.color).toBe('rgb(235, 92, 95)') // #eb5c5f
+        expect(span instanceof HTMLElement && span.style.fontWeight).toBe('bold')
         expect(span?.textContent).toBe('Bold red text')
     })
 
@@ -202,12 +202,12 @@ describe('RichText', () => {
 
         // Should have colored text
         const colorSpan = container.querySelector('span[style*="color"]')
-        expect(colorSpan?.style.color).toBe('rgb(235, 92, 95)') // #eb5c5f
+        expect(colorSpan instanceof HTMLElement && colorSpan.style.color).toBe('rgb(235, 92, 95)') // #eb5c5f
         expect(colorSpan?.textContent).toBe('red')
 
         // Should have bold text
         const boldSpan = container.querySelector('span[style*="bold"]')
-        expect(boldSpan?.style.fontWeight).toBe('bold')
+        expect(boldSpan instanceof HTMLElement && boldSpan.style.fontWeight).toBe('bold')
         expect(boldSpan?.textContent).toBe('bold')
     })
 
@@ -221,7 +221,7 @@ describe('RichText', () => {
     it('handles unclosed tags gracefully', () => {
         const { container } = render(<RichText text="[color=red]text without closing tag" />)
         const span = container.querySelector('span')
-        expect(span?.style.color).toBe('rgb(235, 92, 95)') // #eb5c5f
+        expect(span instanceof HTMLElement && span.style.color).toBe('rgb(235, 92, 95)') // #eb5c5f
         expect(span?.textContent).toBe('text without closing tag')
     })
 })

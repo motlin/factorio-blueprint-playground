@@ -1,19 +1,32 @@
-import {SignalID} from '../parsing/types.ts';
+import {SignalID, SignalType} from '../parsing/types.ts';
 
-export const FactorioIcon = (icon: SignalID) => {
-    const type = icon.type || 'item';
-    let urlType = icon.type || 'item';
-
-    if (urlType === 'virtual') {
-        urlType = 'virtual-signal';
-    } else if (urlType === 'planet') {
-        urlType = 'space-location';
+function getUrlType(type: SignalType) {
+    if (type === 'virtual') {
+        return 'virtual-signal';
+    } else if (type === 'planet') {
+        return 'space-location';
     }
+    return type;
+}
+
+interface FactorioIconProps {
+    id?: string,
+    icon?: SignalID,
+}
+
+export const FactorioIcon = ({id, icon}: FactorioIconProps) => {
+    if (!icon) {
+        return null;
+    }
+
+    const type = icon.type ?? 'item';
+
+    const urlType = getUrlType(type);
 
     // If we have a quality, render in a div that itself is a factorio-icon
     if (icon.quality) {
         return (
-            <div className="factorio-icon-group">
+            <div className="factorio-icon-group" id={id}>
                 <img
                     className="factorio-icon"
                     src={`/icons/${urlType}/${icon.name}.png`}

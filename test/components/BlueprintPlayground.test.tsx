@@ -26,7 +26,8 @@ describe('BlueprintPlayground CSS Classes', () => {
             // First check that there's no error shown
             const errorElements = screen.queryByText(/Failed to parse blueprint/i)
             if (errorElements) {
-                throw new Error('Blueprint parsing failed: ' + screen.getByText(/Failed to parse blueprint/i).textContent)
+                const textContent: string = screen.getByText(/Failed to parse blueprint/i).textContent;
+                throw new Error('Blueprint parsing failed: ' + textContent)
             }
 
             // Then look for successful render
@@ -52,7 +53,7 @@ describe('BlueprintPlayground CSS Classes', () => {
             }
 
             // Process children
-            Array.from(element.children || []).forEach(child => {
+            Array.from(element.children).forEach(child => {
                 getAllClasses(child).forEach(cls => classes.add(cls))
             })
 

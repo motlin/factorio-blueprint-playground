@@ -28,8 +28,13 @@ export type Quality = 'normal' | 'uncommon' | 'rare' | 'epic' | 'legendary' | un
 
 export interface SignalID {
     type?: SignalType  // Defaults to "item" if not specified
-    name: string | VirtualSignalName
+    name: string
     quality?: Quality
+}
+
+export interface VirtualSignalID extends SignalID {
+    type: 'virtual-signal'
+    name: VirtualSignalName
 }
 
 export interface Icon {
@@ -142,7 +147,7 @@ interface ControlBehavior {
     blue_signal?: SignalID
 
     // Random operation (for selector combinators)
-    operation?: 'random' | string
+    operation?: 'random'
     random_update_interval?: number
 
     // Sections (for combinators)

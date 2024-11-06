@@ -1,6 +1,6 @@
 import React from 'react';
 
-import {Quality, SignalType} from '../parsing/types.ts';
+import {Quality, SignalID, SignalType} from '../parsing/types.ts';
 
 import { FactorioIcon } from './FactorioIcon';
 
@@ -113,14 +113,14 @@ export const RichText = ({ text }: { text?: string }) => {
                 case 'img': {
                     // Parse path format "type/name"
                     const [imgType, imgName] = value.split('/');
-                    parts.push(
-                        <FactorioIcon
-                            key={parts.length}
-                            type={imgType as SignalType}
-                            name={imgName}
-                            quality={quality as Quality}
-                        />,
-                    );
+
+                    const icon: SignalID = {
+                        type: imgType as SignalType,
+                        name: imgName,
+                        quality: quality as Quality,
+                    };
+
+                    parts.push(<FactorioIcon key={parts.length} icon={icon}/>);
                     break;
                 }
                 case 'item':
@@ -134,16 +134,16 @@ export const RichText = ({ text }: { text?: string }) => {
                 case 'achievement':
                 case 'quality':
                 case 'planet':
-                case 'space-location':
-            parts.push(
-                <FactorioIcon
-                    key={parts.length}
-                    type={type}
-                    name={value}
-                    quality={quality as Quality}
-                />,
-            );
+                case 'space-location': {
+                    const icon: SignalID = {
+                        type: type,
+                        name: value,
+                        quality: quality as Quality,
+                    };
+
+                    parts.push(<FactorioIcon key={parts.length} icon={icon}/>);
                     break;
+                }
                 // We could add special handling for gps, special-item, armor, train, etc. here
                 default:
                     // For unhandled tags, just render them as text

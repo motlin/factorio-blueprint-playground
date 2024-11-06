@@ -1,11 +1,11 @@
 import {memo} from 'preact/compat';
 
 import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
-import type {
+import {
     BlueprintString,
     DeconstructionPlanner,
     Entity,
-    Filter,
+    Filter, SignalType,
     Tile,
     UpgradePlanner,
 } from '../parsing/types';
@@ -37,7 +37,7 @@ function mapToSortedArray(counts: Map<string, number>) {
 }
 
 // Multi-column list component for showing icon, name, count
-function ItemPanel({ title, items, type }: { title: string, items: Map<string, number>, type: string}) {
+function ItemPanel({ title, items, type }: { title: string, items: Map<string, number>, type: SignalType}) {
     if (!items.size) return null;
 
     const sortedItems = mapToSortedArray(items);
@@ -118,25 +118,13 @@ export const UpgradePlannerPanel = memo(({blueprint}: { blueprint: BlueprintStri
                     .map((mapping, index) => (
                         <Row key={index}>
                             <Cell grow>
-                                {mapping.from && (
-                                    <FactorioIcon
-                                        type={mapping.from.type}
-                                        name={mapping.from.name}
-                                            quality={mapping.from.quality}
-                                    />
-                                )}
+                                <FactorioIcon icon={mapping.from}/>
                             </Cell>
                             <Cell width="40px" align="center">
                                 →
                             </Cell>
                             <Cell grow>
-                            {mapping.to && (
-                                <FactorioIcon
-                                    type={mapping.to.type}
-                                    name={mapping.to.name}
-                                            quality={mapping.to.quality}
-                                />
-                                )}
+                                <FactorioIcon icon={mapping.to}/>
                             </Cell>
                         </Row>
                     ))}
@@ -205,9 +193,7 @@ export const DeconstructionPlannerPanel = memo(({blueprint}: { blueprint: Bluepr
                                     .map((filter, index) => (
                                         <div key={index} className="flex mb8 mr8">
                                             <FactorioIcon
-                                                type="entity"
-                                                name={filter.name}
-                                                quality={filter.quality}
+                                                icon={{type: 'entity', name: filter.name, quality: filter.quality}}
                                             />
                                             <span className="ml8">
                                                 {filter.name}
@@ -230,9 +216,7 @@ export const DeconstructionPlannerPanel = memo(({blueprint}: { blueprint: Bluepr
                                     .map((filter, index) => (
                                         <div key={index} className="flex mb8 mr8">
                                             <FactorioIcon
-                                                type="tile"
-                                                name={filter.name}
-                                                quality={filter.quality}
+                                                icon={{type: 'tile', name: filter.name, quality: filter.quality}}
                                             />
                                             <span className="ml8">
                                                 {filter.name}

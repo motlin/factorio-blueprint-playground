@@ -1,4 +1,4 @@
-import { ClipboardCopy, Download, FileJson } from 'lucide-react';
+import { ClipboardCopy, Download, FileJson , LucideIcon } from 'lucide-react';
 import { memo } from 'preact/compat';
 
 import { BlueprintWrapper } from '../parsing/BlueprintWrapper';
@@ -62,7 +62,7 @@ function downloadFile(filename: string, data: string) {
     URL.revokeObjectURL(url);
 }
 
-const ButtonWithIcon = ({icon: Icon, text, onClick}: { icon: any, text: string, onClick: () => void }) => (
+const ButtonWithIcon = ({icon: Icon, text, onClick}: { icon: LucideIcon, text: string, onClick: () => void }) => (
     <ButtonGreen onClick={onClick}>
         <Icon size={18} className="mr8"/>
         {text}

@@ -1,4 +1,4 @@
-import {deflate, DeflateFunctionOptions} from 'pako';
+import {DeflateFunctionOptions} from 'pako';
 
 export interface CompressionSettings extends DeflateFunctionOptions {
     level: 8 | 9;            // Must be 8 or 9
@@ -26,19 +26,3 @@ export const DEFAULT_COMPRESSION_SETTINGS: CompressionSettings = {
     level: COMPRESSION_LEVEL,
     memLevel: MEMORY_LEVEL,
 };
-
-export function compressBlueprint(jsonStr: string, settings: CompressionSettings = DEFAULT_COMPRESSION_SETTINGS): Uint8Array {
-    // Validate settings
-    if (settings.raw) throw new Error('Compression setting "raw" must be false');
-    if (settings.windowBits !== 15) throw new Error('Compression setting "windowBits" must be 15');
-    if (settings.strategy !== 0) throw new Error('Compression setting "strategy" must be 0');
-    if (![8, 9].includes(settings.level)) throw new Error('Compression setting "level" must be 8 or 9');
-    if (settings.memLevel < 4 || settings.memLevel > 9) throw new Error('Compression setting "memLevel" must be between 4 and 9');
-
-    try {
-        return deflate(jsonStr, settings);
-    } catch (e) {
-        console.error('Compression failed:', e);
-        throw e;
-    }
-}
