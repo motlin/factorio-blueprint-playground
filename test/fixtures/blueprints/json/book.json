@@ -3,7 +3,6 @@
     "blueprints": [
       {
         "blueprint": {
-          "description": "Blueprint torture test",
           "snap-to-grid": {
             "x": 2,
             "y": 1
@@ -231,12 +230,13 @@
           ],
           "item": "blueprint",
           "label": "[item=blueprint-book] [item=parameter-0]",
-          "version": 562949954207746
+          "version": 562949954338818
         },
         "index": 0
       },
       {
         "blueprint": {
+          "description": "Quality alone: [quality=normal]\nNormal quality: [item=iron-plate,quality=normal]\nQuality on item: [entity=small-biter,quality=uncommon]\n[color=red]Red[/color] text\n[color=1,0,0]Red[/color] text\n[color=255,0,0]Red[/color] text\n[color=#ff0000]Red[/color] text\n[font=default-bold]Bold text[/font]    ",
           "icons": [
             {
               "signal": {
@@ -499,14 +499,489 @@
           ],
           "item": "blueprint",
           "label": "Parameterized blueprint where [item=parameter-1] must be an ingredient of [item=parameter-0]",
-          "version": 562949954207746
+          "version": 562949954338818
         },
         "index": 1
+      },
+      {
+        "blueprint": {
+          "description": "Space icons:[entity=small-metallic-asteroid][recipe=carbonic-asteroid-reprocessing][entity=big-oxide-asteroid][item=metallic-asteroid-chunk][recipe=metallic-asteroid-crushing][recipe=advanced-thruster-fuel]\nPlanets: [planet=nauvis][planet=vulcanus][planet=gleba][planet=fulgora][planet=aquilo][space-location=solar-system-edge][space-location=shattered-planet]",
+          "icons": [
+            {
+              "signal": {
+                "type": "space-location",
+                "name": "solar-system-edge"
+              },
+              "index": 1
+            }
+          ],
+          "entities": [
+            {
+              "entity_number": 1,
+              "name": "roboport",
+              "position": {
+                "x": 22,
+                "y": 8
+              },
+              "control_behavior": {
+                "read_robot_stats": true
+              },
+              "request_filters": {
+                "sections": [
+                  {
+                    "index": 1
+                  }
+                ]
+              }
+            }
+          ],
+          "item": "blueprint",
+          "label": "Space icons: [recipe=carbonic-asteroid-reprocessing]",
+          "version": 562949954338818
+        },
+        "index": 2
+      },
+      {
+        "upgrade_planner": {
+          "settings": {
+            "mappers": [
+              {
+                "from": {
+                  "type": "entity",
+                  "name": "wooden-chest",
+                  "quality": "normal",
+                  "comparator": "="
+                },
+                "to": {
+                  "type": "entity",
+                  "name": "iron-chest",
+                  "module_limit": 0,
+                  "module_slots": []
+                },
+                "index": 0
+              },
+              {
+                "from": {
+                  "type": "entity",
+                  "name": "wooden-chest",
+                  "quality": "normal",
+                  "comparator": "="
+                },
+                "to": {
+                  "type": "entity",
+                  "name": "steel-chest",
+                  "module_limit": 0,
+                  "module_slots": []
+                },
+                "index": 4
+              },
+              {
+                "from": {
+                  "type": "entity",
+                  "name": "train-stop",
+                  "quality": "normal",
+                  "comparator": "≠"
+                },
+                "to": {
+                  "type": "entity",
+                  "name": "train-stop",
+                  "module_limit": 0,
+                  "module_slots": []
+                },
+                "index": 5
+              },
+              {
+                "from": {
+                  "type": "item",
+                  "name": "wood",
+                  "quality": "normal",
+                  "comparator": "="
+                },
+                "to": {
+                  "type": "item",
+                  "name": "wood",
+                  "quality": "legendary",
+                  "module_limit": 0,
+                  "module_slots": []
+                },
+                "index": 7
+              },
+              {
+                "from": {
+                  "type": "entity",
+                  "name": "transport-belt",
+                  "quality": "rare",
+                  "comparator": "<"
+                },
+                "to": {
+                  "type": "entity",
+                  "name": "turbo-transport-belt",
+                  "quality": "legendary",
+                  "module_limit": 0,
+                  "module_slots": []
+                },
+                "index": 8
+              },
+              {
+                "from": {
+                  "type": "entity",
+                  "name": "rail-signal",
+                  "quality": "normal",
+                  "comparator": "="
+                },
+                "to": {
+                  "type": "entity",
+                  "name": "rail-chain-signal",
+                  "module_limit": 0,
+                  "module_slots": []
+                },
+                "index": 9
+              },
+              {
+                "from": {
+                  "type": "item",
+                  "name": "quality-module",
+                  "quality": "normal",
+                  "comparator": "=",
+                  "module_filter": {
+                    "name": "beacon",
+                    "quality": "normal",
+                    "comparator": "="
+                  }
+                },
+                "to": {
+                  "type": "item",
+                  "name": "quality-module-3",
+                  "module_limit": 0,
+                  "module_slots": []
+                },
+                "index": 10
+              },
+              {
+                "from": {
+                  "type": "item",
+                  "name": "rocket-fuel",
+                  "quality": "normal",
+                  "comparator": "="
+                },
+                "to": {
+                  "type": "item",
+                  "name": "nuclear-fuel",
+                  "module_limit": 0,
+                  "module_slots": []
+                },
+                "index": 11
+              },
+              {
+                "from": {
+                  "type": "entity",
+                  "name": "fast-transport-belt"
+                },
+                "to": {
+                  "type": "entity",
+                  "name": "express-transport-belt",
+                  "module_limit": 0,
+                  "module_slots": []
+                },
+                "index": 12
+              },
+              {
+                "from": {
+                  "type": "entity",
+                  "name": "active-provider-chest",
+                  "quality": "normal",
+                  "comparator": "="
+                },
+                "to": {
+                  "type": "entity",
+                  "name": "steel-chest",
+                  "module_limit": 0,
+                  "module_slots": []
+                },
+                "index": 13
+              },
+              {
+                "from": {
+                  "type": "item",
+                  "name": "empty-module-slot",
+                  "module_filter": {
+                    "name": "biolab",
+                    "quality": "normal",
+                    "comparator": "="
+                  }
+                },
+                "to": {
+                  "type": "item",
+                  "name": "quality-module-3",
+                  "module_limit": 0,
+                  "module_slots": []
+                },
+                "index": 14
+              },
+              {
+                "from": {
+                  "type": "entity",
+                  "name": "lab",
+                  "quality": "normal",
+                  "comparator": "="
+                },
+                "to": {
+                  "type": "entity",
+                  "name": "lab",
+                  "module_limit": 0,
+                  "module_slots": [
+                    {
+                      "name": "productivity-module-3",
+                      "quality": "legendary"
+                    },
+                    {
+                      "name": "productivity-module-3"
+                    }
+                  ]
+                },
+                "index": 15
+              },
+              {
+                "from": {
+                  "type": "entity",
+                  "name": "burner-inserter",
+                  "quality": "normal",
+                  "comparator": "="
+                },
+                "to": {
+                  "type": "entity",
+                  "name": "stack-inserter",
+                  "module_limit": 0,
+                  "module_slots": []
+                },
+                "index": 16
+              },
+              {
+                "from": {
+                  "type": "entity",
+                  "name": "steel-chest",
+                  "quality": "normal",
+                  "comparator": "="
+                },
+                "to": {
+                  "type": "entity",
+                  "name": "passive-provider-chest",
+                  "module_limit": 0,
+                  "module_slots": []
+                },
+                "index": 17
+              },
+              {
+                "from": {
+                  "type": "entity",
+                  "name": "small-electric-pole",
+                  "quality": "normal",
+                  "comparator": "="
+                },
+                "to": {
+                  "type": "entity",
+                  "name": "small-electric-pole",
+                  "module_limit": 0,
+                  "module_slots": []
+                },
+                "index": 20
+              },
+              {
+                "from": {
+                  "type": "entity",
+                  "name": "assembling-machine-2"
+                },
+                "to": {
+                  "type": "entity",
+                  "name": "assembling-machine-3",
+                  "module_limit": 0,
+                  "module_slots": [
+                    {
+                      "name": "speed-module-3"
+                    },
+                    {
+                      "name": "efficiency-module-3"
+                    },
+                    {
+                      "name": "productivity-module-3"
+                    },
+                    {
+                      "name": "quality-module-3",
+                      "quality": "legendary"
+                    }
+                  ]
+                },
+                "index": 22
+              },
+              {
+                "from": {
+                  "type": "entity",
+                  "name": "substation",
+                  "quality": "normal",
+                  "comparator": "="
+                },
+                "to": {
+                  "type": "entity",
+                  "name": "substation",
+                  "quality": "legendary",
+                  "module_limit": 0,
+                  "module_slots": []
+                },
+                "index": 24
+              },
+              {
+                "from": {
+                  "type": "entity",
+                  "name": "straight-rail"
+                },
+                "to": {
+                  "type": "entity",
+                  "name": "straight-rail",
+                  "module_limit": 0,
+                  "module_slots": []
+                },
+                "index": 28
+              },
+              {
+                "from": {
+                  "type": "entity",
+                  "name": "elevated-straight-rail",
+                  "quality": "normal",
+                  "comparator": "="
+                },
+                "to": {
+                  "type": "entity",
+                  "name": "elevated-straight-rail",
+                  "quality": "epic",
+                  "module_limit": 0,
+                  "module_slots": []
+                },
+                "index": 32
+              }
+            ],
+            "description": "([item=upgrade-planner]) Upgrade Planner Torture Test",
+            "icons": [
+              {
+                "signal": {
+                  "name": "upgrade-planner"
+                },
+                "index": 1
+              },
+              {
+                "signal": {
+                  "name": "upgrade-planner"
+                },
+                "index": 2
+              },
+              {
+                "signal": {
+                  "name": "upgrade-planner"
+                },
+                "index": 4
+              }
+            ]
+          },
+          "item": "upgrade-planner",
+          "label": "([item=upgrade-planner]) Upgrade Planner Torture Test",
+          "version": 562949954338818
+        },
+        "index": 3
+      },
+      {
+        "deconstruction_planner": {
+          "settings": {
+            "entity_filters": [
+              {
+                "name": "tile-ghost",
+                "quality": "normal",
+                "comparator": "=",
+                "index": 0
+              },
+              {
+                "name": "item-request-proxy",
+                "quality": "legendary",
+                "comparator": "=",
+                "index": 1
+              },
+              {
+                "name": "item-on-ground",
+                "quality": "epic",
+                "comparator": "≠",
+                "index": 2
+              },
+              {
+                "name": "entity-ghost",
+                "index": 3
+              }
+            ],
+            "tile_selection_mode": 1,
+            "tile_filters": [
+              {
+                "name": "stone-path",
+                "index": 0
+              },
+              {
+                "name": "concrete",
+                "index": 1
+              }
+            ],
+            "description": "([item=deconstruction-planner]) Deconstruction torture test\n\nwhitelist, whitelist, always",
+            "icons": [
+              {
+                "signal": {
+                  "name": "deconstruction-planner"
+                },
+                "index": 2
+              },
+              {
+                "signal": {
+                  "name": "deconstruction-planner"
+                },
+                "index": 4
+              }
+            ]
+          },
+          "item": "deconstruction-planner",
+          "label": "([item=deconstruction-planner]) Deconstruction torture test",
+          "version": 562949954338818
+        },
+        "index": 4
+      },
+      {
+        "deconstruction_planner": {
+          "settings": {
+            "entity_filter_mode": 1,
+            "entity_filters": [
+              {
+                "name": "cliff",
+                "quality": "normal",
+                "comparator": "=",
+                "index": 0
+              }
+            ],
+            "trees_and_rocks_only": true,
+            "tile_filter_mode": 1,
+            "tile_filters": [
+              {
+                "name": "hazard-concrete-right",
+                "index": 0
+              },
+              {
+                "name": "refined-hazard-concrete-left",
+                "index": 1
+              }
+            ]
+          },
+          "item": "deconstruction-planner",
+          "label": "Trees only, but also blacklist",
+          "version": 562949954338818
+        },
+        "index": 5
       }
     ],
     "item": "blueprint-book",
-    "label": "[item=blueprint-book] Blueprint torture test [item=parameter-0][quality=legendary][quality=epic][quality=rare][quality=uncommon][quality=normal][virtual-signal=signal-any-quality][entity=entity-ghost]",
-    "description": "Blueprint torture test containing lots of new 2.0 features [virtual-signal=signal-heart]",
+    "label": "([item=blueprint-book]) torture test [item=parameter-0][quality=legendary][quality=epic][quality=rare][quality=uncommon][quality=normal][virtual-signal=signal-any-quality][entity=entity-ghost]",
+    "description": "Blueprint torture test\n\n[img=item.iron-plate]\n[img=quantity-time]\n[img=utility/played_green]\n\n[item=iron-plate]    \n[entity=small-biter]    \n[technology=logistics]    \n[recipe=basic-oil-processing]    \n[item-group=combat]    \n[fluid=water]    \n[tile=grass-3]    \n[virtual-signal=signal-A]    \n[achievement=minions]    \n[gps=0,0]    \n[special-item=blueprint_string]    \n[armor=Player]    \n[train=93]    \n[train-stop=100]    \n[tooltip=Hover to see \"Iron plate\",item-name.iron-plate]    ",
     "icons": [
       {
         "signal": {
@@ -523,6 +998,6 @@
       }
     ],
     "active_index": 0,
-    "version": 562949954207746
+    "version": 562949954338818
   }
 }

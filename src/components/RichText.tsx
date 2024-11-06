@@ -70,7 +70,6 @@ interface RichTextProps {
     text?: string;
 }
 
-
 export const RichText = ({ text }: RichTextProps) => {
     if (!text) return null;
 

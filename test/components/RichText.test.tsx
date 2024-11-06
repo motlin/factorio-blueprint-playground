@@ -1,3 +1,5 @@
+import React from 'react';
+
 import { describe, expect, it } from 'vitest'
 import { render } from '@testing-library/preact'
 import { RichText } from '../../src/components/RichText'
@@ -20,7 +22,7 @@ describe('RichText', () => {
     it('renders item tags correctly', () => {
         const { container } = render(<RichText text="[item=blueprint-book]" />)
         const img = container.querySelector('img')
-        expect(img?.getAttribute('src')).toBe('https://www.factorio.school/icons/item/blueprint-book.png')
+        expect(img?.getAttribute('src')).toBe('/icons/item/blueprint-book.png')
         expect(img?.getAttribute('title')).toBe('item: blueprint-book')
     })
 
@@ -32,10 +34,10 @@ describe('RichText', () => {
         expect(wrapper).toBeTruthy()
 
         const mainIcon = wrapper?.querySelector('.factorio-icon')
-        expect(mainIcon?.getAttribute('src')).toBe('https://www.factorio.school/icons/item/iron-plate.png')
+        expect(mainIcon?.getAttribute('src')).toBe('/icons/item/iron-plate.png')
 
         const qualityIcon = wrapper?.querySelector('.quality')
-        expect(qualityIcon?.getAttribute('src')).toBe('https://www.factorio.school/icons/quality/normal.png')
+        expect(qualityIcon?.getAttribute('src')).toBe('/icons/quality/normal.png')
     })
 
     // Test entity tags with quality
@@ -46,10 +48,10 @@ describe('RichText', () => {
         expect(wrapper).toBeTruthy()
 
         const mainIcon = wrapper?.querySelector('.factorio-icon')
-        expect(mainIcon?.getAttribute('src')).toBe('https://www.factorio.school/icons/entity/small-biter.png')
+        expect(mainIcon?.getAttribute('src')).toBe('/icons/entity/small-biter.png')
 
         const qualityIcon = wrapper?.querySelector('.quality')
-        expect(qualityIcon?.getAttribute('src')).toBe('https://www.factorio.school/icons/quality/uncommon.png')
+        expect(qualityIcon?.getAttribute('src')).toBe('/icons/quality/uncommon.png')
     })
 
     // Test quality tags both as plain tags and as modifiers
@@ -68,7 +70,7 @@ describe('RichText', () => {
             qualities.forEach((quality, index) => {
                 const icon = icons[index]
                 expect(icon.getAttribute('src')).toBe(
-                    `https://www.factorio.school/icons/quality/${quality}.png`
+                    `/icons/quality/${quality}.png`
                 )
             })
         })
@@ -85,7 +87,7 @@ describe('RichText', () => {
             qualities.forEach((quality, index) => {
                 const icon = qualityIcons[index]
                 expect(icon.getAttribute('src')).toBe(
-                    `https://www.factorio.school/icons/quality/${quality}.png`
+                    `/icons/quality/${quality}.png`
                 )
             })
         })
@@ -95,7 +97,7 @@ describe('RichText', () => {
     it('renders planet tags correctly', () => {
         const { container } = render(<RichText text="[planet=gleba]" />)
         const img = container.querySelector('img')
-        expect(img?.getAttribute('src')).toBe('https://www.factorio.school/icons/space-location/gleba.png')
+        expect(img?.getAttribute('src')).toBe('/icons/space-location/gleba.png')
     })
 
     // Test planet/space-location tags
@@ -111,14 +113,14 @@ describe('RichText', () => {
             // Check first icon
             const firstIcon = imgs[0]
             expect(firstIcon.getAttribute('src')).toBe(
-                'https://www.factorio.school/icons/space-location/solar-system-edge.png'
+                '/icons/space-location/solar-system-edge.png'
             )
             expect(firstIcon.getAttribute('title')).toBe('space-location: solar-system-edge')
 
             // Check second icon
             const secondIcon = imgs[1]
             expect(secondIcon.getAttribute('src')).toBe(
-                'https://www.factorio.school/icons/space-location/shattered-planet.png'
+                '/icons/space-location/shattered-planet.png'
             )
             expect(secondIcon.getAttribute('title')).toBe('space-location: shattered-planet')
         })
@@ -131,7 +133,7 @@ describe('RichText', () => {
             const img = container.querySelector('img')
             expect(img).toBeTruthy()
             expect(img?.getAttribute('src')).toBe(
-                'https://www.factorio.school/icons/space-location/solar-system-edge.png'
+                '/icons/space-location/solar-system-edge.png'
             )
             expect(img?.getAttribute('title')).toBe('planet: solar-system-edge')
         })
@@ -141,7 +143,7 @@ describe('RichText', () => {
     it('renders virtual signal tags correctly', () => {
         const { container } = render(<RichText text="[virtual-signal=signal-any-quality]" />)
         const img = container.querySelector('img')
-        expect(img?.getAttribute('src')).toBe('https://www.factorio.school/icons/virtual-signal/signal-any-quality.png')
+        expect(img?.getAttribute('src')).toBe('/icons/virtual-signal/signal-any-quality.png')
     })
 
     // Test color tags with different formats

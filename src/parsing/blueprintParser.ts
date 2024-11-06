@@ -73,6 +73,28 @@ export function extractBlueprint(
                 );
             }
 
+            // Check if index is valid
+            if (isNaN(index)) {
+                throw new BlueprintError(
+                    `Invalid path ${path}: "${part}" is not a valid number at ${traversedPath}`,
+                );
+            }
+
+            // Check if index is non-negative
+            if (index < 0) {
+                throw new BlueprintError(
+                    `Invalid path ${path}: index must be positive at ${traversedPath}`,
+                );
+            }
+
+            // Check if index is within bounds
+            if (index >= current.blueprint_book.blueprints.length) {
+                throw new BlueprintError(
+                    `Invalid path ${path}: index ${part} is out of bounds at ${traversedPath} ` +
+                    `(valid range: 1-${current.blueprint_book.blueprints.length})`,
+                );
+            }
+
             current = current.blueprint_book.blueprints[index];
         }
 

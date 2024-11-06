@@ -19,11 +19,11 @@ describe('blueprintParser', () => {
         })
 
         it('throws error on invalid base64', () => {
-            expect(() => deserializeBlueprint('0!@#$')).toThrow(/Failed to parse blueprint/)
+            expect(() => deserializeBlueprint('0!@#$')).toThrow(/Invalid character/)
         })
 
         it('throws error on invalid compression', () => {
-            expect(() => deserializeBlueprint('0YWJj')).toThrow(/Failed to parse blueprint/)
+            expect(() => deserializeBlueprint('0YWJj')).toThrow(/incorrect header check/)
         })
 
         it('parses a simple blueprint', () => {
@@ -37,9 +37,10 @@ describe('blueprintParser', () => {
     })
 
     describe('serializeBlueprint', () => {
-        it('throws error on invalid blueprint data', () => {
+        it('serializes invalid blueprint data', () => {
             const invalid = {} as BlueprintString
-            expect(() => serializeBlueprint(invalid)).toThrow(/Invalid blueprint/)
+            const serializedInvalidBlueprint = serializeBlueprint(invalid);
+            expect(serializedInvalidBlueprint).toEqual("0eNqrrgUAAXUA+Q==")
         })
 
         it('serializes a simple blueprint', () => {
@@ -108,7 +109,7 @@ describe('blueprintParser', () => {
 
         it('throws error on invalid path - no child', () => {
             expect(() => extractBlueprint(book, '3'))
-                .toThrow(/no child at index 3/)
+                .toThrow(/Invalid path 3: index 3 is out of bounds at 3/)
         })
     })
 
