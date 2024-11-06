@@ -1,10 +1,9 @@
 import {signal} from '@preact/signals';
-import { ErrorAlert, Panel } from './ui';
+import {ErrorAlert, InsetLight, Panel} from './ui';
 import {BasicInfoPanel} from './BasicInfoPanel';
 import {BlueprintInfoPanels} from './BlueprintInfoPanels';
 import {ParametersPanel} from './ParametersPanel';
 import { BlueprintTree } from './BlueprintTree';
-import { RootJsonPanel } from './RootJsonPanel.tsx';
 import { BlueprintSourceHandler } from './BlueprintSourceHandler';
 import {deserializeBlueprint} from '../parsing/blueprintParser';
 import {
@@ -13,7 +12,7 @@ import {
     selectedBlueprintPathSignal,
     selectedBlueprintSignal
 } from '../state/blueprintTree';
-import {SelectedJsonPanel} from './SelectedJsonPanel.tsx';
+import {ExportActions} from "./ExportActions.tsx";
 
 // Local UI state signal
 const errorSignal = signal<string | null>(null);
@@ -66,10 +65,15 @@ export function BlueprintPlayground() {
             <div className="panels2">
                 {/* Left side */}
                 <div>
-                    <RootJsonPanel
-                        rootBlueprint={rootBlueprintSignal.value}
-                    />
-                    {rootBlueprintSignal.value?.blueprint_book && (
+                    <Panel title="Export Blueprint">
+                        <InsetLight>
+                            <ExportActions
+                                blueprint={rootBlueprintSignal.value}
+                                path={null}
+                                title="Root Blueprint"
+                            />
+                        </InsetLight>
+                    </Panel>                    {rootBlueprintSignal.value?.blueprint_book && (
                         <Panel title="Blueprint Tree">
                             <BlueprintTree/>
                         </Panel>
@@ -80,11 +84,15 @@ export function BlueprintPlayground() {
                 <div>
                     {selectedBlueprintSignal.value && (
                         <>
-                            <SelectedJsonPanel
-                                rootBlueprint={rootBlueprintSignal.value}
-                                selectedBlueprint={selectedBlueprintSignal.value}
-                                selectedPath={selectedBlueprintPathSignal.value}
-                            />
+                            <Panel title="Export Blueprint">
+                                <InsetLight>
+                                    <ExportActions
+                                        blueprint={selectedBlueprintSignal.value}
+                                        path={selectedBlueprintPathSignal.value}
+                                        title="Selected Blueprint"
+                                    />
+                                </InsetLight>
+                            </Panel>
                             <BasicInfoPanel blueprint={selectedBlueprintSignal.value}/>
                             <BlueprintInfoPanels blueprint={selectedBlueprintSignal.value}/>
                         </>

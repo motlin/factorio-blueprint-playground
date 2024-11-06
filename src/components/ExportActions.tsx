@@ -6,7 +6,7 @@ import { ButtonGreen } from './ui';
 import { ClipboardCopy, Download, FileJson } from 'lucide-react';
 
 interface ExportActionsProps {
-    blueprint: BlueprintString;
+    blueprint: BlueprintString | null;
     path: string | null;
     title: string;
 }
