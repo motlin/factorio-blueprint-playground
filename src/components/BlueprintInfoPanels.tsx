@@ -5,7 +5,9 @@ import {
     BlueprintString,
     DeconstructionPlanner,
     Entity,
-    Filter, SignalType,
+    Filter,
+    Quality,
+    SignalType,
     Tile,
     UpgradePlanner,
 } from '../parsing/types';
@@ -15,32 +17,35 @@ import {Cell, IconCell, Row, Spreadsheet, TextCell} from './spreadsheet';
 import {Panel} from './ui';
 
 // Count occurrences of items in an array, including quality
-function countItems<T>(items: T[], getKey: (item: T) => {name: string, quality?: string} | undefined) {
+function countItems<T>(getKey: (item: T) => ({ name: string; quality?: string } | undefined), items?: T[]) {
     const counts = new Map<string, number>();
+    if (!items) return counts;
+
     for (const item of items) {
         const keyObj = getKey(item);
         if (!keyObj) continue;
 
         const key = JSON.stringify(keyObj);
-        counts.set(key, (counts.get(key) || 0) + 1);
+        counts.set(key, (counts.get(key) ?? 0) + 1);
     }
     return counts;
 }
 
-function mapToSortedArray(counts: Map<string, number>) {
-    return Array.from(counts.entries())
-        .map(([key, count]) => ({
-            ...JSON.parse(key),
-            count,
-        }))
-        .sort((a, b) => b.count - a.count); // Sort by count in descending order
+function mapToSortedArray(counts: Map<string, number>): {name: string, quality: Quality, count: number}[] {
+    const parsedArray = Array.from(counts.entries())
+        .map(([key, count]) => {
+            const parsed = JSON.parse(key) as {name: string, quality: Quality};
+            return ({...parsed, count});
+        });
+    // Sort by count in descending order
+    return parsedArray.sort((a, b) => b.count - a.count);
 }
 
 // Multi-column list component for showing icon, name, count
 function ItemPanel({ title, items, type }: { title: string, items: Map<string, number>, type: SignalType}) {
     if (!items.size) return null;
 
-    const sortedItems = mapToSortedArray(items);
+    const sortedItems: { name: string, quality: Quality, count: number }[] = mapToSortedArray(items);
 
     return (
         <Panel title={title}>
@@ -86,9 +91,9 @@ export const ContentsPanel = memo(({blueprint}: PanelProps) => {
         };
     };
 
-    const entityCounts = countItems(blueprintContent.entities || [], getEntityKey);
-    const tileCounts = countItems(blueprintContent.tiles || [], getTileKey);
-    const recipeCounts = countItems(blueprintContent.entities || [], getRecipeKey);
+    const entityCounts = countItems(getEntityKey, blueprintContent.entities);
+    const tileCounts = countItems(getTileKey, blueprintContent.tiles);
+    const recipeCounts = countItems(getRecipeKey, blueprintContent.entities);
 
     return (
         <>
@@ -118,7 +123,7 @@ export const UpgradePlannerPanel = memo(({blueprint}: { blueprint: BlueprintStri
                     .map((mapping, index) => (
                         <Row key={index}>
                             <Cell grow>
-                                <div style={{margin: "auto"}}>
+                                <div style={{margin: 'auto'}}>
                                     <FactorioIcon icon={mapping.from}/>
                                 </div>
                             </Cell>
@@ -126,7 +131,7 @@ export const UpgradePlannerPanel = memo(({blueprint}: { blueprint: BlueprintStri
                                 →
                             </Cell>
                             <Cell grow>
-                                <div style={{margin: "auto"}}>
+                                <div style={{margin: 'auto'}}>
                                     <FactorioIcon icon={mapping.to}/>
                                 </div>
                             </Cell>
@@ -154,7 +159,6 @@ export const DeconstructionPlannerPanel = memo(({blueprint}: { blueprint: Bluepr
     if (!('deconstruction_planner' in blueprint)) return null;
 
     const { settings } = content as DeconstructionPlanner;
-    if (!settings) return null;
 
     const getTileSelectionText = (mode?: number) => {
         switch (mode) {
@@ -239,8 +243,6 @@ export const DeconstructionPlannerPanel = memo(({blueprint}: { blueprint: Bluepr
 
 // Main wrapper component that shows the appropriate panels
 export const BlueprintInfoPanels = memo(({blueprint}: { blueprint: BlueprintString }) => {
-    if (!blueprint) return null;
-
     return (
         <>
             {/* Show type-specific panels */}

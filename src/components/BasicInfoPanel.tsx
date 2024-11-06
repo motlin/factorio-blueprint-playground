@@ -44,11 +44,11 @@ export const BasicInfoPanel = memo(({ blueprint }: { blueprint: BlueprintString 
                 </InfoRow>
 
                 <InfoRow label="Label" hidden={!label}>
-                    <RichText text={label || ''} />
+                    <RichText text={label} />
                 </InfoRow>
 
                 <InfoRow label="Description" hidden={!description}>
-                    <RichText text={description || ''} />
+                    <RichText text={description} />
                 </InfoRow>
 
                 <InfoRow label="Icons" hidden={!icons?.length}>

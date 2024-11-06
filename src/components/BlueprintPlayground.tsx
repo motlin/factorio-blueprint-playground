@@ -20,13 +20,13 @@ import {ErrorAlert, InsetLight, Panel} from './ui';
 const errorSignal = signal<string | null>(null);
 
 export function BlueprintPlayground() {
-    const handleBlueprintPaste = async (value: string) => {
-    // Guard against undefined/null value
-    if (!value) {
-        resetBlueprintTree();
-        errorSignal.value = null;
-        return;
-    }
+    const handleBlueprintPaste = (value: string) => {
+        // Guard against undefined/null value
+        if (!value) {
+            resetBlueprintTree();
+            errorSignal.value = null;
+            return;
+        }
 
         // Handle empty input
         if (!value.trim()) {
@@ -66,7 +66,7 @@ export function BlueprintPlayground() {
             <div className="panels2">
                 {/* Left side */}
                 <div>
-                    <Panel title="Export Blueprint">
+                    {rootBlueprintSignal.value && <Panel title="Export Blueprint">
                         <InsetLight>
                             <ExportActions
                                 blueprint={rootBlueprintSignal.value}
@@ -74,7 +74,9 @@ export function BlueprintPlayground() {
                                 title="Root Blueprint"
                             />
                         </InsetLight>
-                    </Panel>                    {rootBlueprintSignal.value?.blueprint_book && (
+                    </Panel>
+                    }
+                    {rootBlueprintSignal.value?.blueprint_book && (
                         <Panel title="Blueprint Tree">
                             <BlueprintTree/>
                         </Panel>

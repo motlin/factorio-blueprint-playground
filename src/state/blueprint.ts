@@ -48,6 +48,8 @@ export async function deleteBlueprint(createdOn: number) {
 }
 
 // Load initial history from storage
-blueprintStorage.list().then(blueprints => {
+void blueprintStorage.list().then(blueprints => {
     blueprintHistorySignal.value = blueprints;
+}).catch((error: unknown) => {
+    console.error('Failed to load blueprint history:', error);
 });

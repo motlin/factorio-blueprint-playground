@@ -1,31 +1,49 @@
 import {signal} from '@preact/signals';
 import {useNavigate, useSearch} from '@tanstack/react-router';
 import type {JSX} from 'preact';
-import { useEffect, useRef } from 'preact/hooks';
+import {useCallback, useEffect, useRef} from 'preact/hooks';
 
 import { deserializeBlueprint } from '../parsing/blueprintParser';
 
+interface FactorioSchoolResponse {
+    blueprintString: {
+        blueprintString: string;
+    };
+}
+
+interface FactorioPrintsResponse {
+    blueprintString: string;
+}
+
+// Define a discriminated union type for all possible response types
+type BlueprintResponse = FactorioSchoolResponse | FactorioPrintsResponse;
+
 // Blueprint source configuration
 interface SourceConfig {
-    pattern: RegExp
-    displayUrl: (match: RegExpMatchArray) => string
-    apiUrl: (match: RegExpMatchArray) => string
-    extractBlueprint: (data: any) => string
+    pattern: RegExp;
+    displayUrl: (match: RegExpMatchArray) => string;
+    apiUrl: (match: RegExpMatchArray) => string;
+    extractBlueprint: (data: BlueprintResponse) => string;
 }
 
 const SOURCES: Record<string, SourceConfig> = {
     'factorio.school': {
-        pattern: /factorio\.school\/view\/([^\/\s]+)/,
+        pattern: /factorio\.school\/view\/([^/\s]+)/,
         displayUrl: (match) => `https://www.factorio.school/view/${match[1]}`,
         apiUrl: (match) => `https://www.factorio.school/api/blueprint/${match[1]}`,
-        extractBlueprint: (data) => data.blueprintString.blueprintString,
+        extractBlueprint: (data: BlueprintResponse) => {
+            if (!('blueprintString' in data) || typeof data.blueprintString !== 'object') {
+                throw new Error('Invalid blueprint data from Factorio School');
+            }
+            return data.blueprintString.blueprintString;
+        },
     },
     'factorioprints.com': {
-        pattern: /factorioprints\.com\/view\/([^\/\s]+)/,
+        pattern: /factorioprints\.com\/view\/([^/\s]+)/,
         displayUrl: (match) => `https://factorioprints.com/view/${match[1]}`,
         apiUrl: (match) => `https://facorio-blueprints.firebaseio.com/blueprints/${match[1]}.json`,
-        extractBlueprint: (data) => {
-            if (!data?.blueprintString) {
+        extractBlueprint: (data: BlueprintResponse) => {
+            if (!('blueprintString' in data) || typeof data.blueprintString !== 'string') {
                 throw new Error('Invalid blueprint data from Factorio Prints');
             }
             return data.blueprintString;
@@ -49,18 +67,15 @@ export interface BlueprintSourceHandlerProps {
 
 // Move signals outside component so they persist
 const textValueSignal = signal('');
-const originalInputSignal = signal(''); // New signal to track original input
+const originalInputSignal = signal('');
 const validationStateSignal = signal<ValidationState>({ status: 'initial' });
 
-export const BlueprintSourceHandler = ({onBlueprintString}: BlueprintSourceHandlerProps) => {
-    const search = useSearch({from: '/'});
-    const navigate = useNavigate();
-    const currentValidationId = useRef(0);
-
-    const fetchBlueprint = async (sourceUrl: string) => {
-        const thisValidationId = ++validationId;
-        currentValidationId.current = thisValidationId;
-
+// Core fetching logic moved outside component
+async function fetchBlueprintFromUrl(
+    sourceUrl: string,
+    validationId: number,
+    currentValidationId: React.RefObject<number>,
+): Promise<{ blueprint: string; error?: undefined } | { blueprint?: undefined; error: string }> {
         try {
             const displayUrl = decodeURIComponent(sourceUrl);
             let foundConfig: SourceConfig | null = null;
@@ -80,18 +95,16 @@ export const BlueprintSourceHandler = ({onBlueprintString}: BlueprintSourceHandl
                 throw new Error('Invalid blueprint URL');
             }
 
-            originalInputSignal.value = displayUrl;
-
-            validationStateSignal.value = { status: 'fetching_url', url: displayUrl };
-
             const response = await fetch(foundConfig.apiUrl(foundMatch));
             if (!response.ok) {
                 throw new Error(`Failed to fetch blueprint: ${response.statusText}`);
             }
 
-            if (currentValidationId.current !== thisValidationId) return;
+        if (currentValidationId.current !== validationId) {
+            return { error: 'Operation cancelled' };
+        }
 
-            const data = await response.json();
+            const data = await response.json() as BlueprintResponse;
             const blueprint = foundConfig.extractBlueprint(data);
 
             if (!blueprint) {
@@ -99,35 +112,53 @@ export const BlueprintSourceHandler = ({onBlueprintString}: BlueprintSourceHandl
             }
 
             // Final validation
-            validationStateSignal.value = { status: 'testing_blueprint' };
             deserializeBlueprint(blueprint); // Will throw if invalid
 
-            // Set state and trigger callback but keep the source URL
-            validationStateSignal.value = { status: 'initial' };
-            textValueSignal.value = blueprint;
-            onBlueprintString(blueprint);
-
-            // Don't update URL - keep the source parameter
+        return { blueprint };
         } catch (err) {
+        return {
+            error: err instanceof Error ? err.message : 'Failed to fetch blueprint',
+        };
+    }
+}
+
+export const BlueprintSourceHandler = ({onBlueprintString}: BlueprintSourceHandlerProps) => {
+    const search = useSearch({from: '/'});
+    const navigate = useNavigate();
+    const currentValidationId = useRef(0);
+
+    // Simplified fetchBlueprint that uses the external function
+    const fetchBlueprint = useCallback(async (sourceUrl: string) => {
+        const thisValidationId = ++validationId;
+        currentValidationId.current = thisValidationId;
+
+        originalInputSignal.value = decodeURIComponent(sourceUrl);
+        validationStateSignal.value = { status: 'fetching_url', url: sourceUrl };
+
+        const result = await fetchBlueprintFromUrl(sourceUrl, thisValidationId, currentValidationId);
+
             if (currentValidationId.current !== thisValidationId) return;
-            validationStateSignal.value = {
-                status: 'error',
-                message: err instanceof Error ? err.message : 'Failed to fetch blueprint',
-            };
-            // Clear the URL on error
-            navigate({
+
+        if (result.error) {
+            validationStateSignal.value = { status: 'error', message: result.error };
+            await navigate({
                 to: '/',
                 search: (prev) => ({ ...prev, source: undefined, data: undefined }),
                 replace: true,
             });
+            return;
         }
-    };
 
-    // Handle source URL parameter
+        // Set state and trigger callback but keep the source URL
+        validationStateSignal.value = { status: 'initial' };
+        textValueSignal.value = result.blueprint;
+        onBlueprintString(result.blueprint);
+    }, [navigate]);
+
     useEffect(() => {
         if (!search.source) return;
-        fetchBlueprint(search.source);
-    }, [search.source]);
+        void fetchBlueprint(search.source);
+    }, [search.source, fetchBlueprint]);
 
     const validateInput = async (value: string) => {
         const thisValidationId = ++validationId;
@@ -141,7 +172,7 @@ export const BlueprintSourceHandler = ({onBlueprintString}: BlueprintSourceHandl
             validationStateSignal.value = { status: 'initial' };
             onBlueprintString('');
             // Clear URL parameters
-            navigate({
+            await navigate({
                 to: '/',
                 search: (prev) => ({ ...prev, source: undefined, data: undefined }),
                 replace: true,
@@ -157,7 +188,7 @@ export const BlueprintSourceHandler = ({onBlueprintString}: BlueprintSourceHandl
                 const encodedUrl = encodeURIComponent(config.displayUrl(match));
                 // Only update URL if it's different from current search params
                 if (search.source !== encodedUrl) {
-                    navigate({
+                    await navigate({
                         to: '/',
                         search: (prev) => ({
                             ...prev,
@@ -180,7 +211,7 @@ export const BlueprintSourceHandler = ({onBlueprintString}: BlueprintSourceHandl
             deserializeBlueprint(value);
 
             // Update URL to match what was originally pasted
-            navigate({
+            await navigate({
                 to: '/',
                 search: {
                     data: originalInputSignal.value,
@@ -253,7 +284,7 @@ export const BlueprintSourceHandler = ({onBlueprintString}: BlueprintSourceHandl
         <div>
             <textarea
                 placeholder="Paste blueprint or url here..."
-                onChange={handleChange}
+                onChange={(e) => void handleChange(e)}
                 onFocus={handleFocus}
                 value={textValueSignal.value}
                 rows={3}

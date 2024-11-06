@@ -31,11 +31,12 @@ const TreeRow = memo(({ path, blueprint, indentLevel, isSelected }: TreeRowProps
         return <div key={index} className="placeholder"/>;
     }
 
+    const indentPx = (indentLevel * 32).toString();
     return (
         <div
             className={`tree-row flex clickable ${isSelected ? 'selected' : ''}`}
             style={{
-                paddingLeft: `${indentLevel * 32}px`,
+                paddingLeft: `${indentPx}px`,
             }}
             onClick={() => { selectBlueprintPath(path); }}
         >
