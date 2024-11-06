@@ -66,7 +66,12 @@ const StyledText = ({ text, color, bold }: StyledTextProps) => (
   </span>
 );
 
-export const RichText = ({ text }: { text?: string }) => {
+interface RichTextProps {
+    text?: string;
+}
+
+
+export const RichText = ({ text }: RichTextProps) => {
     if (!text) return null;
 
     const parts: React.ReactNode[] = [];
