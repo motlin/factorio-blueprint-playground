@@ -24,12 +24,12 @@ export const DEFAULT_COMPRESSION_SETTINGS: CompressionSettings = {
     windowBits: 15,    // Required - no variation allowed
     strategy: 0,       // Required - no variation allowed
     level: COMPRESSION_LEVEL,
-    memLevel: MEMORY_LEVEL
+    memLevel: MEMORY_LEVEL,
 };
 
 export function compressBlueprint(jsonStr: string, settings: CompressionSettings = DEFAULT_COMPRESSION_SETTINGS): Uint8Array {
     // Validate settings
-    if (settings.raw !== false) throw new Error('Compression setting "raw" must be false');
+    if (settings.raw) throw new Error('Compression setting "raw" must be false');
     if (settings.windowBits !== 15) throw new Error('Compression setting "windowBits" must be 15');
     if (settings.strategy !== 0) throw new Error('Compression setting "strategy" must be 0');
     if (![8, 9].includes(settings.level)) throw new Error('Compression setting "level" must be 8 or 9');

@@ -1,6 +1,7 @@
 import {inflate} from 'pako';
-import type {BlueprintString} from './types';
+
 import {compressBlueprint, CompressionSettings, DEFAULT_COMPRESSION_SETTINGS} from './compressionSettings';
+import type {BlueprintString} from './types';
 
 export class BlueprintError extends Error {
     constructor(message: string, options?: ErrorOptions) {
@@ -19,7 +20,7 @@ export function deserializeBlueprint(blueprintString: string): BlueprintString {
     // Validate prefix
     if (!blueprintString.startsWith('0')) {
         throw new BlueprintError(
-            `Unknown blueprint format: string does not start with '0' (starts with '${blueprintString[0] || ''}')`
+            `Unknown blueprint format: string does not start with '0' (starts with '${blueprintString[0] || ''}')`,
         );
     }
 
@@ -42,7 +43,7 @@ export function deserializeBlueprint(blueprintString: string): BlueprintString {
  */
 export function serializeBlueprint(
     data: BlueprintString,
-    settings: CompressionSettings = DEFAULT_COMPRESSION_SETTINGS
+    settings: CompressionSettings = DEFAULT_COMPRESSION_SETTINGS,
 ): string {
     validateBlueprintData(data);
 
@@ -60,7 +61,7 @@ export function serializeBlueprint(
  */
 export function extractBlueprint(
     blueprint: BlueprintString,
-    path: string
+    path: string,
 ): BlueprintString {
     try {
         const parts = path.split('.');
@@ -74,14 +75,14 @@ export function extractBlueprint(
 
             if (!current.blueprint_book?.blueprints) {
                 throw new BlueprintError(
-                    `Invalid path ${path}: no blueprint book at ${traversedPath}`
+                    `Invalid path ${path}: no blueprint book at ${traversedPath}`,
                 );
             }
 
             const child = current.blueprint_book.blueprints[index];
             if (!child) {
                 throw new BlueprintError(
-                    `Invalid path ${path}: no child at index ${part} (${traversedPath})`
+                    `Invalid path ${path}: no child at index ${part} (${traversedPath})`,
                 );
             }
 
@@ -112,7 +113,7 @@ function validateBlueprintData(data: BlueprintString): void {
         'blueprint',
         'blueprint_book',
         'upgrade_planner',
-        'deconstruction_planner'
+        'deconstruction_planner',
     ] as const;
 
     const foundTypes = validRootTypes.filter(type => type in data);
@@ -120,14 +121,14 @@ function validateBlueprintData(data: BlueprintString): void {
     if (foundTypes.length === 0) {
         throw new BlueprintError(
             'Invalid blueprint: missing required root property. ' +
-            `Expected one of: ${validRootTypes.join(', ')}`
+            `Expected one of: ${validRootTypes.join(', ')}`,
         );
     }
 
     if (foundTypes.length > 1) {
         throw new BlueprintError(
             'Invalid blueprint: multiple root properties found. ' +
-            `Found: ${foundTypes.join(', ')}, but expected exactly one`
+            `Found: ${foundTypes.join(', ')}, but expected exactly one`,
         );
     }
 
@@ -139,15 +140,15 @@ function validateBlueprintData(data: BlueprintString): void {
     if (typeof content?.item !== 'string') {
         throw new BlueprintError(
             `Invalid ${type}: missing or invalid 'item' field. ` +
-            'Expected string value'
+            'Expected string value',
         );
     }
 
     // Validate version field exists and is a number
-    if (typeof content?.version !== 'number') {
+    if (typeof content.version !== 'number') {
         throw new BlueprintError(
             `Invalid ${type}: missing or invalid 'version' field. ` +
-            'Expected number value'
+            'Expected number value',
         );
     }
 
@@ -157,7 +158,7 @@ function validateBlueprintData(data: BlueprintString): void {
             if (content.item !== 'blueprint') {
                 throw new BlueprintError(
                     'Invalid blueprint: incorrect item type. ' +
-                    `Expected 'blueprint', got '${content.item}'`
+                    `Expected 'blueprint', got '${content.item}'`,
                 );
             }
             break;
@@ -166,12 +167,12 @@ function validateBlueprintData(data: BlueprintString): void {
             if (content.item !== 'blueprint-book') {
                 throw new BlueprintError(
                     'Invalid blueprint book: incorrect item type. ' +
-                    `Expected 'blueprint-book', got '${content.item}'`
+                    `Expected 'blueprint-book', got '${content.item}'`,
                 );
             }
             if (!Array.isArray(content.blueprints)) {
                 throw new BlueprintError(
-                    'Invalid blueprint book: missing or invalid blueprints array'
+                    'Invalid blueprint book: missing or invalid blueprints array',
                 );
             }
             break;
@@ -180,12 +181,12 @@ function validateBlueprintData(data: BlueprintString): void {
             if (content.item !== 'upgrade-planner') {
                 throw new BlueprintError(
                     'Invalid upgrade planner: incorrect item type. ' +
-                    `Expected 'upgrade-planner', got '${content.item}'`
+                    `Expected 'upgrade-planner', got '${content.item}'`,
                 );
             }
-            if (!content.settings?.mappers) {
+            if (!content.settings.mappers) {
                 throw new BlueprintError(
-                    'Invalid upgrade planner: missing or invalid settings.mappers'
+                    'Invalid upgrade planner: missing or invalid settings.mappers',
                 );
             }
             break;
@@ -194,12 +195,12 @@ function validateBlueprintData(data: BlueprintString): void {
             if (content.item !== 'deconstruction-planner') {
                 throw new BlueprintError(
                     'Invalid deconstruction planner: incorrect item type. ' +
-                    `Expected 'deconstruction-planner', got '${content.item}'`
+                    `Expected 'deconstruction-planner', got '${content.item}'`,
                 );
             }
             if (!content.settings) {
                 throw new BlueprintError(
-                    'Invalid deconstruction planner: missing settings'
+                    'Invalid deconstruction planner: missing settings',
                 );
             }
             break;
@@ -210,7 +211,7 @@ function validateBlueprintData(data: BlueprintString): void {
  * Parse a version number into a string like "1.2.3.4"
  */
 export function parseVersion(versionNumber: number): string {
-    const version: bigint = BigInt(versionNumber);
+    const version = BigInt(versionNumber);
     const parts = [];
     for (let i = 0; i < 4; i++) {
         // Extract each 16-bit chunk

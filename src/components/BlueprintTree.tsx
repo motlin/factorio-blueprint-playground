@@ -1,11 +1,13 @@
-import {memo} from 'preact/compat';
 import {JSX} from 'preact';
+import {memo} from 'preact/compat';
+
+import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
 import {BlueprintString, BlueprintStringWithIndex} from '../parsing/types';
+import {rootBlueprintSignal, selectBlueprintPath, selectedBlueprintPathSignal} from '../state/blueprintTree';
+
 import {FactorioIcon} from './FactorioIcon';
 import {RichText} from './RichText';
 import {InsetLight} from './ui';
-import {rootBlueprintSignal, selectBlueprintPath, selectedBlueprintPathSignal} from '../state/blueprintTree';
-import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
 
 interface TreeRowProps {
     path: string
@@ -27,7 +29,7 @@ const TreeRow = memo(({ path, blueprint, indentLevel, isSelected }: TreeRowProps
             style={{
                 paddingLeft: `${indentLevel * 32}px`,
             }}
-            onClick={() => selectBlueprintPath(path)}
+            onClick={() => { selectBlueprintPath(path); }}
         >
             <div className="flex flex-items-center">
                 <FactorioIcon
@@ -86,7 +88,7 @@ export const BlueprintTree = memo(() => {
                 blueprint={node}
                 indentLevel={level}
                 isSelected={selectedPath === path}
-            />
+            />,
         );
 
         if (node.blueprint_book?.blueprints) {

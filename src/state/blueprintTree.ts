@@ -1,7 +1,8 @@
 // src/state/blueprintTree.ts
 import { signal, computed, batch } from '@preact/signals';
-import type { BlueprintString } from '../parsing/types';
+
 import { extractBlueprint } from '../parsing/blueprintParser';
+import type { BlueprintString } from '../parsing/types';
 
 // Global signals for blueprint tree state
 export const rootBlueprintSignal = signal<BlueprintString | null>(null);

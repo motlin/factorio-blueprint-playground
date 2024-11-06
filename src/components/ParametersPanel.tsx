@@ -1,7 +1,9 @@
 import {memo} from 'preact/compat';
-import {InsetDark, Panel} from './ui';
-import {FactorioIcon} from './FactorioIcon';
+
 import {BlueprintString, Parameter, SignalType} from '../parsing/types';
+
+import {FactorioIcon} from './FactorioIcon';
+import {InsetDark, Panel} from './ui';
 
 // Helper function to detect if a string looks like a signal ID
 function detectSignalType(id: string): { type: SignalType, name: string } {
@@ -130,7 +132,7 @@ const ParameterRow = ({ param, parameters }: ParameterRowProps) => {
 };
 
 const ParametersList = ({ parameters }: { parameters: Parameter[] }) => {
-    if (!parameters?.length) return null;
+    if (!parameters.length) return null;
 
     return (
         <InsetDark>

@@ -1,9 +1,10 @@
 import {signal} from '@preact/signals';
 import {useNavigate, useSearch} from '@tanstack/react-router';
-import { useEffect, useRef } from 'preact/hooks';
 import type {JSX} from 'preact';
-import type {RootSearchSchema} from '../routes/__root';
+import { useEffect, useRef } from 'preact/hooks';
+
 import { deserializeBlueprint } from '../parsing/blueprintParser';
+import type {RootSearchSchema} from '../routes/__root';
 
 // Blueprint source configuration
 interface SourceConfig {
@@ -18,7 +19,7 @@ const SOURCES: Record<string, SourceConfig> = {
         pattern: /factorio\.school\/view\/([^\/\s]+)/,
         displayUrl: (match) => `https://www.factorio.school/view/${match[1]}`,
         apiUrl: (match) => `https://www.factorio.school/api/blueprint/${match[1]}`,
-        extractBlueprint: (data) => data.blueprintString.blueprintString
+        extractBlueprint: (data) => data.blueprintString.blueprintString,
     },
     'factorioprints.com': {
         pattern: /factorioprints\.com\/view\/([^\/\s]+)/,
@@ -29,7 +30,7 @@ const SOURCES: Record<string, SourceConfig> = {
                 throw new Error('Invalid blueprint data from Factorio Prints');
             }
             return data.blueprintString;
-        }
+        },
     },
 };
 
@@ -53,7 +54,7 @@ const originalInputSignal = signal(''); // New signal to track original input
 const validationStateSignal = signal<ValidationState>({ status: 'initial' });
 
 export const BlueprintSourceHandler = ({onBlueprintString}: BlueprintSourceHandlerProps) => {
-    const search = useSearch({from: '/'}) as RootSearchSchema;
+    const search = useSearch({from: '/'});
     const navigate = useNavigate();
     const currentValidationId = useRef(0);
 
@@ -112,13 +113,13 @@ export const BlueprintSourceHandler = ({onBlueprintString}: BlueprintSourceHandl
             if (currentValidationId.current !== thisValidationId) return;
             validationStateSignal.value = {
                 status: 'error',
-                message: err instanceof Error ? err.message : 'Failed to fetch blueprint'
+                message: err instanceof Error ? err.message : 'Failed to fetch blueprint',
             };
             // Clear the URL on error
             navigate({
                 to: '/',
                 search: (prev) => ({ ...prev, source: undefined, data: undefined }),
-                replace: true
+                replace: true,
             });
         }
     };
@@ -144,7 +145,7 @@ export const BlueprintSourceHandler = ({onBlueprintString}: BlueprintSourceHandl
             navigate({
                 to: '/',
                 search: (prev) => ({ ...prev, source: undefined, data: undefined }),
-                replace: true
+                replace: true,
             });
             return;
         }
@@ -162,9 +163,9 @@ export const BlueprintSourceHandler = ({onBlueprintString}: BlueprintSourceHandl
                         search: (prev) => ({
                             ...prev,
                             source: encodedUrl,
-                            data: undefined
+                            data: undefined,
                         }),
-                        replace: true
+                        replace: true,
                     });
                 } else {
                     // If URL is the same, trigger fetch directly
@@ -184,9 +185,9 @@ export const BlueprintSourceHandler = ({onBlueprintString}: BlueprintSourceHandl
                 to: '/',
                 search: {
                     data: originalInputSignal.value,
-                    source: undefined
+                    source: undefined,
                 },
-                replace: true
+                replace: true,
             });
 
             validationStateSignal.value = { status: 'initial' };
@@ -195,12 +196,12 @@ export const BlueprintSourceHandler = ({onBlueprintString}: BlueprintSourceHandl
             if (currentValidationId.current !== thisValidationId) return;
             validationStateSignal.value = {
                 status: 'error',
-                message: err instanceof Error ? err.message : 'Invalid blueprint format'
+                message: err instanceof Error ? err.message : 'Invalid blueprint format',
             };
         }
     };
 
-    const handleChange = async (e: JSX.TargetedEvent<HTMLTextAreaElement, Event>) => {
+    const handleChange = async (e: JSX.TargetedEvent<HTMLTextAreaElement>) => {
         const value = (e.target as HTMLTextAreaElement).value;
         const prevValue = textValueSignal.value;
         textValueSignal.value = value;

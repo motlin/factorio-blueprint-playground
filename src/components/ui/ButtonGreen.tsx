@@ -3,7 +3,7 @@ import React from 'react';
 export const ButtonGreen = ({
                                 onClick,
                                 children,
-                                disabled = false
+                                disabled = false,
                             }: {
     onClick: () => void
     children: React.ReactNode

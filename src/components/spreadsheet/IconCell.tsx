@@ -16,4 +16,3 @@ export const IconCell = ({ icon, label }: IconCellProps) => {
         </div>
     );
 };
-

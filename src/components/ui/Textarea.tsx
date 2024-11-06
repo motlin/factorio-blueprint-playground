@@ -11,7 +11,7 @@ export const Textarea = ({
                              value,
                              onChange,
                              placeholder,
-                             rows = 4
+                             rows = 4,
                          }: TextareaProps) => (
     <textarea
         value={value}

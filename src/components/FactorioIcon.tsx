@@ -15,7 +15,7 @@ export const FactorioIcon = (icon: SignalID) => {
         return (
             <div className="factorio-icon-group">
                 <img
-                    className='factorio-icon'
+                    className="factorio-icon"
                     src={`/icons/${urlType}/${icon.name}.png`}
                     alt={icon.name}
                     title={`${type}: ${icon.name}`}

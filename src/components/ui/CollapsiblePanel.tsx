@@ -1,4 +1,5 @@
 import React from 'react';
+
 import {Panel} from './Panel';
 
 export interface CollapsiblePanelProps {
@@ -10,7 +11,7 @@ export interface CollapsiblePanelProps {
 export const CollapsiblePanel = ({
                                      title,
                                      children,
-                                     defaultExpanded = false
+                                     defaultExpanded = false,
                                  }: CollapsiblePanelProps) => {
     const [isExpanded, setIsExpanded] = React.useState(defaultExpanded);
 
@@ -19,7 +20,7 @@ export const CollapsiblePanel = ({
             <h2>{title}</h2>
 
             <button
-                onClick={() => setIsExpanded(!isExpanded)}
+                onClick={() => { setIsExpanded(!isExpanded); }}
                 className="flex flex-space-between w100p text-left yellow bold p8 clickable"
             >
                 <span className="text-center">{isExpanded ? '−' : '+'}</span>

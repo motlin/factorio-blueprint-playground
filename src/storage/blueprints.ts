@@ -35,7 +35,7 @@ export const blueprintStorage = {
             createdOn: now,
             lastUpdatedOn: now,
             ...parsedMetadata,
-            data
+            data,
         };
         await set(now.toString(), blueprint);
         return blueprint;
@@ -48,7 +48,7 @@ export const blueprintStorage = {
         const updated = {
             ...blueprint,
             ...changes,
-            lastUpdatedOn: Date.now()
+            lastUpdatedOn: Date.now(),
         };
         await set(createdOn.toString(), updated);
         return updated;
@@ -67,5 +67,5 @@ export const blueprintStorage = {
         return allEntries
             .map(([_, blueprint]) => blueprint)
             .sort((a, b) => b.lastUpdatedOn - a.lastUpdatedOn);
-    }
+    },
 };

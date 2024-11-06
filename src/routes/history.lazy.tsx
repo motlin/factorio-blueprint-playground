@@ -1,4 +1,5 @@
 import {createLazyFileRoute} from '@tanstack/react-router';
+
 import {InsetDark, InsetLight, Panel} from '../components/ui';
 
 export const Route = createLazyFileRoute('/history')({

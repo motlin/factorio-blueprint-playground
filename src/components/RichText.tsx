@@ -1,6 +1,8 @@
 import React from 'react';
-import { FactorioIcon } from './FactorioIcon';
+
 import {Quality, SignalType} from '../parsing/types.ts';
+
+import { FactorioIcon } from './FactorioIcon';
 
 const COLOR_MAP: Record<string, string> = {
     'red': '#eb5c5f',
@@ -86,7 +88,7 @@ export const RichText = ({ text }: { text?: string }) => {
                     text={text.slice(currentIndex, match.index)}
                     color={currentColor}
                     bold={isBold}
-                />
+                />,
             );
         }
 
@@ -117,7 +119,7 @@ export const RichText = ({ text }: { text?: string }) => {
                             type={imgType as SignalType}
                             name={imgName}
                             quality={quality as Quality}
-                        />
+                        />,
                     );
                     break;
                 }
@@ -139,7 +141,7 @@ export const RichText = ({ text }: { text?: string }) => {
                     type={type}
                     name={value}
                     quality={quality as Quality}
-                />
+                />,
             );
                     break;
                 // We could add special handling for gps, special-item, armor, train, etc. here
@@ -151,7 +153,7 @@ export const RichText = ({ text }: { text?: string }) => {
                             text={match[0]}
                             color={currentColor}
                             bold={isBold}
-                        />
+                        />,
                     );
             }
         }
@@ -167,7 +169,7 @@ export const RichText = ({ text }: { text?: string }) => {
                 text={text.slice(currentIndex)}
                 color={currentColor}
                 bold={isBold}
-            />
+            />,
         );
     }
 

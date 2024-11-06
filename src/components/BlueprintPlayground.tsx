@@ -1,18 +1,20 @@
 import {signal} from '@preact/signals';
-import {ErrorAlert, InsetLight, Panel} from './ui';
-import {BasicInfoPanel} from './BasicInfoPanel';
-import {BlueprintInfoPanels} from './BlueprintInfoPanels';
-import {ParametersPanel} from './ParametersPanel';
-import { BlueprintTree } from './BlueprintTree';
-import { BlueprintSourceHandler } from './BlueprintSourceHandler';
+
 import {deserializeBlueprint} from '../parsing/blueprintParser';
 import {
     resetBlueprintTree,
     rootBlueprintSignal,
     selectedBlueprintPathSignal,
-    selectedBlueprintSignal
+    selectedBlueprintSignal,
 } from '../state/blueprintTree';
-import {ExportActions} from "./ExportActions.tsx";
+
+import {BasicInfoPanel} from './BasicInfoPanel';
+import {BlueprintInfoPanels} from './BlueprintInfoPanels';
+import { BlueprintSourceHandler } from './BlueprintSourceHandler';
+import { BlueprintTree } from './BlueprintTree';
+import {ExportActions} from './ExportActions.tsx';
+import {ParametersPanel} from './ParametersPanel';
+import {ErrorAlert, InsetLight, Panel} from './ui';
 
 // Local UI state signal
 const errorSignal = signal<string | null>(null);
@@ -32,7 +34,6 @@ export function BlueprintPlayground() {
             errorSignal.value = null;
             return;
         }
-
 
         try {
             errorSignal.value = null;

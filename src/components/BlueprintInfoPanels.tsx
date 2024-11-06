@@ -1,16 +1,18 @@
 import {memo} from 'preact/compat';
-import {Panel} from './ui';
-import {FactorioIcon} from './FactorioIcon';
+
+import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
 import type {
     BlueprintString,
     DeconstructionPlanner,
     Entity,
     Filter,
     Tile,
-    UpgradePlanner
+    UpgradePlanner,
 } from '../parsing/types';
+
+import {FactorioIcon} from './FactorioIcon';
 import {Cell, IconCell, Row, Spreadsheet, TextCell} from './spreadsheet';
-import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
+import {Panel} from './ui';
 
 // Count occurrences of items in an array, including quality
 function countItems<T>(items: T[], getKey: (item: T) => {name: string, quality?: string} | undefined) {
@@ -71,7 +73,7 @@ export const ContentsPanel = memo(({blueprint}: PanelProps) => {
 
     const getTileKey = (tile: Tile) => ({
         name: tile.name,
-        quality: undefined
+        quality: undefined,
     });
 
     const getRecipeKey = (entity: Entity) => {
@@ -80,7 +82,7 @@ export const ContentsPanel = memo(({blueprint}: PanelProps) => {
         }
         return {
             name: entity.recipe,
-            quality: entity.recipe_quality
+            quality: entity.recipe_quality,
         };
     };
 
@@ -106,7 +108,7 @@ export const UpgradePlannerPanel = memo(({blueprint}: { blueprint: BlueprintStri
     if (!('upgrade_planner' in blueprint)) return null;
 
     const { settings } = content as UpgradePlanner;
-    if (!settings?.mappers?.length) return null;
+    if (!settings.mappers.length) return null;
 
     return (
         <Panel title="Upgrade Mappings">
@@ -191,7 +193,7 @@ export const DeconstructionPlannerPanel = memo(({blueprint}: { blueprint: Bluepr
                     </Cell>
                 </Row>
 
-                {settings?.entity_filters && settings?.entity_filters.length > 0 && (
+                {settings.entity_filters && settings.entity_filters.length > 0 && (
                     <Row>
                         <Cell width="20%">
                             Entity Filters
@@ -218,7 +220,7 @@ export const DeconstructionPlannerPanel = memo(({blueprint}: { blueprint: Bluepr
                     </Row>
                 )}
 
-                {settings?.tile_filters && settings?.tile_filters.length > 0 && (
+                {settings.tile_filters && settings.tile_filters.length > 0 && (
                     <Row>
                         <Cell width="20%">Tile Filters</Cell>
                         <Cell grow>

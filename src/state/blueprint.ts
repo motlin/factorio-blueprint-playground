@@ -1,4 +1,5 @@
 import { signal } from '@preact/signals';
+
 import {blueprintStorage, DatabaseBlueprint} from '../storage/blueprints';
 
 // Current blueprint being viewed/edited
@@ -10,7 +11,7 @@ export const blueprintHistorySignal = signal<DatabaseBlueprint[]>([]);
 // Helper functions
 export async function addBlueprint(
  data: string,
- parsedMetadata: Omit<DatabaseBlueprint, 'createdOn' | 'lastUpdatedOn'>
+ parsedMetadata: Omit<DatabaseBlueprint, 'createdOn' | 'lastUpdatedOn'>,
 ) {
  const blueprint = await blueprintStorage.add(data, parsedMetadata);
  blueprintHistorySignal.value = [blueprint, ...blueprintHistorySignal.value];
@@ -19,13 +20,13 @@ export async function addBlueprint(
 
 export async function updateBlueprint(
  createdOn: number,
- changes: Partial<Omit<DatabaseBlueprint, 'createdOn'>>
+ changes: Partial<Omit<DatabaseBlueprint, 'createdOn'>>,
 ) {
  const updated = await blueprintStorage.update(createdOn, changes);
  if (!updated) return null;
 
  blueprintHistorySignal.value = blueprintHistorySignal.value.map((bp: DatabaseBlueprint) =>
-   bp.createdOn === createdOn ? updated : bp
+   bp.createdOn === createdOn ? updated : bp,
  ).sort((a: DatabaseBlueprint, b: DatabaseBlueprint) => b.lastUpdatedOn - a.lastUpdatedOn);
 
  if (currentBlueprintSignal.value?.createdOn === createdOn) {

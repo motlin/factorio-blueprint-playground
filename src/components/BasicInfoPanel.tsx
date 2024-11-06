@@ -1,10 +1,12 @@
 import {memo} from 'preact/compat';
+
+import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
 import type {BlueprintString} from '../parsing/types';
-import {Version} from './Version';
+
 import {FactorioIcon} from './FactorioIcon';
 import {RichText} from './RichText';
+import {Version} from './Version';
 import {Panel} from './ui';
-import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
 
 interface InfoRowProps {
     label: string;
