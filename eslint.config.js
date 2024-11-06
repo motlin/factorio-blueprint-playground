@@ -4,6 +4,11 @@ import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
 import importPlugin from 'eslint-plugin-import';
+import {fileURLToPath} from 'url';
+import path from 'path';
+
+// Get current directory in ESM
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default tseslint.config(
     {
@@ -11,14 +16,17 @@ export default tseslint.config(
             'dist',
             'node_modules',
             'coverage',
+            '.vite',
             'routeTree.gen.ts',
-            'vite-env.d.ts'
+            'vite-env.d.ts',
+            'tsconfig.app.tsbuildinfo',
+            'tsconfig.node.tsbuildinfo'
         ]
     },
 
-    // Base JS and TS configurations
+    // Base configs
     js.configs.recommended,
-    ...tseslint.configs.recommended,
+    ...tseslint.configs.recommendedTypeChecked,
     ...tseslint.configs.strictTypeChecked,
     ...tseslint.configs.stylisticTypeChecked,
 
@@ -28,8 +36,10 @@ export default tseslint.config(
         languageOptions: {
             parser: tseslint.parser,
             parserOptions: {
-                project: ['./tsconfig.app.json'],
-                tsconfigRootDir: '.',
+                projectService: true,
+                project: './tsconfig.eslint.json',
+                tsconfigRootDir: __dirname,
+                allowDefaultProject: true,
                 ecmaFeatures: {
                     jsx: true
                 }
@@ -100,27 +110,33 @@ export default tseslint.config(
         languageOptions: {
             parser: tseslint.parser,
             parserOptions: {
-                project: ['./tsconfig.app.json'],
-                tsconfigRootDir: '.'
+                project: './tsconfig.eslint.json',
+                tsconfigRootDir: __dirname
             }
         },
         rules: {
-            // Relax certain rules for tests
             '@typescript-eslint/no-explicit-any': 'off',
             '@typescript-eslint/no-non-null-assertion': 'off',
+            '@typescript-eslint/no-floating-promises': 'off', // Often needed in tests
             'react/display-name': 'off'
         }
     },
 
-    // Configuration files
+    // Config files
     {
-        files: ['*.config.{ts,js}', 'vite.config.ts'],
+        files: ['*.config.{ts,js}', 'vite.config.ts', 'vitest.config.ts'],
         languageOptions: {
             parser: tseslint.parser,
             parserOptions: {
-                project: ['./tsconfig.node.json'],
-                tsconfigRootDir: '.'
+                project: './tsconfig.eslint.json',
+                tsconfigRootDir: __dirname
             }
         }
+    },
+
+    // Disable type checking for JS files
+    {
+        files: ['**/*.js'],
+        ...tseslint.configs.disableTypeChecked
     }
 );
