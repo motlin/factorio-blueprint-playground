@@ -2,7 +2,6 @@ import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
-import jsxA11y from 'eslint-plugin-jsx-a11y';
 import importPlugin from 'eslint-plugin-import';
 import {fileURLToPath} from 'url';
 import path from 'path';
@@ -55,7 +54,6 @@ export default tseslint.config(
         plugins: {
             react,
             'react-hooks': reactHooks,
-            'jsx-a11y': jsxA11y,
             import: importPlugin
         },
         rules: {
@@ -80,9 +78,6 @@ export default tseslint.config(
 
             // React Hooks
             ...reactHooks.configs.recommended.rules,
-
-            // JSX A11Y
-            ...jsxA11y.configs.recommended.rules,
 
             // Import
             'import/order': ['error', {
