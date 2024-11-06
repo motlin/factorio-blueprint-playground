@@ -11,7 +11,8 @@
     "coverage": "vitest run --coverage",
     "lint": "eslint . --format json --output-file eslint_report.json",
     "lint:fix": "eslint . --fix",
-    "lint:report": "eslint . --format stylish"
+    "lint:report": "eslint . --format stylish",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@preact/signals": "^1.3.0",
