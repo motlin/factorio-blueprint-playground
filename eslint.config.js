@@ -69,6 +69,7 @@ export default tseslint.config(
                 'ts-nocheck': false,
                 'ts-check': true
             }],
+            '@typescript-eslint/restrict-template-expressions': 'off',
 
             // React
             ...react.configs.recommended.rules,
