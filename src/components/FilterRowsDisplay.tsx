@@ -9,27 +9,36 @@ interface FilterRowsProps {
     label: string;
 }
 
-function formatFilterValue(filter: Filter): string {
-    const parts: string[] = [];
+function FilterCondition({ filter }: { filter: Filter }) {
+    const parts: React.ReactNode[] = [];
 
     if (filter.comparator) {
-        parts.push(filter.comparator);
+        parts.push(<span key="comparator">{filter.comparator} </span>);
     }
 
-    // Add quality if present
     if (filter.quality) {
-        parts.push(filter.quality);
+        parts.push(
+            <span key="quality" style={{ display: 'inline-flex', alignItems: 'center', marginRight: '4px' }}>
+                <FactorioIcon
+                    icon={{
+                        type: 'quality',
+                        name: filter.quality
+                    }}
+                />
+            </span>
+        );
     }
 
     if (filter.count !== undefined) {
-        parts.push(filter.count.toString());
+        parts.push(<span key="count">{filter.count}</span>);
     }
 
     if (filter.max_count !== undefined) {
-        parts.push('to', filter.max_count.toString());
+        parts.push(<span key="to"> to </span>);
+        parts.push(<span key="maxCount">{filter.max_count}</span>);
     }
 
-    return parts.join(' ');
+    return <div className="flex flex-items-center">{parts}</div>;
 }
 
 const FilterRowsDisplay = ({ filters, type, label }: FilterRowsProps) => {
@@ -59,9 +68,9 @@ const FilterRowsDisplay = ({ filters, type, label }: FilterRowsProps) => {
                                     {filter.name}
                                 </Cell>
                                 <Cell grow>
-                                    <div>
+                                    <div className="flex flex-items-center">
                                         {filter.type}
-                                        {formatFilterValue(filter)}
+                                        <FilterCondition filter={filter} />
                                     </div>
                                 </Cell>
                             </Row>
