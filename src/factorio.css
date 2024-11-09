@@ -2807,14 +2807,6 @@ a.download i {
     left: 0px
 }
 
-.richtext-icon > .quality {
-    position: absolute;
-    left: 0px;
-    bottom: 0px;
-    width: 50%;
-    height: 50%
-}
-
 .hangar-slot {
     flex-grow: 1;
     aspect-ratio: 1 / 1;
@@ -3087,14 +3079,10 @@ a.download i {
 }
 
 .factorio-icon {
-    position: relative;
-    display: inline-block;  /* Or block depending on your needs */
-}
-/* Icons */
-.factorio-icon {
     width: 32px;
     height: 32px;
-    object-fit: contain;
+    display: inline-block;
+    vertical-align: middle;
 }
 
 .placeholder {
