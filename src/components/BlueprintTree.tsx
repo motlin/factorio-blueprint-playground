@@ -74,7 +74,7 @@ export const BlueprintTree = memo(() => {
     const blueprint = rootBlueprintSignal.value;
     const selectedPath = selectedBlueprintPathSignal.value;
 
-    if (!blueprint?.blueprint_book?.blueprints) return null;
+    if (!blueprint) return null;
 
     function renderNode(node: BlueprintString, path: string, level: number): JSX.Element[] {
         const rows: JSX.Element[] = [];

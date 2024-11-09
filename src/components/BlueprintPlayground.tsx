@@ -12,7 +12,7 @@ import {BasicInfoPanel} from './BasicInfoPanel';
 import {BlueprintInfoPanels} from './BlueprintInfoPanels';
 import { BlueprintSourceHandler } from './BlueprintSourceHandler';
 import { BlueprintTree } from './BlueprintTree';
-import {ExportActions} from './ExportActions.tsx';
+import {ExportActions} from './ExportActions';
 import {ParametersPanel} from './ParametersPanel';
 import {ErrorAlert, InsetLight, Panel} from './ui';
 
@@ -66,7 +66,9 @@ export function BlueprintPlayground() {
             <div className="panels2">
                 {/* Left side */}
                 <div>
-                    {rootBlueprintSignal.value && <Panel title="Export Blueprint">
+                    {rootBlueprintSignal.value && (
+                        <>
+                            <Panel title="Export Blueprint">
                         <InsetLight>
                             <ExportActions
                                 blueprint={rootBlueprintSignal.value}
@@ -75,11 +77,10 @@ export function BlueprintPlayground() {
                             />
                         </InsetLight>
                     </Panel>
-                    }
-                    {rootBlueprintSignal.value?.blueprint_book && (
                         <Panel title="Blueprint Tree">
                             <BlueprintTree/>
                         </Panel>
+                        </>
                     )}
                 </div>
 
