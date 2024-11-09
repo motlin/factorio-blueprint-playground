@@ -150,6 +150,12 @@ function formatFilterText(filter: Filter): string {
     return parts.length > 0 ? ` (${parts.join(' ')})` : '';
 }
 
+// Helper to get filter mode text
+function getFilterModeText(mode?: number): string {
+    if (mode === 1) return 'Banned list: Remove only filtered items';
+    return 'Allowed list: Remove everything except filtered items';
+}
+
 // Deconstruction Planner Panel
 export const DeconstructionPlannerPanel = memo(({blueprint}: { blueprint: BlueprintString }) => {
     const wrapper = new BlueprintWrapper(blueprint);
@@ -180,14 +186,14 @@ export const DeconstructionPlannerPanel = memo(({blueprint}: { blueprint: Bluepr
                         </Cell>
                     </Row>
                 )}
-                <Row>
-                    <Cell width="120px" grow={false}>
-                        Tile Selection
-                    </Cell>
-                    <Cell grow>
-                        {getTileSelectionText(settings.tile_selection_mode)}
-                    </Cell>
-                </Row>
+                {settings.entity_filter_mode !== undefined && (
+                    <Row>
+                        <Cell width="120px" grow={false}>
+                            Entity Filter Mode
+                        </Cell>
+                        <Cell grow>{getFilterModeText(settings.entity_filter_mode)}</Cell>
+                    </Row>
+                )}
 
                 {settings.entity_filters && settings.entity_filters.length > 0 && (
                     <Row>
@@ -213,6 +219,15 @@ export const DeconstructionPlannerPanel = memo(({blueprint}: { blueprint: Bluepr
                         </Cell>
                     </Row>
                 )}
+
+                <Row>
+                    <Cell width="120px" grow={false}>
+                        Tile Selection
+                    </Cell>
+                    <Cell grow>
+                        {getTileSelectionText(settings.tile_selection_mode)}
+                    </Cell>
+                </Row>
 
                 {settings.tile_filters && settings.tile_filters.length > 0 && (
                     <Row>

@@ -273,7 +273,8 @@ interface DeconstructionSettings {
     description?: string    // Added these metadata fields that can appear
     icons?: Icon[]
     entity_filters?: Filter[]
-    tile_filters?: Filter[]  // Added this
+    entity_filter_mode?: 0 | 1       // 0=allow, 1=deny
+    tile_filters?: Filter[]
     tile_selection_mode?: 1 | 2 | 3  // 1=default, 2=never, 3=always
     trees_and_rocks_only?: boolean
 }
