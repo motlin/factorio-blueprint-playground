@@ -15,6 +15,7 @@ import {
 import {FactorioIcon} from './FactorioIcon';
 import {Cell, IconCell, Row, Spreadsheet, TextCell} from './spreadsheet';
 import {Panel} from './ui';
+import FilterRowsDisplay from './FilterRowsDisplay';
 
 // Count occurrences of items in an array, including quality
 function countItems<T>(getKey: (item: T) => ({ name: string; quality?: string } | undefined), items?: T[]) {
@@ -142,14 +143,6 @@ export const UpgradePlannerPanel = memo(({blueprint}: { blueprint: BlueprintStri
     );
 });
 
-// Helper to format filter display text
-function formatFilterText(filter: Filter): string {
-    const parts: string[] = [];
-    if (filter.quality) parts.push(filter.quality);
-    if (filter.comparator) parts.push(filter.comparator);
-    return parts.length > 0 ? ` (${parts.join(' ')})` : '';
-}
-
 // Helper to get filter mode text
 function getFilterModeText(mode?: number): string {
     if (mode === 1) return 'Banned list: Remove only filtered items';
@@ -195,61 +188,25 @@ export const DeconstructionPlannerPanel = memo(({blueprint}: { blueprint: Bluepr
                     </Row>
                 )}
 
-                {settings.entity_filters && settings.entity_filters.length > 0 && (
-                    <Row>
-                        <Cell width="120px" grow={false}>
-                            Entity Filters
-                        </Cell>
-                        <Cell grow>
-                            <div className="flex flex-wrap">
-                                {settings.entity_filters
-                                    .sort((a, b) => a.index - b.index)
-                                    .map((filter, index) => (
-                                        <div key={index} className="flex mb8 mr8">
-                                            <FactorioIcon
-                                                icon={{type: 'entity', name: filter.name, quality: filter.quality}}
-                                            />
-                                            <span className="ml8">
-                                                {filter.name}
-                                                {formatFilterText(filter)}
-                                            </span>
-                                        </div>
-                                    ))}
-                            </div>
-                        </Cell>
-                    </Row>
+                {settings.entity_filters && (
+                    <FilterRowsDisplay
+                        filters={settings.entity_filters}
+                        type="entity"
+                        label="Entity Filters"
+                    />
                 )}
 
                 <Row>
-                    <Cell width="120px" grow={false}>
-                        Tile Selection
-                    </Cell>
-                    <Cell grow>
-                        {getTileSelectionText(settings.tile_selection_mode)}
-                    </Cell>
+                    <Cell width="120px" grow={false}>Tile Selection</Cell>
+                    <Cell grow>{getTileSelectionText(settings.tile_selection_mode)}</Cell>
                 </Row>
 
-                {settings.tile_filters && settings.tile_filters.length > 0 && (
-                    <Row>
-                        <Cell width="120px" grow={false}>Tile Filters</Cell>
-                        <Cell grow>
-                            <div className="flex flex-wrap">
-                                {settings.tile_filters
-                                    .sort((a, b) => a.index - b.index)
-                                    .map((filter, index) => (
-                                        <div key={index} className="flex mb8 mr8">
-                                            <FactorioIcon
-                                                icon={{type: 'tile', name: filter.name, quality: filter.quality}}
-                                            />
-                                            <span className="ml8">
-                                                {filter.name}
-                                                {formatFilterText(filter)}
-                                            </span>
-                                </div>
-                            ))}
-                        </div>
-                        </Cell>
-                    </Row>
+                {settings.tile_filters && (
+                    <FilterRowsDisplay
+                        filters={settings.tile_filters}
+                        type="tile"
+                        label="Tile Filters"
+                    />
                 )}
             </Spreadsheet>
         </Panel>
