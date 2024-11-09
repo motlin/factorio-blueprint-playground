@@ -13,6 +13,12 @@ export const Cell = ({
                          width,
                          align = 'left',
                      }: CellProps) => {
+    // Create classes based on props
+    const classNames = ['spreadsheet-cell'];
+    if (!grow) {
+        classNames.push('spreadsheet-cell-fixed');
+    }
+
     const style: React.CSSProperties = {
         flexGrow: grow ? 1 : 0,
         flexShrink: shrink ? 1 : 0,
@@ -21,7 +27,7 @@ export const Cell = ({
     };
 
     return (
-        <div className="spreadsheet-cell" style={style}>
+        <div className={classNames.join(' ')} style={style}>
             {children}
         </div>
     );

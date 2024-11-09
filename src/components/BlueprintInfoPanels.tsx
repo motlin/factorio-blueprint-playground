@@ -174,14 +174,14 @@ export const DeconstructionPlannerPanel = memo(({blueprint}: { blueprint: Bluepr
             <Spreadsheet>
                 {settings.trees_and_rocks_only && (
                     <Row>
-                        <Cell width="20%">Mode</Cell>
+                        <Cell width="120px" grow={false}>Mode</Cell>
                         <Cell grow>
                             Only trees and rocks will be marked for deconstruction
                         </Cell>
                     </Row>
                 )}
                 <Row>
-                    <Cell width="20%">
+                    <Cell width="120px" grow={false}>
                         Tile Selection
                     </Cell>
                     <Cell grow>
@@ -191,7 +191,7 @@ export const DeconstructionPlannerPanel = memo(({blueprint}: { blueprint: Bluepr
 
                 {settings.entity_filters && settings.entity_filters.length > 0 && (
                     <Row>
-                        <Cell width="20%">
+                        <Cell width="120px" grow={false}>
                             Entity Filters
                         </Cell>
                         <Cell grow>
@@ -216,7 +216,7 @@ export const DeconstructionPlannerPanel = memo(({blueprint}: { blueprint: Bluepr
 
                 {settings.tile_filters && settings.tile_filters.length > 0 && (
                     <Row>
-                        <Cell width="20%">Tile Filters</Cell>
+                        <Cell width="120px" grow={false}>Tile Filters</Cell>
                         <Cell grow>
                             <div className="flex flex-wrap">
                                 {settings.tile_filters
