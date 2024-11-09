@@ -96,7 +96,7 @@ const ParameterRow = ({ param, parameters }: ParameterRowProps) => {
             <div className="flex flex-items-center mr8" style={{ minWidth: '120px' }}>
                 <input
                     type="checkbox"
-                    checked={true}
+                    checked={!param['not-parametrised']}
                     readOnly
                     className="mr2"
                     id={'isParameter'}

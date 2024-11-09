@@ -240,6 +240,7 @@ export interface Parameter {
     variable?: string
     formula?: string
     dependent?: boolean
+    'not-parametrised'?: boolean
     'quality-condition'?: {
         quality: Quality
         comparator: string
