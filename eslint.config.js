@@ -114,7 +114,47 @@ export default tseslint.config(
             '@typescript-eslint/no-explicit-any': 'off',
             '@typescript-eslint/no-non-null-assertion': 'off',
             '@typescript-eslint/no-floating-promises': 'off', // Often needed in tests
-            'react/display-name': 'off'
+            'react/display-name': 'off',
+
+            // TypeScript
+            '@typescript-eslint/no-unused-vars': ['error', {
+                argsIgnorePattern: '^_',
+                varsIgnorePattern: '^_'
+            }],
+            '@typescript-eslint/ban-ts-comment': ['error', {
+                'ts-expect-error': {descriptionFormat: '^: .+$'},
+                'ts-ignore': false,
+                'ts-nocheck': false,
+                'ts-check': true
+            }],
+            '@typescript-eslint/restrict-template-expressions': 'off',
+
+            // React
+            ...react.configs.recommended.rules,
+            ...react.configs['jsx-runtime'].rules,
+            'react/prop-types': 'off',
+            'react/react-in-jsx-scope': 'off',
+
+            // React Hooks
+            ...reactHooks.configs.recommended.rules,
+
+            // Import
+            'import/order': ['error', {
+                'groups': ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
+                'newlines-between': 'always',
+                'alphabetize': {'order': 'asc'}
+            }],
+            'import/no-duplicates': 'error',
+
+            // General style
+            'semi': ['error', 'always'],
+            'quotes': ['error', 'single', {'avoidEscape': true}],
+            'jsx-quotes': ['error', 'prefer-double'],
+            'no-console': ['warn', {allow: ['warn', 'error']}],
+            'no-debugger': 'warn',
+            'no-multiple-empty-lines': ['error', {'max': 1, 'maxEOF': 0}],
+            'eol-last': ['error', 'always'],
+            'comma-dangle': ['error', 'always-multiline']
         }
     },
 
