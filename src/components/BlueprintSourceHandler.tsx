@@ -156,9 +156,18 @@ export const BlueprintSourceHandler = ({onBlueprintString}: BlueprintSourceHandl
     }, [navigate]);
 
     useEffect(() => {
-        if (!search.source) return;
+        if (search.data) {
+            const decodedData = decodeURIComponent(search.data);
+            textValueSignal.value = decodedData;
+            void validateInput(decodedData);
+            return;
+        }
+
+        // Then check source parameter
+        if (search.source) {
         void fetchBlueprint(search.source);
-    }, [search.source, fetchBlueprint]);
+        }
+    }, [search.data, search.source, fetchBlueprint]);
 
     const validateInput = async (value: string) => {
         const thisValidationId = ++validationId;
