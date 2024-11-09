@@ -3182,18 +3182,22 @@ a.download i {
     0px 0px 2px 0px #2b2b2b;
     margin: 4px;
     padding: 2px;
+    height: 100%; /* Fill available height */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
 }
 
 /* Row styles */
 .spreadsheet-row {
     display: flex;
     width: 100%;
-    min-height: 40px; /* Ensure consistent minimum height for rows */
+    min-height: 40px;
 }
 
 /* Cell styles */
 .spreadsheet-cell {
-    margin-bottom: 2px;
     padding: 8px;
     background-color: #414040;
     box-shadow: inset 0px 0px 4px 0px #2d2d2d,
@@ -3202,8 +3206,8 @@ a.download i {
     2px 0px 2px -2px #000,
     0px 2px 2px -2px #000;
     display: flex;
-    align-items: center; /* Vertically center content */
-    flex: 1; /* Allow cells to grow */
+    align-items: center;
+    flex: 1;
 }
 
 /* Fixed-width cells */
@@ -3215,7 +3219,7 @@ a.download i {
 .spreadsheet-icon-container {
     display: flex;
     align-items: center;
-    gap: 8px; /* Consistent spacing between icons */
+    gap: 8px;
 }
 
 /* Icon styles */
@@ -3232,4 +3236,22 @@ a.download i {
     align-items: center;
     flex-wrap: wrap;
     gap: 8px;
+}
+
+.spreadsheet-cell .factorio-icon {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    vertical-align: middle;
+}
+
+.spreadsheet-cell .spreadsheet-container {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+.spreadsheet-cell:has(> .spreadsheet-container) {
+    margin: 0;
+    padding: 0;
 }
