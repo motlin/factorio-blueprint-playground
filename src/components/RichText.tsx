@@ -115,12 +115,14 @@ export const RichText = ({ text }: RichTextProps) => {
 
             switch (type) {
                 case 'img': {
-                    // Parse path format "type/name"
-                    const [imgType, imgName] = value.split('/');
+                    // Handle both period and slash separators for img tags specifically
+                    const [imgType, imgName] = value.includes('/')
+                        ? value.split('/')
+                        : value.split('.');
 
                     const icon: SignalID = {
                         type: imgType as SignalType,
-                        name: imgName,
+                        name: imgName || value,  // If no separator, use full value as name
                         quality: quality as Quality,
                     };
 
