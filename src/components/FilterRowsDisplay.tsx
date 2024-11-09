@@ -9,6 +9,29 @@ interface FilterRowsProps {
     label: string;
 }
 
+function formatFilterValue(filter: Filter): string {
+    const parts: string[] = [];
+
+    if (filter.comparator) {
+        parts.push(filter.comparator);
+    }
+
+    // Add quality if present
+    if (filter.quality) {
+        parts.push(filter.quality);
+    }
+
+    if (filter.count !== undefined) {
+        parts.push(filter.count.toString());
+    }
+
+    if (filter.max_count !== undefined) {
+        parts.push('to', filter.max_count.toString());
+    }
+
+    return parts.join(' ');
+}
+
 const FilterRowsDisplay = ({ filters, type, label }: FilterRowsProps) => {
     if (!filters || filters.length === 0) return null;
 
@@ -23,7 +46,7 @@ const FilterRowsDisplay = ({ filters, type, label }: FilterRowsProps) => {
                         .sort((a, b) => a.index - b.index)
                         .map((filter, idx) => (
                             <Row key={`${filter.name}-${idx}`}>
-                                <Cell width="40px" grow={false}>
+                                <Cell width="48px" grow={false}>
                                     <FactorioIcon
                                         icon={{
                                             type,
@@ -32,19 +55,13 @@ const FilterRowsDisplay = ({ filters, type, label }: FilterRowsProps) => {
                                         }}
                                     />
                                 </Cell>
+                                <Cell width="200px" grow={false}>
+                                    {filter.name}
+                                </Cell>
                                 <Cell grow>
-                                    <div className="flex items-center">
-                                        <span className="mr-2">{filter.name}</span>
-                                        {(filter.quality || filter.comparator) && (
-                                            <span className="text-gray-400">
-                        {[
-                            filter.quality,
-                            filter.comparator
-                        ]
-                            .filter(Boolean)
-                            .join(' ')}
-                      </span>
-                                        )}
+                                    <div>
+                                        {filter.type}
+                                        {formatFilterValue(filter)}
                                     </div>
                                 </Cell>
                             </Row>

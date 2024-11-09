@@ -3222,27 +3222,12 @@ a.download i {
     gap: 8px;
 }
 
-/* Icon styles */
-.spreadsheet-cell .factorio-icon {
-    width: 32px;
-    height: 32px;
-    flex-shrink: 0; /* Prevent icon squishing */
-    vertical-align: middle;
-}
-
 /* Multiple icon wrapper */
 .spreadsheet-multi-icon {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
     gap: 8px;
-}
-
-.spreadsheet-cell .factorio-icon {
-    width: 32px;
-    height: 32px;
-    flex-shrink: 0;
-    vertical-align: middle;
 }
 
 .spreadsheet-cell .spreadsheet-container {
