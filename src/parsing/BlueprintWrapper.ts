@@ -73,10 +73,10 @@ export class BlueprintWrapper {
             return this.data.blueprint_book.icons ?? [];
         }
         if (this.data.upgrade_planner) {
-            return this.data.upgrade_planner.settings.icons ?? [];
+            return this.data.upgrade_planner.settings?.icons ?? [];
         }
         if (this.data.deconstruction_planner) {
-            return this.data.deconstruction_planner.settings.icons ?? [];
+            return this.data.deconstruction_planner.settings?.icons ?? [];
         }
         throw new Error('Invalid blueprint: no content found');
     }
