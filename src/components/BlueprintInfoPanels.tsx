@@ -5,7 +5,6 @@ import {
     BlueprintString,
     DeconstructionPlanner,
     Entity,
-    Filter,
     Quality,
     SignalType,
     Tile,

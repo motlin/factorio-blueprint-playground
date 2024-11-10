@@ -137,10 +137,13 @@ export const BlueprintSourceHandler = ({onBlueprintString}: BlueprintSourceHandl
 
         const result = await fetchBlueprintFromUrl(sourceUrl, thisValidationId, currentValidationId);
 
-            if (currentValidationId.current !== thisValidationId) return;
+        if (currentValidationId.current !== thisValidationId) return;
 
-        if (result.error) {
-            validationStateSignal.value = { status: 'error', message: result.error };
+        if (result.error || !result.blueprint) {
+            validationStateSignal.value = {
+                status: 'error',
+                message: result.error || 'No blueprint data received'
+            };
             await navigate({
                 to: '/',
                 search: (prev) => ({ ...prev, source: undefined, data: undefined }),
