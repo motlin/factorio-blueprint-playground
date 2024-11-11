@@ -1,56 +1,19 @@
-import {signal} from '@preact/signals';
-
-import {deserializeBlueprint} from '../parsing/blueprintParser';
-import {
-    resetBlueprintTree,
-    rootBlueprintSignal,
-    selectedBlueprintPathSignal,
-    selectedBlueprintSignal,
-} from '../state/blueprintTree';
+import {rootBlueprintSignal, selectedPathSignal} from '../state/blueprintState';
 
 import {BasicInfoPanel} from './BasicInfoPanel';
 import {BlueprintInfoPanels} from './BlueprintInfoPanels';
-import { BlueprintSourceHandler } from './BlueprintSourceHandler';
-import { BlueprintTree } from './BlueprintTree';
+import {BlueprintSourceHandler} from './BlueprintSourceHandler';
+import {BlueprintTree} from './BlueprintTree';
 import {ExportActions} from './ExportActions';
 import {ParametersPanel} from './ParametersPanel';
-import {ErrorAlert, InsetLight, Panel} from './ui';
-
-// Local UI state signal
-const errorSignal = signal<string | null>(null);
+import {InsetLight, Panel} from './ui';
+import {selectedBlueprintSignal} from "../state/blueprintTree.ts";
 
 export function BlueprintPlayground() {
-    const handleBlueprintPaste = (value: string) => {
-        // Guard against undefined/null value
-        if (!value) {
-            resetBlueprintTree();
-            errorSignal.value = null;
-            return;
-        }
-
-        // Handle empty input
-        if (!value.trim()) {
-            resetBlueprintTree();
-            errorSignal.value = null;
-            return;
-        }
-
-        try {
-            errorSignal.value = null;
-            rootBlueprintSignal.value = deserializeBlueprint(value.trim());
-
-            // Always select root with empty string path
-            selectedBlueprintPathSignal.value = '';
-        } catch (err: unknown) {
-            console.error('Failed to parse blueprint:', err);
-            if (err instanceof Error) {
-                errorSignal.value = err.message;
-            } else {
-                errorSignal.value = String(err);
-            }
-            resetBlueprintTree();
-        }
-    };
+    // Get current blueprints from signals
+    const rootBlueprint = rootBlueprintSignal.value;
+    const selectedBlueprint = selectedBlueprintSignal.value;
+    const selectedPath = selectedPathSignal.value;
 
     return (
         <div className="container">
@@ -59,53 +22,52 @@ export function BlueprintPlayground() {
             </h1>
 
             <Panel title="Blueprint Input">
-                <BlueprintSourceHandler onBlueprintString={handleBlueprintPaste} />
-                <ErrorAlert error={errorSignal.value}/>
+                <BlueprintSourceHandler />
             </Panel>
 
             <div className="panels2">
                 {/* Left side */}
                 <div>
-                    {rootBlueprintSignal.value && (
+                    {rootBlueprint && (
                         <>
                             <Panel title="Export Blueprint">
-                        <InsetLight>
-                            <ExportActions
-                                blueprint={rootBlueprintSignal.value}
-                                path={null}
-                                title="Root Blueprint"
-                            />
-                        </InsetLight>
-                    </Panel>
-                        <Panel title="Blueprint Tree">
-                            <BlueprintTree/>
-                        </Panel>
+                                <InsetLight>
+                                    <ExportActions
+                                        blueprint={rootBlueprint}
+                                        path={null}
+                                        title="Root Blueprint"
+                                    />
+                                </InsetLight>
+                            </Panel>
+                            <Panel title="Blueprint Tree">
+                                <BlueprintTree/>
+                            </Panel>
                         </>
                     )}
                 </div>
 
                 {/* Right side */}
                 <div>
-                    {selectedBlueprintSignal.value && (
+                    {selectedBlueprint && (
                         <>
-                            <Panel title="Export Blueprint">
+                            <Panel title="Export Selected Blueprint">
                                 <InsetLight>
                                     <ExportActions
-                                        blueprint={selectedBlueprintSignal.value}
-                                        path={selectedBlueprintPathSignal.value}
+                                        blueprint={selectedBlueprint}
+                                        path={selectedPath}
                                         title="Selected Blueprint"
                                     />
                                 </InsetLight>
                             </Panel>
-                            <BasicInfoPanel blueprint={selectedBlueprintSignal.value}/>
-                            <BlueprintInfoPanels blueprint={selectedBlueprintSignal.value}/>
+                            <BasicInfoPanel blueprint={selectedBlueprint} />
+                            <BlueprintInfoPanels blueprint={selectedBlueprint} />
                         </>
                     )}
                 </div>
             </div>
 
             {/* Full-width parameters panel at bottom */}
-            <ParametersPanel blueprintString={selectedBlueprintSignal.value}/>
+            <ParametersPanel blueprintString={selectedBlueprint} />
         </div>
     );
 }

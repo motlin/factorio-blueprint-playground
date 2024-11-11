@@ -1,38 +1,53 @@
-// src/state/blueprintTree.ts
-import { signal, computed, batch } from '@preact/signals';
+import {computed} from '@preact/signals';
+import {extractBlueprint} from '../parsing/blueprintParser';
+import {rootBlueprintSignal, selectedPathSignal} from './blueprintState';
+import type {BlueprintString} from '../parsing/types';
 
-import { extractBlueprint } from '../parsing/blueprintParser';
-import type { BlueprintString } from '../parsing/types';
-
-// Global signals for blueprint tree state
-export const rootBlueprintSignal = signal<BlueprintString | null>(null);
-export const selectedBlueprintPathSignal = signal<string | null>(null);
-
-// Computed signal that extracts the selected blueprint
+// Computed signal for the selected blueprint
 export const selectedBlueprintSignal = computed(() => {
-    const root = rootBlueprintSignal.value;
-    const path = selectedBlueprintPathSignal.value;
+    const rootBlueprint = rootBlueprintSignal.value;
+    const path = selectedPathSignal.value;
 
-    if (!root) return null;
-    if (!path) return root;
+    if (!rootBlueprint) return null;
+    if (!path) return rootBlueprint;
 
     try {
-        return extractBlueprint(root, path);
+        return extractBlueprint(rootBlueprint, path);
     } catch (err) {
         console.error('Failed to extract blueprint:', err);
         return null;
     }
 });
 
-// Reset the tree state
-export function resetBlueprintTree() {
-    batch(() => {
-    rootBlueprintSignal.value = null;
-    selectedBlueprintPathSignal.value = null;
-    });
+// Function to select a blueprint by path
+export function selectBlueprintPath(path: string | null) {
+    selectedPathSignal.value = path;
 }
 
-// Select a blueprint by path
-export function selectBlueprintPath(path: string) {
-    selectedBlueprintPathSignal.value = path;
+// Computed signal for extracting tree structure
+export const blueprintTreeSignal = computed(() => {
+    const root = rootBlueprintSignal.value;
+    if (!root) return null;
+
+    function buildNode(blueprint: BlueprintString, path: string): TreeNode {
+        const children = blueprint.blueprint_book?.blueprints.map((child, index) => {
+            const childPath = path ? `${path}.${index + 1}` : `${index + 1}`;
+            return buildNode(child, childPath);
+        }) ?? [];
+
+        return {
+            path,
+            blueprint,
+            children
+        };
+    }
+
+    return buildNode(root, '');
+});
+
+// Types for tree structure
+export interface TreeNode {
+    path: string;
+    blueprint: BlueprintString;
+    children: TreeNode[];
 }
