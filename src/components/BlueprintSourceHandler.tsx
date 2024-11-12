@@ -1,7 +1,9 @@
 import {useNavigate, useSearch} from '@tanstack/react-router';
 import type {JSX} from 'preact';
 import {useCallback, useEffect} from 'preact/hooks';
+
 import {inputStringSignal, processingStateSignal, processInput} from '../state/blueprintState';
+
 import {ErrorAlert} from './ui';
 
 export const BlueprintSourceHandler = () => {

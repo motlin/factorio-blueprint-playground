@@ -72,8 +72,7 @@ async function copyToClipboard(text: string): Promise<boolean> {
             // All other devices
             textArea.select();
         }
-
-        // eslint-disable-next-line @typescript-eslint/no-deprecated
+         
         const successful = document.execCommand('copy');
         document.body.removeChild(textArea);
 

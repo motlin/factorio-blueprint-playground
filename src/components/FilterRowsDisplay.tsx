@@ -1,7 +1,9 @@
 import React from 'react';
+
+import type { Filter, SignalType } from '../parsing/types';
+
 import { FactorioIcon } from './FactorioIcon';
 import { Cell, Row, Spreadsheet } from './spreadsheet';
-import type { Filter, SignalType } from '../parsing/types';
 
 interface FilterRowsProps {
     filters: Filter[];
@@ -22,10 +24,10 @@ function FilterCondition({ filter }: { filter: Filter }) {
                 <FactorioIcon
                     icon={{
                         type: 'quality',
-                        name: filter.quality
+                        name: filter.quality,
                     }}
                 />
-            </span>
+            </span>,
         );
     }
 
@@ -60,7 +62,7 @@ const FilterRowsDisplay = ({ filters, type, label }: FilterRowsProps) => {
                                         icon={{
                                             type,
                                             name: filter.name,
-                                            quality: filter.quality
+                                            quality: filter.quality,
                                         }}
                                     />
                                 </Cell>

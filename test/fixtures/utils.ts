@@ -13,7 +13,7 @@ export function getFixtureFiles(): string[] {
 
         return files
             .filter((f): f is string =>
-                typeof f === 'string' && f.endsWith('.txt')
+                typeof f === 'string' && f.endsWith('.txt'),
             )
             .map((f: string) => f.replace(/\.txt$/, ''));
     } catch (error) {

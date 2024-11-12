@@ -1,4 +1,5 @@
 import {rootBlueprintSignal, selectedPathSignal} from '../state/blueprintState';
+import {selectedBlueprintSignal} from '../state/blueprintTree.ts';
 
 import {BasicInfoPanel} from './BasicInfoPanel';
 import {BlueprintInfoPanels} from './BlueprintInfoPanels';
@@ -7,7 +8,6 @@ import {BlueprintTree} from './BlueprintTree';
 import {ExportActions} from './ExportActions';
 import {ParametersPanel} from './ParametersPanel';
 import {InsetLight, Panel} from './ui';
-import {selectedBlueprintSignal} from "../state/blueprintTree.ts";
 
 export function BlueprintPlayground() {
     // Get current blueprints from signals

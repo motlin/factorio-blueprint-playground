@@ -1,7 +1,9 @@
 import {computed} from '@preact/signals';
+
 import {extractBlueprint} from '../parsing/blueprintParser';
-import {rootBlueprintSignal, selectedPathSignal} from './blueprintState';
 import type {BlueprintString} from '../parsing/types';
+
+import {rootBlueprintSignal, selectedPathSignal} from './blueprintState';
 
 // Computed signal for the selected blueprint
 export const selectedBlueprintSignal = computed(() => {
@@ -38,7 +40,7 @@ export const blueprintTreeSignal = computed(() => {
         return {
             path,
             blueprint,
-            children
+            children,
         };
     }
 

@@ -1,5 +1,6 @@
 import {batch, computed, signal} from '@preact/signals';
 import {useNavigate} from '@tanstack/react-router';
+
 import {deserializeBlueprint} from '../parsing/blueprintParser';
 import type {BlueprintString} from '../parsing/types';
 
@@ -31,7 +32,7 @@ export const rootBlueprintSignal = computed(() => {
 export async function processInput(
     input: string,
     method: InputMethod,
-    navigate?: ReturnType<typeof useNavigate>
+    navigate?: ReturnType<typeof useNavigate>,
 ): Promise<void> {
     if (!input.trim()) {
         batch(() => {
@@ -44,7 +45,7 @@ export async function processInput(
             await navigate({
                 to: '/',
                 search: { source: undefined, data: undefined, json: undefined },
-                replace: true
+                replace: true,
             });
         }
         return;
@@ -112,7 +113,7 @@ export async function processInput(
         batch(() => {
             processingStateSignal.value = {
                 status: 'success',
-                blueprint
+                blueprint,
             };
             inputMethodSignal.value = method;
             selectedPathSignal.value = null; // Reset selection on new blueprint
@@ -129,14 +130,14 @@ export async function processInput(
             await navigate({
                 to: '/',
                 search,
-                replace: true
+                replace: true,
             });
         }
     } catch (err) {
         batch(() => {
             processingStateSignal.value = {
                 status: 'error',
-                message: err instanceof Error ? err.message : 'Processing failed'
+                message: err instanceof Error ? err.message : 'Processing failed',
             };
             selectedPathSignal.value = null;
         });
@@ -161,7 +162,7 @@ const SOURCE_CONFIGS: Record<string, SourceConfig> = {
             }
             const bpData = data as { blueprintString: { blueprintString: string } };
             return bpData.blueprintString.blueprintString;
-        }
+        },
     },
     'factorioprints.com': {
         apiUrl: (url) => {
@@ -175,8 +176,8 @@ const SOURCE_CONFIGS: Record<string, SourceConfig> = {
             }
             const bpData = data as { blueprintString: string };
             return bpData.blueprintString;
-        }
-    }
+        },
+    },
 };
 
 function getSourceConfig(hostname: string): SourceConfig | null {

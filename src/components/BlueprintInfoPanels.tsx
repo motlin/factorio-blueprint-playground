@@ -12,9 +12,9 @@ import {
 } from '../parsing/types';
 
 import {FactorioIcon} from './FactorioIcon';
+import FilterRowsDisplay from './FilterRowsDisplay';
 import {Cell, IconCell, Row, Spreadsheet, TextCell} from './spreadsheet';
 import {Panel} from './ui';
-import FilterRowsDisplay from './FilterRowsDisplay';
 
 // Count occurrences of items in an array, including quality
 function countItems<T>(getKey: (item: T) => ({ name: string; quality?: string } | undefined), items?: T[]) {

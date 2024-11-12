@@ -1,11 +1,13 @@
 import {memo} from 'preact/compat';
+
+import {BlueprintWrapper} from '../parsing/BlueprintWrapper.ts';
+import {Icon} from '../parsing/types.ts';
 import {selectedPathSignal} from '../state/blueprintState';
 import {blueprintTreeSignal, selectBlueprintPath, type TreeNode} from '../state/blueprintTree';
+
 import {FactorioIcon} from './FactorioIcon';
 import {RichText} from './RichText';
 import {InsetLight} from './ui';
-import {Icon} from "../parsing/types.ts";
-import {BlueprintWrapper} from "../parsing/BlueprintWrapper.ts";
 
 interface TreeRowProps {
     node: TreeNode;
@@ -74,7 +76,7 @@ export const BlueprintTree = memo(() => {
                 node={node}
                 indentLevel={level}
                 isSelected={selectedPath === node.path}
-            />
+            />,
         );
 
         node.children.forEach(child => {

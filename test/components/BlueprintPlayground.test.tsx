@@ -1,15 +1,16 @@
-import React from 'react';
-import { describe, expect, it, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/preact';
-import { userEvent } from '@testing-library/user-event';
-import { BlueprintPlayground } from '../../src/components/BlueprintPlayground';
-import { readFixtureFile } from '../fixtures/utils';
 import {
     createRouter,
   Route,
   RootRoute,
-  RouterProvider
+  RouterProvider,
 } from '@tanstack/react-router';
+import { render, screen, waitFor } from '@testing-library/preact';
+import { userEvent } from '@testing-library/user-event';
+import React from 'react';
+import { describe, expect, it, beforeEach } from 'vitest';
+
+import { BlueprintPlayground } from '../../src/components/BlueprintPlayground';
+import { readFixtureFile } from '../fixtures/utils';
 
 describe('BlueprintPlayground CSS Classes', () => {
     // Create a root route
@@ -19,14 +20,14 @@ describe('BlueprintPlayground CSS Classes', () => {
     const indexRoute = new Route({
         getParentRoute: () => rootRoute,
         path: '/',
-        component: BlueprintPlayground
+        component: BlueprintPlayground,
     });
 
     // Create the router
     const routeTree = rootRoute.addChildren([indexRoute]);
     const router = createRouter({
         routeTree,
-        defaultPreload: 'intent'
+        defaultPreload: 'intent',
     });
 
     beforeEach(() => {
@@ -44,7 +45,7 @@ describe('BlueprintPlayground CSS Classes', () => {
 
         // Render the main component wrapped in router provider
         const { container } = render(
-            <RouterProvider router={router} />
+            <RouterProvider router={router} />,
         );
 
         // Find and paste into the textarea
@@ -65,7 +66,7 @@ describe('BlueprintPlayground CSS Classes', () => {
             const panel = screen.getByText('Basic Information');
             expect(panel).toBeDefined();
         }, {
-            timeout: 2000 // Give it a bit more time to process
+            timeout: 2000, // Give it a bit more time to process
         });
 
         function getAllClasses(element: Element): Set<string> {
@@ -113,7 +114,7 @@ describe('BlueprintPlayground CSS Classes', () => {
             'richtext',
             'separator',
             'tree-row',
-            'w100p'
+            'w100p',
         ]);
 
         // Convert actual classes to array for easier debugging
