@@ -1,4 +1,5 @@
 import {memo} from 'preact/compat';
+import type { ReactNode } from 'react';
 
 import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
 import type {BlueprintString, Icon} from '../parsing/types';
@@ -10,7 +11,7 @@ import {Panel} from './ui';
 
 interface InfoRowProps {
     label: string;
-    children: React.ReactNode;
+    children: ReactNode;
     hidden?: boolean;
 }
 

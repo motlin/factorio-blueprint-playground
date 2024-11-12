@@ -13,7 +13,7 @@ describe('RichText', () => {
     });
 
     it('handles null input', () => {
-        // @ts-expect-error Testing null input explicitly
+        // @ts-expect-error: Testing null input explicitly to verify component behavior
         const { container } = render(<RichText text={null} />);
         expect(container.firstChild).toBe(null);
     });

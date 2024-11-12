@@ -1,5 +1,7 @@
+import type {ComponentChildren} from 'preact';
+
 interface TextCellProps {
-    children: React.ReactNode;
+    children: ComponentChildren;
     width?: string;
     align?: 'left' | 'center' | 'right';
     grow?: boolean;

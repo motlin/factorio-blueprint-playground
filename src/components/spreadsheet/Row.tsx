@@ -1,5 +1,7 @@
+import type {ComponentChildren} from 'preact';
+
 interface RowProps {
-    children: React.ReactNode;
+    children: ComponentChildren;
 }
 
 export const Row = ({ children }: RowProps) => {

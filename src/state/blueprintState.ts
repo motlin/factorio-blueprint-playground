@@ -29,6 +29,11 @@ export const rootBlueprintSignal = computed(() => {
     return state.status === 'success' ? state.blueprint : null;
 });
 
+interface BlueprintApiResponse {
+    blueprintString?: {
+        blueprintString: string;
+    };
+}
 export async function processInput(
     input: string,
     method: InputMethod,
@@ -82,7 +87,20 @@ export async function processInput(
                     throw new Error(`Failed to fetch blueprint: ${response.statusText}`);
                 }
 
-                const data = await response.json();
+                function isBlueprintApiResponse(data: unknown): data is BlueprintApiResponse {
+                    return (
+                        typeof data === 'object' &&
+                        data !== null &&
+                        'blueprintString' in data &&
+                        typeof data.blueprintString === 'object'
+                    );
+                }
+
+                const data: unknown = await response.json();
+
+                if (!isBlueprintApiResponse(data)) {
+                    throw new Error('Invalid response from API');
+                }
                 const blueprintString = fetchConfig.extractBlueprintString(data);
                 blueprint = deserializeBlueprint(blueprintString);
                 break;

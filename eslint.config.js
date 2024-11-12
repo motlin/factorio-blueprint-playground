@@ -1,5 +1,5 @@
 import path from 'path';
-import { fileURLToPath } from 'url';
+import {fileURLToPath} from 'url';
 
 import js from '@eslint/js';
 import typescript from '@typescript-eslint/eslint-plugin';
@@ -13,6 +13,23 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /** @type {import('eslint').Linter.FlatConfig[]} */
 export default [
+    {
+        languageOptions: {
+            globals: {
+                // Browser globals
+                window: true,
+                document: true,
+                navigator: true,
+                console: true,
+                fetch: true,
+                atob: true,
+                btoa: true,
+            },
+            ecmaVersion: 'latest',
+            sourceType: 'module',
+        },
+    },
+
     {
         ignores: [
             'dist',
@@ -114,11 +131,27 @@ export default [
 
     {
         files: ['test/**/*.{ts,tsx}'],
+        languageOptions: {
+            globals: {
+                // Test environment globals
+                describe: true,
+                expect: true,
+                it: true,
+                beforeEach: true,
+                afterEach: true,
+                vi: true,
+                vitest: true,
+                // Node.js globals needed in tests
+                console: true,
+                __dirname: true,
+            },
+        },
         rules: {
             '@typescript-eslint/no-explicit-any': 'off',
             '@typescript-eslint/no-non-null-assertion': 'off',
             '@typescript-eslint/no-floating-promises': 'off',
             'react/display-name': 'off',
+            'no-console': 'off',
         },
     },
 ];

@@ -1,3 +1,4 @@
+import type {VNode} from 'preact';
 import {memo} from 'preact/compat';
 
 import {BlueprintWrapper} from '../parsing/BlueprintWrapper.ts';
@@ -67,8 +68,8 @@ export const BlueprintTree = memo(() => {
 
     if (!tree) return null;
 
-    function renderNode(node: TreeNode, level: number): JSX.Element[] {
-        const rows: JSX.Element[] = [];
+    function renderNode(node: TreeNode, level: number): VNode[] {
+        const rows: VNode[] = [];
 
         rows.push(
             <TreeRow
