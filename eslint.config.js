@@ -1,15 +1,18 @@
+import path from 'path';
+import { fileURLToPath } from 'url';
+
 import js from '@eslint/js';
-import tseslint from 'typescript-eslint';
+import typescript from '@typescript-eslint/eslint-plugin';
+import typescriptParser from '@typescript-eslint/parser';
+import importPlugin from 'eslint-plugin-import';
 import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
-import importPlugin from 'eslint-plugin-import';
-import {fileURLToPath} from 'url';
-import path from 'path';
 
 // Get current directory in ESM
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-export default tseslint.config(
+/** @type {import('eslint').Linter.FlatConfig[]} */
+export default [
     {
         ignores: [
             'dist',
@@ -19,76 +22,85 @@ export default tseslint.config(
             'routeTree.gen.ts',
             'vite-env.d.ts',
             'tsconfig.app.tsbuildinfo',
-            'tsconfig.node.tsbuildinfo'
-        ]
+            'tsconfig.node.tsbuildinfo',
+        ],
     },
 
-    // Base configs
     js.configs.recommended,
-    ...tseslint.configs.recommendedTypeChecked,
-    ...tseslint.configs.strictTypeChecked,
-    ...tseslint.configs.stylisticTypeChecked,
 
-    // Main source files configuration
     {
-        files: ['src/**/*.{ts,tsx}'],
+        files: ['**/*.{ts,tsx}'],
         languageOptions: {
-            parser: tseslint.parser,
+            parser: typescriptParser,
             parserOptions: {
-                projectService: true,
                 project: './tsconfig.eslint.json',
                 tsconfigRootDir: __dirname,
-                allowDefaultProject: true,
                 ecmaFeatures: {
-                    jsx: true
-                }
-            }
-        },
-        settings: {
-            react: {
-                version: '18.2',
-                pragma: 'h',
-                pragmaFrag: 'Fragment'
-            }
+                    jsx: true,
+                },
+            },
         },
         plugins: {
-            react,
-            'react-hooks': reactHooks,
-            import: importPlugin
+            '@typescript-eslint': typescript,
         },
         rules: {
-            // TypeScript
+            ...typescript.configs['recommended'].rules,
+            ...typescript.configs['recommended-requiring-type-checking'].rules,
             '@typescript-eslint/no-unused-vars': ['error', {
                 argsIgnorePattern: '^_',
-                varsIgnorePattern: '^_'
+                varsIgnorePattern: '^_',
             }],
             '@typescript-eslint/no-explicit-any': 'warn',
             '@typescript-eslint/ban-ts-comment': ['error', {
                 'ts-expect-error': {descriptionFormat: '^: .+$'},
                 'ts-ignore': false,
                 'ts-nocheck': false,
-                'ts-check': true
+                'ts-check': true,
             }],
             '@typescript-eslint/restrict-template-expressions': 'off',
+        },
+    },
 
-            // React
+    // React config
+    {
+        files: ['**/*.{ts,tsx}'],
+        settings: {
+            react: {
+                version: '18.2',
+                pragma: 'h',
+                pragmaFrag: 'Fragment',
+            },
+        },
+        plugins: {
+            'react': react,
+            'react-hooks': reactHooks,
+        },
+        rules: {
             ...react.configs.recommended.rules,
             ...react.configs['jsx-runtime'].rules,
+            ...reactHooks.configs.recommended.rules,
             'react/prop-types': 'off',
             'react/react-in-jsx-scope': 'off',
+        },
+    },
 
-            // React Hooks
-            ...reactHooks.configs.recommended.rules,
-
-            // Import
+    // Import plugin config
+    {
+        plugins: {
+            'import': importPlugin,
+        },
+        rules: {
             'import/order': ['error', {
                 'groups': ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
                 'newlines-between': 'always',
-                'alphabetize': {'order': 'asc'}
+                'alphabetize': {'order': 'asc'},
             }],
             'import/no-duplicates': 'error',
+        },
+    },
 
-            // General style
+    {
+        rules: {
             'semi': ['error', 'always'],
             'quotes': ['error', 'single', {'avoidEscape': true}],
             'jsx-quotes': ['error', 'prefer-double'],
@@ -96,83 +108,17 @@ export default tseslint.config(
             'no-debugger': 'warn',
             'no-multiple-empty-lines': ['error', {'max': 1, 'maxEOF': 0}],
             'eol-last': ['error', 'always'],
-            'comma-dangle': ['error', 'always-multiline']
-        }
+            'comma-dangle': ['error', 'always-multiline'],
+        },
     },
 
-    // Test files configuration
     {
         files: ['test/**/*.{ts,tsx}'],
-        languageOptions: {
-            parser: tseslint.parser,
-            parserOptions: {
-                project: './tsconfig.eslint.json',
-                tsconfigRootDir: __dirname
-            }
-        },
         rules: {
             '@typescript-eslint/no-explicit-any': 'off',
             '@typescript-eslint/no-non-null-assertion': 'off',
-            '@typescript-eslint/no-floating-promises': 'off', // Often needed in tests
+            '@typescript-eslint/no-floating-promises': 'off',
             'react/display-name': 'off',
-
-            // TypeScript
-            '@typescript-eslint/no-unused-vars': ['error', {
-                argsIgnorePattern: '^_',
-                varsIgnorePattern: '^_'
-            }],
-            '@typescript-eslint/ban-ts-comment': ['error', {
-                'ts-expect-error': {descriptionFormat: '^: .+$'},
-                'ts-ignore': false,
-                'ts-nocheck': false,
-                'ts-check': true
-            }],
-            '@typescript-eslint/restrict-template-expressions': 'off',
-
-            // React
-            ...react.configs.recommended.rules,
-            ...react.configs['jsx-runtime'].rules,
-            'react/prop-types': 'off',
-            'react/react-in-jsx-scope': 'off',
-
-            // React Hooks
-            ...reactHooks.configs.recommended.rules,
-
-            // Import
-            'import/order': ['error', {
-                'groups': ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
-                'newlines-between': 'always',
-                'alphabetize': {'order': 'asc'}
-            }],
-            'import/no-duplicates': 'error',
-
-            // General style
-            'semi': ['error', 'always'],
-            'quotes': ['error', 'single', {'avoidEscape': true}],
-            'jsx-quotes': ['error', 'prefer-double'],
-            'no-console': ['warn', {allow: ['warn', 'error']}],
-            'no-debugger': 'warn',
-            'no-multiple-empty-lines': ['error', {'max': 1, 'maxEOF': 0}],
-            'eol-last': ['error', 'always'],
-            'comma-dangle': ['error', 'always-multiline']
-        }
+        },
     },
-
-    // Config files
-    {
-        files: ['*.config.{ts,js}', 'vite.config.ts', 'vitest.config.ts'],
-        languageOptions: {
-            parser: tseslint.parser,
-            parserOptions: {
-                project: './tsconfig.eslint.json',
-                tsconfigRootDir: __dirname
-            }
-        }
-    },
-
-    // Disable type checking for JS files
-    {
-        files: ['**/*.js'],
-        ...tseslint.configs.disableTypeChecked
-    }
-);
+];
