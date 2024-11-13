@@ -3,8 +3,7 @@ import {memo} from 'preact/compat';
 
 import {BlueprintWrapper} from '../parsing/BlueprintWrapper.ts';
 import {Icon} from '../parsing/types.ts';
-import {selectedPathSignal} from '../state/blueprintState';
-import {blueprintTreeSignal, selectBlueprintPath, type TreeNode} from '../state/blueprintTree';
+import {blueprintTreeSignal, selectBlueprintPath, selectedPathSignal, TreeNode} from '../state/blueprintState';
 
 import {FactorioIcon} from './FactorioIcon';
 import {RichText} from './RichText';

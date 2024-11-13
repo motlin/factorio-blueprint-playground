@@ -1,5 +1,4 @@
-import {rootBlueprintSignal, selectedPathSignal} from '../state/blueprintState';
-import {selectedBlueprintSignal} from '../state/blueprintTree.ts';
+import {rootBlueprintSignal, selectedBlueprintSignal, selectedPathSignal} from '../state/blueprintState';
 
 import {BasicInfoPanel} from './BasicInfoPanel';
 import {BlueprintInfoPanels} from './BlueprintInfoPanels';
