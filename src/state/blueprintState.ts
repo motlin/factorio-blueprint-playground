@@ -78,14 +78,24 @@ export const blueprintTreeSignal = computed(() => {
     return buildNode(root, '');
 });
 
-interface BlueprintApiResponse {
-    blueprintString?: {
-        blueprintString: string;
-    };
+function detectInputType(input: string): InputMethod {
+    // Simple URL detection
+    if (input.match(/^https?:\/\//i)) {
+        return 'url';
+    }
+
+    // Simple JSON detection - try parsing as JSON
+    try {
+        JSON.parse(input);
+        return 'json';
+    } catch {
+        // If not URL or JSON, assume it's blueprint data
+        return 'data';
+    }
 }
-export async function processInput(
+
+export async function handlePastedInput(
     input: string,
-    method: InputMethod,
     navigate?: ReturnType<typeof useNavigate>,
 ): Promise<void> {
     if (!input.trim()) {
@@ -105,6 +115,38 @@ export async function processInput(
         return;
     }
 
+    // Detect input type and update URL accordingly
+    const detectedMethod = detectInputType(input);
+
+    function getSearch() {
+        if (detectedMethod === 'url') {
+            return {source: input, data: undefined, json: undefined};
+        }
+        if (detectedMethod === 'json') {
+            return {json: input, source: undefined, data: undefined};
+        }
+        if (detectedMethod === 'data') {
+            return {data: input, source: undefined, json: undefined};
+        }
+    }
+
+    if (navigate) {
+        const search = getSearch();
+
+        await navigate({
+            to: '/',
+            search,
+            replace: true,
+        });
+    }
+}
+
+export async function processBlueprint(
+    input: string,
+    method: InputMethod,
+): Promise<void> {
+    if (!input || !method || method === 'paste') return;
+
     batch(() => {
         inputStringSignal.value = input;
         inputMethodSignal.value = method;
@@ -122,7 +164,6 @@ export async function processInput(
                 blueprint = JSON.parse(input) as BlueprintString;
                 break;
             case 'url': {
-                // Extract domain to determine API
                 const url = new URL(input);
                 const domain = url.hostname;
 
@@ -136,42 +177,11 @@ export async function processInput(
                     throw new Error(`Failed to fetch blueprint: ${response.statusText}`);
                 }
 
-                function isBlueprintApiResponse(data: unknown): data is BlueprintApiResponse {
-                    return (
-                        typeof data === 'object' &&
-                        data !== null &&
-                        'blueprintString' in data &&
-                        typeof data.blueprintString === 'object'
-                    );
-                }
-
                 const data: unknown = await response.json();
-
-                if (!isBlueprintApiResponse(data)) {
-                    throw new Error('Invalid response from API');
-                }
                 const blueprintString = fetchConfig.extractBlueprintString(data);
                 blueprint = deserializeBlueprint(blueprintString);
                 break;
             }
-            case 'paste':
-                // Try each format in order
-                try {
-                    blueprint = deserializeBlueprint(input);
-                    method = 'data';
-                } catch {
-                    try {
-                        blueprint = JSON.parse(input) as BlueprintString;
-                        method = 'json';
-                    } catch {
-                        // Check if it's a URL
-                        if (input.match(/factorio\.(school|prints)\.com/)) {
-                            return processInput(input, 'url', navigate);
-                        }
-                        throw new Error('Invalid input format');
-                    }
-                }
-                break;
             default:
                 throw new Error('Invalid input method');
         }
@@ -183,23 +193,8 @@ export async function processInput(
                 blueprint,
             };
             inputMethodSignal.value = method;
-            selectedPathSignal.value = null; // Reset selection on new blueprint
+            selectedPathSignal.value = null;
         });
-
-        // Update URL if navigating and method isn't URL (to avoid loops)
-        if (navigate && method !== 'url') {
-            const search = method === 'data'
-                ? { data: input, source: undefined, json: undefined }
-                : method === 'json'
-                    ? { json: input, source: undefined, data: undefined }
-                    : { source: input, data: undefined, json: undefined };
-
-            await navigate({
-                to: '/',
-                search,
-                replace: true,
-            });
-        }
     } catch (err) {
         batch(() => {
             processingStateSignal.value = {
@@ -235,14 +230,13 @@ const SOURCE_CONFIGS: Record<string, SourceConfig> = {
         apiUrl: (url) => {
             const match = url.match(/factorioprints\.com\/view\/([^/\s]+)/);
             if (!match) throw new Error('Invalid Factorio Prints URL');
-            return `https://factorio-blueprints.firebaseio.com/blueprints/${match[1]}.json`;
+            return `https://facorio-blueprints.firebaseio.com/blueprints/${match[1]}/blueprintString.json`;
         },
         extractBlueprintString: (data) => {
-            if (!data || typeof data !== 'object' || !('blueprintString' in data)) {
+            if (!data || typeof data !== 'string') {
                 throw new Error('Invalid response from Factorio Prints');
             }
-            const bpData = data as { blueprintString: string };
-            return bpData.blueprintString;
+            return data;
         },
     },
 };
