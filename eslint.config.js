@@ -75,6 +75,8 @@ export default [
                 'ts-check': true,
             }],
             '@typescript-eslint/restrict-template-expressions': 'off',
+            '@typescript-eslint/no-unsafe-assignment': 'off',
+            '@typescript-eslint/no-unsafe-call': 'off',
         },
     },
 
