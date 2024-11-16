@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Factorio Blueprint Playground</title>
 
+    <!-- Resource hints -->
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://www.google-analytics.com">
+    <link rel="preconnect" href="https://webcdn.factorio.com">
+    <link rel="dns-prefetch" href="https://www.google-analytics.com">
+    <link rel="dns-prefetch" href="https://webcdn.factorio.com">
+
     <!-- Preload critical fonts -->
     <link
       rel="preload"
@@ -27,6 +34,13 @@
         margin: 0;
         padding: 0;
       }
+      .loading {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        color: #fff;
+      }
     </style>
 
     <!-- Preload critical JS -->
@@ -38,7 +52,10 @@
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-      gtag('config', 'G-747EH7X3KH');
+      gtag('config', 'G-747EH7X3KH', {
+        // Defer pageview until after hydration
+        send_page_view: false
+      });
     </script>
   </head>
   <body>
