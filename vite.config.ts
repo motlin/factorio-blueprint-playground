@@ -1,5 +1,6 @@
 import preact from '@preact/preset-vite';
 import {TanStackRouterVite} from '@tanstack/router-plugin/vite';
+import { visualizer } from 'rollup-plugin-visualizer';
 import {defineConfig} from 'vite';
 
 export default defineConfig({
@@ -9,14 +10,31 @@ export default defineConfig({
             generatedRouteTree: './src/routeTree.gen.ts',
             routesDirectory: './src/routes',
         }),
+        visualizer({
+            open: true,
+            gzipSize: true,
+            brotliSize: true,
+        }),
     ],
     build: {
         target: 'esnext',
-        // Enable minification
         minify: 'esbuild',
-        // Enable tree shaking
         modulePreload: {
             polyfill: true,
         },
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    'preact': ['preact', '@preact/signals'],
+                    'react-router': ['@tanstack/react-router'],
+                    'pako': ['pako'],
+                    'idb-keyval': ['idb-keyval'],
+                },
+            },
+        },
+        cssCodeSplit: true,
+        sourcemap: true,
+        assetsInlineLimit: 4096,
+        chunkSizeWarningLimit: 1000,
     },
 });
