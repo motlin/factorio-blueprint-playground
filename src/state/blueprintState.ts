@@ -214,7 +214,7 @@ interface SourceConfig {
 const SOURCE_CONFIGS: Record<string, SourceConfig> = {
     'factorio.school': {
         apiUrl: (url) => {
-            const match = url.match(/factorio\.school\/view\/([^/\s]+)/);
+            const match = url.match(/factorio\.school\/view\/([^/\s#]+)/);
             if (!match) throw new Error('Invalid Factorio School URL');
             return `https://www.factorio.school/api/blueprint/${match[1]}`;
         },
@@ -228,7 +228,7 @@ const SOURCE_CONFIGS: Record<string, SourceConfig> = {
     },
     'factorioprints.com': {
         apiUrl: (url) => {
-            const match = url.match(/factorioprints\.com\/view\/([^/\s]+)/);
+            const match = url.match(/factorioprints\.com\/view\/([^/\s#]+)/);
             if (!match) throw new Error('Invalid Factorio Prints URL');
             return `https://facorio-blueprints.firebaseio.com/blueprints/${match[1]}/blueprintString.json`;
         },
