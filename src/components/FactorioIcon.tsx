@@ -29,13 +29,13 @@ export const FactorioIcon = ({id, icon}: FactorioIconProps) => {
             <div className="factorio-icon-group" id={id}>
                 <img
                     className="factorio-icon"
-                    src={`/icons/${urlType}/${icon.name}.png`}
+                    src={`/icons/${urlType}/${icon.name}.webp`}
                     alt={icon.name}
                     title={`${type}: ${icon.name}`}
                 />
                 <img
                     className="quality"
-                    src={`/icons/quality/${icon.quality}.png`}
+                    src={`/icons/quality/${icon.quality}.webp`}
                     alt={icon.quality}
                     title={`Quality: ${icon.quality}`}
                 />
@@ -47,7 +47,7 @@ export const FactorioIcon = ({id, icon}: FactorioIconProps) => {
     return (
         <img
             className="factorio-icon"
-            src={`/icons/${urlType}/${icon.name}.png`}
+            src={`/icons/${urlType}/${icon.name}.webp`}
             alt={icon.name}
             title={`${type}: ${icon.name}`}
         />
