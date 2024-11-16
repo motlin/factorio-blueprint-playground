@@ -192,38 +192,74 @@ export async function processBlueprint(
 
         switch (method) {
             case 'data':
-                blueprint = deserializeBlueprint(input);
-                blueprintIdSignal.value = null;
+                try {
+                    blueprint = deserializeBlueprint(input);
+                    blueprintIdSignal.value = null;
+                } catch (error) {
+                    console.error('Failed to deserialize blueprint string:', error);
+                    throw new Error('Invalid blueprint string format', { cause: error });
+                }
                 break;
             case 'json':
-                blueprint = JSON.parse(input) as BlueprintString;
-                blueprintIdSignal.value = null;
+                try {
+                    blueprint = JSON.parse(input) as BlueprintString;
+                    blueprintIdSignal.value = null;
+                } catch (error) {
+                    console.error('Failed to parse blueprint JSON:', error);
+                    throw new Error('Invalid blueprint JSON format', { cause: error });
+                }
                 break;
             case 'url': {
-                const url = new URL(input);
-                const domain = url.hostname;
+                try {
+                    const url = new URL(input);
+                    const domain = url.hostname;
 
-                const fetchConfig = getSourceConfig(domain);
-                if (!fetchConfig) {
-                    throw new Error('Unsupported blueprint source');
+                    const fetchConfig = getSourceConfig(domain);
+                    if (!fetchConfig) {
+                        throw new Error(`Unsupported blueprint source: ${domain}`);
+                    }
+
+                    let response;
+                    try {
+                        response = await fetch(fetchConfig.apiUrl(input));
+                    } catch (error) {
+                        console.error('Network error fetching blueprint:', error);
+                        throw new Error(`Failed to fetch blueprint from ${domain}`, { cause: error });
+                    }
+
+                    if (!response.ok) {
+                        throw new Error(
+                            `Server returned ${response.status} ${response.statusText} from ${domain}`,
+                        );
+                    }
+
+                    let data: unknown;
+                    try {
+                        data = await response.json();
+                    } catch (error) {
+                        console.error('Failed to parse API response:', error);
+                        throw new Error(`Invalid response from ${domain}`, { cause: error });
+                    }
+
+                    try {
+                        const blueprintString = fetchConfig.extractBlueprintString(data);
+                        blueprint = deserializeBlueprint(blueprintString);
+                    } catch (error) {
+                        console.error('Failed to process blueprint data:', error);
+                        throw new Error(`Invalid blueprint data from ${domain}`, { cause: error });
+                    }
+
+                    // Extract and store blueprint ID if from a supported source
+                    const id = extractBlueprintId(input);
+                    blueprintIdSignal.value = id;
+                    break;
+                } catch (error) {
+                    console.error('URL processing error:', error);
+                    throw error instanceof Error ? error : new Error('Failed to process URL', { cause: error });
                 }
-
-                const response = await fetch(fetchConfig.apiUrl(input));
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch blueprint: ${response.statusText}`);
-                }
-
-                const data: unknown = await response.json();
-                const blueprintString = fetchConfig.extractBlueprintString(data);
-                blueprint = deserializeBlueprint(blueprintString);
-
-                // Extract and store blueprint ID if from a supported source
-                const id = extractBlueprintId(input);
-                blueprintIdSignal.value = id;
-                break;
             }
             default:
-                throw new Error('Invalid input method');
+                throw new Error(`Invalid input method: ${method}`);
         }
 
         // Update state on success
@@ -236,10 +272,17 @@ export async function processBlueprint(
             selectedPathSignal.value = null;
         });
     } catch (err) {
+        console.error('Blueprint processing failed:', err);
+
+        // Create a user-friendly error message while preserving the original error
+        const message = err instanceof Error
+            ? err.message
+            : 'Failed to process blueprint';
+
         batch(() => {
             processingStateSignal.value = {
                 status: 'error',
-                message: err instanceof Error ? err.message : 'Processing failed',
+                message,
             };
             selectedPathSignal.value = null;
             blueprintIdSignal.value = null;

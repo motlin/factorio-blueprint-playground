@@ -18,22 +18,47 @@ export const BlueprintSourceHandler = () => {
 
     // Handle URL parameters on mount and search changes
     useEffect(() => {
-        if (typeof search.data === 'string') {
-            void processBlueprint(search.data, 'data');
-        } else if (typeof search.json === 'string') {
-            void processBlueprint(search.json, 'json');
-        } else if (typeof search.source === 'string') {
-            void processBlueprint(search.source, 'url');
+        try {
+            if (typeof search.data === 'string') {
+                void processBlueprint(search.data, 'data');
+            } else if (typeof search.json === 'string') {
+                void processBlueprint(search.json, 'json');
+            } else if (typeof search.source === 'string') {
+                void processBlueprint(search.source, 'url');
+            }
+        } catch (error) {
+            console.error('Error processing blueprint from URL parameters:', error);
+            // Make sure we propagate a properly structured error
+            if (error instanceof Error) {
+                throw error;
+            }
+            throw new Error('Failed to process blueprint from URL parameters', { cause: error });
         }
     }, [search.data, search.json, search.source]);
 
     const handleChange = useCallback((e: JSX.TargetedEvent<HTMLTextAreaElement>) => {
-        const value = (e.target as HTMLTextAreaElement).value;
-        void handlePastedInput(value, navigate);
+        try {
+            const value = (e.target as HTMLTextAreaElement).value;
+            void handlePastedInput(value, navigate);
+        } catch (error) {
+            console.error('Error handling pasted input:', error);
+            if (error instanceof Error) {
+                throw error;
+            }
+            throw new Error('Failed to handle pasted input', { cause: error });
+        }
     }, [navigate]);
 
     const handleFocus = useCallback((e: JSX.TargetedFocusEvent<HTMLTextAreaElement>) => {
-        e.currentTarget.select();
+        try {
+            e?.currentTarget?.select();
+        } catch (error) {
+            console.error('Error handling focus:', error);
+            if (error instanceof Error) {
+                throw error;
+            }
+            throw new Error('Failed to handle focus event', { cause: error });
+        }
     }, []);
 
     const state = processingStateSignal.value;
