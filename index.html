@@ -4,9 +4,22 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Factorio Blueprint Playground</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Preload critical fonts -->
+    <link
+      rel="preload"
+      href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700&display=swap"
+      as="style"
+      onload="this.onload=null;this.rel='stylesheet'"
+    />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
+
+    <!-- Inline critical CSS -->
     <style>
       body {
         font-family: 'Titillium Web', sans-serif;
@@ -15,13 +28,16 @@
         padding: 0;
       }
     </style>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-747EH7X3KH"></script>
+
+    <!-- Preload critical JS -->
+    <link rel="modulepreload" href="/src/main.tsx" />
+
+    <!-- Analytics script with defer -->
+    <script defer src="https://www.googletagmanager.com/gtag/js?id=G-747EH7X3KH"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-
       gtag('config', 'G-747EH7X3KH');
     </script>
   </head>

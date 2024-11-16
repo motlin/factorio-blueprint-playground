@@ -6,11 +6,17 @@ export default defineConfig({
     plugins: [
         preact(),
         TanStackRouterVite({
-            generatedRouteTree: './src/routeTree.gen.ts', // Specify the output path
-            routesDirectory: './src/routes',              // Specify the routes directory
+            generatedRouteTree: './src/routeTree.gen.ts',
+            routesDirectory: './src/routes',
         }),
     ],
     build: {
         target: 'esnext',
+        // Enable minification
+        minify: 'esbuild',
+        // Enable tree shaking
+        modulePreload: {
+            polyfill: true,
+        },
     },
 });
