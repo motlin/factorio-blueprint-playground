@@ -1,9 +1,15 @@
-import {rootBlueprintSignal, selectedBlueprintSignal, selectedPathSignal} from '../state/blueprintState';
+import {
+    blueprintIdSignal, getFactorioprintsUrl,
+    rootBlueprintSignal,
+    selectedBlueprintSignal,
+    selectedPathSignal,
+} from '../state/blueprintState';
 
 import {BasicInfoPanel} from './BasicInfoPanel';
 import {BlueprintInfoPanels} from './BlueprintInfoPanels';
 import {BlueprintSourceHandler} from './BlueprintSourceHandler';
 import {BlueprintTree} from './BlueprintTree';
+import DisqusComments from './DisqusComments.tsx';
 import {ExportActions} from './ExportActions';
 import {ParametersPanel} from './ParametersPanel';
 import {InsetLight, Panel} from './ui';
@@ -67,6 +73,18 @@ export function BlueprintPlayground() {
 
             {/* Full-width parameters panel at bottom */}
             <ParametersPanel blueprintString={selectedBlueprint} />
+
+            {/* Comments panel - only shown for root blueprint when ID is present */}
+            {blueprintIdSignal.value && (
+                <Panel title="Comments">
+                    <DisqusComments
+                        identifier={blueprintIdSignal.value}
+                        url={getFactorioprintsUrl(blueprintIdSignal.value)}
+                        title={rootBlueprint?.blueprint?.label}
+                    />
+                </Panel>
+            )}
+
         </div>
     );
 }
