@@ -1,17 +1,24 @@
-absorb:
-    git absorb --base $(git first) --force
+set shell := ["bash", "-O", "globstar", "-c"]
+set dotenv-filename := ".envrc"
 
-rebase:
-    git rebase --interactive --autosquash --root
+import ".just/git.just"
+import ".just/git-rebase.just"
+import ".just/git-test.just"
 
-push:
-    git push --force-with-lease origin main
+default:
+    npm install
+    npm run build
+    npm run coverage
+    npm run lint:fix
+    npm run typecheck
 
 dump-tree:
-    dump-tree --ignore test/fixtures --ignore .vite > ../factorio-blueprint-playground.txt
+    dump-tree --line-numbers --ignore test/fixtures --ignore .vite --ignore requirements/ --ignore public/icons --ignore src/factorio.css --ignore stats.html > ../factorio-blueprint-playground.txt
+
+factorio_home := env('FACTORIO_HOME')
 
 dump-icon-sprites:
-    ~/Library/Application\ Support/Steam/SteamApps/common/Factorio/factorio.app/Contents/MacOS/factorio --dump-icon-sprites
+    {{factorio_home}}/factorio --dump-icon-sprites
 
 sync-icon-sprites:
     rsync -av ~/Library/Application\ Support/factorio/script-output/entity/*.png         ~/projects/factorio-blueprint-playground/public/icons/entity/
@@ -25,3 +32,7 @@ sync-icon-sprites:
     rsync -av ~/Library/Application\ Support/factorio/script-output/tile/*.png           ~/projects/factorio-blueprint-playground/public/icons/tile/
     rsync -av ~/Library/Application\ Support/factorio/script-output/virtual-signal/*.png ~/projects/factorio-blueprint-playground/public/icons/virtual-signal/
     npm run prebuild
+
+# Override this with a command called `woof` which notifies you in whatever ways you prefer.
+# My `woof` command uses `echo`, `say`, and sends a Pushover notification.
+echo_command := env('ECHO_COMMAND', "echo")
