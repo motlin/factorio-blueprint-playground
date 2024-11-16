@@ -2,6 +2,7 @@ import {useNavigate, useSearch} from '@tanstack/react-router';
 import type {JSX} from 'preact';
 import {useCallback, useEffect} from 'preact/hooks';
 
+import {RootSearchSchema} from '../routes/__root';
 import {
     inputStringSignal,
     processingStateSignal,
@@ -12,16 +13,16 @@ import {
 import {ErrorAlert} from './ui';
 
 export const BlueprintSourceHandler = () => {
-    const search = useSearch({from: '/'});
+    const search = useSearch({from: '/'}) as RootSearchSchema;
     const navigate = useNavigate();
 
     // Handle URL parameters on mount and search changes
     useEffect(() => {
-        if (search.data) {
+        if (typeof search.data === 'string') {
             void processBlueprint(search.data, 'data');
-        } else if (search.json) {
+        } else if (typeof search.json === 'string') {
             void processBlueprint(search.json, 'json');
-        } else if (search.source) {
+        } else if (typeof search.source === 'string') {
             void processBlueprint(search.source, 'url');
         }
     }, [search.data, search.json, search.source]);
