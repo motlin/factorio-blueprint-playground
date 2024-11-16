@@ -1,29 +1,45 @@
-import { RouterProvider, createRouter } from '@tanstack/react-router';
-import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
+import {createRouter, RouterProvider} from '@tanstack/react-router';
+import {StrictMode, Suspense} from 'react';
+import {createRoot} from 'react-dom/client';
 
 // Import the generated route tree
 import {routeTree} from './routeTree.gen';
 
 import './factorio.css';
 
-// Create a new router instance
+// Create router instance
 const router = createRouter({ routeTree });
 
-// Register the router instance for type safety
+// Register router for type safety
 declare module '@tanstack/react-router' {
-  interface Register {
-    router: typeof router
-  }
+    interface Register {
+        router: typeof router;
+    }
 }
 
-// Render the app
+// Root element rendering with loading fallback
 const rootElement = document.getElementById('app');
 if (rootElement && !rootElement.innerHTML) {
-  const root = createRoot(rootElement);
-  root.render(
-      <StrictMode>
-        <RouterProvider router={router} />
-      </StrictMode>,
-  );
+    const root = createRoot(rootElement);
+    root.render(
+        <StrictMode>
+            <Suspense fallback={<div className="loading">Loading...</div>}>
+                <RouterProvider router={router} />
+            </Suspense>
+        </StrictMode>,
+    );
+}
+
+// Initialize analytics after hydration
+if (typeof window.gtag === 'function') {
+    window.gtag('event', 'page_view');
+}
+
+// Preload important routes on idle
+if ('requestIdleCallback' in window) {
+    window.requestIdleCallback(() => {
+        void router.preloadRoute({
+            to: '/history',
+        });
+    });
 }
