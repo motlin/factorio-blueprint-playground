@@ -23,6 +23,10 @@ dist-ssr
 *.sln
 *.sw?
 
+/.envrc
 /.vite/
+/JUSTFILE_BRANCH
+/coverage
+/stats.html
 /tsconfig.app.tsbuildinfo
 /tsconfig.node.tsbuildinfo
