@@ -11,6 +11,37 @@ export const inputMethodSignal = signal<InputMethod>(null);
 // Raw input string
 export const inputStringSignal = signal<string>('');
 
+// Track the blueprint ID for Disqus comments
+export const blueprintIdSignal = signal<string | null>(null);
+
+// Extract blueprint ID from either factorioprints.com or factorio.school URLs
+function extractBlueprintId(url: string): string | null {
+    try {
+        const urlObj = new URL(url);
+
+        // Handle factorioprints.com URLs
+        if (urlObj.hostname.includes('factorioprints.com')) {
+            const match = url.match(/factorioprints\.com\/view\/([^/\s#]+)/);
+            return match?.[1] || null;
+        }
+
+        // Handle factorio.school URLs - same ID pattern
+        if (urlObj.hostname.includes('factorio.school')) {
+            const match = url.match(/factorio\.school\/view\/([^/\s#]+)/);
+            return match?.[1] || null;
+        }
+
+        return null;
+    } catch {
+        return null;
+    }
+}
+
+// Generate the canonical Factorioprints URL for Disqus
+export function getFactorioprintsUrl(id: string): string {
+    return `https://factorioprints.com/view/${id}`;
+}
+
 // Validation/processing state
 export type ProcessingState =
     | { status: 'initial' }
@@ -145,7 +176,10 @@ export async function processBlueprint(
     input: string,
     method: InputMethod,
 ): Promise<void> {
-    if (!input || !method || method === 'paste') return;
+    if (!input || !method || method === 'paste') {
+        blueprintIdSignal.value = null;
+        return;
+    }
 
     batch(() => {
         inputStringSignal.value = input;
@@ -159,9 +193,11 @@ export async function processBlueprint(
         switch (method) {
             case 'data':
                 blueprint = deserializeBlueprint(input);
+                blueprintIdSignal.value = null;
                 break;
             case 'json':
                 blueprint = JSON.parse(input) as BlueprintString;
+                blueprintIdSignal.value = null;
                 break;
             case 'url': {
                 const url = new URL(input);
@@ -180,6 +216,10 @@ export async function processBlueprint(
                 const data: unknown = await response.json();
                 const blueprintString = fetchConfig.extractBlueprintString(data);
                 blueprint = deserializeBlueprint(blueprintString);
+
+                // Extract and store blueprint ID if from a supported source
+                const id = extractBlueprintId(input);
+                blueprintIdSignal.value = id;
                 break;
             }
             default:
@@ -202,6 +242,7 @@ export async function processBlueprint(
                 message: err instanceof Error ? err.message : 'Processing failed',
             };
             selectedPathSignal.value = null;
+            blueprintIdSignal.value = null;
         });
     }
 }
