@@ -13,7 +13,7 @@ import {
 import {ErrorAlert} from './ui';
 
 export const BlueprintSourceHandler = () => {
-    const search = useSearch({from: '/'}) as RootSearchSchema;
+    const search: RootSearchSchema = useSearch({from: '/'});
     const navigate = useNavigate();
 
     // Handle URL parameters on mount and search changes
