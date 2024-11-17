@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import fs from 'fs/promises';
 import path from 'path';
-import { exit } from 'process';
+import {exit} from 'process';
 
 import sharp from 'sharp';
 
@@ -17,7 +17,8 @@ async function convertToWebP(filePath: string): Promise<void> {
         try {
             const webpStats = await fs.stat(webpPath);
             if (webpStats.mtime > sourceStats.mtime) {
-                return; // WebP is newer than source, skip
+                // WebP is newer than source, skip
+                return;
             }
         } catch {
             // WebP doesn't exist, continue with conversion
@@ -39,7 +40,7 @@ async function convertToWebP(filePath: string): Promise<void> {
 }
 
 async function processDirectory(dirPath: string): Promise<void> {
-    const entries = await fs.readdir(dirPath, { withFileTypes: true });
+    const entries = await fs.readdir(dirPath, {withFileTypes: true});
 
     for (const entry of entries) {
         const fullPath = path.join(dirPath, entry.name);
