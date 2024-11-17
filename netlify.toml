@@ -16,3 +16,10 @@ Cache-Control = "public, max-age=86400, immutable"
 for = "/*.woff2"
 [headers.values]
 Cache-Control = "public, max-age=86400, immutable"
+
+[[headers]]
+for = "/assets/*"
+[headers.values]
+Cache-Control = "public, max-age=86400, immutable"
+X-Frame-Options = "DENY"
+X-XSS-Protection = "1; mode=block"
