@@ -341,8 +341,8 @@ Phase 1: Project Setup
 * Create new project using Vite template for TypeScript + Preact
   * `npm create vite@latest factorio-blueprint-playground -- --template preact-ts`
 * Set up dependencies
-  * `npm install idb-keyval @preact/signals pako @tanstack/router @tanstack/react-router`
-  * `npm install -D @types/pako @tanstack/router-devtools`
+  * `npm install idb-keyval @preact/signals fflate @tanstack/router @tanstack/react-router`
+  * `npm install -D @tanstack/router-devtools`
 * Get rid of unnecessary template files and stuff in index.html
   * rm src/app.tsx
   * rm src/app.css
@@ -383,16 +383,12 @@ Phase 2: Core Blueprint Parsing
 * Add compression settings matching Factorio's requirements
 
 ```typescript
-export interface CompressionSettings extends DeflateFunctionOptions {
-  level: 8 | 9;            // Must be 8 or 9
-  windowBits: 15           // Must be 15 - Factorio requires max window size (32K)
-  memLevel: number         // Must be 4-9 inclusive
-  strategy: pako.constants.Z_DEFAULT_STRATEGY // Must be 0 - Factorio requires default strategy
-  raw: false               // Must be false - Factorio requires zlib headers
+export interface CompressionSettings {
+  level?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;  // 0 = no compression, 9 = max compression
+  mem?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;  // Memory level (more = faster)
 }
 ```
 
-* 
 * Add BlueprintWrapper class for unified blueprint handling
 * Add comprehensive testing for blueprint parsing
   * Blueprint roundtrip tests
