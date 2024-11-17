@@ -1,6 +1,6 @@
-import {deflate, inflate} from 'pako';
+import {zlibSync, unzlibSync, DeflateOptions} from 'fflate';
 
-import {CompressionSettings, DEFAULT_COMPRESSION_SETTINGS} from './compressionSettings';
+import {DEFAULT_COMPRESSION_SETTINGS} from './compressionSettings';
 import type {BlueprintString} from './types';
 
 export class BlueprintError extends Error {
@@ -28,8 +28,9 @@ export function deserializeBlueprint(blueprintString: string): BlueprintString {
     const base64String = blueprintString.slice(1);
     const bytes = Uint8Array.from(atob(base64String), c => c.charCodeAt(0));
 
-    // Decompress the bytes using zlib (pako)
-    const decompressedStr = inflate(bytes, {to: 'string'});
+    // Decompress using fflate's zlib decompression
+    const decompressedBytes = unzlibSync(bytes);
+    const decompressedStr = new TextDecoder().decode(decompressedBytes);
 
     return JSON.parse(decompressedStr.trim()) as BlueprintString;
 }
@@ -39,15 +40,18 @@ export function deserializeBlueprint(blueprintString: string): BlueprintString {
  */
 export function serializeBlueprint(
     data: BlueprintString,
-    settings: CompressionSettings = DEFAULT_COMPRESSION_SETTINGS,
+    settings: DeflateOptions = DEFAULT_COMPRESSION_SETTINGS,
 ): string {
     const jsonStr = JSON.stringify(data).trim();
-    const compressed = deflate(jsonStr, settings);
+    const bytes = new TextEncoder().encode(jsonStr);
+
+    // Compress using fflate's zlib compression
+    const compressed = zlibSync(bytes, settings);
 
     // Convert to base64 and add version prefix
-    return '0' + btoa(compressed.reduce(function (data, byte) {
-        return data + String.fromCharCode(byte);
-    }, ''));
+    return '0' + btoa(compressed.reduce((data, byte) =>
+        data + String.fromCharCode(byte),
+    ''));
 }
 
 /**

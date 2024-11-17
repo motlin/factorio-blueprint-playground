@@ -27,7 +27,7 @@ export default defineConfig({
                 manualChunks: {
                     'preact': ['preact', '@preact/signals'],
                     'react-router': ['@tanstack/react-router'],
-                    'pako': ['pako'],
+                    'fflate': ['fflate'],
                     'idb-keyval': ['idb-keyval'],
                 },
             },

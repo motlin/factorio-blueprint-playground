@@ -24,7 +24,7 @@ describe('blueprintParser', () => {
         });
 
         it('throws error on invalid compression', () => {
-            expect(() => deserializeBlueprint('0YWJj')).toThrow(/incorrect header check/);
+            expect(() => deserializeBlueprint('0YWJj')).toThrow(/invalid zlib data/);
         });
 
         it('parses a simple blueprint', () => {
@@ -41,7 +41,7 @@ describe('blueprintParser', () => {
         it('serializes invalid blueprint data', () => {
             const invalid = {} as BlueprintString;
             const serializedInvalidBlueprint = serializeBlueprint(invalid);
-            expect(serializedInvalidBlueprint).toEqual('0eNqrrgUAAXUA+Q==');
+            expect(serializedInvalidBlueprint).toEqual('0eF6rrgUAAXUA+Q==');
         });
 
         it('serializes a simple blueprint', () => {
