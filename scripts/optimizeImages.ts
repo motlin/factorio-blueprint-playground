@@ -12,19 +12,18 @@ async function convertToWebP(filePath: string): Promise<void> {
     const webpPath = filePath.replace(/\.(png|jpg|jpeg)$/i, '.webp');
 
     try {
-        // Only convert if WebP doesn't exist or is older than source
         const sourceStats = await fs.stat(filePath);
+
         try {
             const webpStats = await fs.stat(webpPath);
             if (webpStats.mtime > sourceStats.mtime) {
-                // WebP is newer than source, skip
                 return;
             }
-        } catch {
-            // WebP doesn't exist, continue with conversion
+            console.log(`WebP at ${webpPath} is older than source (${webpStats.mtime.toISOString()} < ${sourceStats.mtime.toISOString()})`);
+        } catch (error) {
+            console.log(`Creating new WebP file at ${webpPath} because of error:`, error);
         }
 
-        // Convert to WebP with high quality
         await sharp(filePath)
             .webp({
                 quality: 90,
@@ -33,13 +32,14 @@ async function convertToWebP(filePath: string): Promise<void> {
             })
             .toFile(webpPath);
 
-        console.log(`✓ Converted ${path.basename(filePath)} to WebP`);
+        console.log(`✓ Created ${webpPath}`);
     } catch (error) {
         console.error(`✗ Failed to convert ${filePath}:`, error);
     }
 }
 
 async function processDirectory(dirPath: string): Promise<void> {
+    console.log(`\nScanning directory: ${dirPath}`);
     const entries = await fs.readdir(dirPath, {withFileTypes: true});
 
     for (const entry of entries) {
@@ -54,16 +54,20 @@ async function processDirectory(dirPath: string): Promise<void> {
             }
         }
     }
+
 }
 
 async function main() {
     console.log('Starting image optimization...');
+    console.log(`Base directory: ${path.resolve(INPUT_DIR)}`);
+    console.log(`Supported formats: ${SUPPORTED_FORMATS.join(', ')}`);
+
     const startTime = Date.now();
 
     try {
         await processDirectory(INPUT_DIR);
         const duration = ((Date.now() - startTime) / 1000).toFixed(2);
-        console.log(`\nImage optimization completed in ${duration}s`);
+        console.log(`\nCompleted in ${duration}s`);
     } catch (error) {
         console.error('Failed to process images:', error);
         exit(1);
