@@ -5,7 +5,7 @@ import {exit} from 'process';
 
 import sharp from 'sharp';
 
-const ICONS_DIR = 'public/icons';
+const INPUT_DIR = 'public';
 const SUPPORTED_FORMATS = ['.png', '.jpg', '.jpeg'];
 
 async function convertToWebP(filePath: string): Promise<void> {
@@ -61,7 +61,7 @@ async function main() {
     const startTime = Date.now();
 
     try {
-        await processDirectory(ICONS_DIR);
+        await processDirectory(INPUT_DIR);
         const duration = ((Date.now() - startTime) / 1000).toFixed(2);
         console.log(`\nImage optimization completed in ${duration}s`);
     } catch (error) {
