@@ -16,7 +16,7 @@ async function convertToWebP(filePath: string): Promise<void> {
 
         try {
             const webpStats = await fs.stat(webpPath);
-            if (webpStats.mtime > sourceStats.mtime) {
+            if (webpStats.mtime >= sourceStats.mtime) {
                 return;
             }
             console.log(`WebP at ${webpPath} is older than source (${webpStats.mtime.toISOString()} < ${sourceStats.mtime.toISOString()})`);
