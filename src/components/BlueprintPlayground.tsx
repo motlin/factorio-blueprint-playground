@@ -30,25 +30,21 @@ export function BlueprintPlayground() {
                 <BlueprintSourceHandler />
             </Panel>
 
-            <div className="panels2">
+            {rootBlueprint && <div className="panels2">
                 {/* Left side */}
                 <div>
-                    {rootBlueprint && (
-                        <>
-                            <Panel title="Export Blueprint">
-                                <InsetLight>
-                                    <ExportActions
-                                        blueprint={rootBlueprint}
-                                        path={null}
-                                        title="Root Blueprint"
-                                    />
-                                </InsetLight>
-                            </Panel>
-                            <Panel title="Blueprint Tree">
-                                <BlueprintTree/>
-                            </Panel>
-                        </>
-                    )}
+                    <Panel title="Export Blueprint">
+                        <InsetLight>
+                            <ExportActions
+                                blueprint={rootBlueprint}
+                                path={null}
+                                title="Root Blueprint"
+                            />
+                        </InsetLight>
+                    </Panel>
+                    <Panel title="Blueprint Tree">
+                        <BlueprintTree/>
+                    </Panel>
                 </div>
 
                 {/* Right side */}
@@ -64,27 +60,29 @@ export function BlueprintPlayground() {
                                     />
                                 </InsetLight>
                             </Panel>
-                            <BasicInfoPanel blueprint={selectedBlueprint} />
-                            <BlueprintInfoPanels blueprint={selectedBlueprint} />
+                            <BasicInfoPanel blueprint={selectedBlueprint}/>
+                            <BlueprintInfoPanels blueprint={selectedBlueprint}/>
                         </>
                     )}
                 </div>
             </div>
+            }
 
-            {/* Full-width parameters panel at bottom */}
-            <ParametersPanel blueprintString={selectedBlueprint} />
+            {rootBlueprint && <>
+                {/* Full-width parameters panel at bottom */}
+                <ParametersPanel blueprintString={selectedBlueprint} />
 
-            {/* Comments panel - only shown for root blueprint when ID is present */}
-            {blueprintIdSignal.value && (
-                <Panel title="Comments">
-                    <DisqusComments
-                        identifier={blueprintIdSignal.value}
-                        url={getFactorioprintsUrl(blueprintIdSignal.value)}
-                        title={rootBlueprint?.blueprint?.label}
-                    />
-                </Panel>
-            )}
-
+                {/* Comments panel - only shown for root blueprint when ID is present */}
+                {blueprintIdSignal.value && (
+                    <Panel title="Comments">
+                        <DisqusComments
+                            identifier={blueprintIdSignal.value}
+                            url={getFactorioprintsUrl(blueprintIdSignal.value)}
+                            title={rootBlueprint?.blueprint?.label}
+                        />
+                    </Panel>
+                )}
+            </>}
         </div>
     );
 }
