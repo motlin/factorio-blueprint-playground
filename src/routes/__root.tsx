@@ -55,10 +55,10 @@ export const Route = createRootRoute({
         <div>
             <div className="top-bar">
                 <div className="top-bar-inner">
-                    <nav className="flex flex-items-baseline p8">
+                    <nav>
                         <Link
                             to="/"
-                            className="blue nowrap fs110"
+                            className="blue nowrap"
                             activeProps={{
                                 className: 'yellow bold',
                             }}
@@ -68,7 +68,7 @@ export const Route = createRootRoute({
                         <span className="separator">|</span>
                         <Link
                             to="/history"
-                            className="blue nowrap fs110"
+                            className="blue nowrap"
                             activeProps={{
                                 className: 'yellow bold',
                             }}
