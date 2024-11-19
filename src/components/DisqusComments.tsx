@@ -41,14 +41,12 @@ const DisqusComments = ({ url, identifier, title }: DisqusCommentsProps) => {
       return;
     }
 
-    // Configure Disqus
     window.disqus_config = function (this: DisqusConfig) {
       this.page.url = url;
       this.page.identifier = identifier;
       this.page.title = title;
     };
 
-    // Load Disqus script
     const script = document.createElement('script');
     script.src = 'https://factorio-blueprints.disqus.com/embed.js';
     script.setAttribute('data-timestamp', (+new Date()).toString());
@@ -56,11 +54,9 @@ const DisqusComments = ({ url, identifier, title }: DisqusCommentsProps) => {
     document.body.appendChild(script);
 
     return () => {
-      // Cleanup script on unmount
       if (document.body.contains(script)) {
         document.body.removeChild(script);
       }
-      // Clean up the global disqus_config
       delete window.disqus_config;
     };
   }, [url, identifier, title]);
