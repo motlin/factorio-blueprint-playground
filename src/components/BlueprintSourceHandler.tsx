@@ -28,11 +28,13 @@ export const BlueprintSourceHandler = () => {
     }, [search.data, search.json, search.source]);
 
     const handleChange = useCallback((e: JSX.TargetedEvent<HTMLTextAreaElement>) => {
+        e.preventDefault();
         const value = (e.target as HTMLTextAreaElement).value;
         void handlePastedInput(value, navigate);
     }, [navigate]);
 
     const handleFocus = useCallback((e: JSX.TargetedFocusEvent<HTMLTextAreaElement>) => {
+        e.preventDefault();
         e.currentTarget.select();
     }, []);
 

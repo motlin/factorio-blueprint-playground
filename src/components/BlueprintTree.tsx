@@ -34,7 +34,10 @@ const TreeRow = memo(({ node, indentLevel, isSelected }: TreeRowProps) => {
             style={{
                 paddingLeft: `${indentPx}px`,
             }}
-            onClick={() => { selectBlueprintPath(node.path); }}
+            onClick={(e) => {
+                e.preventDefault();
+                selectBlueprintPath(node.path);
+            }}
         >
             <div className="flex flex-items-center">
                 <FactorioIcon icon={{ type: 'item', name: wrapper.getType() }} />

@@ -116,9 +116,19 @@ function downloadFile(filename: string, data: string) {
     URL.revokeObjectURL(url);
 }
 
-const ButtonWithIcon = ({icon: Icon, text, onClick}: { icon: LucideIcon, text: string, onClick: () => void }) => (
-    <ButtonGreen onClick={onClick}>
-        <Icon size={18} className="mr8"/>
+interface ButtonWithIconProps {
+    icon: LucideIcon;
+    text: string;
+    onClick: () => void;
+}
+
+const ButtonWithIcon = ({icon: Icon, text, onClick}: ButtonWithIconProps) => (
+    <ButtonGreen
+        onClick={(e) => {
+            e.preventDefault();
+            onClick();
+        }}
+    >        <Icon size={18} className="mr8"/>
         {text}
     </ButtonGreen>
 );
@@ -126,14 +136,14 @@ const ButtonWithIcon = ({icon: Icon, text, onClick}: { icon: LucideIcon, text: s
 export const ExportActions = memo(({ blueprint, path, title }: ExportActionsProps) => {
     if (!blueprint) return null;
 
-    const handleCopyString = async () => {
+    const handleCopyString = () => {
         const str = serializeBlueprint(blueprint);
-        await copyToClipboard(str);
+        void copyToClipboard(str);
     };
 
-    const handleCopyJSON = async () => {
+    const handleCopyJSON = () => {
         const json = JSON.stringify(blueprint, null, 2);
-        await copyToClipboard(json);
+        void copyToClipboard(json);
     };
 
     const handleDownloadString = () => {
@@ -149,17 +159,17 @@ export const ExportActions = memo(({ blueprint, path, title }: ExportActionsProp
                 <ButtonWithIcon
                     icon={ClipboardCopy}
                     text="Copy String"
-                    onClick={() => void handleCopyString()}
+                    onClick={handleCopyString}
                 />
                 <ButtonWithIcon
                     icon={FileJson}
                     text="Copy JSON"
-                    onClick={() => void handleCopyJSON()}
+                    onClick={handleCopyJSON}
                 />
                 <ButtonWithIcon
                     icon={Download}
                     text="Download String"
-                    onClick={() => { handleDownloadString(); }}
+                    onClick={handleDownloadString}
                 />
             </div>
         </>
