@@ -5,7 +5,7 @@ import {exit} from 'process';
 
 import sharp from 'sharp';
 
-const INPUT_DIR = 'public';
+const INPUT_DIR = 'public/icons';
 const SUPPORTED_FORMATS = ['.png', '.jpg', '.jpeg'];
 
 async function convertToWebP(filePath: string): Promise<void> {
