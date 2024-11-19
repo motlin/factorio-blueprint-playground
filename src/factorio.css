@@ -3018,6 +3018,18 @@ a.download i {
     0px 0px 4px 0px #000;
 }
 
+.tree-row.active {
+    background-color: rgba(94, 182, 99, 0.4);
+    box-shadow: inset 0px 10px 2px -8px #000,
+    inset 0px 9px 2px -8px #000,
+    inset 8px 0px 4px -8px darkgreen,
+    inset -8px 0px 4px -8px darkgreen,
+    inset 0px 9px 2px -8px darkgreen,
+    inset 0px -9px 2px -8px darkgreen,
+    inset 0px -8.5px 0px -8px darkgreen,
+    0px 0px 4px 0px #000;
+}
+
 .blueprint-tree .separator {
     width: 1px;
     height: 24px;
