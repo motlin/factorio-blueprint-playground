@@ -1,9 +1,10 @@
 import type {VNode} from 'preact';
 import {memo} from 'preact/compat';
 
-import {BlueprintWrapper} from '../parsing/BlueprintWrapper.ts';
+import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
 import {Icon} from '../parsing/types.ts';
-import {blueprintTreeSignal, selectBlueprintPath, selectedPathSignal, TreeNode} from '../state/blueprintState';
+import type {TreeNode} from '../state/blueprintState';
+import {blueprintTreeSignal, selectBlueprintPath, selectedPathSignal} from '../state/blueprintState';
 
 import {FactorioIcon} from './FactorioIcon';
 import {RichText} from './RichText';
@@ -13,10 +14,11 @@ interface TreeRowProps {
     node: TreeNode;
     indentLevel: number;
     isSelected: boolean;
+    isActive: boolean;
 }
 
 // Memoize the tree row component
-const TreeRow = memo(({ node, indentLevel, isSelected }: TreeRowProps) => {
+const TreeRow = memo(({ node, indentLevel, isSelected, isActive }: TreeRowProps) => {
     const wrapper = new BlueprintWrapper(node.blueprint);
 
     function getIconElement(index: number) {
@@ -27,10 +29,17 @@ const TreeRow = memo(({ node, indentLevel, isSelected }: TreeRowProps) => {
         return <div key={index} className="placeholder" />;
     }
 
+    // Combine the CSS classes based on state
+    const classes = [
+        'tree-row flex clickable',
+        isSelected ? 'selected' : '',
+        isActive ? 'active' : '',
+    ].filter(Boolean).join(' ');
+
     const indentPx = (indentLevel * 32).toString();
     return (
         <div
-            className={`tree-row flex clickable ${isSelected ? 'selected' : ''}`}
+            className={classes}
             style={{
                 paddingLeft: `${indentPx}px`,
             }}
@@ -59,9 +68,32 @@ const TreeRow = memo(({ node, indentLevel, isSelected }: TreeRowProps) => {
     return (
         prevProps.node === nextProps.node &&
         prevProps.isSelected === nextProps.isSelected &&
-        prevProps.indentLevel === nextProps.indentLevel
+        prevProps.indentLevel === nextProps.indentLevel &&
+        prevProps.isActive === nextProps.isActive
     );
 });
+
+function isNodeActive(node: TreeNode, parentNode?: TreeNode): boolean {
+    if (!parentNode) {
+        return false;
+    }
+
+    if (!('blueprint_book' in parentNode.blueprint)) {
+        return false;
+    }
+
+    const book = parentNode.blueprint.blueprint_book;
+    if (!book || typeof book.active_index !== 'number') {
+        return false;
+    }
+
+    // Find this node's index in the parent's children
+    const nodeIndex = parentNode.children.findIndex(
+        child => child.path === node.path,
+    );
+
+    return nodeIndex === book.active_index;
+}
 
 // Memoize the entire tree component
 export const BlueprintTree = memo(() => {
@@ -70,8 +102,10 @@ export const BlueprintTree = memo(() => {
 
     if (!tree) return null;
 
-    function renderNode(node: TreeNode, level: number): VNode[] {
+    function renderNode(node: TreeNode, level: number, parent?: TreeNode): VNode[] {
         const rows: VNode[] = [];
+
+        const active = isNodeActive(node, parent);
 
         rows.push(
             <TreeRow
@@ -79,11 +113,12 @@ export const BlueprintTree = memo(() => {
                 node={node}
                 indentLevel={level}
                 isSelected={selectedPath === node.path}
+                isActive={active}
             />,
         );
 
         node.children.forEach(child => {
-            rows.push(...renderNode(child, level + 1));
+            rows.push(...renderNode(child, level + 1, node));
         });
 
         return rows;
