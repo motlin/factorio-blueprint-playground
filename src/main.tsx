@@ -9,8 +9,9 @@ import './styles/factorio-a76ef767.css';
 import './styles/main.css';
 
 // Create router instance
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 const router = createRouter({routeTree});
+/* eslint-enable @typescript-eslint/no-unsafe-assignment */
 
 // Register router for type safety
 declare module '@tanstack/react-router' {
