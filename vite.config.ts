@@ -22,11 +22,6 @@ export default defineConfig({
         }),
     ],
     build: {
-        target: 'esnext',
-        minify: 'esbuild',
-        modulePreload: {
-            polyfill: true,
-        },
         rollupOptions: {
             output: {
                 manualChunks: {
@@ -37,9 +32,6 @@ export default defineConfig({
                 },
             },
         },
-        cssCodeSplit: true,
         sourcemap: true,
-        assetsInlineLimit: 4096,
-        chunkSizeWarningLimit: 1000,
     },
 });
