@@ -1,8 +1,8 @@
-import { render } from '@testing-library/preact';
+import {render, within} from '@testing-library/preact';
 import React from 'react';
-import { describe, expect, it } from 'vitest';
+import {describe, expect, it} from 'vitest';
 
-import { RichText } from '../../src/components/RichText';
+import {RichText} from '../../src/components/RichText';
 import '../../test/setup';
 
 describe('RichText', () => {
@@ -20,38 +20,38 @@ describe('RichText', () => {
 
     // Test basic item tags
     it('renders item tags correctly', () => {
-        const { container } = render(<RichText text="[item=blueprint-book]" />);
-        const img = container.querySelector('img');
-        expect(img?.getAttribute('src')).toBe('/icons/item/blueprint-book.webp');
-        expect(img?.getAttribute('title')).toBe('item: blueprint-book');
+        const { getByTestId } = render(<RichText text="[item=blueprint-book]" />);
+        const icon = getByTestId('icon');
+        expect(icon.getAttribute('src')).toBe('/icons/item/blueprint-book.webp');
+        expect(icon.getAttribute('title')).toBe('item: blueprint-book');
     });
 
     // Test quality parameter
     it('renders items with quality correctly', () => {
-        const { container } = render(<RichText text="[item=iron-plate,quality=normal]" />);
+        const renderResult = render(<RichText text="[item=iron-plate,quality=normal]" />);
 
-        const wrapper = container.querySelector('.factorio-icon-group');
+        const wrapper = renderResult.getByTestId('iconParent');
         expect(wrapper).toBeTruthy();
 
-        const mainIcon = wrapper?.querySelector('.factorio-icon');
-        expect(mainIcon?.getAttribute('src')).toBe('/icons/item/iron-plate.webp');
+        const mainIcon = within(wrapper).getByTestId('icon');
+        expect(mainIcon.getAttribute('src')).toBe('/icons/item/iron-plate.webp');
 
-        const qualityIcon = wrapper?.querySelector('.quality');
-        expect(qualityIcon?.getAttribute('src')).toBe('/icons/quality/normal.webp');
+        const qualityIcon = within(wrapper).getByTestId('quality');
+        expect(qualityIcon.getAttribute('src')).toBe('/icons/quality/normal.webp');
     });
 
     // Test entity tags with quality
     it('renders entities with quality correctly', () => {
-        const { container } = render(<RichText text="[entity=small-biter,quality=uncommon]" />);
+        const renderResult = render(<RichText text="[entity=small-biter,quality=uncommon]" />);
 
-        const wrapper = container.querySelector('.factorio-icon-group');
+        const wrapper = renderResult.getByTestId('iconParent');
         expect(wrapper).toBeTruthy();
 
-        const mainIcon = wrapper?.querySelector('.factorio-icon');
-        expect(mainIcon?.getAttribute('src')).toBe('/icons/entity/small-biter.webp');
+        const mainIcon = within(wrapper).getByTestId('icon');
+        expect(mainIcon.getAttribute('src')).toBe('/icons/entity/small-biter.webp');
 
-        const qualityIcon = wrapper?.querySelector('.quality');
-        expect(qualityIcon?.getAttribute('src')).toBe('/icons/quality/uncommon.webp');
+        const qualityIcon = within(wrapper).getByTestId('quality');
+        expect(qualityIcon.getAttribute('src')).toBe('/icons/quality/uncommon.webp');
     });
 
     // Test quality tags both as plain tags and as modifiers
@@ -60,11 +60,9 @@ describe('RichText', () => {
             const qualities = ['normal', 'uncommon', 'rare', 'epic', 'legendary'];
             const text = qualities.map(q => `[quality=${q}]`).join('');
 
-            const { container } = render(
-                <RichText text={text} />,
-            );
+            const { getAllByTestId } = render(<RichText text={text} />);
 
-            const icons = container.querySelectorAll('img');
+            const icons = getAllByTestId('icon');
             expect(icons.length).toBe(qualities.length);
 
             qualities.forEach((quality, index) => {
@@ -77,11 +75,11 @@ describe('RichText', () => {
 
         it('renders quality parameters on items correctly', () => {
             const qualities = ['normal', 'uncommon', 'rare', 'epic', 'legendary'];
-            const { container } = render(
+            const { getAllByTestId } = render(
                 <RichText text={qualities.map(q => `[item=iron-plate,quality=${q}]`).join('')} />,
             );
 
-            const qualityIcons = container.querySelectorAll('.quality');
+            const qualityIcons = getAllByTestId('quality');
             expect(qualityIcons.length).toBe(qualities.length);
 
             qualities.forEach((quality, index) => {
@@ -95,30 +93,30 @@ describe('RichText', () => {
 
     // Test planet tags
     it('renders planet tags correctly', () => {
-        const { container } = render(<RichText text="[planet=gleba]" />);
-        const img = container.querySelector('img');
-        expect(img?.getAttribute('src')).toBe('/icons/space-location/gleba.webp');
+        const { getByTestId } = render(<RichText text="[planet=gleba]" />);
+        const icon = getByTestId('icon');
+        expect(icon.getAttribute('src')).toBe('/icons/space-location/gleba.webp');
     });
 
     // Test planet/space-location tags
     describe('space location tags', () => {
         it('renders space location tags correctly', () => {
-            const { container } = render(
+            const { getAllByTestId } = render(
                 <RichText text="[space-location=solar-system-edge] [space-location=shattered-planet]" />,
             );
 
-            const imgs = container.querySelectorAll('img');
-            expect(imgs.length).toBe(2);
+            const icons = getAllByTestId('icon');
+            expect(icons.length).toBe(2);
 
             // Check first icon
-            const firstIcon = imgs[0];
+            const firstIcon = icons[0];
             expect(firstIcon.getAttribute('src')).toBe(
                 '/icons/space-location/solar-system-edge.webp',
             );
             expect(firstIcon.getAttribute('title')).toBe('space-location: solar-system-edge');
 
             // Check second icon
-            const secondIcon = imgs[1];
+            const secondIcon = icons[1];
             expect(secondIcon.getAttribute('src')).toBe(
                 '/icons/space-location/shattered-planet.webp',
             );
@@ -126,91 +124,138 @@ describe('RichText', () => {
         });
 
         it('renders planet tags as space-location icons', () => {
-            const { container } = render(
+            const { getByTestId } = render(
                 <RichText text="[planet=solar-system-edge]" />,
             );
 
-            const img = container.querySelector('img');
-            expect(img).toBeTruthy();
-            expect(img?.getAttribute('src')).toBe(
+            const icon = getByTestId('icon');
+            expect(icon).toBeTruthy();
+            expect(icon.getAttribute('src')).toBe(
                 '/icons/space-location/solar-system-edge.webp',
             );
-            expect(img?.getAttribute('title')).toBe('planet: solar-system-edge');
+            expect(icon.getAttribute('title')).toBe('planet: solar-system-edge');
         });
     });
 
     // Test virtual signal tags
     it('renders virtual signal tags correctly', () => {
-        const { container } = render(<RichText text="[virtual-signal=signal-any-quality]" />);
-        const img = container.querySelector('img');
-        expect(img?.getAttribute('src')).toBe('/icons/virtual-signal/signal-any-quality.webp');
+        const { getByTestId } = render(<RichText text="[virtual-signal=signal-any-quality]" />);
+        const icon = getByTestId('icon');
+        expect(icon.getAttribute('src')).toBe('/icons/virtual-signal/signal-any-quality.webp');
     });
 
     // Test color tags with different formats
     describe('color tags', () => {
         it('handles named colors', () => {
-            const { container } = render(<RichText text="[color=red]Red text[/color]" />);
-            const span = container.querySelector('span');
-            expect(span instanceof HTMLElement && span.style.color).toBe('rgb(235, 92, 95)'); // #eb5c5f
-            expect(span?.textContent).toBe('Red text');
+            const renderedResult = render(<RichText text="[color=red]Red text[/color]" />);
+            const span = renderedResult.getByText('Red text');
+            expect(span.style.color).toBe('rgb(235, 92, 95)'); // #eb5c5f
+            expect(span.textContent).toBe('Red text');
         });
 
         it('handles RGB values 0-1', () => {
-            const { container } = render(<RichText text="[color=1,0,0]Red text[/color]" />);
-            const span = container.querySelector('span');
-            expect(span instanceof HTMLElement && span.style.color).toBe('rgb(255, 0, 0)');
+            const renderedResult = render(<RichText text="[color=1,0,0]Red text[/color]" />);
+            const span = renderedResult.getByText('Red text');
+            expect(span.style.color).toBe('rgb(255, 0, 0)');
+            expect(span.textContent).toBe('Red text');
         });
 
         it('handles RGB values 0-255', () => {
-            const { container } = render(<RichText text="[color=255,0,0]Red text[/color]" />);
-            const span = container.querySelector('span');
-            expect(span instanceof HTMLElement && span.style.color).toBe('rgb(255, 0, 0)');
+            const renderedResult = render(<RichText text="[color=255,0,0]Red text[/color]" />);
+            const span = renderedResult.getByText('Red text');
+            expect(span.style.color).toBe('rgb(255, 0, 0)');
+            expect(span.textContent).toBe('Red text');
         });
 
         it('handles hex colors', () => {
-            const { container } = render(<RichText text="[color=#ff0000]Red text[/color]" />);
-            const span = container.querySelector('span');
-            expect(span instanceof HTMLElement && span.style.color).toBe('rgb(255, 0, 0)');
+            const renderedResult = render(<RichText text="[color=#ff0000]Red text[/color]" />);
+            const span = renderedResult.getByText('Red text');
+            expect(span.style.color).toBe('rgb(255, 0, 0)');
+            expect(span.textContent).toBe('Red text');
         });
     });
 
     // Test font tags
     it('renders bold font correctly', () => {
-        const { container } = render(<RichText text="[font=default-bold]Bold text[/font]" />);
-        const span = container.querySelector('span');
-        expect(span instanceof HTMLElement && span.style.fontWeight).toBe('bold');
-        expect(span?.textContent).toBe('Bold text');
+        const renderedResult = render(<RichText text="[font=default-bold]Bold text[/font]" />);
+        const span = renderedResult.getByText('Bold text');
+        expect(span.style.fontWeight).toBe('bold');
+        expect(span.textContent).toBe('Bold text');
     });
 
     // Test nested formatting
     it('handles nested formatting correctly', () => {
-        const { container } = render(
+        const { getByTestId } = render(
             <RichText text="[color=red][font=default-bold]Bold red text[/font][/color]" />,
         );
-        const span = container.querySelector('span');
-        expect(span instanceof HTMLElement && span.style.color).toBe('rgb(235, 92, 95)'); // #eb5c5f
-        expect(span instanceof HTMLElement && span.style.fontWeight).toBe('bold');
-        expect(span?.textContent).toBe('Bold red text');
+        const span = getByTestId('formatted-text');
+        expect(span.style.color).toBe('rgb(235, 92, 95)'); // #eb5c5f
+        expect(span.style.fontWeight).toBe('bold');
+        expect(span.textContent).toBe('Bold red text');
     });
 
     // Test complex mixed content
     it('handles mixed content correctly', () => {
         const complexText = '[item=iron-plate,quality=normal] Iron plate with [color=red]red[/color] text and [font=default-bold]bold[/font] styling';
-        const { container } = render(<RichText text={complexText} />);
+        const renderedResult = render(<RichText text={complexText} />);
 
-        // Should have the item icon with quality
-        const wrapper = container.querySelector('.factorio-icon-group');
-        expect(wrapper).toBeTruthy();
+    // Check root structure
+    const richTextDiv = within(renderedResult.container).getByTestId('richtext');
+    expect(richTextDiv).toBeInTheDocument();
 
-        // Should have colored text
-        const colorSpan = container.querySelector('span[style*="color"]');
-        expect(colorSpan instanceof HTMLElement && colorSpan.style.color).toBe('rgb(235, 92, 95)'); // #eb5c5f
-        expect(colorSpan?.textContent).toBe('red');
+    // Check icon wrapper
+    const wrapper = within(richTextDiv).getByTestId('iconParent');
+    expect(wrapper).toBeInTheDocument();
+    // Instead of checking exact class names, verify the wrapper has some classes
+    expect(wrapper.className).not.toBe('');
 
-        // Should have bold text
-        const boldSpan = container.querySelector('span[style*="bold"]');
-        expect(boldSpan instanceof HTMLElement && boldSpan.style.fontWeight).toBe('bold');
-        expect(boldSpan?.textContent).toBe('bold');
+    // Check main icon properties
+        const mainIcon = within(wrapper).getByTestId('icon');
+    expect(mainIcon).toHaveAttribute('src', '/icons/item/iron-plate.webp');
+    expect(mainIcon).toHaveAttribute('title', 'item: iron-plate');
+    expect(mainIcon).toHaveAttribute('alt', 'iron-plate');
+    expect(mainIcon).toHaveAttribute('loading', 'lazy');
+    // Verify icon has a class without checking exact name
+    expect(mainIcon.className).not.toBe('');
+
+    // Check quality icon properties
+    const qualityIcon = within(wrapper).getByTestId('quality');
+    expect(qualityIcon).toHaveAttribute('src', '/icons/quality/normal.webp');
+    expect(qualityIcon).toHaveAttribute('title', 'Quality: normal');
+    expect(qualityIcon).toHaveAttribute('alt', 'normal');
+    expect(qualityIcon).toHaveAttribute('loading', 'lazy');
+    // Verify quality icon has a class without checking exact name
+    expect(qualityIcon.className).not.toBe('');
+
+           // Check all formatted text spans
+    const formattedSpans = within(richTextDiv).getAllByTestId('formatted-text');
+    expect(formattedSpans).toHaveLength(5);
+
+    // First span (plain text before red)
+    expect(formattedSpans[0]).toHaveStyle({ fontWeight: 'normal' });
+    expect(formattedSpans[0].textContent).toBe(' Iron plate with ');
+
+    // Second span (red text)
+    expect(formattedSpans[1]).toHaveStyle({
+        color: 'rgb(235, 92, 95)',
+        fontWeight: 'normal',
+    });
+    expect(formattedSpans[1].textContent).toBe('red');
+
+    // Third span (plain text between red and bold)
+    expect(formattedSpans[2]).toHaveStyle({ fontWeight: 'normal' });
+    expect(formattedSpans[2].textContent).toBe(' text and ');
+
+    // Fourth span (bold text)
+    expect(formattedSpans[3]).toHaveStyle({ fontWeight: 'bold' });
+    expect(formattedSpans[3].textContent).toBe('bold');
+
+    // Fifth span (plain text after bold)
+    expect(formattedSpans[4]).toHaveStyle({ fontWeight: 'normal' });
+    expect(formattedSpans[4].textContent).toBe(' styling');
+
+    // Verify the complete text content
+    expect(richTextDiv.textContent.trim()).toBe('Iron plate with red text and bold styling');
     });
 
     // Test invalid/malformed tags
@@ -221,9 +266,9 @@ describe('RichText', () => {
 
     // Test unclosed tags
     it('handles unclosed tags gracefully', () => {
-        const { container } = render(<RichText text="[color=red]text without closing tag" />);
-        const span = container.querySelector('span');
-        expect(span instanceof HTMLElement && span.style.color).toBe('rgb(235, 92, 95)'); // #eb5c5f
-        expect(span?.textContent).toBe('text without closing tag');
+        const renderedResult = render(<RichText text="[color=red]text without closing tag" />);
+        const span = renderedResult.getByText('text without closing tag');
+        expect(span.style.color).toBe('rgb(235, 92, 95)'); // #eb5c5f
+        expect(span.textContent).toBe('text without closing tag');
     });
 });

@@ -6,7 +6,7 @@ import {Icon} from '../parsing/types.ts';
 import type {TreeNode} from '../state/blueprintState';
 import {blueprintTreeSignal, selectBlueprintPath, selectedPathSignal} from '../state/blueprintState';
 
-import {FactorioIcon} from './FactorioIcon';
+import {FactorioIcon, Placeholder} from './FactorioIcon';
 import {RichText} from './RichText';
 import {InsetLight} from './ui';
 
@@ -24,9 +24,9 @@ const TreeRow = memo(({ node, indentLevel, isSelected, isActive }: TreeRowProps)
     function getIconElement(index: number) {
         const icon: Icon|undefined = wrapper.getIcons()?.find(icon => icon.index === index);
         if (icon) {
-            return <FactorioIcon key={index} icon={icon.signal} />;
+            return <FactorioIcon key={index} icon={icon.signal} size={'small'} />;
         }
-        return <div key={index} className="placeholder" />;
+        return <Placeholder key={index} size={'small'}/>;
     }
 
     // Combine the CSS classes based on state
@@ -49,7 +49,7 @@ const TreeRow = memo(({ node, indentLevel, isSelected, isActive }: TreeRowProps)
             }}
         >
             <div className="flex flex-items-center">
-                <FactorioIcon icon={{ type: 'item', name: wrapper.getType() }} />
+                <FactorioIcon icon={{ type: 'item', name: wrapper.getType() }} size={'small'} />
                 <div className="separator" />
             </div>
 
@@ -59,7 +59,7 @@ const TreeRow = memo(({ node, indentLevel, isSelected, isActive }: TreeRowProps)
             </div>
 
             <div className="label">
-                <RichText text={wrapper.getLabel()} />
+                <RichText text={wrapper.getLabel()} iconSize={'small'} />
             </div>
         </div>
     );

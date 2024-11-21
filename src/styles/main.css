@@ -2,42 +2,8 @@ body {
     background-image: url("/assets/bg_v4-85.jpg"), var(--factorio-bg-fallback);
 }
 
-/* Make all icons in tree and rich text consistent size */
-.blueprint-tree img {
-    width: 24px;
-    height: 24px;
-}
-
 .blueprint-tree-row:hover {
     background-color: #414040;
-}
-
-.factorio-icon {
-    width: 32px;
-    height: 32px;
-    display: inline-block;
-    vertical-align: middle;
-}
-
-.placeholder {
-    width: 32px;
-    height: 32px;
-    object-fit: contain;
-}
-
-/* Icon group container */
-.factorio-icon-group {
-    position: relative;
-    display: inline-block;
-}
-
-/* Quality overlay when inside a group */
-.factorio-icon-group img.quality {
-    position: absolute;
-    left: 0;
-    bottom: 0;
-    width: 66%;
-    height: 66%;
 }
 
 /* Tree specific contextual styles */
@@ -94,16 +60,6 @@ body {
     text-overflow: ellipsis;
     white-space: nowrap;
     flex: 1;
-}
-
-.blueprint-tree img.factorio-icon {
-    width: 24px;
-    height: 24px;
-}
-
-.blueprint-tree .placeholder {
-    width: 24px;
-    height: 24px;
 }
 
 /* Container styles */

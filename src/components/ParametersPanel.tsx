@@ -44,7 +44,7 @@ const ParameterRow = ({ param, parameters }: ParameterRowProps) => {
         }
 
         const icon: SignalID = detectSignalType(ingredientOfParam.id);
-        return <FactorioIcon id={'ingredientOf'} icon={icon} />;
+        return <FactorioIcon id={'ingredientOf'} icon={icon} size={'large'} />;
     }
 
     function getIngredientOfElement() {
@@ -65,7 +65,7 @@ const ParameterRow = ({ param, parameters }: ParameterRowProps) => {
         if (param.type === 'id' && iconInfo) {
             return (
                 <span className="flex flex-items-center">
-                    <FactorioIcon id={'value'} icon={iconInfo} />
+                    <FactorioIcon id={'value'} icon={iconInfo} size={'large'} />
                 </span>);
         }
 

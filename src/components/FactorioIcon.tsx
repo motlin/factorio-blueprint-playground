@@ -1,4 +1,6 @@
-import {SignalID, SignalType} from '../parsing/types.ts';
+import {SignalID, SignalType} from '../parsing/types';
+
+import styles from './FactorioIcon.module.css';
 
 function getUrlType(type: SignalType) {
     if (type === 'virtual') {
@@ -12,9 +14,25 @@ function getUrlType(type: SignalType) {
 interface FactorioIconProps {
     id?: string,
     icon?: SignalID,
+    size: 'small' | 'large',
 }
 
-export const FactorioIcon = ({id, icon}: FactorioIconProps) => {
+function getQualityNode(icon: SignalID) {
+    if (!icon.quality) {
+        return null;
+    }
+
+    return <img
+        loading="lazy"
+        className={styles.iconQuality}
+        src={`/icons/quality/${icon.quality}.webp`}
+        alt={icon.quality}
+        title={`Quality: ${icon.quality}`}
+        data-testid="quality"
+    />;
+}
+
+export const FactorioIcon = ({id, icon, size}: FactorioIconProps) => {
     if (!icon) {
         return null;
     }
@@ -23,33 +41,41 @@ export const FactorioIcon = ({id, icon}: FactorioIconProps) => {
 
     const urlType = getUrlType(type);
 
-    // If we have a quality, render in a div that itself is a factorio-icon
-    if (icon.quality) {
-        return (
-            <div className="factorio-icon-group" id={id}>
-                <img
-                    className="factorio-icon"
-                    src={`/icons/${urlType}/${icon.name}.webp`}
-                    alt={icon.name}
-                    title={`${type}: ${icon.name}`}
-                />
-                <img
-                    className="quality"
-                    src={`/icons/quality/${icon.quality}.webp`}
-                    alt={icon.quality}
-                    title={`Quality: ${icon.quality}`}
-                />
-            </div>
-        );
-    }
+    const sizeClass = size === 'small' ? styles.smallSquare : styles.largeSquare;
 
-    // Without quality, render just the icon
+    const qualityNode = getQualityNode(icon);
+
     return (
-        <img
-            className="factorio-icon"
-            src={`/icons/${urlType}/${icon.name}.webp`}
-            alt={icon.name}
-            title={`${type}: ${icon.name}`}
-        />
+        <div
+            data-testid="iconParent"
+            className={`${styles.iconParent} ${sizeClass}`}
+            id={id}
+        >
+            <img
+                data-testid="icon"
+                loading="lazy"
+                className={styles.icon}
+                src={`/icons/${urlType}/${icon.name}.webp`}
+                alt={icon.name}
+                title={`${type}: ${icon.name}`}
+            />
+            {qualityNode}
+        </div>
+    );
+};
+
+interface PlaceholderProps {
+    size: string,
+}
+
+export const Placeholder = ({ size}: PlaceholderProps) => {
+    const sizeClass = size === 'small' ? styles.smallSquare : styles.largeSquare;
+
+    return (
+        <div className={`${styles.iconParent} ${sizeClass}`}>
+            <div
+                className={styles.icon}
+            />
+        </div>
     );
 };

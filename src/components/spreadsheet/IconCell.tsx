@@ -11,7 +11,7 @@ export const IconCell = ({ icon, label }: IconCellProps) => {
     return (
         <div className="spreadsheet-cell spreadsheet-cell-fixed">
             <div className="spreadsheet-icon-container">
-                <FactorioIcon icon={icon} />
+                <FactorioIcon icon={icon} size={'large'} />
                 {label && <span>{label}</span>}
             </div>
         </div>

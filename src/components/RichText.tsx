@@ -57,6 +57,7 @@ interface StyledTextProps {
 
 const StyledText = ({ text, color, bold }: StyledTextProps) => (
     <span
+        data-testid="formatted-text"
         style={{
             color: parseColor(color),
             fontWeight: bold ? 'bold' : 'normal',
@@ -68,9 +69,10 @@ const StyledText = ({ text, color, bold }: StyledTextProps) => (
 
 interface RichTextProps {
     text?: string;
+    iconSize: 'small' | 'large';
 }
 
-export const RichText = ({ text }: RichTextProps) => {
+export const RichText = ({ text ,iconSize}: RichTextProps ) => {
     if (!text) return null;
 
     const parts: React.ReactNode[] = [];
@@ -126,7 +128,7 @@ export const RichText = ({ text }: RichTextProps) => {
                         quality: quality as Quality,
                     };
 
-                    parts.push(<FactorioIcon key={parts.length} icon={icon}/>);
+                    parts.push(<FactorioIcon key={parts.length} icon={icon} size={iconSize}/>);
                     break;
                 }
                 case 'item':
@@ -147,7 +149,7 @@ export const RichText = ({ text }: RichTextProps) => {
                         quality: quality as Quality,
                     };
 
-                    parts.push(<FactorioIcon key={parts.length} icon={icon}/>);
+                    parts.push(<FactorioIcon key={parts.length} icon={icon} size={iconSize}/>);
                     break;
                 }
                 // We could add special handling for gps, special-item, armor, train, etc. here
@@ -179,5 +181,5 @@ export const RichText = ({ text }: RichTextProps) => {
         );
     }
 
-    return <div className="richtext">{parts}</div>;
+    return <div className="richtext" data-testid={'richtext'}>{parts}</div>;
 };
