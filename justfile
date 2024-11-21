@@ -13,7 +13,7 @@ default:
     npm run typecheck
 
 dump-tree:
-    dump-tree --line-numbers --ignore test/fixtures --ignore .vite --ignore requirements/ --ignore public/icons --ignore src/factorio.css --ignore stats.html > ../factorio-blueprint-playground.txt
+    dump-tree --line-numbers --ignore test/fixtures --ignore .vite --ignore requirements/ --ignore public/icons --ignore stats.html > ../factorio-blueprint-playground.txt
 
 factorio_home := env('FACTORIO_HOME')
 
