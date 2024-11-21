@@ -11,7 +11,8 @@ import {createRoot} from 'react-dom/client';
 // Import the generated route tree
 import {routeTree} from './routeTree.gen';
 
-import './factorio.css';
+import './styles/factorio-a76ef767.css';
+import './styles/main.css';
 
 // Create router instance
 const router = createRouter({routeTree});

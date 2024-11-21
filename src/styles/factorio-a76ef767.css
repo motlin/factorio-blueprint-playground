@@ -41,10 +41,14 @@ html {
     height: 100%
 }
 
+:root {
+    --factorio-bg-fallback: url("data:image/jpeg;base64,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");
+}
+
 body {
     background-color: #201810;
     background: #201810;
-    background-image: url("/assets/bg_v4-85.jpg"), url("data:image/jpeg;base64,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");
+    background-image: url("https://webcdn.factorio.com/assets/img/web/bg_v4-85.jpg"), var(--factorio-bg-fallback);
     background-size: 2048px 3072px;
     background-position: center top;
     color: #fff;
@@ -68,6 +72,12 @@ pre {
     line-height: 1.2
 }
 
+.top-bar {
+    background-color: rgba(0, 0, 0, 0.5);
+    width: 100%;
+    padding: 16px;
+    flex-wrap: wrap
+}
 
 .sites {
     width: 65%;
@@ -85,6 +95,15 @@ pre {
     width: 35%;
     text-align: right;
     font-size: 110%
+}
+
+.top-bar-inner {
+    max-width: 1200px;
+    padding-left: 16px;
+    padding-right: 16px;
+    margin: auto;
+    display: flex;
+    flex-wrap: wrap
 }
 
 .header-inner {
@@ -136,6 +155,16 @@ pre {
     margin-left: 4px;
     margin-right: 4px;
     margin-bottom: 8px
+}
+
+.container {
+    width: 1200px;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    padding-right: 16px;
+    padding-left: 16px;
+    flex-shrink: 0
 }
 
 .container-inner {
@@ -526,6 +555,10 @@ div.mr12 {
     margin-top: 8px !important
 }
 
+.mt12 {
+    margin-top: 12px !important
+}
+
 .mtm4 {
     margin-top: -4px !important
 }
@@ -665,6 +698,10 @@ div.mh400 {
 
 .w80p {
     width: 80%
+}
+
+.w100p {
+    width: 100%
 }
 
 .columns-2 {
@@ -1544,6 +1581,31 @@ hr.mn {
     font-size: smaller
 }
 
+input[type=text], input[type=password], input[type=email], input[type=url], input[type=search], textarea {
+    vertical-align: baseline;
+    font-family: inherit;
+    line-height: 1.2;
+    font-size: 105%;
+    height: 36px;
+    max-width: 100%;
+    background: #8e8e8e;
+    border-radius: 4px;
+    padding: 6px;
+    border: none;
+    box-shadow: inset 0px 4px 1px -2px #000, inset 0px -4px 1px -2px #c5c5c5, inset 2px 0px 1px 0px #5f5f5f, inset -2px 0px 1px 0px #5f5f5f, inset 0px -2px 2px 0px #5f5f5f, 0px 0px 4px 1px #2e2521
+}
+
+input[type=text]:focus, input[type=password]:focus, input[type=email]:focus, input[type=url]:focus, input[type=search]:focus, textarea:focus {
+    outline: none;
+    background: #f0dab4;
+    box-shadow: inset 0px 4px 2px -2px #000, inset 0px -1px 1px 0px #74624b, inset 0px -4px 2px -2px #e0e0e0, inset 2px 0px 2px 0px #a6885c, inset -2px 0px 2px 0px #a6885c, 0px 0px 4px 1px #2e2521
+}
+
+textarea {
+    width: 100%;
+    height: 8.1em
+}
+
 select.button {
     vertical-align: middle;
     -webkit-appearance: none;
@@ -1971,6 +2033,7 @@ a.download i {
     from {
         transform: rotate(0deg)
     }
+
     to {
         transform: rotate(360deg)
     }
@@ -2051,7 +2114,7 @@ a.download i {
 .grid-homepage {
     display: grid;
     grid-gap: 16px;
-    grid-template-columns:1fr 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
     margin-bottom: 16px
 }
 
@@ -2093,6 +2156,66 @@ a.download i {
 .box-mods {
     grid-column: 3 / 5;
     grid-row: 3
+}
+
+.grid-buy {
+    display: grid;
+    grid-gap: 16px;
+    grid-template-columns: 1fr 1fr;
+    margin-bottom: 16px
+}
+
+.grid-buy > .panel {
+    margin: 0
+}
+
+.grid-buy .box-pic {
+    grid-column: 1;
+    grid-row: 1 / 3
+}
+
+.grid-buy .box-early-access-key-type {
+    grid-column: 2;
+    grid-row: 1 / 3
+}
+
+.grid-buy .box-system-requirements {
+    grid-column: 1;
+    grid-row: 3 / 5
+}
+
+.grid-buy .box-whats-included {
+    grid-column: 2;
+    grid-row: 3
+}
+
+.grid-buy .box-other-places {
+    grid-column: 2;
+    grid-row: 4
+}
+
+.shopify-buy__collection-products {
+    display: flex !important;
+    flex-wrap: wrap
+}
+
+.shopify-buy__collection-pagination-button {
+    display: none
+}
+
+.shopify-buy__layout-vertical {
+    text-align: center;
+    background-color: #161616 !important;
+    margin-bottom: 0px
+}
+
+.shopify-buy__layout-vertical h2 {
+    margin-top: 8px
+}
+
+.shopify-buy__btn {
+    margin-top: 16px;
+    text-align: center
 }
 
 .mod-thumbnail {
@@ -2220,6 +2343,7 @@ a.download i {
     from {
         background-position: 0 0px
     }
+
     to {
         background-position: 0 24px
     }
@@ -2455,82 +2579,102 @@ a.download i {
         clip: rect(48px, 9999px, 5px, 0);
         transform: skew(0.52deg)
     }
+
     5% {
         clip: rect(12px, 9999px, 50px, 0);
         transform: skew(0.86deg)
     }
+
     10% {
         clip: rect(30px, 9999px, 22px, 0);
         transform: skew(0.65deg)
     }
+
     15% {
         clip: rect(47px, 9999px, 93px, 0);
         transform: skew(0.59deg)
     }
+
     20% {
         clip: rect(59px, 9999px, 8px, 0);
         transform: skew(0.11deg)
     }
+
     25% {
         clip: rect(48px, 9999px, 20px, 0);
         transform: skew(0.25deg)
     }
+
     30% {
         clip: rect(1px, 9999px, 28px, 0);
         transform: skew(0.5deg)
     }
+
     35% {
         clip: rect(55px, 9999px, 11px, 0);
         transform: skew(0.51deg)
     }
+
     40% {
         clip: rect(19px, 9999px, 16px, 0);
         transform: skew(0.77deg)
     }
+
     45% {
         clip: rect(2px, 9999px, 42px, 0);
         transform: skew(0.18deg)
     }
+
     50% {
         clip: rect(39px, 9999px, 5px, 0);
         transform: skew(0.45deg)
     }
+
     55% {
         clip: rect(62px, 9999px, 9px, 0);
         transform: skew(0.74deg)
     }
+
     60% {
         clip: rect(35px, 9999px, 30px, 0);
         transform: skew(0.4deg)
     }
+
     65% {
         clip: rect(10px, 9999px, 97px, 0);
         transform: skew(0.03deg)
     }
+
     70% {
         clip: rect(66px, 9999px, 25px, 0);
         transform: skew(0.9deg)
     }
+
     75% {
         clip: rect(81px, 9999px, 73px, 0);
         transform: skew(0.38deg)
     }
+
     80% {
         clip: rect(67px, 9999px, 24px, 0);
         transform: skew(0.69deg)
     }
+
     85% {
         clip: rect(48px, 9999px, 87px, 0);
         transform: skew(0.78deg)
     }
+
     90% {
         clip: rect(54px, 9999px, 11px, 0);
         transform: skew(0.89deg)
     }
+
     95% {
         clip: rect(47px, 9999px, 56px, 0);
         transform: skew(0.56deg)
     }
+
     100% {
         clip: rect(13px, 9999px, 91px, 0);
         transform: skew(0.77deg)
@@ -2542,82 +2686,102 @@ a.download i {
         clip: rect(14px, 9999px, 78px, 0);
         transform: skew(0.56deg)
     }
+
     5% {
         clip: rect(46px, 9999px, 19px, 0);
         transform: skew(0.39deg)
     }
+
     10% {
         clip: rect(90px, 9999px, 51px, 0);
         transform: skew(0.52deg)
     }
+
     15% {
         clip: rect(51px, 9999px, 7px, 0);
         transform: skew(0.71deg)
     }
+
     20% {
         clip: rect(95px, 9999px, 47px, 0);
         transform: skew(0.33deg)
     }
+
     25% {
         clip: rect(58px, 9999px, 50px, 0);
         transform: skew(0.83deg)
     }
+
     30% {
         clip: rect(12px, 9999px, 21px, 0);
         transform: skew(0.99deg)
     }
+
     35% {
         clip: rect(42px, 9999px, 35px, 0);
         transform: skew(1deg)
     }
+
     40% {
         clip: rect(13px, 9999px, 31px, 0);
         transform: skew(0.75deg)
     }
+
     45% {
         clip: rect(63px, 9999px, 80px, 0);
         transform: skew(0.93deg)
     }
+
     50% {
         clip: rect(22px, 9999px, 35px, 0);
         transform: skew(0.8deg)
     }
+
     55% {
         clip: rect(15px, 9999px, 37px, 0);
         transform: skew(0.24deg)
     }
+
     60% {
         clip: rect(36px, 9999px, 68px, 0);
         transform: skew(0.95deg)
     }
+
     65% {
         clip: rect(93px, 9999px, 81px, 0);
         transform: skew(0.48deg)
     }
+
     70% {
         clip: rect(81px, 9999px, 100px, 0);
         transform: skew(0.41deg)
     }
+
     75% {
         clip: rect(49px, 9999px, 79px, 0);
         transform: skew(0.98deg)
     }
+
     80% {
         clip: rect(31px, 9999px, 86px, 0);
         transform: skew(0.88deg)
     }
+
     85% {
         clip: rect(32px, 9999px, 67px, 0);
         transform: skew(0.29deg)
     }
+
     90% {
         clip: rect(7px, 9999px, 3px, 0);
         transform: skew(0.1deg)
     }
+
     95% {
         clip: rect(78px, 9999px, 62px, 0);
         transform: skew(0.39deg)
     }
+
     100% {
         clip: rect(33px, 9999px, 23px, 0);
         transform: skew(0.4deg)
@@ -2628,33 +2792,43 @@ a.download i {
     0% {
         transform: skew(-1deg)
     }
+
     10% {
         transform: skew(1deg)
     }
+
     20% {
         transform: skew(-3deg)
     }
+
     30% {
         transform: skew(-3deg)
     }
+
     40% {
         transform: skew(-2deg)
     }
+
     50% {
         transform: skew(4deg)
     }
+
     60% {
         transform: skew(-4deg)
     }
+
     70% {
         transform: skew(-1deg)
     }
+
     80% {
         transform: skew(-3deg)
     }
+
     90% {
         transform: skew(3deg)
     }
+
     100% {
         transform: skew(-4deg)
     }
@@ -2689,6 +2863,14 @@ a.download i {
     left: 0px
 }
 
+.richtext-icon > .quality {
+    position: absolute;
+    left: 0px;
+    bottom: 0px;
+    width: 50%;
+    height: 50%
+}
+
 .hangar-slot {
     flex-grow: 1;
     aspect-ratio: 1 / 1;
@@ -2715,7 +2897,7 @@ a.download i {
     .grid-homepage {
         display: grid;
         grid-gap: 16px;
-        grid-template-columns:1fr 1fr 1fr 1fr;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
         margin-bottom: 16px
     }
 
@@ -2948,177 +3130,4 @@ a.download i {
     .mod-page-info {
         font-size: 90%
     }
-}
-
-/* Make all icons in tree and rich text consistent size */
-.blueprint-tree img {
-    width: 24px;
-    height: 24px;
-}
-
-.blueprint-tree-row:hover {
-    background-color: #414040;
-}
-
-.factorio-icon {
-    width: 32px;
-    height: 32px;
-    display: inline-block;
-    vertical-align: middle;
-}
-
-.placeholder {
-    width: 32px;
-    height: 32px;
-    object-fit: contain;
-}
-
-/* Icon group container */
-.factorio-icon-group {
-    position: relative;
-    display: inline-block;
-}
-
-/* Quality overlay when inside a group */
-.factorio-icon-group img.quality {
-    position: absolute;
-    left: 0;
-    bottom: 0;
-    width: 66%;
-    height: 66%;
-}
-
-/* Tree specific contextual styles */
-.tree-row {
-    margin-right: 4px;
-    border-radius: 4px;
-    transition: background-color 0.15s ease;
-    padding: 2px 0;
-}
-
-.tree-row:hover {
-    background-color: #e39827;
-    box-shadow: inset 0px 9px 2px -8px #fff,
-    inset 0px 8px 4px -8px #000,
-    inset 0px -8px 4px -8px #000,
-    inset 0px -9px 2px -8px #432400,
-    0px 0px 4px 0px #000,
-    inset 0px 0px 4px 2px #f9b44b;
-}
-
-.tree-row.selected {
-    background-color: #f1be64;
-    box-shadow: inset 0px 10px 2px -8px #000,
-    inset 0px 9px 2px -8px #000,
-    inset 8px 0px 4px -8px #563a10,
-    inset -8px 0px 4px -8px #563a10,
-    inset 0px 9px 2px -8px #563a10,
-    inset 0px -9px 2px -8px #563a10,
-    inset 0px -8.5px 0px -8px #563a10,
-    0px 0px 4px 0px #000;
-}
-
-.tree-row.active {
-    background-color: rgba(94, 182, 99, 0.4);
-    box-shadow: inset 0px 10px 2px -8px #000,
-    inset 0px 9px 2px -8px #000,
-    inset 8px 0px 4px -8px darkgreen,
-    inset -8px 0px 4px -8px darkgreen,
-    inset 0px 9px 2px -8px darkgreen,
-    inset 0px -9px 2px -8px darkgreen,
-    inset 0px -8.5px 0px -8px darkgreen,
-    0px 0px 4px 0px #000;
-}
-
-.blueprint-tree .separator {
-    width: 1px;
-    height: 24px;
-    background-color: #666;
-    margin: 0 8px;
-}
-
-.blueprint-tree .label {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    flex: 1;
-}
-
-.blueprint-tree img.factorio-icon {
-    width: 24px;
-    height: 24px;
-}
-
-.blueprint-tree .placeholder {
-    width: 24px;
-    height: 24px;
-}
-
-/* Container styles */
-.spreadsheet-container {
-    border: 0;
-    background-color: #313031;
-    box-shadow: inset 0px 2px 2px -1px #000,
-    inset 0px 0px 2px 0px #181616,
-    inset 0px -2px 2px -2px #fff,
-    0px 0px 2px 0px #2b2b2b;
-    margin: 4px;
-    padding: 2px;
-    height: 100%; /* Fill available height */
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    flex: 1;
-}
-
-/* Row styles */
-.spreadsheet-row {
-    display: flex;
-    width: 100%;
-    min-height: 40px;
-}
-
-/* Cell styles */
-.spreadsheet-cell {
-    padding: 8px;
-    background-color: #414040;
-    box-shadow: inset 0px 0px 4px 0px #2d2d2d,
-    0px -2px 2px -1px #888,
-    -2px 0px 2px -2px #000,
-    2px 0px 2px -2px #000,
-    0px 2px 2px -2px #000;
-    display: flex;
-    align-items: center;
-    flex: 1;
-}
-
-/* Fixed-width cells */
-.spreadsheet-cell-fixed {
-    flex: 0 0 auto; /* Don't grow or shrink */
-}
-
-/* Icon container styles */
-.spreadsheet-icon-container {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-/* Multiple icon wrapper */
-.spreadsheet-multi-icon {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-.spreadsheet-cell .spreadsheet-container {
-    width: 100%;
-    margin: 0;
-    padding: 0;
-}
-
-.spreadsheet-cell:has(> .spreadsheet-container) {
-    margin: 0;
-    padding: 0;
 }
