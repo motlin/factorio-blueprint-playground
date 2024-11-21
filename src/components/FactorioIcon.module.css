@@ -1,0 +1,33 @@
+.iconParent {
+    position: relative;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.iconParent + .iconParent {
+    margin-left: 2px;
+}
+
+.icon {
+    position: relative;
+    top: 0;
+    left: 0;
+}
+
+.iconQuality {
+    position: absolute;
+    left: 0;
+    top: 43.75%;
+    width: 50%;
+    height: 50%;
+}
+
+.largeSquare {
+    width: 32px;
+    height: 32px;
+}
+
+.smallSquare {
+    width: 24px;
+    height: 24px;
+}

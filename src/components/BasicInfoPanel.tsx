@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
 import type {BlueprintString, Icon} from '../parsing/types';
 
-import {FactorioIcon} from './FactorioIcon';
+import {FactorioIcon, Placeholder} from './FactorioIcon';
 import {RichText} from './RichText';
 import {Version} from './Version';
 import {Panel} from './ui';
@@ -31,25 +31,25 @@ export const BasicInfoPanel = memo(({ blueprint }: { blueprint: BlueprintString 
 
     function getIconElement(index: number, icon?: Icon) {
         if (icon) {
-            return <FactorioIcon key={index} icon={icon.signal} />;
+            return <FactorioIcon key={index} icon={icon.signal} size="large" />;
         }
 
-        return <div key={index} className="placeholder" />;
+        return <Placeholder key={index} size={'large'} />;
     }
 
     return (
         <Panel title="Basic Information">
             <dl className="panel-hole basic-info">
                 <InfoRow label="Type">
-                    <FactorioIcon icon={{type: 'item', name: type}} />
+                    <FactorioIcon icon={{type: 'item', name: type}} size={'large'} />
                 </InfoRow>
 
                 <InfoRow label="Label" hidden={!label}>
-                    <RichText text={label} />
+                    <RichText text={label} iconSize={'large'}/>
                 </InfoRow>
 
                 <InfoRow label="Description" hidden={!description}>
-                    <RichText text={description} />
+                    <RichText text={description} iconSize={'large'}/>
                 </InfoRow>
 
                 <InfoRow label="Icons" hidden={!icons?.length}>

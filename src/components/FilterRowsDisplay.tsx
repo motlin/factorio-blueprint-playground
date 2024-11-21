@@ -26,6 +26,7 @@ function FilterCondition({ filter }: { filter: Filter }) {
                         type: 'quality',
                         name: filter.quality,
                     }}
+                    size="large"
                 />
             </span>,
         );
@@ -64,6 +65,7 @@ const FilterRowsDisplay = ({ filters, type, label }: FilterRowsProps) => {
                                             name: filter.name,
                                             quality: filter.quality,
                                         }}
+                                        size={'large'}
                                     />
                                 </Cell>
                                 <Cell width="200px" grow={false}>
