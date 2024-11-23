@@ -1,5 +1,6 @@
 import {render} from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
+import React from 'react';
 import {beforeEach, describe, expect, it, vi} from 'vitest';
 
 import {BlueprintTree} from '../../src/components/BlueprintTree';
