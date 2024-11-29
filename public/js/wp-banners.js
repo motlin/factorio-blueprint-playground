@@ -1,2 +1,2 @@
-var adsAreWithUs = true;
-console.log('Set adsAreWithUs to true.')
+var canary = true;
+console.log('Set canary to true.')

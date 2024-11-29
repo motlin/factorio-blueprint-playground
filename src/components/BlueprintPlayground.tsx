@@ -26,7 +26,7 @@ export function BlueprintPlayground() {
     const selectedBlueprint = selectedBlueprintSignal.value;
     const selectedPath = selectedPathSignal.value;
 
-    console.log('window.adsAreWithUs', window.adsAreWithUs);
+    console.log('window.canary', window.canary);
 
     return (
         <div className="container">
