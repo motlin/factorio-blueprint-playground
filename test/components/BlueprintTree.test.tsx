@@ -100,4 +100,26 @@ describe('BlueprintTree', () => {
         // Should have called selectBlueprintPath with the correct path
         expect(blueprintState.selectBlueprintPath).toHaveBeenCalledWith('1');
     });
+
+    it('avoids infinite loops between clicks updating the URL and URL changes updating the state', async () => {
+        const user = userEvent.setup();
+        const { container } = render(<BlueprintTree />);
+
+        // Click the first blueprint
+        const firstBlueprint = container.querySelectorAll('.tree-row')[1];
+        await user.click(firstBlueprint);
+
+        // Simulate URL change
+        blueprintState.selectedPathSignal.value = '1';
+
+        // Click the second blueprint
+        const secondBlueprint = container.querySelectorAll('.tree-row')[2];
+        await user.click(secondBlueprint);
+
+        // Simulate URL change
+        blueprintState.selectedPathSignal.value = '2';
+
+        // Ensure no infinite loop occurred
+        expect(blueprintState.selectBlueprintPath).toHaveBeenCalledTimes(2);
+    });
 });

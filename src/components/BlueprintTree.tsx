@@ -1,3 +1,4 @@
+import {useNavigate} from '@tanstack/react-router';
 import type {VNode} from 'preact';
 import {memo} from 'preact/compat';
 
@@ -20,6 +21,7 @@ interface TreeRowProps {
 // Memoize the tree row component
 const TreeRow = memo(({ node, indentLevel, isSelected, isActive }: TreeRowProps) => {
     const wrapper = new BlueprintWrapper(node.blueprint);
+    const navigate = useNavigate();
 
     function getIconElement(index: number) {
         const icon: Icon|undefined = wrapper.getIcons()?.find(icon => icon.index === index);
@@ -46,6 +48,11 @@ const TreeRow = memo(({ node, indentLevel, isSelected, isActive }: TreeRowProps)
             onClick={(e) => {
                 e.preventDefault();
                 selectBlueprintPath(node.path);
+                void navigate({
+                    to: '/',
+                    search: (prev) => ({...prev, selection: node.path}),
+                    replace: true,
+                });
             }}
         >
             <div className="flex flex-items-center">

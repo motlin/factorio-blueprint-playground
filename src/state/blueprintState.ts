@@ -72,7 +72,8 @@ export const selectedBlueprintSignal = computed(() => {
         return extractBlueprint(rootBlueprint, path);
     } catch (err) {
         console.error('Failed to extract blueprint:', err);
-        return null;
+        selectedPathSignal.value = null;
+        return rootBlueprint;
     }
 });
 

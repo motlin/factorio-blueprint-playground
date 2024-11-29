@@ -19,6 +19,7 @@ export interface RootSearchSchema {
     data?: string
     source?: string
     json?: string
+    selection?: string
 }
 
 function ErrorComponent({ error }: { error: RouteError }) {
@@ -48,6 +49,7 @@ export const Route = createRootRoute({
             data: search.data as string | undefined,
             source: search.source as string | undefined,
             json: search.json as string | undefined,
+            selection: search.selection as string | undefined,
         };
     },
     errorComponent: ErrorComponent,

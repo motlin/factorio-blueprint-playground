@@ -334,6 +334,28 @@ Since we are trying to closely copy factorio.com's style, we will use similar el
 * Comments go above the code they describe, never at the end of a line
 * Always use semi-colons
 
+## Query Parameters
+
+### data
+
+The `data` query parameter allows users to directly input a blueprint string. When provided, the application will process and display the blueprint without requiring any additional input from the user.
+
+### json
+
+The `json` query parameter allows users to input a JSON representation of a blueprint. When provided, the application will process and display the blueprint based on the JSON data.
+
+### source
+
+The `source` query parameter allows users to provide a URL from which the blueprint can be fetched. The application will fetch the blueprint from the provided URL and display it.
+
+### selection
+
+The `selection` query parameter takes a "path" like `1.2.3`, which is interpreted to mean selecting the root book's first child's second child's third child. The assumption is that the book is deep enough, that the root, its first child, and that second child are all books. The end of the path can be anything, a book, blueprint, upgrade planner, or deconstruction planner. If the path isn't valid but the blueprint is valid, the selection is dropped. The empty path means the root is selected.
+
+When users click items in the blueprint tree, the URL updates with the new selection.
+
+If the `selection` path is invalid, the application handles it gracefully by dropping the selection and continuing to display the root blueprint as the selection.
+
 ## Plan
 
 Phase 1: Project Setup

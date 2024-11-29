@@ -8,6 +8,7 @@ import {
     processingStateSignal,
     handlePastedInput,
     processBlueprint,
+    selectedPathSignal,
 } from '../state/blueprintState';
 
 import {ErrorAlert} from './ui';
@@ -25,7 +26,13 @@ export const BlueprintSourceHandler = () => {
         } else if (typeof search.source === 'string') {
             void processBlueprint(search.source, 'url');
         }
-    }, [search.data, search.json, search.source]);
+
+        if (typeof search.selection === 'string') {
+            selectedPathSignal.value = search.selection;
+        } else {
+            selectedPathSignal.value = null;
+        }
+    }, [search.data, search.json, search.source, search.selection]);
 
     const handleChange = useCallback((e: JSX.TargetedEvent<HTMLTextAreaElement>) => {
         e.preventDefault();
