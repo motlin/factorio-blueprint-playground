@@ -16,7 +16,7 @@ import {InsetLight, Panel} from './ui';
 
 declare global {
     interface Window {
-        adsAreWithUs?: boolean;
+        canary?: boolean;
     }
 }
 
@@ -34,7 +34,7 @@ export function BlueprintPlayground() {
                 Factorio Blueprint Playground
             </h1>
 
-            {window.adsAreWithUs === undefined && (
+            {window.canary === undefined && (
                 <Panel title="Adblocker Detected">
                     <p>{"We noticed you're using an adblocker. Ad revenue is used for hosting the project. Please consider turning off your adblocker to support us."}</p>
                 </Panel>
