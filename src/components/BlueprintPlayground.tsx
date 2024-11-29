@@ -14,17 +14,31 @@ import {ExportActions} from './ExportActions';
 import {ParametersPanel} from './ParametersPanel';
 import {InsetLight, Panel} from './ui';
 
+declare global {
+    interface Window {
+        canary?: boolean;
+    }
+}
+
 export function BlueprintPlayground() {
     // Get current blueprints from signals
     const rootBlueprint = rootBlueprintSignal.value;
     const selectedBlueprint = selectedBlueprintSignal.value;
     const selectedPath = selectedPathSignal.value;
 
+    console.log('window.canary', window.canary);
+
     return (
         <div className="container">
             <h1>
                 Factorio Blueprint Playground
             </h1>
+
+            {window.canary === undefined && (
+                <Panel title="Adblocker Detected">
+                    <p>{"We noticed you're using an adblocker. Ad revenue is used for hosting the project. Please consider turning off your adblocker to support us."}</p>
+                </Panel>
+            )}
 
             <Panel title="Blueprint Input">
                 <BlueprintSourceHandler />
