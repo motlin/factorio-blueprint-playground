@@ -40,6 +40,7 @@ export default [
             'vite-env.d.ts',
             'tsconfig.app.tsbuildinfo',
             'tsconfig.node.tsbuildinfo',
+            'public/js/wp-banners.js',
         ],
     },
 

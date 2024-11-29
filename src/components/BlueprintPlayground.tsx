@@ -14,6 +14,12 @@ import {ExportActions} from './ExportActions';
 import {ParametersPanel} from './ParametersPanel';
 import {InsetLight, Panel} from './ui';
 
+declare global {
+    interface Window {
+        adsAreWithUs?: boolean;
+    }
+}
+
 export function BlueprintPlayground() {
     // Get current blueprints from signals
     const rootBlueprint = rootBlueprintSignal.value;
@@ -25,6 +31,12 @@ export function BlueprintPlayground() {
             <h1>
                 Factorio Blueprint Playground
             </h1>
+
+            {window.adsAreWithUs === undefined && (
+                <Panel title="Adblocker Detected">
+                    <p>We noticed you're using an adblocker. Ad revenue is used for hosting the project. Please consider turning off your adblocker to support us.</p>
+                </Panel>
+            )}
 
             <Panel title="Blueprint Input">
                 <BlueprintSourceHandler />
