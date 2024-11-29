@@ -26,6 +26,8 @@ export function BlueprintPlayground() {
     const selectedBlueprint = selectedBlueprintSignal.value;
     const selectedPath = selectedPathSignal.value;
 
+    console.log('window.adsAreWithUs', window.adsAreWithUs);
+
     return (
         <div className="container">
             <h1>
@@ -34,7 +36,7 @@ export function BlueprintPlayground() {
 
             {window.adsAreWithUs === undefined && (
                 <Panel title="Adblocker Detected">
-                    <p>We noticed you're using an adblocker. Ad revenue is used for hosting the project. Please consider turning off your adblocker to support us.</p>
+                    <p>{"We noticed you're using an adblocker. Ad revenue is used for hosting the project. Please consider turning off your adblocker to support us."}</p>
                 </Panel>
             )}
 
