@@ -122,4 +122,31 @@ describe('BlueprintTree', () => {
         // Ensure no infinite loop occurred
         expect(blueprintState.selectBlueprintPath).toHaveBeenCalledTimes(2);
     });
+
+    it('updates selection state correctly when starting with a URL with data and selection', () => {
+        const mockedState = vi.mocked(blueprintState);
+        mockedState.selectedPathSignal.value = '2';
+
+        const { container } = render(<BlueprintTree />);
+
+        const allRows = container.querySelectorAll('.tree-row');
+        expect(allRows[2].className).toContain('selected'); // Second blueprint should be selected
+        expect(allRows[1].className).not.toContain('selected'); // First blueprint should not be selected
+    });
+
+    it('updates selection state correctly when starting with data and then selecting an item in the tree', async () => {
+        const user = userEvent.setup();
+        const { container } = render(<BlueprintTree />);
+
+        // Click the first blueprint
+        const firstBlueprint = container.querySelectorAll('.tree-row')[1];
+        await user.click(firstBlueprint);
+
+        // Simulate URL change
+        blueprintState.selectedPathSignal.value = '1';
+
+        const allRows = container.querySelectorAll('.tree-row');
+        expect(allRows[1].className).toContain('selected'); // First blueprint should be selected
+        expect(allRows[2].className).not.toContain('selected'); // Second blueprint should not be selected
+    });
 });

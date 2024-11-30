@@ -1,6 +1,6 @@
 import {useNavigate} from '@tanstack/react-router';
 import type {VNode} from 'preact';
-import {memo} from 'preact/compat';
+import {memo, useEffect} from 'preact/compat';
 
 import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
 import {Icon} from '../parsing/types.ts';
@@ -130,6 +130,12 @@ export const BlueprintTree = memo(() => {
 
         return rows;
     }
+
+    useEffect(() => {
+        if (selectedPathSignal.value) {
+            selectBlueprintPath(selectedPathSignal.value);
+        }
+    }, [selectedPathSignal.value]);
 
     return (
         <div className="blueprint-tree">

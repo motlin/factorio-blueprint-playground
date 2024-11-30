@@ -13,12 +13,21 @@ import DisqusComments from './DisqusComments.tsx';
 import {ExportActions} from './ExportActions';
 import {ParametersPanel} from './ParametersPanel';
 import {InsetLight, Panel} from './ui';
+import { useEffect } from 'preact/hooks';
+import { useSearch } from '@tanstack/react-router';
 
 export function BlueprintPlayground() {
     // Get current blueprints from signals
     const rootBlueprint = rootBlueprintSignal.value;
     const selectedBlueprint = selectedBlueprintSignal.value;
     const selectedPath = selectedPathSignal.value;
+    const search = useSearch({ from: '/' });
+
+    useEffect(() => {
+        if (typeof search.selection === 'string') {
+            selectedPathSignal.value = search.selection;
+        }
+    }, [search.selection]);
 
     return (
         <div className="container">

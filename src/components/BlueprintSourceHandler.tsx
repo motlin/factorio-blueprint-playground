@@ -49,6 +49,13 @@ export const BlueprintSourceHandler = () => {
     const validating = state.status === 'validating';
     const error = state.status === 'error' ? state.message : null;
 
+    // Synchronize selectedPathSignal with the selection query parameter
+    useEffect(() => {
+        if (typeof search.selection === 'string') {
+            selectedPathSignal.value = search.selection;
+        }
+    }, [search.selection]);
+
     return (
         <div>
             <textarea
