@@ -1,5 +1,5 @@
-import {SignalID} from '../../parsing/types.ts';
-import {FactorioIcon} from '../FactorioIcon.tsx';
+import {SignalID} from '../../parsing/types';
+import {FactorioIcon} from '../FactorioIcon';
 
 interface IconCellProps {
     icon: SignalID;
