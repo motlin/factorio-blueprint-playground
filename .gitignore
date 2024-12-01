@@ -30,3 +30,7 @@ dist-ssr
 /stats.html
 /tsconfig.app.tsbuildinfo
 /tsconfig.node.tsbuildinfo
+
+# wrangler files
+.wrangler
+.dev.vars
