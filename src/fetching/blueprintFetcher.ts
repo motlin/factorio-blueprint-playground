@@ -34,6 +34,7 @@ export type BlueprintFetchResult = BaseBlueprintResult | UrlBlueprintResult | un
 
 interface BlueprintFetchSource {
 	apiUrl: (url: URL) => string;
+	responseType: 'json' | 'text';
 	extractBlueprintString: (data: unknown) => string;
 	extractId: (url: URL) => string;
 }
@@ -44,6 +45,7 @@ const factorioSchoolSourceConfig: BlueprintFetchSource = {
 		if (!match) throw new Error('Invalid Factorio School URL');
 		return `https://www.factorio.school/api/blueprint/${match[1]}`;
 	},
+	responseType: 'json',
 	extractBlueprintString: (data) => {
 		if (!data || typeof data !== 'object' || !('blueprintString' in data)) {
 			throw new Error('Invalid response from Factorio School');
@@ -64,6 +66,7 @@ const factorioPrintsSourceConfig: BlueprintFetchSource = {
 		if (!match) throw new Error('Invalid Factorio Prints URL');
 		return `https://facorio-blueprints.firebaseio.com/blueprints/${match[1]}/blueprintString.json`;
 	},
+	responseType: 'json',
 	extractBlueprintString: (data) => {
 		if (!data || typeof data !== 'string') {
 			throw new Error('Invalid response from Factorio Prints');
@@ -77,9 +80,30 @@ const factorioPrintsSourceConfig: BlueprintFetchSource = {
 	},
 };
 
+const factorioBinSourceConfig: BlueprintFetchSource = {
+	apiUrl: (url) => {
+		const match = url.href.match(/factoriobin\.com\/perma\/bp\/[^/]+\/[^/]+\/([^/\s#-]+)/);
+		if (!match) throw new Error('Invalid Factorio Bin URL');
+		return `/proxy?${url.href}`;
+	},
+	responseType: 'text',
+	extractBlueprintString: (data) => {
+		if (typeof data !== 'string') {
+			throw new Error('Invalid response from Factorio Bin');
+		}
+		return data;
+	},
+	extractId: (url) => {
+		const match = url.pathname.match(/\/([^/\s#-]+)(?:-[^/]*)?\/fbin/);
+		if (!match) throw new Error('Invalid Factorio Bin URL');
+		return match[1];
+	},
+};
+
 const SOURCE_CONFIGS: Record<string, BlueprintFetchSource> = {
 	'factorio.school': factorioSchoolSourceConfig,
 	'factorioprints.com': factorioPrintsSourceConfig,
+	'cdn.factoriobin.com': factorioBinSourceConfig,
 };
 
 async function fetchUrl(pasted: string): Promise<UrlBlueprintResult> {
@@ -96,7 +120,7 @@ async function fetchUrl(pasted: string): Promise<UrlBlueprintResult> {
 		throw new Error(`Failed to fetch blueprint: ${response.statusText}`);
 	}
 
-	const data: unknown = await response.json();
+	const data = await (fetchConfig.responseType === 'json' ? response.json() : response.text());
 	const blueprintString = fetchConfig.extractBlueprintString(data);
 	const blueprint = deserializeBlueprint(blueprintString);
 
