@@ -25,6 +25,7 @@ export default [
                 fetch: true,
                 atob: true,
                 btoa: true,
+                process: true,
             },
             ecmaVersion: 'latest',
             sourceType: 'module',
