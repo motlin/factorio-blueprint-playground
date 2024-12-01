@@ -8,8 +8,8 @@ import { BlueprintString } from '../parsing/types';
 import { ButtonGreen } from './ui';
 
 interface ExportActionsProps {
-    blueprint: BlueprintString | null;
-    path: string | null;
+    blueprint?: BlueprintString;
+    path?: string;
     title: string;
 }
 
@@ -87,7 +87,7 @@ async function copyToClipboard(text: string): Promise<boolean> {
     }
 }
 
-function getFilename(blueprint: BlueprintString, path: string | null): string {
+function getFilename(blueprint: BlueprintString, path?: string): string {
     const wrapper = new BlueprintWrapper(blueprint);
     const label = wrapper.getLabel();
 

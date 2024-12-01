@@ -1,6 +1,8 @@
 import {createRootRoute, Link, Outlet} from '@tanstack/react-router';
-import type { ComponentType } from 'preact';
+import type {ComponentType} from 'preact';
 import {lazy, Suspense} from 'react';
+
+import {ErrorComponent} from '../components/ErrorComponent.tsx';
 
 const TanStackRouterDevtools = import.meta.env.PROD
     ? () => null // Render nothing in production
@@ -9,27 +11,6 @@ const TanStackRouterDevtools = import.meta.env.PROD
             default: res.TanStackRouterDevtools,
         })),
     );
-
-interface RouteError {
-    message: string;
-    status?: number;
-}
-
-export interface RootSearchSchema {
-    data?: string
-    source?: string
-    json?: string
-}
-
-function ErrorComponent({ error }: { error: RouteError }) {
-    return (
-        <div className="panel alert alert-error">
-            <h2>Error</h2>
-            <p>{error.message}</p>
-            {error.status && <p>Status: {error.status}</p>}
-        </div>
-    );
-}
 
 // Create a wrapper component to handle the type union
 const DevTools = () => {
@@ -43,13 +24,6 @@ const DevTools = () => {
 };
 
 export const Route = createRootRoute({
-    validateSearch: (search: Record<string, unknown>): RootSearchSchema => {
-        return {
-            data: search.data as string | undefined,
-            source: search.source as string | undefined,
-            json: search.json as string | undefined,
-        };
-    },
     errorComponent: ErrorComponent,
     component: () => (
         <div>

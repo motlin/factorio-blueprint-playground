@@ -2,23 +2,70 @@ import type {VNode} from 'preact';
 import {memo} from 'preact/compat';
 
 import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
-import {Icon} from '../parsing/types.ts';
-import type {TreeNode} from '../state/blueprintState';
-import {blueprintTreeSignal, selectBlueprintPath, selectedPathSignal} from '../state/blueprintState';
+import {type BlueprintString, Icon} from '../parsing/types';
 
 import {FactorioIcon, Placeholder} from './FactorioIcon';
 import {RichText} from './RichText';
 import {InsetLight} from './ui';
+
+// Types for tree structure
+export interface TreeNode {
+    path: string;
+    blueprint: BlueprintString;
+    children: TreeNode[];
+}
 
 interface TreeRowProps {
     node: TreeNode;
     indentLevel: number;
     isSelected: boolean;
     isActive: boolean;
+    onSelect: (path: string) => void;
+}
+
+/**
+ * Determines if a node is active based on its parent's active_index.
+ *
+ * @param node - The node to check for active status
+ * @param parentNode - Optional parent node containing active_index
+ * @returns boolean indicating if the node is active
+ */
+function isNodeActive(node: TreeNode, parentNode?: TreeNode): boolean {
+    const activeIndex = parentNode?.blueprint.blueprint_book?.active_index;
+    if (!activeIndex) {
+        return false;
+    }
+
+    const nodeIndex = parentNode.children.findIndex(
+        child => child.path === node.path,
+    );
+
+    return nodeIndex === activeIndex;
+}
+
+/**
+ * Builds a tree structure from a blueprint string.
+ * Recursively processes blueprint books to create a navigable hierarchy.
+ *
+ * @param blueprint - Source blueprint data
+ * @param path - Current path in the tree
+ * @returns Constructed TreeNode
+ */
+function buildNode(blueprint: BlueprintString, path: string): TreeNode {
+    const children = blueprint.blueprint_book?.blueprints.map((child, index) => {
+        const childPath = path ? `${path}.${index + 1}` : `${index + 1}`;
+        return buildNode(child, childPath);
+    }) ?? [];
+
+    return {
+        path,
+        blueprint,
+        children,
+    };
 }
 
 // Memoize the tree row component
-const TreeRow = memo(({ node, indentLevel, isSelected, isActive }: TreeRowProps) => {
+const TreeRow = ({ node, indentLevel, isSelected, isActive, onSelect }: TreeRowProps) => {
     const wrapper = new BlueprintWrapper(node.blueprint);
 
     function getIconElement(index: number) {
@@ -37,16 +84,19 @@ const TreeRow = memo(({ node, indentLevel, isSelected, isActive }: TreeRowProps)
     ].filter(Boolean).join(' ');
 
     const indentPx = (indentLevel * 32).toString();
+
+    const handleClick = (e: MouseEvent) => {
+        e.preventDefault();
+        onSelect(node.path);
+    };
+
     return (
         <div
             className={classes}
             style={{
                 paddingLeft: `${indentPx}px`,
             }}
-            onClick={(e) => {
-                e.preventDefault();
-                selectBlueprintPath(node.path);
-            }}
+            onClick={handleClick}
         >
             <div className="flex flex-items-center">
                 <FactorioIcon icon={{ type: 'item', name: wrapper.getType() }} size={'small'} />
@@ -63,42 +113,17 @@ const TreeRow = memo(({ node, indentLevel, isSelected, isActive }: TreeRowProps)
             </div>
         </div>
     );
-}, (prevProps, nextProps) => {
-    // Custom comparison function for memo
-    return (
-        prevProps.node === nextProps.node &&
-        prevProps.isSelected === nextProps.isSelected &&
-        prevProps.indentLevel === nextProps.indentLevel &&
-        prevProps.isActive === nextProps.isActive
-    );
-});
+};
 
-function isNodeActive(node: TreeNode, parentNode?: TreeNode): boolean {
-    if (!parentNode) {
-        return false;
-    }
-
-    if (!('blueprint_book' in parentNode.blueprint)) {
-        return false;
-    }
-
-    const book = parentNode.blueprint.blueprint_book;
-    if (!book || typeof book.active_index !== 'number') {
-        return false;
-    }
-
-    // Find this node's index in the parent's children
-    const nodeIndex = parentNode.children.findIndex(
-        child => child.path === node.path,
-    );
-
-    return nodeIndex === book.active_index;
+interface BlueprintTreeProps {
+    rootBlueprint: BlueprintString;
+    selectedPath: string;
+    onSelect: (path: string) => void;
 }
 
 // Memoize the entire tree component
-export const BlueprintTree = memo(() => {
-    const tree = blueprintTreeSignal.value;
-    const selectedPath = selectedPathSignal.value;
+export const BlueprintTree = memo(({rootBlueprint, selectedPath, onSelect}:BlueprintTreeProps) => {
+    const tree = buildNode(rootBlueprint, '');
 
     if (!tree) return null;
 
@@ -114,6 +139,7 @@ export const BlueprintTree = memo(() => {
                 indentLevel={level}
                 isSelected={selectedPath === node.path}
                 isActive={active}
+                onSelect={onSelect}
             />,
         );
 
