@@ -1,103 +1,98 @@
 import {render} from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
-import {beforeEach, describe, expect, it, vi} from 'vitest';
+import {describe, expect, it, vi} from 'vitest';
 
 import {BlueprintTree} from '../../src/components/BlueprintTree';
-// Import the mocked module after mocking it
-import * as blueprintState from '../../src/state/blueprintState';
-import {TreeNode} from '../../src/state/blueprintState';
-import {BlueprintString} from '../parsing/types.ts';
+import type {BlueprintString} from '../types/blueprint';
 
-// Mock the state module
-vi.mock('../../src/state/blueprintState', () => ({
-    blueprintTreeSignal: { value: null },
-    selectedPathSignal: { value: null },
-    selectBlueprintPath: vi.fn(),
-}));
-
-describe('BlueprintTree', () => {
-    const simpleBlueprintBook: TreeNode = {
-        path: '',
-        blueprint: {
-            blueprint_book: {
-                item: 'blueprint-book' as const,
-                version: 1,
-                active_index: 1, // Second blueprint should be active
-                blueprints: [
-                    {
-                        index: 0,
-                        blueprint: {
-                            item: 'blueprint' as const,
-                            label: 'First',
-                            version: 1,
-            },
-        },
-                    {
-                        index: 1,
-                        blueprint: {
-                            item: 'blueprint' as const,
-                            label: 'Second',
-                            version: 1,
-                        },
-                    },
-                ],
-            },
-        } as BlueprintString,
-        children: [
+/**
+ * Test suite for BlueprintTree component.
+ * Verifies tree structure rendering and selection behavior.
+ */
+describe('BlueprintTree Component', () => {
+const testBlueprintData: BlueprintString = {
+    blueprint_book: {
+            item: 'blueprint-book',
+        version: 1,
+            active_index: 1,
+        blueprints: [
             {
-                path: '1',
+                index: 0,
                 blueprint: {
-                    blueprint: {
-                        item: 'blueprint' as const,
-                        label: 'First',
-                        version: 1,
-                    },
-                } as BlueprintString,
-                children: [],
+                        item: 'blueprint',
+                    label: 'First Blueprint',
+                    version: 1,
+                },
             },
             {
-                path: '2',
+                index: 1,
                 blueprint: {
-                    blueprint: {
-                        item: 'blueprint' as const,
-                        label: 'Second',
-                        version: 1,
-                    },
-                } as BlueprintString,
-                children: [],
+                        item: 'blueprint',
+                    label: 'Second Blueprint',
+                    version: 1,
+                },
             },
         ],
-    };
+    },
+};
 
-    beforeEach(() => {
-        // Reset mock state before each test
-        // Access the mock directly through vi.mocked
-        const mockedState = vi.mocked(blueprintState);
-        // Type assertion to allow setting read-only properties for testing
-        (mockedState.blueprintTreeSignal as { value: TreeNode | null }).value = simpleBlueprintBook;
-        (mockedState.selectedPathSignal as { value: string | null }).value = null;
-        mockedState.selectBlueprintPath.mockReset();
+    it('highlights active blueprint on initial render', () => {
+        const onSelect = vi.fn();
+        const { container } = render(
+            <BlueprintTree
+                rootBlueprint={testBlueprintData}
+                onSelect={onSelect}
+            />,
+        );
+
+        const treeRows = container.querySelectorAll('.tree-row');
+        expect(treeRows).toHaveLength(3);
+        expect(treeRows[2].className).toContain('active');
+        expect(treeRows[1].className).not.toContain('active');
+        expect(treeRows[1].textContent).toContain('First Blueprint');
+        expect(treeRows[2].textContent).toContain('Second Blueprint');
     });
 
-    it('highlights active blueprint', () => {
-        const { container } = render(<BlueprintTree />);
-
-        // The second blueprint (index 1) should have the active class
-        const allRows = container.querySelectorAll('.tree-row');
-        expect(allRows[2].className).toContain('active'); // Second blueprint
-        expect(allRows[1].className).not.toContain('active'); // First blueprint
-    });
-
-    it('allows selecting blueprints by clicking', async () => {
+    it('calls onSelect when clicking blueprints', async () => {
         const user = userEvent.setup();
-        const { container } = render(<BlueprintTree />);
+        const onSelect = vi.fn();
 
-        // Click the first blueprint
+        const { container } = render(
+            <BlueprintTree
+                rootBlueprint={testBlueprintData}
+                onSelect={onSelect}
+            />,
+        );
+
         const firstBlueprint = container.querySelectorAll('.tree-row')[1];
         await user.click(firstBlueprint);
 
-        // Should have called selectBlueprintPath with the correct path
-        expect(blueprintState.selectBlueprintPath).toHaveBeenCalledWith('1');
+        expect(onSelect).toHaveBeenCalledWith('1');
+    });
+
+    it('maintains selection state across rerenders', () => {
+        const onSelect = vi.fn();
+        const { container, rerender } = render(
+            <BlueprintTree
+                rootBlueprint={testBlueprintData}
+                selectedPath="1"
+                onSelect={onSelect}
+            />,
+        );
+
+        const initialRows = container.querySelectorAll('.tree-row');
+        expect(initialRows[1].className).toContain('selected');
+
+        rerender(
+            <BlueprintTree
+                rootBlueprint={testBlueprintData}
+                selectedPath="1"
+                onSelect={onSelect}
+            />,
+        );
+
+        const rerenderedRows = container.querySelectorAll('.tree-row');
+        expect(rerenderedRows[1].className).toContain('selected');
     });
 });

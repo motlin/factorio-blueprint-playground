@@ -156,7 +156,7 @@ const ParametersList = ({ parameters }: { parameters: Parameter[] }) => {
     );
 };
 
-export const ParametersPanel = memo(({ blueprintString }: { blueprintString: BlueprintString | null }) => {
+export const ParametersPanel = memo(({ blueprintString }: { blueprintString?: BlueprintString }) => {
     if (!blueprintString?.blueprint?.parameters?.length) return null;
 
     return (

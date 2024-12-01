@@ -59,8 +59,12 @@ export function serializeBlueprint(
  */
 export function extractBlueprint(
     blueprint: BlueprintString,
-    path: string,
+    path?: string,
 ): BlueprintString {
+    if (!path) {
+        return blueprint;
+    }
+
     try {
         const parts = path.split('.');
         let current = blueprint;

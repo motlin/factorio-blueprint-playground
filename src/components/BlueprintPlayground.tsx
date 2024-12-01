@@ -1,24 +1,40 @@
-import {
-    blueprintIdSignal, getFactorioprintsUrl,
-    rootBlueprintSignal,
-    selectedBlueprintSignal,
-    selectedPathSignal,
-} from '../state/blueprintState';
+import {useNavigate} from '@tanstack/react-router';
+
+import {BlueprintFetchResult, UrlBlueprintResult} from '../fetching/blueprintFetcher';
+import {extractBlueprint} from '../parsing/blueprintParser';
+import {RootSearch, Route} from '../routes';
 
 import {BasicInfoPanel} from './BasicInfoPanel';
 import {BlueprintInfoPanels} from './BlueprintInfoPanels';
-import {BlueprintSourceHandler} from './BlueprintSourceHandler';
+import BlueprintSourceHandler from './BlueprintSourceHandler';
 import {BlueprintTree} from './BlueprintTree';
 import DisqusComments from './DisqusComments.tsx';
 import {ExportActions} from './ExportActions';
 import {ParametersPanel} from './ParametersPanel';
 import {InsetLight, Panel} from './ui';
 
+function getFactorioprintsUrl(id: string): string {
+    return `https://factorioprints.com/view/${id}`;
+}
+
 export function BlueprintPlayground() {
-    // Get current blueprints from signals
-    const rootBlueprint = rootBlueprintSignal.value;
-    const selectedBlueprint = selectedBlueprintSignal.value;
-    const selectedPath = selectedPathSignal.value;
+    const { pasted, selection: selectedPath }: RootSearch = Route.useSearch();
+    const loaderData: BlueprintFetchResult = Route.useLoaderData();
+    const method = loaderData?.fetchMethod;
+    const rootBlueprint = loaderData?.blueprintString;
+
+    const selectedBlueprint = rootBlueprint && extractBlueprint(rootBlueprint, selectedPath);
+
+    const navigate = useNavigate({ from: Route.fullPath });
+
+    const onSelect: (path: string) => void = (path) => {
+        void navigate({
+            search: (prev: RootSearch): RootSearch => ({
+                ...prev,
+                selection: path,
+            }),
+        });
+    };
 
     return (
         <div className="container">
@@ -27,7 +43,7 @@ export function BlueprintPlayground() {
             </h1>
 
             <Panel title="Blueprint Input">
-                <BlueprintSourceHandler />
+                <BlueprintSourceHandler pasted={pasted} />
             </Panel>
 
             {rootBlueprint && <div className="panels2">
@@ -37,13 +53,13 @@ export function BlueprintPlayground() {
                         <InsetLight>
                             <ExportActions
                                 blueprint={rootBlueprint}
-                                path={null}
+                                path={undefined}
                                 title="Root Blueprint"
                             />
                         </InsetLight>
                     </Panel>
                     <Panel title="Blueprint Tree">
-                        <BlueprintTree/>
+                        <BlueprintTree rootBlueprint={rootBlueprint} onSelect={onSelect} selectedPath={selectedPath || ''}/>
                     </Panel>
                 </div>
 
@@ -73,11 +89,11 @@ export function BlueprintPlayground() {
                 <ParametersPanel blueprintString={selectedBlueprint} />
 
                 {/* Comments panel - only shown for root blueprint when ID is present */}
-                {blueprintIdSignal.value && (
+                {method === 'url' && (
                     <Panel title="Comments">
                         <DisqusComments
-                            identifier={blueprintIdSignal.value}
-                            url={getFactorioprintsUrl(blueprintIdSignal.value)}
+                            identifier={(loaderData as UrlBlueprintResult).id}
+                            url={getFactorioprintsUrl((loaderData as UrlBlueprintResult).id)}
                             title={rootBlueprint?.blueprint?.label}
                         />
                     </Panel>
