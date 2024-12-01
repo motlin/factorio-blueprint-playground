@@ -8,25 +8,25 @@ import importPlugin from 'eslint-plugin-import';
 import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
+import globals from 'globals';
+
+const {
+    browser,     // Browser-specific globals (window, document, etc.)
+    commonjs,    // CommonJS module system globals
+    es2024,      // ECMAScript 2024 globals
+    node,        // Node.js runtime globals
+    worker,      // Web Worker globals
+    vitest,      // Vitest testing framework globals
+} = globals;
 
 // Get current directory in ESM
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /** @type {import('eslint').Linter.FlatConfig[]} */
 export default [
+    // Base configuration - applies to all files
     {
         languageOptions: {
-            globals: {
-                // Browser globals
-                window: true,
-                document: true,
-                navigator: true,
-                console: true,
-                fetch: true,
-                atob: true,
-                btoa: true,
-                process: true,
-            },
             ecmaVersion: 'latest',
             sourceType: 'module',
         },
@@ -45,8 +45,60 @@ export default [
         ],
     },
 
+    // Node.js environment - for config files
+    {
+        files: [
+            '**/vite.config.{js,ts}',
+            '**/vitest.config.{js,ts}',
+            '**/jest.config.{js,ts}',
+            '**/webpack.config.{js,ts}',
+            '**/rollup.config.{js,ts}',
+            '**/scripts/**/*.{js,ts}',
+        ],
+        languageOptions: {
+            globals: {
+                ...node,
+                ...commonjs,
+            },
+        },
+    },
+
+    // Browser environment - for source files
+    {
+        files: ['src/**/*.{js,jsx,ts,tsx}'],
+        languageOptions: {
+            globals: {
+                ...browser,
+                ...es2024,
+                ...worker,
+            },
+        },
+    },
+
+    // Test environment
+    {
+        files: [
+            'test/**/*.{js,ts,jsx,tsx}',
+            'test/fixtures/**/*.{js,ts}',
+        ],
+        languageOptions: {
+            globals: {
+                ...vitest,
+                ...node,
+            },
+        },
+        rules: {
+            '@typescript-eslint/no-explicit-any': 'off',
+            '@typescript-eslint/no-non-null-assertion': 'off',
+            '@typescript-eslint/no-floating-promises': 'off',
+            'react/display-name': 'off',
+            'no-console': 'off',
+        },
+    },
+
     js.configs.recommended,
 
+    // TypeScript configuration
     {
         files: ['**/*.{ts,tsx}'],
         languageOptions: {
@@ -82,7 +134,7 @@ export default [
         },
     },
 
-    // React config
+    // React configuration
     {
         files: ['**/*.{ts,tsx}'],
         settings: {
@@ -106,7 +158,7 @@ export default [
         },
     },
 
-    // Import plugin config
+    // Import plugin configuration
     {
         plugins: {
             'import': importPlugin,
@@ -121,6 +173,7 @@ export default [
         },
     },
 
+    // Common rules
     {
         rules: {
             'semi': ['error', 'always'],
@@ -131,32 +184,6 @@ export default [
             'no-multiple-empty-lines': ['error', {'max': 1, 'maxEOF': 0}],
             'eol-last': ['error', 'always'],
             'comma-dangle': ['error', 'always-multiline'],
-        },
-    },
-
-    {
-        files: ['test/**/*.{ts,tsx}'],
-        languageOptions: {
-            globals: {
-                // Test environment globals
-                describe: true,
-                expect: true,
-                it: true,
-                beforeEach: true,
-                afterEach: true,
-                vi: true,
-                vitest: true,
-                // Node.js globals needed in tests
-                console: true,
-                __dirname: true,
-            },
-        },
-        rules: {
-            '@typescript-eslint/no-explicit-any': 'off',
-            '@typescript-eslint/no-non-null-assertion': 'off',
-            '@typescript-eslint/no-floating-promises': 'off',
-            'react/display-name': 'off',
-            'no-console': 'off',
         },
     },
 ];
