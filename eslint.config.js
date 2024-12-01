@@ -7,6 +7,7 @@ import typescriptParser from '@typescript-eslint/parser';
 import importPlugin from 'eslint-plugin-import';
 import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
+import reactRefresh from 'eslint-plugin-react-refresh';
 
 // Get current directory in ESM
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -93,6 +94,7 @@ export default [
         plugins: {
             'react': react,
             'react-hooks': reactHooks,
+            'react-refresh': reactRefresh,
         },
         rules: {
             ...react.configs.recommended.rules,
