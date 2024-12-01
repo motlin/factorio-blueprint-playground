@@ -3,7 +3,8 @@
   "compilerOptions": {
     "types": [
       "vitest/globals",
-      "node"
+      "node",
+      "@cloudflare/workers-types"
     ],
     "allowJs": true
   },
@@ -11,6 +12,7 @@
     "src/**/*",
     "test/**/*",
     "scripts/**/*",
+    "functions/**/*",
     "*.config.ts",
     "vite.config.ts",
     "vitest.config.ts"
