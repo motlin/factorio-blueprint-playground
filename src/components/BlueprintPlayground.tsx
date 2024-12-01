@@ -8,7 +8,7 @@ import {BasicInfoPanel} from './BasicInfoPanel';
 import {BlueprintInfoPanels} from './BlueprintInfoPanels';
 import BlueprintSourceHandler from './BlueprintSourceHandler';
 import {BlueprintTree} from './BlueprintTree';
-import DisqusComments from './DisqusComments.tsx';
+import DisqusComments from './DisqusComments';
 import {ExportActions} from './ExportActions';
 import {ParametersPanel} from './ParametersPanel';
 import {InsetLight, Panel} from './ui';

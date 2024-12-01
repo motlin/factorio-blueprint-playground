@@ -23,9 +23,9 @@ build:
 
     npm install
     npm run build
-    npm run coverage
+    npm run test:coverage
     npm run lint:fix
-    npm run typecheck
+    npm run build:types
 
 dump-tree:
     dump-tree --line-numbers \

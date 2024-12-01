@@ -2,7 +2,7 @@ import {createRootRoute, Link, Outlet} from '@tanstack/react-router';
 import type {ComponentType} from 'preact';
 import {lazy, Suspense} from 'react';
 
-import {ErrorComponent} from '../components/ErrorComponent.tsx';
+import {ErrorComponent} from '../components/ErrorComponent';
 
 const TanStackRouterDevtools = import.meta.env.PROD
     ? () => null // Render nothing in production

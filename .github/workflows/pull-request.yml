@@ -11,9 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Use Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '22.x'
           cache: 'npm'
@@ -22,7 +20,7 @@ jobs:
         run: npm ci
 
       - name: Run ESLint
-        run: npm run lint:report
+        run: npm run ci:lint
 
       - name: Upload ESLint Report
         if: always()
@@ -31,24 +29,6 @@ jobs:
           name: eslint-report
           path: eslint_report.json
           retention-days: 14
-
-  typecheck:
-    name: Type Check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Use Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22.x'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Type Check
-        run: npm run typecheck
 
   test:
     name: Test (Node ${{ matrix.node-version }})
@@ -61,9 +41,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
@@ -80,8 +58,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Use Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '22.x'
           cache: 'npm'
@@ -90,10 +67,10 @@ jobs:
         run: npm ci
 
       - name: Run coverage
-        run: npm run coverage
+        run: npm run test:coverage
 
       - name: Upload coverage report
-        if: always()
+        if: matrix.node-version == '22.x'
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
@@ -105,9 +82,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Use Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '22.x'
           cache: 'npm'
@@ -125,6 +100,41 @@ jobs:
           name: dist
           path: dist/
           retention-days: 1
+
+
+  build-types:
+    name: Build Types
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Types
+        run: npm run build:types
+
+  typecheck:
+    name: Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type Check
+        run: npm run ci:typecheck
 
   all-checks:
     name: All checks
