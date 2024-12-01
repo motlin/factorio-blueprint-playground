@@ -21,11 +21,23 @@ build:
         fi
     done
 
-    npm install
-    npm run lint:fix
-    npm run build:types
-    npm run build
-    npm run test:coverage
+    EXIT_CODE=0
+    FAILED_COMMAND=""
+
+    npm install || { EXIT_CODE=$?; FAILED_COMMAND="npm install"; }
+    [ $EXIT_CODE -eq 0 ] && npm run lint:fix || { EXIT_CODE=$?; FAILED_COMMAND="npm run lint:fix"; }
+    [ $EXIT_CODE -eq 0 ] && npm run build:types || { EXIT_CODE=$?; FAILED_COMMAND="npm run build:types"; }
+    [ $EXIT_CODE -eq 0 ] && npm run build || { EXIT_CODE=$?; FAILED_COMMAND="npm run build"; }
+    [ $EXIT_CODE -eq 0 ] && npm run test:coverage || { EXIT_CODE=$?; FAILED_COMMAND="npm run test:coverage"; }
+
+    if [ $EXIT_CODE -eq 0 ]; then
+        exit 0
+    fi
+
+    DIRECTORY=$(basename $(pwd))
+    MESSAGE="Failed in directory ${DIRECTORY} on command '${FAILED_COMMAND}' from commit: '${COMMIT_MESSAGE}' with exit code ${EXIT_CODE}"
+    {{echo_command}} "$MESSAGE"
+    exit $EXIT_CODE
 
 dump-tree:
     dump-tree --line-numbers \

@@ -29,6 +29,7 @@ dist-ssr
 /coverage
 /stats.html
 /tsconfig.app.tsbuildinfo
+/tsconfig.eslint.tsbuildinfo
 /tsconfig.node.tsbuildinfo
 
 # wrangler files

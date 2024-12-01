@@ -1,6 +1,7 @@
 import path from 'path';
 import {fileURLToPath} from 'url';
 
+import {includeIgnoreFile} from '@eslint/compat';
 import js from '@eslint/js';
 import typescript from '@typescript-eslint/eslint-plugin';
 import typescriptParser from '@typescript-eslint/parser';
@@ -11,38 +12,35 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import globals from 'globals';
 
 const {
-    browser,     // Browser-specific globals (window, document, etc.)
+    browser,      // Browser-specific globals (window, document, etc.)
     commonjs,    // CommonJS module system globals
-    es2024,      // ECMAScript 2024 globals
-    node,        // Node.js runtime globals
-    worker,      // Web Worker globals
-    vitest,      // Vitest testing framework globals
+    es2024,        // ECMAScript 2024 globals
+    node,            // Node.js runtime globals
+    worker,        // Web Worker globals
+    vitest,                        // Vitest testing framework globals
 } = globals;
 
 // Get current directory in ESM
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const gitignorePath = path.resolve(__dirname, '.gitignore');
 
 /** @type {import('eslint').Linter.FlatConfig[]} */
 export default [
+    includeIgnoreFile(gitignorePath),
+
     // Base configuration - applies to all files
     {
         languageOptions: {
             ecmaVersion: 'latest',
             sourceType: 'module',
         },
-    },
-
-    {
-        ignores: [
-            'dist',
-            'node_modules',
-            'coverage',
-            '.vite',
-            'routeTree.gen.ts',
-            'vite-env.d.ts',
-            'tsconfig.app.tsbuildinfo',
-            'tsconfig.node.tsbuildinfo',
-        ],
+        linterOptions: {
+            reportUnusedDisableDirectives: true,
+            noInlineConfig: false,
+        },
+        settings: {
+            maxWarnings: 0,
+        },
     },
 
     // Node.js environment - for config files
@@ -63,14 +61,25 @@ export default [
         },
     },
 
+    // Cloudflare Pages Functions
+    {
+        files: ['functions/**/*.{js,ts}'],
+        languageOptions: {
+            globals: {
+                ...es2024,
+                ...worker,
+                KVNamespace: 'readonly',
+            },
+        },
+    },
+
     // Browser environment - for source files
     {
         files: ['src/**/*.{js,jsx,ts,tsx}'],
         languageOptions: {
             globals: {
-                ...browser,
                 ...es2024,
-                ...worker,
+                ...browser,
             },
         },
     },
@@ -83,8 +92,8 @@ export default [
         ],
         languageOptions: {
             globals: {
-                ...vitest,
                 ...node,
+                ...vitest,
             },
         },
         rules: {
@@ -109,6 +118,7 @@ export default [
                 ecmaFeatures: {
                     jsx: true,
                 },
+                EXPERIMENTAL_useProjectService: true,
             },
         },
         plugins: {
