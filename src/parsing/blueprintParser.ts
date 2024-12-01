@@ -20,7 +20,7 @@ export function deserializeBlueprint(blueprintString: string): BlueprintString {
 	// Validate prefix
 	if (!blueprintString.startsWith('0')) {
 		throw new BlueprintError(
-			`Unknown blueprint format: string does not start with '0' (starts with '${blueprintString[0] || ''}')`,
+			`Unknown blueprint format: string does not start with '0'.\nStarts with:\n'${blueprintString.slice(0, 80)}`,
 		);
 	}
 
