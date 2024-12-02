@@ -31,7 +31,7 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20241127.0",
     "@eslint/compat": "^1.2.3",
-    "@eslint/js": "^9.15.0",
+    "@eslint/js": "^9.16.0",
     "@preact/preset-vite": "^2.9.2",
     "@tanstack/router-cli": "^1.84.4",
     "@tanstack/router-devtools": "^1.85.0",
