@@ -25,9 +25,9 @@ build:
     FAILED_COMMAND=""
 
     npm install || { EXIT_CODE=$?; FAILED_COMMAND="npm install"; }
-    [ $EXIT_CODE -eq 0 ] && npm run lint:fix || { EXIT_CODE=$?; FAILED_COMMAND="npm run lint:fix"; }
     [ $EXIT_CODE -eq 0 ] && npm run build:types || { EXIT_CODE=$?; FAILED_COMMAND="npm run build:types"; }
     [ $EXIT_CODE -eq 0 ] && npm run build || { EXIT_CODE=$?; FAILED_COMMAND="npm run build"; }
+    [ $EXIT_CODE -eq 0 ] && npm run lint:fix || { EXIT_CODE=$?; FAILED_COMMAND="npm run lint:fix"; }
     [ $EXIT_CODE -eq 0 ] && npm run test:coverage || { EXIT_CODE=$?; FAILED_COMMAND="npm run test:coverage"; }
 
     if [ $EXIT_CODE -eq 0 ]; then
@@ -43,6 +43,7 @@ dump-tree:
     dump-tree --line-numbers \
         --ignore test/fixtures \
         --ignore .vite \
+        --ignore .wrangler \
         --ignore requirements/ \
         --ignore public/icons \
         --ignore stats.html \
