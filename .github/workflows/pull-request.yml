@@ -7,6 +7,9 @@ concurrency:
 
 jobs:
   eslint:
+    permissions:
+      pull-requests: read
+      checks: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,14 +21,9 @@ jobs:
       - run: npm ci
 
       - run: npm run ci:eslint
+        continue-on-error: true
 
-      - name: Upload ESLint Report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: eslint-report
-          path: eslint_report.json
-          retention-days: 14
+      - uses: ataylorme/eslint-annotate-action@v3
 
   prettier:
     runs-on: ubuntu-latest
