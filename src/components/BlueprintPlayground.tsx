@@ -1,6 +1,6 @@
 import {useNavigate} from '@tanstack/react-router';
+import React from 'react';
 
-import {BlueprintFetchResult, UrlBlueprintResult} from '../fetching/blueprintFetcher';
 import {extractBlueprint} from '../parsing/blueprintParser';
 import {RootSearch, Route} from '../routes';
 
@@ -11,23 +11,29 @@ import {BlueprintTree} from './BlueprintTree';
 import DisqusComments from './DisqusComments';
 import {ExportActions} from './ExportActions';
 import {ParametersPanel} from './ParametersPanel';
-import {InsetLight, Panel} from './ui';
-
-function getFactorioprintsUrl(id: string): string {
-	return `https://factorioprints.com/view/${id}`;
-}
+import {ErrorAlert, InsetLight, Panel} from './ui';
 
 export function BlueprintPlayground() {
 	const {pasted, selection: selectedPath}: RootSearch = Route.useSearch();
-	const loaderData: BlueprintFetchResult = Route.useLoaderData();
-	const method = loaderData?.fetchMethod;
-	const rootBlueprint = loaderData?.blueprintString;
-
-	const selectedBlueprint = rootBlueprint && extractBlueprint(rootBlueprint, selectedPath);
-
+	const loaderResult = Route.useLoaderData();
 	const navigate = useNavigate({from: Route.fullPath});
 
-	const onSelect: (path: string) => void = (path) => {
+	// Extract error and blueprint data
+	const error = loaderResult?.error;
+	const method = loaderResult?.fetchMethod;
+	const rootBlueprint = loaderResult?.blueprintString;
+
+	// Log error to console if present
+	React.useEffect(() => {
+		if (error) {
+			console.error('Blueprint error:', error);
+		}
+	}, [error]);
+
+	const selectedBlueprint =
+		rootBlueprint && selectedPath ? extractBlueprint(rootBlueprint, selectedPath) : rootBlueprint;
+
+	const onSelect = (path: string) => {
 		void navigate({
 			search: (prev: RootSearch): RootSearch => ({
 				...prev,
@@ -43,6 +49,8 @@ export function BlueprintPlayground() {
 			<Panel title="Blueprint Input">
 				<BlueprintSourceHandler pasted={pasted} />
 			</Panel>
+
+			{error && <ErrorAlert error={error.message} />}
 
 			{rootBlueprint && (
 				<div className="panels2">
@@ -89,11 +97,11 @@ export function BlueprintPlayground() {
 					<ParametersPanel blueprintString={selectedBlueprint} />
 
 					{/* Comments panel - only shown for root blueprint when ID is present */}
-					{method === 'url' && (
+					{method === 'url' && loaderResult.id && (
 						<Panel title="Comments">
 							<DisqusComments
-								identifier={(loaderData as UrlBlueprintResult).id}
-								url={getFactorioprintsUrl((loaderData as UrlBlueprintResult).id)}
+								identifier={loaderResult.id}
+								url={`https://factorioprints.com/view/${loaderResult.id}`}
 								title={rootBlueprint?.blueprint?.label}
 							/>
 						</Panel>

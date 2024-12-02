@@ -141,23 +141,35 @@ function fetchData(pasted: string): BaseBlueprintResult {
 	return {fetchMethod: 'data', pasted: pasted, blueprintString: blueprint};
 }
 
-export async function fetchBlueprint(deps: {pasted: string | undefined}): Promise<BlueprintFetchResult> {
+export async function fetchBlueprint(deps: {
+	pasted: string | undefined;
+}): Promise<BlueprintFetchResult & {error?: Error}> {
 	const pasted = deps.pasted;
 	if (!pasted) {
-		return;
+		return undefined;
 	}
 
-	// Simple URL detection
-	if (pasted.match(/^https?:\/\//i)) {
-		return await fetchUrl(pasted);
-	}
-
-	// Simple JSON detection - try parsing as JSON
 	try {
-		JSON.parse(pasted);
-		return fetchJson(pasted);
-	} catch {
-		// If not URL or JSON, assume it's blueprint data
-		return fetchData(pasted);
+		// Simple URL detection
+		if (pasted.match(/^https?:\/\//i)) {
+			return await fetchUrl(pasted);
+		}
+
+		// Simple JSON detection - try parsing as JSON
+		try {
+			JSON.parse(pasted);
+			return fetchJson(pasted);
+		} catch {
+			// If not URL or JSON, assume it's blueprint data
+			return fetchData(pasted);
+		}
+	} catch (error) {
+		// Return both the error and any partial data we might have
+		return {
+			error: error instanceof Error ? error : new Error(String(error)),
+			fetchMethod: 'data',
+			pasted,
+			blueprintString: undefined,
+		};
 	}
 }
