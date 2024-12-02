@@ -5,7 +5,22 @@ import ".just/git.just"
 import ".just/git-rebase.just"
 import ".just/git-test.just"
 
-default:
+default: build
+
+build:
+    #!/usr/bin/env bash
+    set -uo pipefail
+
+    COMMIT_MESSAGE=$(git log --format=%B -n 1 HEAD)
+    SKIPPABLE_WORDS=("skip" "pass" "stop" "fail")
+
+    for word in "${SKIPPABLE_WORDS[@]}"; do
+        if [[ $COMMIT_MESSAGE == *\[${word}\]* ]]; then
+            echo "Skipping due to [${word}] in commit: '$COMMIT_MESSAGE'"
+            exit 0
+        fi
+    done
+
     npm install
     npm run build
     npm run coverage
