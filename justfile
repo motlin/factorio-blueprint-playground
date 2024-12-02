@@ -22,10 +22,10 @@ build:
     done
 
     npm install
-    npm run build
-    npm run test:coverage
     npm run lint:fix
     npm run build:types
+    npm run build
+    npm run test:coverage
 
 dump-tree:
     dump-tree --line-numbers \

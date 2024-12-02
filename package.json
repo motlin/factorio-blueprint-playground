@@ -13,8 +13,10 @@
     "test:coverage": "vitest run --coverage",
     "generate:routes": "npx @tanstack/router-cli generate-routefiles",
     "build:types": "npm run generate:routes && tsc --noEmit --project tsconfig.routes.json",
-    "lint:fix": "eslint . --fix",
-    "ci:lint": "eslint . --format json --output-file eslint_report.json",
+    "lint:fix": "prettier --write \"src/**/*.{js,jsx,ts,tsx,css,md,json}\" && eslint . --fix",
+
+    "ci:eslint": "eslint . --format json --output-file eslint_report.json",
+    "ci:prettier": "prettier --check \"src/**/*.{js,jsx,ts,tsx,css,md,json}\"",
     "ci:typecheck": "tsc --noEmit"
   },
   "dependencies": {

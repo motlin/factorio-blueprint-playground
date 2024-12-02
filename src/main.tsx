@@ -13,33 +13,33 @@ const router = createRouter({routeTree});
 
 // Register router for type safety
 declare module '@tanstack/react-router' {
-    interface Register {
-        router: typeof router;
-    }
+	interface Register {
+		router: typeof router;
+	}
 }
 
 // Root element rendering with loading fallback
 const rootElement = document.getElementById('app');
 if (rootElement && !rootElement.innerHTML) {
-    const root = createRoot(rootElement);
-    root.render(
-        <StrictMode>
-            <Suspense fallback={<div className="loading">Loading...</div>}>
-                <RouterProvider router={router}/>
-            </Suspense>
-        </StrictMode>,
-    );
+	const root = createRoot(rootElement);
+	root.render(
+		<StrictMode>
+			<Suspense fallback={<div className="loading">Loading...</div>}>
+				<RouterProvider router={router} />
+			</Suspense>
+		</StrictMode>,
+	);
 }
 
 if (typeof window.gtag === 'function') {
-    window.gtag('event', 'page_view');
+	window.gtag('event', 'page_view');
 }
 
 // Preload important routes on idle
 if ('requestIdleCallback' in window) {
-    window.requestIdleCallback(() => {
-        void router.preloadRoute({
-            to: '/history',
-        });
-    });
+	window.requestIdleCallback(() => {
+		void router.preloadRoute({
+			to: '/history',
+		});
+	});
 }
