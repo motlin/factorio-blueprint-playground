@@ -48,15 +48,8 @@ dump-tree:
         --ignore netlify.toml \
         --ignore public \
         --ignore scripts \
-        --ignore tsconfig.app.json \
         --ignore tsconfig.app.tsbuildinfo \
-        --ignore tsconfig.eslint.json \
-        --ignore tsconfig.json \
-        --ignore tsconfig.node.json \
         --ignore tsconfig.node.tsbuildinfo \
-        --ignore tsconfig.scripts.json \
-        --ignore vite.config.ts \
-        --ignore vitest.config.ts \
         --ignore src/styles/factorio-a76ef767.css \
         > ../factorio-blueprint-playground.txt
 
