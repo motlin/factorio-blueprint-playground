@@ -80,22 +80,40 @@ const factorioPrintsSourceConfig: BlueprintFetchSource = {
 	},
 };
 
-const factorioBinSourceConfig: BlueprintFetchSource = {
+const factorioBinCdnSourceConfig: BlueprintFetchSource = {
 	apiUrl: (url) => {
 		const match = url.href.match(/factoriobin\.com\/perma\/bp\/[^/]+\/[^/]+\/([^/\s#-]+)/);
-		if (!match) throw new Error('Invalid Factorio Bin URL');
+		if (!match) throw new Error('Invalid Factorio Bin CDN URL');
 		return `/proxy?${url.href}`;
 	},
 	responseType: 'text',
 	extractBlueprintString: (data) => {
 		if (typeof data !== 'string') {
-			throw new Error('Invalid response from Factorio Bin');
+			throw new Error('Invalid response from Factorio Bin CDN');
 		}
 		return data;
 	},
 	extractId: (url) => {
 		const match = url.pathname.match(/\/([^/\s#-]+)(?:-[^/]*)?\/fbin/);
-		if (!match) throw new Error('Invalid Factorio Bin URL');
+		if (!match) throw new Error('Invalid Factorio Bin CDN URL');
+		return match[1];
+	},
+};
+
+const factorioBinDirectSourceConfig: BlueprintFetchSource = {
+	apiUrl: (url) => {
+		return `/proxy?${url.href}/blueprint.txt`;
+	},
+	responseType: 'text',
+	extractBlueprintString: (data) => {
+		if (typeof data !== 'string') {
+			throw new Error('Invalid response from Factorio Bin Direct');
+		}
+		return data;
+	},
+	extractId: (url) => {
+		const match = url.pathname.match(/post\/([^/\s#]+)/);
+		if (!match) throw new Error('Invalid Factorio Bin Direct URL');
 		return match[1];
 	},
 };
@@ -103,7 +121,8 @@ const factorioBinSourceConfig: BlueprintFetchSource = {
 const SOURCE_CONFIGS: Record<string, BlueprintFetchSource> = {
 	'factorio.school': factorioSchoolSourceConfig,
 	'factorioprints.com': factorioPrintsSourceConfig,
-	'cdn.factoriobin.com': factorioBinSourceConfig,
+	'cdn.factoriobin.com': factorioBinCdnSourceConfig,
+	'factoriobin.com': factorioBinDirectSourceConfig,
 };
 
 async function fetchUrl(pasted: string): Promise<UrlBlueprintResult> {
@@ -123,8 +142,6 @@ async function fetchUrl(pasted: string): Promise<UrlBlueprintResult> {
 	const data = await (fetchConfig.responseType === 'json' ? response.json() : response.text());
 	const blueprintString = fetchConfig.extractBlueprintString(data);
 	const blueprint = deserializeBlueprint(blueprintString);
-
-	// Extract and store blueprint ID if from a supported source
 	const id = fetchConfig.extractId(url);
 
 	return {fetchMethod: 'url', pasted: pasted, blueprintString: blueprint, id};
