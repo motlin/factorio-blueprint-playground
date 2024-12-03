@@ -22,7 +22,7 @@ describe('RichText', () => {
     it('renders item tags correctly', () => {
         const { getByTestId } = render(<RichText text="[item=blueprint-book]" />);
         const icon = getByTestId('icon');
-        expect(icon.getAttribute('src')).toBe('/icons/item/blueprint-book.webp');
+        expect(icon.getAttribute('src')).toBe('https://factorio-icon-cdn.pages.dev/item/blueprint-book.webp');
         expect(icon.getAttribute('title')).toBe('item: blueprint-book');
     });
 
@@ -34,10 +34,10 @@ describe('RichText', () => {
         expect(wrapper).toBeTruthy();
 
         const mainIcon = within(wrapper).getByTestId('icon');
-        expect(mainIcon.getAttribute('src')).toBe('/icons/item/iron-plate.webp');
+        expect(mainIcon.getAttribute('src')).toBe('https://factorio-icon-cdn.pages.dev/item/iron-plate.webp');
 
         const qualityIcon = within(wrapper).getByTestId('quality');
-        expect(qualityIcon.getAttribute('src')).toBe('/icons/quality/normal.webp');
+        expect(qualityIcon.getAttribute('src')).toBe('https://factorio-icon-cdn.pages.dev/quality/normal.webp');
     });
 
     // Test entity tags with quality
@@ -48,10 +48,10 @@ describe('RichText', () => {
         expect(wrapper).toBeTruthy();
 
         const mainIcon = within(wrapper).getByTestId('icon');
-        expect(mainIcon.getAttribute('src')).toBe('/icons/entity/small-biter.webp');
+        expect(mainIcon.getAttribute('src')).toBe('https://factorio-icon-cdn.pages.dev/entity/small-biter.webp');
 
         const qualityIcon = within(wrapper).getByTestId('quality');
-        expect(qualityIcon.getAttribute('src')).toBe('/icons/quality/uncommon.webp');
+        expect(qualityIcon.getAttribute('src')).toBe('https://factorio-icon-cdn.pages.dev/quality/uncommon.webp');
     });
 
     // Test quality tags both as plain tags and as modifiers
@@ -68,7 +68,7 @@ describe('RichText', () => {
             qualities.forEach((quality, index) => {
                 const icon = icons[index];
                 expect(icon.getAttribute('src')).toBe(
-                    `/icons/quality/${quality}.webp`,
+                    `https://factorio-icon-cdn.pages.dev/quality/${quality}.webp`,
                 );
             });
         });
@@ -85,7 +85,7 @@ describe('RichText', () => {
             qualities.forEach((quality, index) => {
                 const icon = qualityIcons[index];
                 expect(icon.getAttribute('src')).toBe(
-                    `/icons/quality/${quality}.webp`,
+                    `https://factorio-icon-cdn.pages.dev/quality/${quality}.webp`,
                 );
             });
         });
@@ -95,7 +95,7 @@ describe('RichText', () => {
     it('renders planet tags correctly', () => {
         const { getByTestId } = render(<RichText text="[planet=gleba]" />);
         const icon = getByTestId('icon');
-        expect(icon.getAttribute('src')).toBe('/icons/space-location/gleba.webp');
+        expect(icon.getAttribute('src')).toBe('https://factorio-icon-cdn.pages.dev/space-location/gleba.webp');
     });
 
     // Test planet/space-location tags
@@ -111,14 +111,14 @@ describe('RichText', () => {
             // Check first icon
             const firstIcon = icons[0];
             expect(firstIcon.getAttribute('src')).toBe(
-                '/icons/space-location/solar-system-edge.webp',
+                'https://factorio-icon-cdn.pages.dev/space-location/solar-system-edge.webp',
             );
             expect(firstIcon.getAttribute('title')).toBe('space-location: solar-system-edge');
 
             // Check second icon
             const secondIcon = icons[1];
             expect(secondIcon.getAttribute('src')).toBe(
-                '/icons/space-location/shattered-planet.webp',
+                'https://factorio-icon-cdn.pages.dev/space-location/shattered-planet.webp',
             );
             expect(secondIcon.getAttribute('title')).toBe('space-location: shattered-planet');
         });
@@ -131,7 +131,7 @@ describe('RichText', () => {
             const icon = getByTestId('icon');
             expect(icon).toBeTruthy();
             expect(icon.getAttribute('src')).toBe(
-                '/icons/space-location/solar-system-edge.webp',
+                'https://factorio-icon-cdn.pages.dev/space-location/solar-system-edge.webp',
             );
             expect(icon.getAttribute('title')).toBe('planet: solar-system-edge');
         });
@@ -141,7 +141,7 @@ describe('RichText', () => {
     it('renders virtual signal tags correctly', () => {
         const { getByTestId } = render(<RichText text="[virtual-signal=signal-any-quality]" />);
         const icon = getByTestId('icon');
-        expect(icon.getAttribute('src')).toBe('/icons/virtual-signal/signal-any-quality.webp');
+        expect(icon.getAttribute('src')).toBe('https://factorio-icon-cdn.pages.dev/virtual-signal/signal-any-quality.webp');
     });
 
     // Test color tags with different formats
@@ -211,7 +211,7 @@ describe('RichText', () => {
 
     // Check main icon properties
         const mainIcon = within(wrapper).getByTestId('icon');
-    expect(mainIcon).toHaveAttribute('src', '/icons/item/iron-plate.webp');
+    expect(mainIcon).toHaveAttribute('src', 'https://factorio-icon-cdn.pages.dev/item/iron-plate.webp');
     expect(mainIcon).toHaveAttribute('title', 'item: iron-plate');
     expect(mainIcon).toHaveAttribute('alt', 'iron-plate');
     expect(mainIcon).toHaveAttribute('loading', 'lazy');
@@ -220,7 +220,7 @@ describe('RichText', () => {
 
     // Check quality icon properties
     const qualityIcon = within(wrapper).getByTestId('quality');
-    expect(qualityIcon).toHaveAttribute('src', '/icons/quality/normal.webp');
+    expect(qualityIcon).toHaveAttribute('src', 'https://factorio-icon-cdn.pages.dev/quality/normal.webp');
     expect(qualityIcon).toHaveAttribute('title', 'Quality: normal');
     expect(qualityIcon).toHaveAttribute('alt', 'normal');
     expect(qualityIcon).toHaveAttribute('loading', 'lazy');
