@@ -128,6 +128,8 @@ export default [
             ...typescript.configs['recommended-requiring-type-checking'].rules,
             '@typescript-eslint/no-unused-vars': ['error', {
                 argsIgnorePattern: '^_',
+                caughtErrorsIgnorePattern: '^_',
+                destructuredArrayIgnorePattern: '^_',
                 varsIgnorePattern: '^_',
             }],
             '@typescript-eslint/no-explicit-any': 'warn',
@@ -145,7 +147,7 @@ export default [
 
     // React configuration
     {
-        files: ['**/*.{ts,tsx}'],
+        files: ['**/*.{jsx,tsx}'],
         settings: {
             react: {
                 version: '18.2',
