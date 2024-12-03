@@ -50,8 +50,6 @@ interface Env {
 }
 
 export const onRequest = async (context: EventContext<Env, string, Record<string, unknown>>) => {
-	console.log('Request received', {context});
-
 	const request = context.request;
 	const isPreflightRequest = request.method === 'OPTIONS';
 	const originUrl = new URL(request.url);
@@ -133,8 +131,7 @@ export const onRequest = async (context: EventContext<Env, string, Record<string
 				status: isPreflightRequest ? 200 : response.status,
 				statusText: isPreflightRequest ? 'OK' : response.statusText,
 			});
-		} catch (e) {
-			console.error(e);
+		} catch (_e) {
 			return new Response('Error fetching resource', {status: 500});
 		}
 	}
