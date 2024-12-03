@@ -1,7 +1,9 @@
 import {useNavigate} from '@tanstack/react-router';
+import React from 'react';
 
 import {BlueprintFetchResult} from '../fetching/blueprintFetcher';
 import {extractBlueprint} from '../parsing/blueprintParser';
+import type {BlueprintString} from '../parsing/types';
 import {RootSearch, Route} from '../routes';
 
 import {BasicInfoPanel} from './BasicInfoPanel';
@@ -11,7 +13,7 @@ import {BlueprintTree} from './BlueprintTree';
 import DisqusComments from './DisqusComments';
 import {ExportActions} from './ExportActions';
 import {ParametersPanel} from './ParametersPanel';
-import {Panel} from './ui';
+import {ErrorAlert, Panel} from './ui';
 
 function getFactorioprintsUrl(id?: string): string | undefined {
 	if (!id) {
@@ -23,13 +25,23 @@ function getFactorioprintsUrl(id?: string): string | undefined {
 export function BlueprintPlayground() {
 	const {pasted, selection: selectedPath}: RootSearch = Route.useSearch();
 	const loaderData: BlueprintFetchResult = Route.useLoaderData();
-	const rootBlueprint = loaderData?.blueprintString;
+
+	const rootBlueprint: BlueprintString | undefined = loaderData?.success ? loaderData.blueprintString : undefined;
+	const error = loaderData?.success ? undefined : loaderData?.error;
+	const disqusId: string | undefined = loaderData?.success ? loaderData.id : undefined;
+
+	// Log errors to console in development
+	React.useEffect(() => {
+		if (error) {
+			console.error('Blueprint error:', error);
+		}
+	}, [error]);
 
 	const selectedBlueprint = rootBlueprint && extractBlueprint(rootBlueprint, selectedPath);
 
 	const navigate = useNavigate({from: Route.fullPath});
 
-	const onSelect: (path: string) => void = (path) => {
+	const onSelect = (path: string) => {
 		void navigate({
 			search: (prev: RootSearch): RootSearch => ({
 				...prev,
@@ -45,6 +57,8 @@ export function BlueprintPlayground() {
 			<Panel title="Blueprint Input">
 				<BlueprintSourceHandler pasted={pasted} />
 			</Panel>
+
+			{error && <ErrorAlert error={error} />}
 
 			<div className="panels2">
 				{/* Left side */}
@@ -69,8 +83,8 @@ export function BlueprintPlayground() {
 			<ParametersPanel blueprintString={selectedBlueprint} />
 
 			<DisqusComments
-				identifier={loaderData?.id}
-				url={getFactorioprintsUrl(loaderData?.id)}
+				identifier={disqusId}
+				url={getFactorioprintsUrl(disqusId)}
 				title={rootBlueprint?.blueprint?.label}
 			/>
 		</div>
