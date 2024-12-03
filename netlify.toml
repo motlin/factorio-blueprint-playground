@@ -8,16 +8,6 @@ Referrer-Policy = "strict-origin-when-cross-origin"
 Permissions-Policy = "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
 
 [[headers]]
-for = "/icons/*"
-[headers.values]
-Cache-Control = "public, max-age=86400, immutable"
-
-[[headers]]
-for = "/*.woff2"
-[headers.values]
-Cache-Control = "public, max-age=86400, immutable"
-
-[[headers]]
 for = "/assets/*"
 [headers.values]
 Cache-Control = "public, max-age=86400, immutable"
