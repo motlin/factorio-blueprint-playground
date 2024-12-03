@@ -25,7 +25,8 @@ const InfoRow = ({label, children, hidden = false}: InfoRowProps) => {
 	);
 };
 
-export const BasicInfoPanel = memo(({blueprint}: {blueprint: BlueprintString}) => {
+export const BasicInfoPanel = memo(({blueprint}: {blueprint?: BlueprintString}) => {
+	if (!blueprint) return null;
 	const wrapper = new BlueprintWrapper(blueprint);
 	const {type, label, description, icons, version} = wrapper.getInfo();
 

@@ -1,6 +1,6 @@
 import {useNavigate} from '@tanstack/react-router';
 
-import {BlueprintFetchResult, UrlBlueprintResult} from '../fetching/blueprintFetcher';
+import {BlueprintFetchResult} from '../fetching/blueprintFetcher';
 import {extractBlueprint} from '../parsing/blueprintParser';
 import {RootSearch, Route} from '../routes';
 
@@ -11,16 +11,18 @@ import {BlueprintTree} from './BlueprintTree';
 import DisqusComments from './DisqusComments';
 import {ExportActions} from './ExportActions';
 import {ParametersPanel} from './ParametersPanel';
-import {InsetLight, Panel} from './ui';
+import {Panel} from './ui';
 
-function getFactorioprintsUrl(id: string): string {
+function getFactorioprintsUrl(id?: string): string | undefined {
+	if (!id) {
+		return undefined;
+	}
 	return `https://factorioprints.com/view/${id}`;
 }
 
 export function BlueprintPlayground() {
 	const {pasted, selection: selectedPath}: RootSearch = Route.useSearch();
 	const loaderData: BlueprintFetchResult = Route.useLoaderData();
-	const method = loaderData?.fetchMethod;
 	const rootBlueprint = loaderData?.blueprintString;
 
 	const selectedBlueprint = rootBlueprint && extractBlueprint(rootBlueprint, selectedPath);
@@ -44,62 +46,33 @@ export function BlueprintPlayground() {
 				<BlueprintSourceHandler pasted={pasted} />
 			</Panel>
 
-			{rootBlueprint && (
-				<div className="panels2">
-					{/* Left side */}
-					<div>
-						<Panel title="Export Blueprint">
-							<InsetLight>
-								<ExportActions blueprint={rootBlueprint} path={undefined} title="Root Blueprint" />
-							</InsetLight>
-						</Panel>
-						<Panel title="Blueprint Tree">
-							<BlueprintTree
-								rootBlueprint={rootBlueprint}
-								onSelect={onSelect}
-								selectedPath={selectedPath || ''}
-							/>
-						</Panel>
-					</div>
+			<div className="panels2">
+				{/* Left side */}
+				<div>
+					<ExportActions blueprint={rootBlueprint} path={undefined} title="Root Blueprint" />
 
-					{/* Right side */}
-					<div>
-						{selectedBlueprint && (
-							<>
-								<Panel title="Export Selected Blueprint">
-									<InsetLight>
-										<ExportActions
-											blueprint={selectedBlueprint}
-											path={selectedPath}
-											title="Selected Blueprint"
-										/>
-									</InsetLight>
-								</Panel>
-								<BasicInfoPanel blueprint={selectedBlueprint} />
-								<BlueprintInfoPanels blueprint={selectedBlueprint} />
-							</>
-						)}
-					</div>
+					<BlueprintTree
+						rootBlueprint={rootBlueprint}
+						onSelect={onSelect}
+						selectedPath={selectedPath || ''}
+					/>
 				</div>
-			)}
 
-			{rootBlueprint && (
-				<>
-					{/* Full-width parameters panel at bottom */}
-					<ParametersPanel blueprintString={selectedBlueprint} />
+				{/* Right side */}
+				<div>
+					<ExportActions blueprint={selectedBlueprint} path={selectedPath} title="Selected Blueprint" />
+					<BasicInfoPanel blueprint={selectedBlueprint} />
+					<BlueprintInfoPanels blueprint={selectedBlueprint} />
+				</div>
+			</div>
 
-					{/* Comments panel - only shown for root blueprint when ID is present */}
-					{method === 'url' && (
-						<Panel title="Comments">
-							<DisqusComments
-								identifier={(loaderData as UrlBlueprintResult).id}
-								url={getFactorioprintsUrl((loaderData as UrlBlueprintResult).id)}
-								title={rootBlueprint?.blueprint?.label}
-							/>
-						</Panel>
-					)}
-				</>
-			)}
+			<ParametersPanel blueprintString={selectedBlueprint} />
+
+			<DisqusComments
+				identifier={loaderData?.id}
+				url={getFactorioprintsUrl(loaderData?.id)}
+				title={rootBlueprint?.blueprint?.label}
+			/>
 		</div>
 	);
 }

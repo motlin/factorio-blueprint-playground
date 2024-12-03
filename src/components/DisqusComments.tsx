@@ -1,5 +1,7 @@
 import {useEffect} from 'react';
 
+import {Panel} from './ui';
+
 interface DisqusConfig {
 	page: {
 		identifier: string;
@@ -16,15 +18,19 @@ interface DisqusWindow extends Window {
 }
 
 interface DisqusCommentsProps {
-	url: string;
-	identifier: string;
+	identifier?: string;
+	url?: string;
 	title?: string;
 }
 
 declare const window: DisqusWindow;
 
-const DisqusComments = ({url, identifier, title}: DisqusCommentsProps) => {
+const DisqusComments = ({identifier, url, title}: DisqusCommentsProps) => {
 	useEffect(() => {
+		if (!identifier || !url) {
+			return;
+		}
+
 		// Reset Disqus if it's already loaded
 		if (window.DISQUS) {
 			window.DISQUS.reset({
@@ -58,16 +64,22 @@ const DisqusComments = ({url, identifier, title}: DisqusCommentsProps) => {
 		};
 	}, [url, identifier, title]);
 
+	if (!identifier || !url) {
+		return null;
+	}
+
 	return (
-		<div className="mt-8">
-			<div id="disqus_thread" />
-			<noscript>
-				Please enable JavaScript to view the{' '}
-				<a href="https://disqus.com/?ref_noscript" rel="nofollow">
-					comments powered by Disqus.
-				</a>
-			</noscript>
-		</div>
+		<Panel title="Comments">
+			<div className="mt-8">
+				<div id="disqus_thread" />
+				<noscript>
+					Please enable JavaScript to view the{' '}
+					<a href="https://disqus.com/?ref_noscript" rel="nofollow">
+						comments powered by Disqus.
+					</a>
+				</noscript>
+			</div>
+		</Panel>
 	);
 };
 

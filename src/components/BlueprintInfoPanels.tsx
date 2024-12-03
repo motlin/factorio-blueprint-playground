@@ -212,7 +212,8 @@ export const DeconstructionPlannerPanel = memo(({blueprint}: {blueprint: Bluepri
 });
 
 // Main wrapper component that shows the appropriate panels
-export const BlueprintInfoPanels = memo(({blueprint}: {blueprint: BlueprintString}) => {
+export const BlueprintInfoPanels = memo(({blueprint}: {blueprint?: BlueprintString}) => {
+	if (!blueprint) return null;
 	return (
 		<>
 			{/* Show type-specific panels */}

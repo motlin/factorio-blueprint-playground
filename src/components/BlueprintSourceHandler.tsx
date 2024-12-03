@@ -45,7 +45,7 @@ export const BlueprintSourceHandler = ({pasted}: BlueprintSourceHandlerProps) =>
 		e.currentTarget.select();
 	}, []);
 
-	// TODO: 2024-11-30: Show error alert
+	// TODO: 2024-11-30: Show error alert for router errors
 	return (
 		<div>
 			<textarea

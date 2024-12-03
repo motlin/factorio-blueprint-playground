@@ -12,7 +12,7 @@ interface CloudflareRequestCF {
 interface ProxyConfig {
 	allowListOrigins: string[];
 	denyListUrls: string[];
-	allowListUrls: string[]; // Added missing property
+	allowListUrls: string[];
 }
 
 const config: ProxyConfig = {
@@ -21,13 +21,11 @@ const config: ProxyConfig = {
 	allowListOrigins: ['http://localhost.*', 'https://factorio-blueprint-playground.pages.dev.*'],
 };
 
-// Helper function to check whitelist
 function isListedIn(uri: string | null, listing: string[]): boolean {
 	if (!uri) return true;
 	return listing.some((pattern) => new RegExp(pattern).test(uri));
 }
 
-// Helper function to setup CORS headers
 function setupCORSHeaders(
 	headers: Headers,
 	originHeader: string | null,
@@ -52,6 +50,8 @@ interface Env {
 }
 
 export const onRequest = async (context: EventContext<Env, string, Record<string, unknown>>) => {
+	console.log('Request received', {context});
+
 	const request = context.request;
 	const isPreflightRequest = request.method === 'OPTIONS';
 	const originUrl = new URL(request.url);
@@ -127,7 +127,8 @@ export const onRequest = async (context: EventContext<Env, string, Record<string
 			responseHeaders.set('Access-Control-Expose-Headers', exposedHeaders.join(','));
 			responseHeaders.set('cors-received-headers', JSON.stringify(allResponseHeaders));
 
-			return new Response(isPreflightRequest ? null : await response.arrayBuffer(), {
+			let responseBody = response.status === 304 || isPreflightRequest ? null : await response.arrayBuffer();
+			return new Response(responseBody, {
 				headers: responseHeaders,
 				status: isPreflightRequest ? 200 : response.status,
 				statusText: isPreflightRequest ? 'OK' : response.statusText,
