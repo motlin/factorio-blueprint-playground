@@ -6,7 +6,7 @@ import {type BlueprintString, Icon} from '../parsing/types';
 
 import {FactorioIcon, Placeholder} from './FactorioIcon';
 import {RichText} from './RichText';
-import {InsetLight} from './ui';
+import {InsetLight, Panel} from './ui';
 
 // Types for tree structure
 export interface TreeNode {
@@ -113,16 +113,16 @@ const TreeRow = ({node, indentLevel, isSelected, isActive, onSelect}: TreeRowPro
 };
 
 interface BlueprintTreeProps {
-	rootBlueprint: BlueprintString;
+	rootBlueprint?: BlueprintString;
 	selectedPath: string;
 	onSelect: (path: string) => void;
 }
 
 // Memoize the entire tree component
 export const BlueprintTree = memo(({rootBlueprint, selectedPath, onSelect}: BlueprintTreeProps) => {
-	const tree = buildNode(rootBlueprint, '');
+	if (!rootBlueprint) return null;
 
-	if (!tree) return null;
+	const tree = buildNode(rootBlueprint, '');
 
 	function renderNode(node: TreeNode, level: number, parent?: TreeNode): VNode[] {
 		const rows: VNode[] = [];
@@ -148,9 +148,11 @@ export const BlueprintTree = memo(({rootBlueprint, selectedPath, onSelect}: Blue
 	}
 
 	return (
-		<div className="blueprint-tree">
-			<InsetLight>{renderNode(tree, 0)}</InsetLight>
-		</div>
+		<Panel title="Blueprint Tree">
+			<div className="blueprint-tree">
+				<InsetLight>{renderNode(tree, 0)}</InsetLight>
+			</div>
+		</Panel>
 	);
 });
 

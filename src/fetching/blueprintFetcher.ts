@@ -12,9 +12,11 @@ export type BlueprintFetchMethod = 'url' | 'json' | 'data';
  * Provides core structure that specific result types extend.
  */
 export interface BaseBlueprintResult {
+	// TODO 2024-12-03: fetchMethod is not used, but may be used in the future for history
 	fetchMethod: BlueprintFetchMethod;
 	pasted: string;
 	blueprintString: BlueprintString;
+	id?: string;
 }
 
 /**
@@ -36,7 +38,7 @@ interface BlueprintFetchSource {
 	apiUrl: (url: URL) => string;
 	responseType: 'json' | 'text';
 	extractBlueprintString: (data: unknown) => string;
-	extractId: (url: URL) => string;
+	extractId: (url: URL) => string | undefined;
 }
 
 const factorioSchoolSourceConfig: BlueprintFetchSource = {
@@ -82,8 +84,6 @@ const factorioPrintsSourceConfig: BlueprintFetchSource = {
 
 const factorioBinCdnSourceConfig: BlueprintFetchSource = {
 	apiUrl: (url) => {
-		const match = url.href.match(/factoriobin\.com\/perma\/bp\/[^/]+\/[^/]+\/([^/\s#-]+)/);
-		if (!match) throw new Error('Invalid Factorio Bin CDN URL');
 		return `/proxy?${url.href}`;
 	},
 	responseType: 'text',
@@ -93,10 +93,8 @@ const factorioBinCdnSourceConfig: BlueprintFetchSource = {
 		}
 		return data;
 	},
-	extractId: (url) => {
-		const match = url.pathname.match(/\/([^/\s#-]+)(?:-[^/]*)?\/fbin/);
-		if (!match) throw new Error('Invalid Factorio Bin CDN URL');
-		return match[1];
+	extractId: (_url) => {
+		return undefined;
 	},
 };
 
@@ -111,10 +109,8 @@ const factorioBinDirectSourceConfig: BlueprintFetchSource = {
 		}
 		return data;
 	},
-	extractId: (url) => {
-		const match = url.pathname.match(/post\/([^/\s#]+)/);
-		if (!match) throw new Error('Invalid Factorio Bin Direct URL');
-		return match[1];
+	extractId: (_url) => {
+		return undefined;
 	},
 };
 

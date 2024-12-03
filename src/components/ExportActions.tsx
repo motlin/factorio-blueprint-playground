@@ -5,7 +5,7 @@ import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
 import {serializeBlueprint} from '../parsing/blueprintParser';
 import {BlueprintString} from '../parsing/types';
 
-import {ButtonGreen} from './ui';
+import {ButtonGreen, InsetLight, Panel} from './ui';
 
 interface ExportActionsProps {
 	blueprint?: BlueprintString;
@@ -153,13 +153,15 @@ export const ExportActions = memo(({blueprint, path, title}: ExportActionsProps)
 	};
 
 	return (
-		<>
-			<h3>{title}</h3>
-			<div className="flex-space-between">
-				<ButtonWithIcon icon={ClipboardCopy} text="Copy String" onClick={handleCopyString} />
-				<ButtonWithIcon icon={FileJson} text="Copy JSON" onClick={handleCopyJSON} />
-				<ButtonWithIcon icon={Download} text="Download String" onClick={handleDownloadString} />
-			</div>
-		</>
+		<Panel title={`Export ${title}`}>
+			<InsetLight>
+				<h3>{title}</h3>
+				<div className="flex-space-between">
+					<ButtonWithIcon icon={ClipboardCopy} text="Copy String" onClick={handleCopyString} />
+					<ButtonWithIcon icon={FileJson} text="Copy JSON" onClick={handleCopyJSON} />
+					<ButtonWithIcon icon={Download} text="Download String" onClick={handleDownloadString} />
+				</div>
+			</InsetLight>
+		</Panel>
 	);
 });

@@ -1,3 +1,5 @@
+/* eslint-disable no-console */
+
 import {DeflateOptions} from 'fflate/esm/browser';
 import {describe, expect, it} from 'vitest';
 
