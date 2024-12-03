@@ -51,7 +51,6 @@ export default [
             '**/jest.config.{js,ts}',
             '**/webpack.config.{js,ts}',
             '**/rollup.config.{js,ts}',
-            '**/scripts/**/*.{js,ts}',
         ],
         languageOptions: {
             globals: {
