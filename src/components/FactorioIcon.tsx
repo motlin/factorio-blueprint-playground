@@ -26,7 +26,7 @@ function getQualityNode(icon: SignalID) {
 		<img
 			loading="lazy"
 			className={styles.iconQuality}
-			src={`/icons/quality/${icon.quality}.webp`}
+			src={`https://factorio-icon-cdn.pages.dev/quality/${icon.quality}.webp`}
 			alt={icon.quality}
 			title={`Quality: ${icon.quality}`}
 			data-testid="quality"
@@ -53,7 +53,7 @@ export const FactorioIcon = ({id, icon, size}: FactorioIconProps) => {
 				data-testid="icon"
 				loading="lazy"
 				className={styles.icon}
-				src={`/icons/${urlType}/${icon.name}.webp`}
+				src={`https://factorio-icon-cdn.pages.dev/${urlType}/${icon.name}.webp`}
 				alt={icon.name}
 				title={`${type}: ${icon.name}`}
 			/>
