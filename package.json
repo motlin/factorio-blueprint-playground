@@ -6,8 +6,6 @@
   "scripts": {
     "dev": "vite",
     "preview": "vite preview",
-    "optimize:images": "tsx scripts/optimizeImages.ts",
-    "prebuild": "npm run optimize:images",
     "build": "vite build",
     "test": "vitest",
     "test:coverage": "vitest run --coverage",

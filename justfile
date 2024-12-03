@@ -60,7 +60,6 @@ dump-tree:
         --ignore justfile \
         --ignore netlify.toml \
         --ignore public \
-        --ignore scripts \
         --ignore tsconfig.app.tsbuildinfo \
         --ignore tsconfig.node.tsbuildinfo \
         --ignore src/styles/factorio-a76ef767.css \
