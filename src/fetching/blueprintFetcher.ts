@@ -3,112 +3,220 @@ import type {BlueprintString} from '../parsing/types';
 
 export type BlueprintFetchMethod = 'url' | 'json' | 'data';
 
-export type BlueprintFetchSuccess = {
-	// TODO 2024-12-03: fetchMethod is not used, but may be used in the future for history
-	success: true;
+interface BlueprintFetchBase {
+	success: boolean;
 	pasted: string;
 	fetchMethod: BlueprintFetchMethod;
+}
+
+export interface BlueprintFetchSuccess extends BlueprintFetchBase {
+	// TODO 2024-12-03: fetchMethod is not used, but may be used in the future for history
+	success: true;
 	blueprintString: BlueprintString;
 	// TODO 2024-12-03: rename to disqusId
 	id?: string;
-};
+}
 
-export type BlueprintFetchFailure = {
+export interface BlueprintFetchFailure extends BlueprintFetchBase {
 	success: false;
-	pasted: string;
 	error: Error;
-};
+}
 
 export type BlueprintFetchResult = BlueprintFetchSuccess | BlueprintFetchFailure | undefined;
 
+interface SourceFetchResult {
+	success: boolean;
+	blueprintString?: string;
+	id?: string;
+	error?: Error;
+}
+
 interface BlueprintFetchSource {
-	apiUrl: (url: URL) => string;
-	responseType: 'json' | 'text';
-	extractBlueprintString: (data: unknown) => string;
-	extractId: (url: URL) => string | undefined;
+	fetchBlueprint: (url: URL) => Promise<SourceFetchResult>;
+}
+
+class CdnUtils {
+	/**
+	 * Splits a blueprint key into CDN-compatible prefix and suffix.
+	 * @param key Full blueprint key
+	 * @returns Object containing 3-char prefix and remaining suffix
+	 */
+	static splitBlueprintKey(key: string): {prefix: string; suffix: string} {
+		const prefix = key.slice(0, 3);
+		const suffix = key.slice(3);
+		return {prefix, suffix};
+	}
+
+	/**
+	 * Constructs a CDN URL for a given blueprint key.
+	 * @param key Blueprint key to fetch
+	 * @returns Full CDN URL for the blueprint
+	 */
+	static constructUrl(key: string): string {
+		const {prefix, suffix} = this.splitBlueprintKey(key);
+		return `https://factorio-blueprint-key-cdn.pages.dev/${prefix}/${suffix}.txt`;
+	}
 }
 
 const factorioSchoolSourceConfig: BlueprintFetchSource = {
-	apiUrl: (url) => {
-		const match = url.href.match(/factorio\.school\/view\/([^/\s#]+)/);
-		if (!match) throw new Error('Invalid Factorio School URL');
-		return `https://www.factorio.school/api/blueprint/${match[1]}`;
-	},
-	responseType: 'json',
-	extractBlueprintString: (data) => {
-		if (!data || typeof data !== 'object' || !('blueprintString' in data)) {
-			throw new Error('Invalid response from Factorio School');
+	async fetchBlueprint(url: URL): Promise<SourceFetchResult> {
+		const match = url.href.match(/(?:www\.)?factorio\.school\/view\/([^/\s#]+)/);
+		if (!match) {
+			return {
+				success: false,
+				error: new Error('Invalid Factorio School URL'),
+			};
 		}
-		const bpData = data as {blueprintString: {blueprintString: string}};
-		return bpData.blueprintString.blueprintString;
-	},
-	extractId: (url) => {
-		const match = url.pathname.match(/view\/([^/\s#]+)/);
-		if (!match) throw new Error('Invalid Factorio School URL');
-		return match?.[1];
+
+		try {
+			const key = match[1];
+			const cdnUrl = CdnUtils.constructUrl(key);
+			const response = await fetch(cdnUrl);
+
+			if (!response.ok) {
+				return {
+					success: false,
+					error: new Error(`HTTP error! status: ${response.status}`),
+				};
+			}
+
+			const blueprintString = await response.text();
+			return {
+				success: true,
+				blueprintString,
+				id: key,
+			};
+		} catch (error) {
+			return {
+				success: false,
+				error: error instanceof Error ? error : new Error(String(error)),
+			};
+		}
 	},
 };
 
 const factorioPrintsSourceConfig: BlueprintFetchSource = {
-	apiUrl: (url) => {
-		const match = url.href.match(/factorioprints\.com\/view\/([^/\s#]+)/);
-		if (!match) throw new Error('Invalid Factorio Prints URL');
-		return `https://facorio-blueprints.firebaseio.com/blueprints/${match[1]}/blueprintString.json`;
-	},
-	responseType: 'json',
-	extractBlueprintString: (data) => {
-		if (!data || typeof data !== 'string') {
-			throw new Error('Invalid response from Factorio Prints');
+	async fetchBlueprint(url: URL): Promise<SourceFetchResult> {
+		const match = url.href.match(/(?:www\.)?factorioprints\.com\/view\/([^/\s#]+)/);
+		if (!match) {
+			return {
+				success: false,
+				error: new Error('Invalid Factorio Prints URL'),
+			};
 		}
-		return data;
-	},
-	extractId: (url) => {
-		const match = url.pathname.match(/view\/([^/\s#]+)/);
-		if (!match) throw new Error('Invalid Factorio Prints URL');
-		return match?.[1];
+
+		const key = match[1];
+
+		// Try CDN first
+		try {
+			const cdnUrl = CdnUtils.constructUrl(key);
+			const cdnResponse = await fetch(cdnUrl);
+
+			if (cdnResponse.ok) {
+				const blueprintString = await cdnResponse.text();
+				return {
+					success: true,
+					blueprintString,
+					id: key,
+				};
+			}
+		} catch (error) {
+			console.warn('CDN fetch failed, falling back to Firebase:', error);
+		}
+
+		// Fallback to Firebase
+		try {
+			const fallbackUrl = `https://facorio-blueprints.firebaseio.com/blueprints/${key}/blueprintString.json`;
+			const response = await fetch(fallbackUrl);
+
+			if (!response.ok) {
+				return {
+					success: false,
+					error: new Error(`HTTP error! status: ${response.status}`),
+				};
+			}
+
+			const data = await response.json();
+			if (typeof data !== 'string') {
+				return {
+					success: false,
+					error: new Error('Invalid response from Factorio Prints'),
+				};
+			}
+
+			return {
+				success: true,
+				blueprintString: data,
+				id: key,
+			};
+		} catch (error) {
+			return {
+				success: false,
+				error: error instanceof Error ? error : new Error(String(error)),
+			};
+		}
 	},
 };
 
 const factorioBinCdnSourceConfig: BlueprintFetchSource = {
-	apiUrl: (url) => {
-		return `/proxy?${url.href}`;
-	},
-	responseType: 'text',
-	extractBlueprintString: (data) => {
-		if (typeof data !== 'string') {
-			throw new Error('Invalid response from Factorio Bin CDN');
+	async fetchBlueprint(url: URL): Promise<SourceFetchResult> {
+		try {
+			const proxyUrl = `/proxy?${url.href}`;
+			const response = await fetch(proxyUrl);
+
+			if (!response.ok) {
+				return {
+					success: false,
+					error: new Error(`HTTP error! status: ${response.status}`),
+				};
+			}
+
+			const blueprintString = await response.text();
+			return {success: true, blueprintString};
+		} catch (error) {
+			return {
+				success: false,
+				error: error instanceof Error ? error : new Error(String(error)),
+			};
 		}
-		return data;
-	},
-	extractId: (_url) => {
-		return undefined;
 	},
 };
 
 const factorioBinDirectSourceConfig: BlueprintFetchSource = {
-	apiUrl: (url) => {
-		return `/proxy?${url.href}/blueprint.txt`;
-	},
-	responseType: 'text',
-	extractBlueprintString: (data) => {
-		if (typeof data !== 'string') {
-			throw new Error('Invalid response from Factorio Bin Direct');
+	async fetchBlueprint(url: URL): Promise<SourceFetchResult> {
+		try {
+			const proxyUrl = `/proxy?${url.href}/blueprint.txt`;
+			const response = await fetch(proxyUrl);
+
+			if (!response.ok) {
+				return {
+					success: false,
+					error: new Error(`HTTP error! status: ${response.status}`),
+				};
+			}
+
+			const blueprintString = await response.text();
+			return {success: true, blueprintString};
+		} catch (error) {
+			return {
+				success: false,
+				error: error instanceof Error ? error : new Error(String(error)),
+			};
 		}
-		return data;
-	},
-	extractId: (_url) => {
-		return undefined;
 	},
 };
 
 const SOURCE_CONFIGS: Record<string, BlueprintFetchSource> = {
 	'factorio.school': factorioSchoolSourceConfig,
+	'www.factorio.school': factorioSchoolSourceConfig,
 	'factorioprints.com': factorioPrintsSourceConfig,
+	'www.factorioprints.com': factorioPrintsSourceConfig,
 	'cdn.factoriobin.com': factorioBinCdnSourceConfig,
 	'factoriobin.com': factorioBinDirectSourceConfig,
+	'www.factoriobin.com': factorioBinDirectSourceConfig,
 };
 
-async function fetchUrl(pasted: string): Promise<BlueprintFetchResult> {
+async function fetchUrl(pasted: string): Promise<BlueprintFetchSuccess | BlueprintFetchFailure> {
 	try {
 		const url = new URL(pasted);
 		const domain = url.hostname;
@@ -119,73 +227,64 @@ async function fetchUrl(pasted: string): Promise<BlueprintFetchResult> {
 				success: false,
 				error: new Error('Unsupported blueprint source: ' + domain),
 				pasted,
+				fetchMethod: 'url',
 			};
 		}
 
-		const response = await fetch(fetchConfig.apiUrl(url));
-		if (!response.ok) {
+		const result = await fetchConfig.fetchBlueprint(url);
+
+		if (!result.success || !result.blueprintString) {
 			return {
 				success: false,
-				error: new Error(`Failed to fetch blueprint: ${response.statusText}`),
+				error: result.error ?? new Error('Unknown fetch error'),
 				pasted,
+				fetchMethod: 'url',
 			};
 		}
 
-		const data = await (fetchConfig.responseType === 'json' ? response.json() : response.text());
-		const blueprintString = fetchConfig.extractBlueprintString(data);
-		const blueprint = deserializeBlueprint(blueprintString);
-		const id = fetchConfig.extractId(url);
-
+		const blueprint = deserializeBlueprint(result.blueprintString);
 		return {
 			success: true,
-			fetchMethod: 'url' as const,
+			fetchMethod: 'url',
 			pasted,
 			blueprintString: blueprint,
-			id,
+			id: result.id,
 		};
 	} catch (error) {
 		return {
 			success: false,
 			error: error instanceof Error ? error : new Error(String(error)),
 			pasted,
+			fetchMethod: 'url',
 		};
 	}
 }
 
-function fetchJson(pasted: string): BlueprintFetchResult {
-	try {
-		const blueprint = JSON.parse(pasted) as BlueprintString;
-
-		return {
-			success: true,
-			fetchMethod: 'json' as const,
-			pasted,
-			blueprintString: blueprint,
-		};
-	} catch (error) {
-		return {
-			success: false,
-			error: error instanceof Error ? error : new Error(String(error)),
-			pasted,
-		};
-	}
+function fetchJson(pasted: string, blueprintString: BlueprintString): BlueprintFetchSuccess | BlueprintFetchFailure {
+	return {
+		success: true,
+		fetchMethod: 'json' as const,
+		pasted,
+		blueprintString,
+	};
 }
 
-function fetchData(pasted: string): BlueprintFetchResult {
+function fetchData(pasted: string): BlueprintFetchSuccess | BlueprintFetchFailure {
 	try {
-		const blueprint: BlueprintString = deserializeBlueprint(pasted);
+		const blueprintString: BlueprintString = deserializeBlueprint(pasted);
 
 		return {
 			success: true,
 			fetchMethod: 'data' as const,
 			pasted,
-			blueprintString: blueprint,
+			blueprintString,
 		};
 	} catch (error) {
 		return {
 			success: false,
 			error: error instanceof Error ? error : new Error(String(error)),
 			pasted,
+			fetchMethod: 'data',
 		};
 	}
 }
@@ -203,8 +302,8 @@ export async function fetchBlueprint(deps: {pasted: string | undefined}): Promis
 
 	// Simple JSON detection - try parsing as JSON
 	try {
-		JSON.parse(pasted);
-		return fetchJson(pasted);
+		const blueprintString = JSON.parse(pasted) as BlueprintString;
+		return fetchJson(pasted, blueprintString);
 	} catch {
 		// If not URL or JSON, assume it's blueprint data
 		return fetchData(pasted);

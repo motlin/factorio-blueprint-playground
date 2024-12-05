@@ -16,16 +16,16 @@ export class BlueprintError extends Error {
 /**
  * Takes a blueprint string and returns the parsed JSON data
  */
-export function deserializeBlueprint(blueprintString: string): BlueprintString {
+export function deserializeBlueprint(blueprintData: string): BlueprintString {
 	// Validate prefix
-	if (!blueprintString.startsWith('0')) {
+	if (!blueprintData.startsWith('0')) {
 		throw new BlueprintError(
-			`Unknown blueprint format: string does not start with '0'.\nStarts with:\n'${blueprintString.slice(0, 80)}`,
+			`Unknown blueprint format: string does not start with '0'.\nStarts with:\n'${blueprintData.slice(0, 80)}`,
 		);
 	}
 
 	// Decode base64 to bytes
-	const base64String = blueprintString.slice(1);
+	const base64String = blueprintData.slice(1);
 	const bytes = Uint8Array.from(atob(base64String), (c) => c.charCodeAt(0));
 
 	// Decompress using fflate's zlib decompression
