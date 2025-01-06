@@ -72,9 +72,7 @@ interface RichTextProps {
 	iconSize: 'small' | 'large';
 }
 
-export const RichText = ({text, iconSize}: RichTextProps) => {
-	if (!text) return null;
-
+const processRichTextLine = ({text, iconSize}: RichTextProps): React.ReactNode[] => {
 	const parts: React.ReactNode[] = [];
 	let currentIndex = 0;
 	let currentColor: string | undefined;
@@ -123,7 +121,8 @@ export const RichText = ({text, iconSize}: RichTextProps) => {
 
 					const icon: SignalID = {
 						type: imgType as SignalType,
-						name: imgName || value, // If no separator, use full value as name
+						// If no separator, use full value as name
+						name: imgName || value,
 						quality: quality as Quality,
 					};
 
@@ -168,9 +167,24 @@ export const RichText = ({text, iconSize}: RichTextProps) => {
 		);
 	}
 
+	return parts;
+};
+
+export const RichText = ({text, iconSize}: RichTextProps) => {
+	if (!text) return null;
+
+	const lines = text.split(/\r\n|\r|\n/);
+
+	const processedLines = lines.map((line, index) => (
+		<React.Fragment key={index}>
+			{index > 0 && <br />}
+			<div className="richtext-line">{processRichTextLine({text: line, iconSize})}</div>
+		</React.Fragment>
+	));
+
 	return (
 		<div className="richtext" data-testid={'richtext'}>
-			{parts}
+			{processedLines}
 		</div>
 	);
 };
