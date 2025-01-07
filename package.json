@@ -30,7 +30,7 @@
     "@cloudflare/workers-types": "^4.20241230.0",
     "@eslint/compat": "^1.2.4",
     "@eslint/js": "^9.17.0",
-    "@preact/preset-vite": "^2.9.3",
+    "@preact/preset-vite": "^2.9.4",
     "@tanstack/router-cli": "^1.95.1",
     "@tanstack/router-devtools": "^1.95.1",
     "@tanstack/router-plugin": "^1.95.1",
