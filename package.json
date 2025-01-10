@@ -23,7 +23,7 @@
     "@tanstack/react-router": "^1.95.3",
     "fflate": "^0.8.2",
     "idb-keyval": "^6.2.1",
-    "lucide-react": "^0.469.0",
+    "lucide-react": "^0.470.0",
     "preact": "^10.25.4"
   },
   "devDependencies": {
