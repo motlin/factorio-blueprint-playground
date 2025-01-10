@@ -27,7 +27,7 @@
     "preact": "^10.25.4"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20241230.0",
+    "@cloudflare/workers-types": "^4.20250109.0",
     "@eslint/compat": "^1.2.4",
     "@eslint/js": "^9.17.0",
     "@preact/preset-vite": "^2.9.4",
