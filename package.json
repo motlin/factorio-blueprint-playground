@@ -17,7 +17,7 @@
     "ci:typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@preact/signals": "^2.0.0",
+    "@preact/signals": "^2.0.1",
     "@tanstack/react-query": "^5.63.0",
     "@tanstack/react-query-devtools": "^5.63.0",
     "@tanstack/react-router": "^1.95.3",
