@@ -36,7 +36,7 @@
     "@tanstack/router-plugin": "^1.97.8",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/preact": "^3.2.4",
-    "@testing-library/user-event": "^14.6.0",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^22.10.7",
     "@types/react-dom": "^19.0.3",
     "@types/rollup-plugin-visualizer": "^4.2.4",
