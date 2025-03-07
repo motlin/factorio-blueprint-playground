@@ -70,20 +70,58 @@ const factorioSchoolSourceConfig: BlueprintFetchSource = {
 
 		try {
 			const key = match[1];
-			const cdnUrl = CdnUtils.constructUrl(key);
-			const response = await fetch(cdnUrl);
 
-			if (!response.ok) {
+			const cdnUrl = CdnUtils.constructUrl(key);
+			const cdnResponse = await fetch(cdnUrl).catch(() => null);
+
+			if (cdnResponse?.ok) {
+				const blueprintString = await cdnResponse.text();
 				return {
-					success: false,
-					error: new Error(`HTTP error! status: ${response.status}`),
+					success: true,
+					blueprintString,
+					id: key,
 				};
 			}
 
-			const blueprintString = await response.text();
+			const fallbackUrl = `https://factorio.school/api/blueprint/${key}`;
+			const fallbackResponse = await fetch(fallbackUrl);
+
+			if (!fallbackResponse.ok) {
+				return {
+					success: false,
+					error: new Error(`HTTP error! status: ${fallbackResponse.status}`),
+				};
+			}
+
+			type FactorioSchoolBlueprintString = {
+				blueprintString: string;
+			};
+
+			type FactorioSchoolResponse = {
+				blueprintString?: FactorioSchoolBlueprintString;
+			};
+
+			const jsonData = await fallbackResponse.json();
+
+			// Type guards
+			if (typeof jsonData !== 'object' || jsonData === null) {
+				return {
+					success: false,
+					error: new Error('Invalid API response format'),
+				};
+			}
+
+			const typedData = jsonData as FactorioSchoolResponse;
+			if (!typedData.blueprintString || !typedData.blueprintString.blueprintString) {
+				return {
+					success: false,
+					error: new Error('Blueprint data missing in API response'),
+				};
+			}
+
 			return {
 				success: true,
-				blueprintString,
+				blueprintString: typedData.blueprintString.blueprintString,
 				id: key,
 			};
 		} catch (error) {
