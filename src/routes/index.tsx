@@ -1,4 +1,5 @@
 import {createFileRoute} from '@tanstack/react-router';
+import {z} from 'zod';
 
 import {BlueprintPlayground} from '../components/BlueprintPlayground';
 import {fetchBlueprint} from '../fetching/blueprintFetcher.ts';
@@ -12,19 +13,14 @@ export interface RootSearch {
 	selection?: string;
 }
 
-// TODO: 2024-11-30: Consider moving to zod for validation as documented in https://tanstack.com/router/latest/docs/framework/react/guide/search-params#validating-search-params
+export const searchSchema = z.object({
+	pasted: z.string().catch(undefined),
+	selection: z.string().catch(undefined),
+});
 
 export const Route = createFileRoute('/')({
 	component: BlueprintPlayground,
-	validateSearch: (search: Record<string, unknown>): RootSearch => {
-		const pasted = search.pasted as string | undefined;
-		const selection = search.selection as string | undefined;
-
-		return {
-			pasted,
-			selection,
-		};
-	},
+	validateSearch: searchSchema,
 	loaderDeps: ({search: {pasted}}) => ({pasted}),
 	loader: ({deps: {pasted}}) => fetchBlueprint({pasted}),
 });
