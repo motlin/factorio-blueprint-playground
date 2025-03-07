@@ -83,8 +83,9 @@ const factorioSchoolSourceConfig: BlueprintFetchSource = {
 				};
 			}
 
-			const fallbackUrl = `https://factorio.school/api/blueprint/${key}`;
-			const fallbackResponse = await fetch(fallbackUrl);
+			const factorioSchoolUrl = `https://factorio.school/api/blueprint/${key}`;
+			const proxyUrl = `/proxy?${factorioSchoolUrl}`;
+			const fallbackResponse = await fetch(proxyUrl);
 
 			if (!fallbackResponse.ok) {
 				return {
