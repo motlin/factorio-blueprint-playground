@@ -17,7 +17,11 @@ interface ProxyConfig {
 
 const config: ProxyConfig = {
 	denyListUrls: [],
-	allowListUrls: ['https://cdn\\.factoriobin\\.com/.*', 'https://factoriobin\\.com/post/.*'],
+	allowListUrls: [
+		'https://cdn\\.factoriobin\\.com/.*',
+		'https://factoriobin\\.com/post/.*',
+		'https://factorio\\.school/api/blueprint/.*',
+	],
 	allowListOrigins: ['http://localhost.*', 'https://factorio-blueprint-playground.pages.dev.*'],
 };
 
