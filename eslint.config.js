@@ -35,6 +35,8 @@ const gitignorePath = path.resolve(__dirname, '.gitignore');
 export default [
     includeIgnoreFile(gitignorePath),
 
+    { ignores: ['.llm/**'] },
+
     // Base configuration - applies to all files
     {
         languageOptions: {
@@ -47,66 +49,6 @@ export default [
         },
         settings: {
             maxWarnings: 0,
-        },
-    },
-
-    // Node.js environment - for config files
-    {
-        files: [
-            '**/vite.config.{js,ts}',
-            '**/vitest.config.{js,ts}',
-            '**/jest.config.{js,ts}',
-            '**/webpack.config.{js,ts}',
-            '**/rollup.config.{js,ts}',
-        ],
-        languageOptions: {
-            globals: {
-                ...node,
-                ...commonjs,
-            },
-        },
-    },
-
-    // Cloudflare Pages Functions
-    {
-        files: ['functions/**/*.{js,ts}'],
-        languageOptions: {
-            globals: {
-                ...es2024,
-                ...worker,
-                KVNamespace: 'readonly',
-            },
-        },
-    },
-
-    // Browser environment - for source files
-    {
-        files: ['src/**/*.{js,jsx,ts,tsx}'],
-        languageOptions: {
-            globals: {
-                ...es2024,
-                ...browser,
-            },
-        },
-    },
-
-    // Test environment
-    {
-        files: [
-            'test/**/*.{js,ts,jsx,tsx}',
-            'test/fixtures/**/*.{js,ts}',
-        ],
-        languageOptions: {
-            globals: {
-                ...node,
-                ...vitest,
-            },
-        },
-        rules: {
-            '@typescript-eslint/no-explicit-any': 'off',
-            '@typescript-eslint/no-non-null-assertion': 'off',
-            '@typescript-eslint/no-floating-promises': 'off',
-            'no-console': 'warn',
         },
     },
 
@@ -148,6 +90,71 @@ export default [
             '@typescript-eslint/no-inferrable-types': 'error',
             '@typescript-eslint/no-unnecessary-type-assertion': 'error',
             '@typescript-eslint/no-unnecessary-type-constraint': 'error',
+        },
+    },
+
+    // Node.js environment
+    {
+        files: [
+            '**/vite.config.{js,ts}',
+            '**/vitest.config.{js,ts}',
+            '**/jest.config.{js,ts}',
+            '**/webpack.config.{js,ts}',
+            '**/rollup.config.{js,ts}',
+        ],
+        languageOptions: {
+            globals: {
+                ...node,
+                ...commonjs,
+            },
+        },
+    },
+
+    // Cloudflare Pages Functions
+    {
+        files: ['functions/**/*.{js,ts}'],
+        languageOptions: {
+            globals: {
+                ...es2024,
+                ...worker,
+                KVNamespace: 'readonly',
+            },
+        },
+    },
+
+    // Browser environment
+    {
+        files: ['src/**/*.{js,jsx,ts,tsx}'],
+        languageOptions: {
+            globals: {
+                ...es2024,
+                ...browser,
+            },
+        },
+    },
+
+    // Test environment
+    {
+        files: [
+            'test/**/*.{js,ts,jsx,tsx}',
+            'test/fixtures/**/*.{js,ts}',
+        ],
+        languageOptions: {
+            globals: {
+                ...node,
+                ...vitest,
+                ...browser,
+            },
+        },
+        rules: {
+            '@typescript-eslint/no-explicit-any': 'off',
+            '@typescript-eslint/no-non-null-assertion': 'off',
+            '@typescript-eslint/no-floating-promises': 'off',
+            '@typescript-eslint/no-unsafe-call': 'off',
+            '@typescript-eslint/no-unsafe-member-access': 'off',
+            '@typescript-eslint/no-unsafe-assignment': 'off',
+            '@typescript-eslint/no-unsafe-argument': 'off',
+            'no-console': 'warn',
         },
     },
 

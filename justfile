@@ -78,7 +78,7 @@ ci-prettier:
 typecheck:
     npm run ci:typecheck
 
-# Install dependencies
+# `npm install`
 install:
     npm install
 
