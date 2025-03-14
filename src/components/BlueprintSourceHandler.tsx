@@ -20,7 +20,6 @@ export const BlueprintSourceHandler = ({pasted}: BlueprintSourceHandlerProps) =>
 			e.preventDefault();
 			const pasted = (e.target as HTMLTextAreaElement).value;
 
-			// Execute navigation in a non-blocking way
 			void (async () => {
 				if (!pasted.trim()) {
 					await navigate({

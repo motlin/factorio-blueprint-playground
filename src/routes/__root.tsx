@@ -1,8 +1,9 @@
-import {createRootRoute, Link, Outlet} from '@tanstack/react-router';
+import {createRootRoute, Link, Outlet, useRouter} from '@tanstack/react-router';
 import type {ComponentType} from 'preact';
-import {lazy, Suspense} from 'react';
+import {lazy, Suspense, useEffect, useState} from 'react';
 
 import {ErrorComponent} from '../components/ErrorComponent';
+import {getMostRecentBlueprint} from '../state/blueprintLocalStorage';
 
 const TanStackRouterDevtools = import.meta.env.PROD
 	? () => null // Render nothing in production
@@ -25,13 +26,55 @@ const DevTools = () => {
 
 export const Route = createRootRoute({
 	errorComponent: ErrorComponent,
-	component: () => (
+	component: () => <DynamicNavigation />,
+});
+
+const DynamicNavigation = () => {
+	const [mostRecentData, setMostRecentData] = useState<{pasted?: string; selection?: string}>({});
+	const router = useRouter();
+
+	// Listen for navigation events to update most recent blueprint data
+	useEffect(() => {
+		const unsubscribe = router.history.subscribe(() => {
+			// Check if we're navigating to the root route from history
+			// and the search params contain a pasted parameter
+			const location = router.state.location;
+			if (location.pathname === '/' && location.search.pasted) {
+				setMostRecentData({
+					pasted: location.search.pasted,
+					selection: location.search.selection,
+				});
+			}
+		});
+
+		return () => {
+			unsubscribe();
+		};
+	}, [router]);
+
+	// Load most recent blueprint from IndexedDB
+	useEffect(() => {
+		const loadMostRecent = async () => {
+			const recentBlueprint = await getMostRecentBlueprint();
+			if (recentBlueprint) {
+				setMostRecentData({
+					pasted: recentBlueprint.metadata.data,
+					selection: recentBlueprint.metadata.selection,
+				});
+			}
+		};
+
+		void loadMostRecent();
+	}, []);
+
+	return (
 		<div>
 			<div className="top-bar">
 				<div className="top-bar-inner">
 					<nav>
 						<Link
 							to="/"
+							search={mostRecentData}
 							className="blue nowrap"
 							activeProps={{
 								className: 'yellow bold',
@@ -61,5 +104,5 @@ export const Route = createRootRoute({
 				<DevTools />
 			</Suspense>
 		</div>
-	),
-});
+	);
+};

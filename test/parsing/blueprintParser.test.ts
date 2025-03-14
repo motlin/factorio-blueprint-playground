@@ -93,6 +93,14 @@ describe('blueprintParser', () => {
             },
         };
 
+        const simpleBlueprint: BlueprintString = {
+            blueprint: {
+                item: 'blueprint',
+                version: 281479275675648,
+                label: 'Simple',
+            },
+        };
+
         it('extracts blueprint at path', () => {
             const result = extractBlueprint(book, '1');
             expect(result.blueprint?.label).toBe('First');
@@ -111,6 +119,11 @@ describe('blueprintParser', () => {
         it('throws error on invalid path - no child', () => {
             expect(() => extractBlueprint(book, '3'))
                 .toThrow(/Invalid path 3: index 3 is out of bounds at 3/);
+        });
+        
+        it('throws error when trying to use nested path on simple blueprint', () => {
+            expect(() => extractBlueprint(simpleBlueprint, '1.2.3'))
+                .toThrow(/Invalid path 1.2.3: no blueprint book at 1/);
         });
     });
 
