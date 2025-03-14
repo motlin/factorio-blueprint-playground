@@ -1,11 +1,16 @@
 import {parseVersion} from '../parsing/blueprintParser';
 import {getErrorMessage} from '../parsing/errors';
 
-export const Version = ({number}: {number: number}) => {
+const getVersionText = (number: number): string => {
 	try {
 		const version = parseVersion(number);
-		return <span className="p2 text-right">{version}</span>;
+		return version.split('.').slice(0, 3).join('.');
 	} catch (error: unknown) {
-		return <span className="p2 text-right">Invalid version: {getErrorMessage(error)}</span>;
+		return `Invalid version: ${getErrorMessage(error)}`;
 	}
+};
+
+export const Version = ({number}: {number: number}) => {
+	const text = getVersionText(number);
+	return <span className="p2 text-right">{text}</span>;
 };
