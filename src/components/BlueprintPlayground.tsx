@@ -1,10 +1,14 @@
 import {useNavigate} from '@tanstack/react-router';
-import React from 'react';
+import {useLiveQuery} from 'dexie-react-hooks';
+import React, {useEffect} from 'react';
 
 import {BlueprintFetchResult} from '../fetching/blueprintFetcher';
 import {extractBlueprint} from '../parsing/blueprintParser';
 import type {BlueprintString} from '../parsing/types';
 import {RootSearch, Route} from '../routes';
+import {updateBlueprintMetadata} from '../state/blueprintLocalStorage';
+import {generateSha} from '../storage/blueprints';
+import {db} from '../storage/db';
 
 import {BasicInfoPanel} from './BasicInfoPanel';
 import {BlueprintInfoPanels} from './BlueprintInfoPanels';
@@ -26,6 +30,7 @@ export function BlueprintPlayground() {
 	const {pasted, selection: selectedPath}: RootSearch = Route.useSearch();
 	const loaderData: BlueprintFetchResult = Route.useLoaderData();
 
+	const navigate = useNavigate({from: Route.fullPath});
 	const rootBlueprint: BlueprintString | undefined = loaderData?.success ? loaderData.blueprintString : undefined;
 	const error = loaderData?.success ? undefined : loaderData?.error;
 	const disqusId: string | undefined = loaderData?.success ? loaderData.id : undefined;
@@ -39,7 +44,17 @@ export function BlueprintPlayground() {
 
 	const selectedBlueprint = rootBlueprint && extractBlueprint(rootBlueprint, selectedPath);
 
-	const navigate = useNavigate({from: Route.fullPath});
+	const existingBlueprint = useLiveQuery(async () => {
+		if (!pasted) return null;
+
+		try {
+			const sha = await generateSha(pasted);
+			return await db.blueprints.get(sha);
+		} catch (error) {
+			console.error('Error finding blueprint in database:', error);
+			return null;
+		}
+	}, [pasted]);
 
 	const onSelect = (path: string) => {
 		void navigate({
@@ -48,7 +63,21 @@ export function BlueprintPlayground() {
 				selection: path,
 			}),
 		});
+
+		if (pasted && rootBlueprint && loaderData.success && existingBlueprint) {
+			void updateBlueprintMetadata(existingBlueprint.metadata.sha, {
+				selection: path,
+			});
+		}
 	};
+
+	useEffect(() => {
+		if (selectedPath && pasted && rootBlueprint && loaderData.success && existingBlueprint) {
+			void updateBlueprintMetadata(existingBlueprint.metadata.sha, {
+				selection: selectedPath,
+			});
+		}
+	}, [selectedPath, pasted, rootBlueprint, loaderData?.success, existingBlueprint]);
 
 	return (
 		<div className="container">

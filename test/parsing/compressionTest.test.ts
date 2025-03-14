@@ -32,12 +32,10 @@ function findMatchingCompression(blueprintString: string): {
     const matches: DeflateOptions[] = [];
 
     for (const settings of generateCompressionSettings()) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         const key = `level=${settings.level} mem=${settings.memLevel}`;
         attempted.add(key);
 
         try {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             const serialized = serializeBlueprint(expectedJson, settings);
             if (serialized === blueprintString) {
                 matches.push({...settings});
@@ -64,7 +62,7 @@ describe('compression settings search', () => {
         // Verify all matches still produce acceptable output size
         for (const settings of matches) {
             const expectedJson = deserializeBlueprint(minimal);
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
             const serialized = serializeBlueprint(expectedJson, settings);
             expect(serialized.length).toBeLessThanOrEqual(
                 minimal.length * 1.1,
@@ -101,13 +99,12 @@ describe('compression settings search', () => {
             }
 
             // If we found matches, verify the first one works
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const firstMatch = matches[0];
 
             console.log('Found working settings:', firstMatch);
 
             const expectedJson = deserializeBlueprint(blueprintStr);
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
             const serialized = serializeBlueprint(expectedJson, firstMatch);
 
             // For exact matches, we expect the output to be identical

@@ -4,13 +4,8 @@ import path from 'path';
 import { chromium } from '@playwright/test';
 import { beforeAll, afterAll, expect } from 'vitest';
 
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
-let browser: any = null;
-let page: any = null;
+let browser: ReturnType<typeof chromium.launch> | null = null;
+let page: Awaited<ReturnType<Awaited<ReturnType<typeof chromium.launch>>['newPage']>> | null = null;
 
 const skipBrowserTests = process.env.CI === 'true' || process.env.SKIP_BROWSER_TESTS === 'true';
 
@@ -125,7 +120,7 @@ export async function compareScreenshots(
         expect(current).toEqual(baseline);
         await fs.unlink(tempPath);
     } catch (error: unknown) {
-        if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+        if (error instanceof Error && 'code' in error && (error as { code?: string }).code === 'ENOENT') {
             // No baseline exists, create it
             await fs.rename(tempPath, snapshotPath);
             console.warn(`Created new baseline for ${testName}`);
@@ -134,8 +129,3 @@ export async function compareScreenshots(
         }
     }
 }
-
-/* eslint-enable @typescript-eslint/no-unsafe-assignment */
-/* eslint-enable @typescript-eslint/no-unsafe-call */
-/* eslint-enable @typescript-eslint/no-unsafe-member-access */
-/* eslint-enable @typescript-eslint/no-explicit-any */

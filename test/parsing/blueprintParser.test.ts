@@ -4,7 +4,7 @@ import {
     BlueprintError,
     deserializeBlueprint,
     extractBlueprint,
-    parseVersion,
+    parseVersion4,
     serializeBlueprint,
 } from '../../src/parsing/blueprintParser';
 import type {BlueprintString} from '../../src/parsing/types';
@@ -95,6 +95,14 @@ describe('blueprintParser', () => {
             },
         };
 
+        const simpleBlueprint: BlueprintString = {
+            blueprint: {
+                item: 'blueprint',
+                version: 281479275675648,
+                label: 'Simple',
+            },
+        };
+
         it('extracts blueprint at path', () => {
             const result = extractBlueprint(book, '1');
             expect(result.blueprint?.label).toBe('First');
@@ -114,12 +122,17 @@ describe('blueprintParser', () => {
             expect(() => extractBlueprint(book, '3'))
                 .toThrow(/Invalid path 3: index 3 is out of bounds at 3/);
         });
+
+        it('throws error when trying to use nested path on simple blueprint', () => {
+            expect(() => extractBlueprint(simpleBlueprint, '1.2.3'))
+                .toThrow(/Invalid path 1.2.3: no blueprint book at 1/);
+        });
     });
 
     describe('parseVersion', () => {
         it('parses version numbers', () => {
-            expect(parseVersion(281479275675648)).toBe('1.1.61');
-            expect(parseVersion(562949954076673)).toBe('2.0.10.1');
+            expect(parseVersion4(281479275675648)).toBe('1.1.61.0');
+            expect(parseVersion4(562949954076673)).toBe('2.0.10.1');
         });
     });
 });

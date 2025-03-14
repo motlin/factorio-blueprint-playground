@@ -1,8 +1,11 @@
-import {createRootRoute, Link, Outlet} from '@tanstack/react-router';
+import {createRootRoute, Link, Outlet, useRouter} from '@tanstack/react-router';
 import type {ComponentType} from 'react';
-import {lazy, Suspense} from 'react';
+import {lazy, Suspense, useEffect, useState} from 'react';
 
 import {ErrorComponent} from '../components/ErrorComponent';
+import {blueprintStorage} from '../storage/blueprints';
+
+import type {RootSearch} from './index';
 
 // Render nothing in production
 const TanStackRouterDevtools = import.meta.env.PROD
@@ -13,26 +16,65 @@ const TanStackRouterDevtools = import.meta.env.PROD
 			})),
 		);
 
-// Create a wrapper component to handle the type union
 const DevTools = () => {
 	if (import.meta.env.PROD) {
 		return null;
 	}
 
-	// Use empty props object type since we don't need the specific options type
 	const DevToolsComponent = TanStackRouterDevtools as ComponentType;
 	return <DevToolsComponent />;
 };
 
 export const Route = createRootRoute({
 	errorComponent: ErrorComponent,
-	component: () => (
+	component: () => <DynamicNavigation />,
+});
+
+const DynamicNavigation = () => {
+	const [mostRecentData, setMostRecentData] = useState<RootSearch>({});
+	const router = useRouter();
+
+	// Listen for navigation events to update most recent blueprint data
+	useEffect(() => {
+		const unsubscribe = router.history.subscribe(() => {
+			// Check if we're navigating to the root route from history and the search params contain a pasted parameter
+			const location = router.state.location;
+			const searchParams = location.search as RootSearch;
+			if (location.pathname === '/' && searchParams.pasted) {
+				setMostRecentData({
+					pasted: searchParams.pasted,
+					selection: searchParams.selection,
+				});
+			}
+		});
+
+		return () => {
+			unsubscribe();
+		};
+	}, [router]);
+
+	useEffect(() => {
+		const loadMostRecent = async () => {
+			const recentBlueprint = await blueprintStorage.getMostRecent();
+			if (recentBlueprint) {
+				setMostRecentData({
+					pasted: recentBlueprint.metadata.data,
+					selection: recentBlueprint.metadata.selection,
+				});
+			}
+		};
+
+		void loadMostRecent();
+	}, []);
+
+	return (
 		<div>
 			<div className="top-bar">
 				<div className="top-bar-inner">
 					<nav>
 						<Link
 							to="/"
+							search={mostRecentData}
 							className="blue nowrap"
 							activeProps={{
 								className: 'yellow bold',
@@ -62,5 +104,5 @@ export const Route = createRootRoute({
 				<DevTools />
 			</Suspense>
 		</div>
-	),
-});
+	);
+};

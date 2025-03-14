@@ -1,6 +1,7 @@
-import {zlibSync, unzlibSync, DeflateOptions} from 'fflate';
+import {DeflateOptions, unzlibSync, zlibSync} from 'fflate';
 
 import {DEFAULT_COMPRESSION_SETTINGS} from './compressionSettings';
+import {getErrorMessage} from './errors';
 import type {BlueprintString} from './types';
 
 export class BlueprintError extends Error {
@@ -33,6 +34,15 @@ export function deserializeBlueprint(blueprintData: string): BlueprintString {
 	const decompressedStr = new TextDecoder().decode(decompressedBytes);
 
 	return JSON.parse(decompressedStr.trim()) as BlueprintString;
+}
+
+export function deserializeBlueprintNoThrow(data: string): BlueprintString | null {
+	try {
+		return deserializeBlueprint(data);
+	} catch (error) {
+		console.error('Failed to parse blueprint:', error);
+		return null;
+	}
 }
 
 /**
@@ -112,7 +122,7 @@ export function extractBlueprint(blueprint: BlueprintString, path?: string): Blu
 /**
  * Parse a version number into a string like "1.2.3.4"
  */
-export function parseVersion(versionNumber: number): string {
+export function parseVersion4(versionNumber: number): string {
 	const version = BigInt(versionNumber);
 	const parts = [];
 	for (let i = 0; i < 4; i++) {
@@ -121,10 +131,17 @@ export function parseVersion(versionNumber: number): string {
 		parts.push(part);
 	}
 
-	// Remove trailing zeros
-	while (parts.length > 1 && parts[parts.length - 1] === 0) {
-		parts.pop();
-	}
-
 	return parts.join('.');
+}
+
+/**
+ * Parse a version number into a string like "1.2.3"
+ */
+export function parseVersion3(number: number): string {
+	try {
+		const version = parseVersion4(number);
+		return version.split('.').slice(0, 3).join('.');
+	} catch (error: unknown) {
+		return `Invalid version: ${getErrorMessage(error)}`;
+	}
 }

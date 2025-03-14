@@ -1,4 +1,4 @@
-import {useEffect} from 'react';
+import {useEffect, useState, useRef} from 'react';
 
 import {Panel} from './ui';
 
@@ -26,43 +26,65 @@ interface DisqusCommentsProps {
 declare const window: DisqusWindow;
 
 const DisqusComments = ({identifier, url, title}: DisqusCommentsProps) => {
+	const prevIdentifierRef = useRef<string | undefined>();
+	const [isLoading, setIsLoading] = useState(false);
+
 	useEffect(() => {
-		if (!identifier || !url) {
+		if (!identifier || !url || (prevIdentifierRef.current === identifier && window.DISQUS)) {
 			return;
 		}
 
-		// Reset Disqus if it's already loaded
+		prevIdentifierRef.current = identifier;
+
+		// If Disqus is already loaded, reset it instead of reloading
 		if (window.DISQUS) {
+			// eslint-disable-next-line no-console
+			console.log('Resetting Disqus for:', identifier);
 			window.DISQUS.reset({
 				reload: true,
 				config: function (this: DisqusConfig) {
 					this.page.identifier = identifier;
 					this.page.url = url;
-					this.page.title = title;
+					if (title) this.page.title = title;
 				},
 			});
 			return;
 		}
 
-		window.disqus_config = function (this: DisqusConfig) {
-			this.page.url = url;
-			this.page.identifier = identifier;
-			this.page.title = title;
-		};
+		// If we're not already loading Disqus, load it
+		if (!isLoading) {
+			// eslint-disable-next-line no-console
+			console.log('Loading Disqus for:', identifier);
+			setIsLoading(true);
 
-		const script = document.createElement('script');
-		script.src = 'https://factorio-blueprints.disqus.com/embed.js';
-		script.setAttribute('data-timestamp', (+new Date()).toString());
+			window.disqus_config = function (this: DisqusConfig) {
+				this.page.url = url;
+				this.page.identifier = identifier;
+				if (title) this.page.title = title;
+			};
 
-		document.body.appendChild(script);
+			const script = document.createElement('script');
+			script.src = 'https://factorio-blueprints.disqus.com/embed.js';
+			script.setAttribute('data-timestamp', (+new Date()).toString());
+			script.async = true;
 
-		return () => {
-			if (document.body.contains(script)) {
-				document.body.removeChild(script);
-			}
-			delete window.disqus_config;
-		};
-	}, [url, identifier, title]);
+			script.onload = () => {
+				setIsLoading(false);
+			};
+
+			document.body.appendChild(script);
+
+			return () => {
+				if (prevIdentifierRef.current !== identifier) {
+					if (document.body.contains(script)) {
+						document.body.removeChild(script);
+					}
+					delete window.disqus_config;
+					setIsLoading(false);
+				}
+			};
+		}
+	}, [url, identifier, title, isLoading]);
 
 	if (!identifier || !url) {
 		return null;

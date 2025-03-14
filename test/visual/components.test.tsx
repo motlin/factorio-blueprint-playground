@@ -9,8 +9,6 @@ import { ParametersPanel } from '../../src/components/ParametersPanel';
 
 import { compareScreenshots } from './setup';
 
-/* eslint-disable no-undef */
-
 function renderToStaticHTML(element: React.ReactElement): string {
     const div = document.createElement('div');
     render(element, { container: div });
@@ -236,5 +234,3 @@ describe('Visual regression tests', () => {
         await compareScreenshots('deconstruction-planner-panel', replaceIconUrls(html));
     });
 });
-
-/* eslint-enable no-undef */
