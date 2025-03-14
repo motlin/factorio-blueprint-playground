@@ -35,6 +35,15 @@ export function deserializeBlueprint(blueprintData: string): BlueprintString {
 	return JSON.parse(decompressedStr.trim()) as BlueprintString;
 }
 
+export function deserializeBlueprintNoThrow(data: string): BlueprintString | null {
+	try {
+		return deserializeBlueprint(data);
+	} catch (error) {
+		console.error('Failed to parse blueprint:', error);
+		return null;
+	}
+}
+
 /**
  * Takes blueprint JSON data and returns an encoded blueprint string
  */

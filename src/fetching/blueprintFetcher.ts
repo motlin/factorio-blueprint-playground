@@ -3,6 +3,19 @@ import type {BlueprintString} from '../parsing/types';
 
 export type BlueprintFetchMethod = 'url' | 'json' | 'data';
 
+export function getSourceLabel(fetchMethod?: BlueprintFetchMethod): string {
+	switch (fetchMethod) {
+		case 'url':
+			return 'External URL';
+		case 'json':
+			return 'JSON Import';
+		case 'data':
+			return 'Direct Paste';
+		default:
+			return 'Unknown';
+	}
+}
+
 interface BlueprintFetchBase {
 	success: boolean;
 	pasted: string;
@@ -10,7 +23,6 @@ interface BlueprintFetchBase {
 }
 
 export interface BlueprintFetchSuccess extends BlueprintFetchBase {
-	// TODO 2024-12-03: fetchMethod is not used, but may be used in the future for history
 	success: true;
 	blueprintString: BlueprintString;
 	// TODO 2024-12-03: rename to disqusId
