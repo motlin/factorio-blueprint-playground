@@ -12,9 +12,11 @@
     "generate:routes": "npx @tanstack/router-cli generate-routefiles",
     "build:types": "npm run generate:routes && tsc --noEmit --project tsconfig.routes.json",
     "lint:fix": "prettier --write \"{src,functions}/**/*.{js,jsx,ts,tsx,css,md,json}\" && eslint . --fix",
+    "ci:test": "vitest run",
     "ci:eslint": "eslint . --format json --output-file eslint_report.json",
     "ci:prettier": "prettier --check \"{src,functions}/**/*.{js,jsx,ts,tsx,css,md,json}\"",
-    "ci:typecheck": "tsc --noEmit"
+    "ci:typecheck": "tsc --noEmit",
+    "all": "npm run lint:fix && npm run ci:typecheck && npm run build && npm run ci:test"
   },
   "dependencies": {
     "@preact/signals": "^2.0.1",

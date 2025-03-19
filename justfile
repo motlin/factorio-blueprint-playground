@@ -5,8 +5,11 @@ import ".just/git.just"
 import ".just/git-rebase.just"
 import ".just/git-test.just"
 
-default: build
+# `just --list --unsorted`
+default:
+    @just --list --unsorted
 
+# `npm run {build:types, build, lint:fix, test:coverage}`
 build:
     #!/usr/bin/env bash
     set -uo pipefail
@@ -39,39 +42,53 @@ build:
     {{echo_command}} "$MESSAGE"
     exit $EXIT_CODE
 
-dump-tree:
-    dump-tree --line-numbers \
-        --ignore test/fixtures \
-        --ignore .vite \
-        --ignore .wrangler \
-        --ignore requirements/ \
-        --ignore public/icons \
-        --ignore stats.html \
-        --ignore .devcontainer \
-        --ignore .envrc \
-        --ignore .github \
-        --ignore .gitignore \
-        --ignore .just \
-        --ignore .node-version \
-        --ignore JUSTFILE_BRANCH \
-        --ignore README.md \
-        --ignore eslint.config.js \
-        --ignore index.html \
-        --ignore justfile \
-        --ignore netlify.toml \
-        --ignore public \
-        --ignore tsconfig.app.tsbuildinfo \
-        --ignore tsconfig.node.tsbuildinfo \
-        --ignore src/styles/factorio-a76ef767.css \
-        > ../factorio-blueprint-playground.txt
+# Run development server
+dev:
+    npm run dev
 
-    du -sh ../factorio-blueprint-playground.txt
+# Run Vite preview server
+preview:
+    npm run preview
+
+# Run tests
+test:
+    npm run test
+
+# Run tests with coverage
+test-coverage:
+    npm run test:coverage
+
+# Generate route files
+generate-routes:
+    npm run generate:routes
+
+# Run linting with auto-fix
+lint-fix:
+    npm run lint:fix
+
+# Run ESLint and generate report
+ci-eslint:
+    npm run ci:eslint
+
+# Check formatting with Prettier
+ci-prettier:
+    npm run ci:prettier
+
+# Run TypeScript type checking
+typecheck:
+    npm run ci:typecheck
+
+# Run all checks (lint, typecheck, build, test)
+all:
+    npm run all
 
 factorio_home := env('FACTORIO_HOME')
 
+# `factorio --dump-icon-sprites`
 dump-icon-sprites:
     {{factorio_home}}/factorio --dump-icon-sprites
 
+# `rsync` from `factorio/script-output` to `./public`
 sync-icon-sprites:
     rsync -av ~/Library/Application\ Support/factorio/script-output/entity/*.png         ~/projects/factorio-blueprint-playground/public/icons/entity/
     rsync -av ~/Library/Application\ Support/factorio/script-output/fluid/*.png          ~/projects/factorio-blueprint-playground/public/icons/fluid/
