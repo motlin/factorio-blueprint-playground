@@ -7,7 +7,7 @@ import {ErrorComponent} from '../components/ErrorComponent';
 const TanStackRouterDevtools = import.meta.env.PROD
 	? () => null // Render nothing in production
 	: lazy(() =>
-			import('@tanstack/router-devtools').then((res) => ({
+			import('@tanstack/react-router-devtools').then((res) => ({
 				default: res.TanStackRouterDevtools,
 			})),
 		);
