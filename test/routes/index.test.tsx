@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {describe, expect, it} from 'vitest';
 
 import {searchSchema} from '../../src/routes';
@@ -55,7 +56,8 @@ describe('Root route search schema', () => {
       const result = searchSchema.parse({
         pasted: 123,
         selection: true,
-      } as any);
+        // Using Record<string, unknown> instead of any
+      } as Record<string, unknown>);
       
       expect(result).toEqual({
         pasted: undefined,
