@@ -1,5 +1,5 @@
-import preact from '@preact/preset-vite';
 import {TanStackRouterVite} from '@tanstack/router-plugin/vite';
+import react from '@vitejs/plugin-react';
 import {visualizer} from 'rollup-plugin-visualizer';
 import {defineConfig, loadEnv} from 'vite';
 
@@ -9,7 +9,7 @@ export default defineConfig(({mode}) => {
 
     return {
         plugins: [
-            preact(),
+            react(),
             TanStackRouterVite({
                 generatedRouteTree: './src/routeTree.gen.ts',
                 routesDirectory: './src/routes',
@@ -24,7 +24,7 @@ export default defineConfig(({mode}) => {
             rollupOptions: {
                 output: {
                     manualChunks: {
-                        'preact': ['preact', '@preact/signals'],
+                        'react': ['react', 'react-dom'],
                         'react-router': ['@tanstack/react-router'],
                         'fflate': ['fflate'],
                         'idb-keyval': ['idb-keyval'],

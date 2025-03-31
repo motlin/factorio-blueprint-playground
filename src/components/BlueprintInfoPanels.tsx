@@ -1,4 +1,4 @@
-import {memo} from 'preact/compat';
+import {memo} from 'react';
 
 import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
 import {
@@ -67,7 +67,7 @@ interface PanelProps {
 	blueprint: BlueprintString;
 }
 
-export const ContentsPanel = memo(({blueprint}: PanelProps) => {
+const ContentsPanelComponent = ({blueprint}: PanelProps) => {
 	const blueprintContent = blueprint.blueprint;
 
 	// Type guard to ensure we're working with a Blueprint type
@@ -103,10 +103,10 @@ export const ContentsPanel = memo(({blueprint}: PanelProps) => {
 			<ItemPanel title="Tiles" items={tileCounts} type={'tile'} />
 		</>
 	);
-});
+};
 
 // Upgrade Planner Panel
-export const UpgradePlannerPanel = memo(({blueprint}: {blueprint: BlueprintString}) => {
+const UpgradePlannerPanelComponent = ({blueprint}: {blueprint: BlueprintString}) => {
 	const wrapper = new BlueprintWrapper(blueprint);
 	const {content} = wrapper.getInfo();
 
@@ -141,7 +141,10 @@ export const UpgradePlannerPanel = memo(({blueprint}: {blueprint: BlueprintStrin
 			</Spreadsheet>
 		</Panel>
 	);
-});
+};
+
+UpgradePlannerPanelComponent.displayName = 'UpgradePlannerPanel';
+export const UpgradePlannerPanel = memo(UpgradePlannerPanelComponent);
 
 // Helper to get filter mode text
 function getFilterModeText(mode?: number): string {
@@ -150,7 +153,7 @@ function getFilterModeText(mode?: number): string {
 }
 
 // Deconstruction Planner Panel
-export const DeconstructionPlannerPanel = memo(({blueprint}: {blueprint: BlueprintString}) => {
+const DeconstructionPlannerPanelComponent = ({blueprint}: {blueprint: BlueprintString}) => {
 	const wrapper = new BlueprintWrapper(blueprint);
 	const {content} = wrapper.getInfo();
 
@@ -209,10 +212,10 @@ export const DeconstructionPlannerPanel = memo(({blueprint}: {blueprint: Bluepri
 			</Spreadsheet>
 		</Panel>
 	);
-});
+};
 
 // Main wrapper component that shows the appropriate panels
-export const BlueprintInfoPanels = memo(({blueprint}: {blueprint?: BlueprintString}) => {
+const BlueprintInfoPanelsComponent = ({blueprint}: {blueprint?: BlueprintString}) => {
 	if (!blueprint) return null;
 	return (
 		<>
@@ -222,4 +225,13 @@ export const BlueprintInfoPanels = memo(({blueprint}: {blueprint?: BlueprintStri
 			{blueprint.deconstruction_planner && <DeconstructionPlannerPanel blueprint={blueprint} />}
 		</>
 	);
-});
+};
+
+ContentsPanelComponent.displayName = 'ContentsPanel';
+export const ContentsPanel = memo(ContentsPanelComponent);
+
+DeconstructionPlannerPanelComponent.displayName = 'DeconstructionPlannerPanel';
+export const DeconstructionPlannerPanel = memo(DeconstructionPlannerPanelComponent);
+
+BlueprintInfoPanelsComponent.displayName = 'BlueprintInfoPanels';
+export const BlueprintInfoPanels = memo(BlueprintInfoPanelsComponent);

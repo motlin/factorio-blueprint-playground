@@ -151,7 +151,7 @@ export default [
         settings: {
             react: {
                 version: '18.2',
-                pragma: 'h',
+                pragma: 'React',
                 pragmaFrag: 'Fragment',
             },
         },

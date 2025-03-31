@@ -1,5 +1,4 @@
-import type {VNode} from 'preact';
-import {memo} from 'preact/compat';
+import React, {memo, type ReactNode} from 'react';
 
 import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
 import {type BlueprintString, Icon} from '../parsing/types';
@@ -82,7 +81,7 @@ const TreeRow = ({node, indentLevel, isSelected, isActive, onSelect}: TreeRowPro
 
 	const indentPx = (indentLevel * 32).toString();
 
-	const handleClick = (e: MouseEvent) => {
+	const handleClick = (e: React.MouseEvent) => {
 		e.preventDefault();
 		onSelect(node.path);
 	};
@@ -118,14 +117,13 @@ interface BlueprintTreeProps {
 	onSelect: (path: string) => void;
 }
 
-// Memoize the entire tree component
-export const BlueprintTree = memo(({rootBlueprint, selectedPath, onSelect}: BlueprintTreeProps) => {
+const BlueprintTreeComponent = ({rootBlueprint, selectedPath, onSelect}: BlueprintTreeProps) => {
 	if (!rootBlueprint) return null;
 
 	const tree = buildNode(rootBlueprint, '');
 
-	function renderNode(node: TreeNode, level: number, parent?: TreeNode): VNode[] {
-		const rows: VNode[] = [];
+	function renderNode(node: TreeNode, level: number, parent?: TreeNode): ReactNode[] {
+		const rows: ReactNode[] = [];
 
 		const active = isNodeActive(node, parent);
 
@@ -154,6 +152,7 @@ export const BlueprintTree = memo(({rootBlueprint, selectedPath, onSelect}: Blue
 			</div>
 		</Panel>
 	);
-});
+};
 
-export default BlueprintTree;
+BlueprintTreeComponent.displayName = 'BlueprintTree';
+export const BlueprintTree = memo(BlueprintTreeComponent);

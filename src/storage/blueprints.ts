@@ -29,7 +29,10 @@ export interface DatabaseBlueprint {
 }
 
 export const blueprintStorage = {
-	async add(data: string, parsedMetadata: Omit<DatabaseBlueprint, 'createdOn' | 'lastUpdatedOn'>) {
+	async add(
+		data: string,
+		parsedMetadata: Omit<DatabaseBlueprint, 'createdOn' | 'lastUpdatedOn'>,
+	): Promise<DatabaseBlueprint> {
 		const now = Date.now();
 		const blueprint: DatabaseBlueprint = {
 			createdOn: now,
@@ -41,11 +44,14 @@ export const blueprintStorage = {
 		return blueprint;
 	},
 
-	async update(createdOn: number, changes: Partial<Omit<DatabaseBlueprint, 'createdOn'>>) {
+	async update(
+		createdOn: number,
+		changes: Partial<Omit<DatabaseBlueprint, 'createdOn'>>,
+	): Promise<DatabaseBlueprint | null> {
 		const blueprint = await this.get(createdOn);
 		if (!blueprint) return null;
 
-		const updated = {
+		const updated: DatabaseBlueprint = {
 			...blueprint,
 			...changes,
 			lastUpdatedOn: Date.now(),
@@ -54,15 +60,15 @@ export const blueprintStorage = {
 		return updated;
 	},
 
-	async get(createdOn: number) {
-		return get<DatabaseBlueprint>(createdOn.toString());
+	async get(createdOn: number): Promise<DatabaseBlueprint | undefined> {
+		return await get<DatabaseBlueprint>(createdOn.toString());
 	},
 
-	async remove(createdOn: number) {
+	async remove(createdOn: number): Promise<void> {
 		await del(createdOn.toString());
 	},
 
-	async list() {
+	async list(): Promise<DatabaseBlueprint[]> {
 		const allEntries = await entries<string, DatabaseBlueprint>();
 		return allEntries.map(([_, blueprint]) => blueprint).sort((a, b) => b.lastUpdatedOn - a.lastUpdatedOn);
 	},

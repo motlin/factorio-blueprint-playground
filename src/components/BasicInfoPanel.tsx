@@ -1,4 +1,4 @@
-import {memo} from 'preact/compat';
+import {memo} from 'react';
 import type {ReactNode} from 'react';
 
 import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
@@ -25,7 +25,7 @@ const InfoRow = ({label, children, hidden = false}: InfoRowProps) => {
 	);
 };
 
-export const BasicInfoPanel = memo(({blueprint}: {blueprint?: BlueprintString}) => {
+const BasicInfoPanelComponent = ({blueprint}: {blueprint?: BlueprintString}) => {
 	if (!blueprint) return null;
 	const wrapper = new BlueprintWrapper(blueprint);
 	const {type, label, description, icons, version} = wrapper.getInfo();
@@ -68,4 +68,7 @@ export const BasicInfoPanel = memo(({blueprint}: {blueprint?: BlueprintString}) 
 			</dl>
 		</Panel>
 	);
-});
+};
+
+BasicInfoPanelComponent.displayName = 'BasicInfoPanel';
+export const BasicInfoPanel = memo(BasicInfoPanelComponent);
