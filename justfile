@@ -78,8 +78,12 @@ ci-prettier:
 typecheck:
     npm run ci:typecheck
 
+# Install dependencies
+install:
+    npm install
+
 # Run all checks (lint, typecheck, build, test)
-all:
+all: install
     npm run all
 
 factorio_home := env('FACTORIO_HOME')
