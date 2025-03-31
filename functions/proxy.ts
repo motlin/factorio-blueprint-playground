@@ -21,6 +21,9 @@ const config: ProxyConfig = {
 		'https://cdn\\.factoriobin\\.com/.*',
 		'https://factoriobin\\.com/post/.*',
 		'https://factorio\\.school/api/blueprint/.*',
+		'https://ny\\.storage\\.bunnycdn\\.com/factorio-blueprints/blueprints/by-sha1/.*',
+		'https://ny\\.storage\\.bunnycdn\\.com/factorio-blueprints/blueprints/by-key/.*/.*',
+		'https://ny\\.storage\\.bunnycdn\\.com/factorio-blueprints/blueprints/by-key/.*',
 	],
 	allowListOrigins: ['http://localhost.*', 'https://factorio-blueprint-playground.pages.dev.*'],
 };
