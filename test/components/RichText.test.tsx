@@ -199,63 +199,63 @@ describe('RichText', () => {
         const complexText = '[item=iron-plate,quality=normal] Iron plate with [color=red]red[/color] text and [font=default-bold]bold[/font] styling';
         const renderedResult = render(<RichText text={complexText} />);
 
-    // Check root structure
-    const richTextDiv = within(renderedResult.container).getByTestId('richtext');
-    expect(richTextDiv).toBeInTheDocument();
+        // Check root structure
+        const richTextDiv = within(renderedResult.container).getByTestId('richtext');
+        expect(richTextDiv).toBeInTheDocument();
 
-    // Check icon wrapper
-    const wrapper = within(richTextDiv).getByTestId('iconParent');
-    expect(wrapper).toBeInTheDocument();
-    // Instead of checking exact class names, verify the wrapper has some classes
-    expect(wrapper.className).not.toBe('');
+        // Check icon wrapper
+        const wrapper = within(richTextDiv).getByTestId('iconParent');
+        expect(wrapper).toBeInTheDocument();
+        // Instead of checking exact class names, verify the wrapper has some classes
+        expect(wrapper.className).not.toBe('');
 
-    // Check main icon properties
+        // Check main icon properties
         const mainIcon = within(wrapper).getByTestId('icon');
-    expect(mainIcon).toHaveAttribute('src', 'https://factorio-icon-cdn.pages.dev/item/iron-plate.webp');
-    expect(mainIcon).toHaveAttribute('title', 'item: iron-plate');
-    expect(mainIcon).toHaveAttribute('alt', 'iron-plate');
-    expect(mainIcon).toHaveAttribute('loading', 'lazy');
-    // Verify icon has a class without checking exact name
-    expect(mainIcon.className).not.toBe('');
+        expect(mainIcon).toHaveAttribute('src', 'https://factorio-icon-cdn.pages.dev/item/iron-plate.webp');
+        expect(mainIcon).toHaveAttribute('title', 'item: iron-plate');
+        expect(mainIcon).toHaveAttribute('alt', 'iron-plate');
+        expect(mainIcon).toHaveAttribute('loading', 'lazy');
+        // Verify icon has a class without checking exact name
+        expect(mainIcon.className).not.toBe('');
 
-    // Check quality icon properties
-    const qualityIcon = within(wrapper).getByTestId('quality');
-    expect(qualityIcon).toHaveAttribute('src', 'https://factorio-icon-cdn.pages.dev/quality/normal.webp');
-    expect(qualityIcon).toHaveAttribute('title', 'Quality: normal');
-    expect(qualityIcon).toHaveAttribute('alt', 'normal');
-    expect(qualityIcon).toHaveAttribute('loading', 'lazy');
-    // Verify quality icon has a class without checking exact name
-    expect(qualityIcon.className).not.toBe('');
+        // Check quality icon properties
+        const qualityIcon = within(wrapper).getByTestId('quality');
+        expect(qualityIcon).toHaveAttribute('src', 'https://factorio-icon-cdn.pages.dev/quality/normal.webp');
+        expect(qualityIcon).toHaveAttribute('title', 'Quality: normal');
+        expect(qualityIcon).toHaveAttribute('alt', 'normal');
+        expect(qualityIcon).toHaveAttribute('loading', 'lazy');
+        // Verify quality icon has a class without checking exact name
+        expect(qualityIcon.className).not.toBe('');
 
-           // Check all formatted text spans
-    const formattedSpans = within(richTextDiv).getAllByTestId('formatted-text');
-    expect(formattedSpans).toHaveLength(5);
+        // Check all formatted text spans
+        const formattedSpans = within(richTextDiv).getAllByTestId('formatted-text');
+        expect(formattedSpans).toHaveLength(5);
 
-    // First span (plain text before red)
-    expect(formattedSpans[0]).toHaveStyle({ fontWeight: 'normal' });
-    expect(formattedSpans[0].textContent).toBe(' Iron plate with ');
+        // First span (plain text before red)
+        expect(formattedSpans[0]).toHaveStyle({ fontWeight: 'normal' });
+        expect(formattedSpans[0].textContent).toBe(' Iron plate with ');
 
-    // Second span (red text)
-    expect(formattedSpans[1]).toHaveStyle({
-        color: 'rgb(235, 92, 95)',
-        fontWeight: 'normal',
-    });
-    expect(formattedSpans[1].textContent).toBe('red');
+        // Second span (red text)
+        expect(formattedSpans[1]).toHaveStyle({
+            color: 'rgb(235, 92, 95)',
+            fontWeight: 'normal',
+        });
+        expect(formattedSpans[1].textContent).toBe('red');
 
-    // Third span (plain text between red and bold)
-    expect(formattedSpans[2]).toHaveStyle({ fontWeight: 'normal' });
-    expect(formattedSpans[2].textContent).toBe(' text and ');
+        // Third span (plain text between red and bold)
+        expect(formattedSpans[2]).toHaveStyle({ fontWeight: 'normal' });
+        expect(formattedSpans[2].textContent).toBe(' text and ');
 
-    // Fourth span (bold text)
-    expect(formattedSpans[3]).toHaveStyle({ fontWeight: 'bold' });
-    expect(formattedSpans[3].textContent).toBe('bold');
+        // Fourth span (bold text)
+        expect(formattedSpans[3]).toHaveStyle({ fontWeight: 'bold' });
+        expect(formattedSpans[3].textContent).toBe('bold');
 
-    // Fifth span (plain text after bold)
-    expect(formattedSpans[4]).toHaveStyle({ fontWeight: 'normal' });
-    expect(formattedSpans[4].textContent).toBe(' styling');
+        // Fifth span (plain text after bold)
+        expect(formattedSpans[4]).toHaveStyle({ fontWeight: 'normal' });
+        expect(formattedSpans[4].textContent).toBe(' styling');
 
-    // Verify the complete text content
-    expect(richTextDiv.textContent.trim()).toBe('Iron plate with red text and bold styling');
+        // Verify the complete text content
+        expect(richTextDiv.textContent.trim()).toBe('Iron plate with red text and bold styling');
     });
 
     // Test invalid/malformed tags
