@@ -1,8 +1,7 @@
-import type {ComponentChildren} from 'preact';
-import type {CSSProperties} from 'preact/compat';
+import type {ReactNode, CSSProperties} from 'react';
 
 interface CellProps {
-	children: ComponentChildren;
+	children: ReactNode;
 	grow?: boolean; // Allows cell to grow
 	shrink?: boolean; // Allows cell to shrink
 	width?: string; // Sets a fixed width

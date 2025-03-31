@@ -1,5 +1,5 @@
 import {createRootRoute, Link, Outlet} from '@tanstack/react-router';
-import type {ComponentType} from 'preact';
+import type {ComponentType} from 'react';
 import {lazy, Suspense} from 'react';
 
 import {ErrorComponent} from '../components/ErrorComponent';

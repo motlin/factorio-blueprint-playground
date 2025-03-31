@@ -1,6 +1,5 @@
 import {useNavigate} from '@tanstack/react-router';
-import type {JSX} from 'preact';
-import {useCallback} from 'preact/hooks';
+import React, {useCallback} from 'react';
 
 import {Route} from '../routes';
 
@@ -16,13 +15,13 @@ export const BlueprintSourceHandler = ({pasted}: BlueprintSourceHandlerProps) =>
 	 * Wraps the async navigation logic in a synchronous handler to satisfy React's onChange type.
 	 */
 	const handleChange = useCallback(
-		(e: JSX.TargetedEvent<HTMLTextAreaElement>) => {
+		(e: React.ChangeEvent<HTMLTextAreaElement>) => {
 			e.preventDefault();
-			const pasted = (e.target as HTMLTextAreaElement).value;
+			const pasted = e.target.value;
 
 			// Execute navigation in a non-blocking way
 			void (async () => {
-				if (!pasted.trim()) {
+				if (!pasted || !pasted.trim()) {
 					await navigate({
 						search: {pasted: undefined, selection: undefined},
 					});
@@ -40,7 +39,7 @@ export const BlueprintSourceHandler = ({pasted}: BlueprintSourceHandlerProps) =>
 	/**
 	 * Handles focus events by selecting all text in the textarea.
 	 */
-	const handleFocus = useCallback((e: JSX.TargetedFocusEvent<HTMLTextAreaElement>) => {
+	const handleFocus = useCallback((e: React.FocusEvent<HTMLTextAreaElement>) => {
 		e.preventDefault();
 		e.currentTarget.select();
 	}, []);

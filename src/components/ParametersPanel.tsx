@@ -1,4 +1,4 @@
-import {memo} from 'preact/compat';
+import {memo} from 'react';
 
 import {BlueprintString, Parameter, SignalID} from '../parsing/types';
 
@@ -151,7 +151,7 @@ const ParametersList = ({parameters}: {parameters: Parameter[]}) => {
 	);
 };
 
-export const ParametersPanel = memo(({blueprintString}: {blueprintString?: BlueprintString}) => {
+const ParametersPanelComponent = ({blueprintString}: {blueprintString?: BlueprintString}) => {
 	if (!blueprintString?.blueprint?.parameters?.length) return null;
 
 	return (
@@ -159,4 +159,7 @@ export const ParametersPanel = memo(({blueprintString}: {blueprintString?: Bluep
 			<ParametersList parameters={blueprintString.blueprint.parameters} />
 		</Panel>
 	);
-});
+};
+
+ParametersPanelComponent.displayName = 'ParametersPanel';
+export const ParametersPanel = memo(ParametersPanelComponent);

@@ -4,6 +4,7 @@ import {createRoot} from 'react-dom/client';
 
 // Import the generated route tree
 import {routeTree} from './routeTree.gen';
+import {BlueprintProvider} from './state/blueprintLocalStorage';
 
 import './styles/factorio-a76ef767.css';
 import './styles/main.css';
@@ -24,9 +25,11 @@ if (rootElement && !rootElement.innerHTML) {
 	const root = createRoot(rootElement);
 	root.render(
 		<StrictMode>
-			<Suspense fallback={<div className="loading">Loading...</div>}>
-				<RouterProvider router={router} />
-			</Suspense>
+			<BlueprintProvider>
+				<Suspense fallback={<div className="loading">Loading...</div>}>
+					<RouterProvider router={router} />
+				</Suspense>
+			</BlueprintProvider>
 		</StrictMode>,
 	);
 }

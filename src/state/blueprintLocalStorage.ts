@@ -1,56 +1,52 @@
-import {signal} from '@preact/signals';
+import React, {createContext, useState} from 'react';
 
 import {blueprintStorage, DatabaseBlueprint} from '../storage/blueprints';
 
-// Current blueprint being viewed/edited
-export const currentBlueprintSignal = signal<DatabaseBlueprint | null>(null);
-
-// Complete list of blueprints, sorted by lastUpdatedOn
-export const blueprintHistorySignal = signal<DatabaseBlueprint[]>([]);
-
-// Helper functions
-export async function addBlueprint(
-	data: string,
-	parsedMetadata: Omit<DatabaseBlueprint, 'createdOn' | 'lastUpdatedOn'>,
-) {
-	const blueprint = await blueprintStorage.add(data, parsedMetadata);
-	blueprintHistorySignal.value = [blueprint, ...blueprintHistorySignal.value];
-	return blueprint;
+interface BlueprintContextType {
+	currentBlueprint: DatabaseBlueprint | null;
+	setCurrentBlueprint: (blueprint: DatabaseBlueprint | null) => void;
 }
 
-export async function updateBlueprint(createdOn: number, changes: Partial<Omit<DatabaseBlueprint, 'createdOn'>>) {
+export const BlueprintContext = createContext<BlueprintContextType>({
+	currentBlueprint: null,
+	setCurrentBlueprint: () => {},
+});
+
+export async function updateBlueprint(
+	createdOn: number,
+	changes: Partial<Omit<DatabaseBlueprint, 'createdOn'>>,
+	setCurrentBlueprint: (blueprint: DatabaseBlueprint | null) => void,
+	currentBlueprint: DatabaseBlueprint | null,
+): Promise<DatabaseBlueprint | null> {
 	const updated = await blueprintStorage.update(createdOn, changes);
 	if (!updated) return null;
 
-	blueprintHistorySignal.value = blueprintHistorySignal.value
-		.map((bp: DatabaseBlueprint) => (bp.createdOn === createdOn ? updated : bp))
-		.sort((a: DatabaseBlueprint, b: DatabaseBlueprint) => b.lastUpdatedOn - a.lastUpdatedOn);
-
-	if (currentBlueprintSignal.value?.createdOn === createdOn) {
-		currentBlueprintSignal.value = updated;
+	if (currentBlueprint?.createdOn === createdOn) {
+		setCurrentBlueprint(updated);
 	}
 
 	return updated;
 }
 
-export async function deleteBlueprint(createdOn: number) {
+export async function deleteBlueprint(
+	createdOn: number,
+	setCurrentBlueprint: (blueprint: DatabaseBlueprint | null) => void,
+	currentBlueprint: DatabaseBlueprint | null,
+): Promise<void> {
 	await blueprintStorage.remove(createdOn);
 
-	blueprintHistorySignal.value = blueprintHistorySignal.value.filter(
-		(bp: DatabaseBlueprint) => bp.createdOn !== createdOn,
-	);
-
-	if (currentBlueprintSignal.value?.createdOn === createdOn) {
-		currentBlueprintSignal.value = null;
+	if (currentBlueprint?.createdOn === createdOn) {
+		setCurrentBlueprint(null);
 	}
 }
 
-// Load initial history from storage
-void blueprintStorage
-	.list()
-	.then((blueprints) => {
-		blueprintHistorySignal.value = blueprints;
-	})
-	.catch((error: unknown) => {
-		console.error('Failed to load blueprint history:', error);
-	});
+export function BlueprintProvider(props: {children: React.ReactNode}): React.ReactElement {
+	const [currentBlueprint, setCurrentBlueprint] = useState<DatabaseBlueprint | null>(null);
+
+	const contextValue: BlueprintContextType = {
+		currentBlueprint,
+		setCurrentBlueprint,
+	};
+
+	return React.createElement(BlueprintContext.Provider, {value: contextValue}, props.children);
+}

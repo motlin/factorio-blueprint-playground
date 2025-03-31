@@ -1,5 +1,5 @@
 import {ClipboardCopy, Download, FileJson, LucideIcon} from 'lucide-react';
-import {memo} from 'preact/compat';
+import {memo} from 'react';
 
 import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
 import {serializeBlueprint} from '../parsing/blueprintParser';
@@ -133,7 +133,7 @@ const ButtonWithIcon = ({icon: Icon, text, onClick}: ButtonWithIconProps) => (
 	</ButtonGreen>
 );
 
-export const ExportActions = memo(({blueprint, path, title}: ExportActionsProps) => {
+const ExportActionsComponent = ({blueprint, path, title}: ExportActionsProps) => {
 	if (!blueprint) return null;
 
 	const handleCopyString = () => {
@@ -164,4 +164,7 @@ export const ExportActions = memo(({blueprint, path, title}: ExportActionsProps)
 			</InsetLight>
 		</Panel>
 	);
-});
+};
+
+ExportActionsComponent.displayName = 'ExportActions';
+export const ExportActions = memo(ExportActionsComponent);
