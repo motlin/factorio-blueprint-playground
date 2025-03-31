@@ -139,9 +139,9 @@ export default [
                 'ts-nocheck': false,
                 'ts-check': true,
             }],
-            '@typescript-eslint/restrict-template-expressions': 'off',
-            '@typescript-eslint/no-unsafe-assignment': 'off',
-            '@typescript-eslint/no-unsafe-call': 'off',
+            '@typescript-eslint/no-inferrable-types': 'error',
+            '@typescript-eslint/no-unnecessary-type-assertion': 'error',
+            '@typescript-eslint/no-unnecessary-type-constraint': 'error',
         },
     },
 

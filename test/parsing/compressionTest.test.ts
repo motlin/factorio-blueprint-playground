@@ -100,8 +100,9 @@ describe('compression settings search', () => {
             }
 
             // If we found matches, verify the first one works
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const firstMatch = matches[0];
-
+            
             console.log('Found working settings:', firstMatch);
 
             const expectedJson = deserializeBlueprint(blueprintStr);
