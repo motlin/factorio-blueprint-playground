@@ -10,7 +10,7 @@ describe('Root route search schema', () => {
         pasted: 'some-blueprint-string',
         selection: '1.2.3',
       });
-      
+
       expect(result).toEqual({
         pasted: 'some-blueprint-string',
         selection: '1.2.3',
@@ -19,7 +19,7 @@ describe('Root route search schema', () => {
 
     it('should handle empty parameters', () => {
       const result = searchSchema.parse({});
-      
+
       expect(result).toEqual({
         pasted: undefined,
         selection: undefined,
@@ -31,7 +31,7 @@ describe('Root route search schema', () => {
         pasted: undefined,
         selection: undefined,
       });
-      
+
       expect(result).toEqual({
         pasted: undefined,
         selection: undefined,
@@ -44,7 +44,7 @@ describe('Root route search schema', () => {
         selection: '1',
         extraParam: 'should be ignored',
       } as Record<string, unknown>);
-      
+
       expect(result).toEqual({
         pasted: 'blueprint',
         selection: '1',
@@ -56,7 +56,7 @@ describe('Root route search schema', () => {
         pasted: 123,
         selection: true,
       } as Record<string, unknown>);
-      
+
       expect(result).toEqual({
         pasted: undefined,
         selection: undefined,

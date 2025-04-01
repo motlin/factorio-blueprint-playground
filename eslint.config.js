@@ -194,6 +194,7 @@ export default [
             'no-debugger': 'warn',
             'no-multiple-empty-lines': ['error', {'max': 1, 'maxEOF': 0}],
             'eol-last': ['error', 'always'],
+            'no-trailing-spaces': 'error',
             'comma-dangle': ['error', 'always-multiline'],
         },
     },
