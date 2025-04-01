@@ -23,7 +23,6 @@
     "@tanstack/react-query-devtools": "^5.71.1",
     "@tanstack/react-router": "^1.114.29",
     "fflate": "^0.8.2",
-    "idb-keyval": "^6.2.1",
     "lucide-react": "^0.485.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

@@ -80,7 +80,7 @@ export const onRequest = async (context: EventContext<Env, string, Record<string
 
 	if (corsHeadersStr) {
 		try {
-			customHeaders = JSON.parse(corsHeadersStr);
+			customHeaders = JSON.parse(corsHeadersStr) as CustomHeaders;
 		} catch {
 			// Invalid JSON in custom headers - ignore
 		}

@@ -39,7 +39,7 @@ describe('ButtonGreen Component', () => {
         expect(handleClick).toHaveBeenCalledTimes(1);
 
         // Verify event object is passed to handler
-        const mockEvent = expect.any(Object);
+        const mockEvent = expect.anything() as React.MouseEvent<HTMLButtonElement>;
         expect(handleClick).toHaveBeenCalledWith(mockEvent);
     });
 

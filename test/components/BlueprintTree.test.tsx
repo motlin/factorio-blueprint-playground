@@ -4,7 +4,7 @@ import React from 'react';
 import {describe, expect, it, vi} from 'vitest';
 
 import {BlueprintTree} from '../../src/components/BlueprintTree';
-import type {BlueprintString} from '../types/blueprint';
+import type {BlueprintString} from '../../src/parsing/types';
 
 /**
  * Test suite for BlueprintTree component.

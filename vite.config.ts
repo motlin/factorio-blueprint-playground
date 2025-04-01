@@ -27,7 +27,6 @@ export default defineConfig(({mode}) => {
                         'react': ['react', 'react-dom'],
                         'react-router': ['@tanstack/react-router'],
                         'fflate': ['fflate'],
-                        'idb-keyval': ['idb-keyval'],
                     },
                 },
             },
