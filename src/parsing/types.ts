@@ -81,7 +81,8 @@ export type SignalType =
 export type Quality = 'normal' | 'uncommon' | 'rare' | 'epic' | 'legendary' | undefined;
 
 export interface SignalID {
-	type?: SignalType; // Defaults to "item" if not specified
+	// Defaults to "item" if not specified
+	type?: SignalType;
 	name: string;
 	quality?: Quality;
 }
@@ -93,7 +94,8 @@ export interface VirtualSignalID extends SignalID {
 
 export interface Icon {
 	signal: SignalID;
-	index: number; // 1-based index, max 4 icons
+	// 1-based index, max 4 icons
+	index: number;
 }
 
 interface NetworkPorts {
@@ -149,7 +151,8 @@ export interface Filter {
 	name: string;
 	type?: string;
 	quality?: Quality;
-	comparator?: string; // '=' | '≠' | '>' | '<' | '≥' | '≤'
+	// '=' | '≠' | '>' | '<' | '≥' | '≤'
+	comparator?: string;
 	count?: number;
 	max_count?: number;
 }
@@ -226,7 +229,8 @@ export interface Entity {
 	entity_number: number;
 	name: string;
 	position: Position;
-	direction?: number; // 0, 2, 4, 6 = North, East, South, West
+	// 0, 2, 4, 6 = North, East, South, West
+	direction?: number;
 	control_behavior?: ControlBehavior;
 	recipe?: string;
 	recipe_quality?: Quality;
@@ -251,11 +255,13 @@ export interface Entity {
 		a: number;
 	};
 	spoil_priority?: 'fresh-first' | 'spoiled-first';
-	type?: string; // For underground belts - "input" or "output"
+	// For underground belts - "input" or "output"
+	type?: string;
 	manual_trains_limit?: number;
 	priority?: number;
 	station?: string;
-	text?: string; // For display panels
+	// For display panels
+	text?: string;
 	quality?: Quality;
 }
 
@@ -325,12 +331,15 @@ export interface Blueprint extends CommonFields {
 }
 
 interface DeconstructionSettings {
-	description?: string; // Added these metadata fields that can appear
+	// Added these metadata fields that can appear
+	description?: string;
 	icons?: Icon[];
 	entity_filters?: Filter[];
-	entity_filter_mode?: 0 | 1; // 0=allow, 1=deny
+	// 0=allow, 1=deny
+	entity_filter_mode?: 0 | 1;
 	tile_filters?: Filter[];
-	tile_selection_mode?: 1 | 2 | 3; // 1=default, 2=never, 3=always
+	// 1=default, 2=never, 3=always
+	tile_selection_mode?: 1 | 2 | 3;
 	trees_and_rocks_only?: boolean;
 }
 

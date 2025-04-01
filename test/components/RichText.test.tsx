@@ -149,7 +149,8 @@ describe('RichText', () => {
         it('handles named colors', () => {
             const renderedResult = render(<RichText text="[color=red]Red text[/color]" />);
             const span = renderedResult.getByText('Red text');
-            expect(span.style.color).toBe('rgb(235, 92, 95)'); // #eb5c5f
+            // #eb5c5f
+            expect(span.style.color).toBe('rgb(235, 92, 95)');
             expect(span.textContent).toBe('Red text');
         });
 
@@ -189,7 +190,8 @@ describe('RichText', () => {
             <RichText text="[color=red][font=default-bold]Bold red text[/font][/color]" />,
         );
         const span = getByTestId('formatted-text');
-        expect(span.style.color).toBe('rgb(235, 92, 95)'); // #eb5c5f
+        // #eb5c5f
+        expect(span.style.color).toBe('rgb(235, 92, 95)');
         expect(span.style.fontWeight).toBe('bold');
         expect(span.textContent).toBe('Bold red text');
     });
@@ -268,7 +270,8 @@ describe('RichText', () => {
     it('handles unclosed tags gracefully', () => {
         const renderedResult = render(<RichText text="[color=red]text without closing tag" />);
         const span = renderedResult.getByText('text without closing tag');
-        expect(span.style.color).toBe('rgb(235, 92, 95)'); // #eb5c5f
+        // #eb5c5f
+        expect(span.style.color).toBe('rgb(235, 92, 95)');
         expect(span.textContent).toBe('text without closing tag');
     });
 });

@@ -4,8 +4,9 @@ import {lazy, Suspense} from 'react';
 
 import {ErrorComponent} from '../components/ErrorComponent';
 
+// Render nothing in production
 const TanStackRouterDevtools = import.meta.env.PROD
-	? () => null // Render nothing in production
+	? () => null
 	: lazy(() =>
 			import('@tanstack/react-router-devtools').then((res) => ({
 				default: res.TanStackRouterDevtools,

@@ -12,12 +12,18 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import globals from 'globals';
 
 const {
-    browser,      // Browser-specific globals (window, document, etc.)
-    commonjs,    // CommonJS module system globals
-    es2024,        // ECMAScript 2024 globals
-    node,            // Node.js runtime globals
-    worker,        // Web Worker globals
-    vitest,                        // Vitest testing framework globals
+    // Browser-specific globals (window, document, etc.)
+    browser,
+    // CommonJS module system globals
+    commonjs,
+    // ECMAScript 2024 globals
+    es2024,
+    // Node.js runtime globals
+    node,
+    // Web Worker globals
+    worker,
+    // Vitest testing framework globals
+    vitest,
 } = globals;
 
 // Get current directory in ESM
@@ -196,6 +202,7 @@ export default [
             'eol-last': ['error', 'always'],
             'no-trailing-spaces': 'error',
             'comma-dangle': ['error', 'always-multiline'],
+            'line-comment-position': ['error', { 'position': 'above' }],
         },
     },
 ];

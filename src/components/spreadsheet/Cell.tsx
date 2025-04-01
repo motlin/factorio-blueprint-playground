@@ -2,10 +2,14 @@ import type {ReactNode, CSSProperties} from 'react';
 
 interface CellProps {
 	children: ReactNode;
-	grow?: boolean; // Allows cell to grow
-	shrink?: boolean; // Allows cell to shrink
-	width?: string; // Sets a fixed width
-	align?: 'left' | 'center' | 'right'; // Text alignment
+	// Allows cell to grow
+	grow?: boolean;
+	// Allows cell to shrink
+	shrink?: boolean;
+	// Sets a fixed width
+	width?: string;
+	// Text alignment
+	align?: 'left' | 'center' | 'right';
 }
 
 export const Cell = ({children, grow = false, shrink = false, width, align = 'left'}: CellProps) => {
