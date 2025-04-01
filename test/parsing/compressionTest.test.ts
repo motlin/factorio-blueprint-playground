@@ -75,7 +75,8 @@ describe('compression settings search', () => {
 
     it('works with all fixture blueprints', () => {
         const fixtures = getFixtureFiles();
-        expect(fixtures.length).toBeGreaterThan(0); // Sanity check that we found fixtures
+        // Sanity check that we found fixtures
+        expect(fixtures.length).toBeGreaterThan(0);
 
         console.log(`\nTesting ${fixtures.length.toString()} blueprint fixtures:`);
 

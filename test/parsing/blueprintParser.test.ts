@@ -52,8 +52,10 @@ describe('blueprintParser', () => {
                 },
             };
             const result = serializeBlueprint(blueprint);
-            expect(result).toMatch(/^0/); // Should start with 0
-            expect(result).toMatch(/^[0-9A-Za-z+/=]+$/); // Should be valid base64
+            // Should start with 0
+            expect(result).toMatch(/^0/);
+            // Should be valid base64
+            expect(result).toMatch(/^[0-9A-Za-z+/=]+$/);
 
             // Round trip
             const parsed = deserializeBlueprint(result);
