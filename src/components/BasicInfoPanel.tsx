@@ -25,7 +25,7 @@ const InfoRow = ({label, children, hidden = false}: InfoRowProps) => {
 	);
 };
 
-const BasicInfoPanelComponent = ({blueprint}: {blueprint?: BlueprintString}) => {
+export const BasicInfoPanelComponent = ({blueprint}: {blueprint?: BlueprintString}) => {
 	if (!blueprint) return null;
 	const wrapper = new BlueprintWrapper(blueprint);
 	const {type, label, description, icons, version} = wrapper.getInfo();
