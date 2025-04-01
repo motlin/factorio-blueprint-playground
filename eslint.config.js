@@ -105,8 +105,7 @@ export default [
             '@typescript-eslint/no-explicit-any': 'off',
             '@typescript-eslint/no-non-null-assertion': 'off',
             '@typescript-eslint/no-floating-promises': 'off',
-            'react/display-name': 'off',
-            'no-console': 'off',
+            'no-console': 'warn',
         },
     },
 
