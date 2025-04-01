@@ -20,6 +20,9 @@ jobs:
 
       - run: npm ci
 
+      - name: Generate routes
+        run: npm run generate:routes
+
       - run: npm run ci:eslint
         continue-on-error: true
 
