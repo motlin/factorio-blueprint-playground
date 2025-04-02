@@ -60,6 +60,7 @@ export function HistoryBlueprintRow({blueprint, isSelected, onToggleSelection}: 
 				onToggleSelection(blueprint.metadata.sha);
 			}}
 			onKeyDown={handleKeyDown}
+			tabIndex={0}
 			aria-pressed={isSelected}
 			data-testid="blueprint-item"
 		>
