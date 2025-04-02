@@ -21,7 +21,7 @@ export const ErrorAlert = ({error}: {error: ErrorType}) => {
 	const {message, stack} = formatError(error);
 
 	return (
-		<div className="panel alert alert-error mt16">
+		<div className="panel alert alert-error mt16 w-full">
 			<div className="flex items-center gap-2">
 				<XCircle className="h-4 w-4" />
 				<span>{message}</span>

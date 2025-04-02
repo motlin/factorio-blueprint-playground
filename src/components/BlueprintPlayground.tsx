@@ -1,11 +1,11 @@
 import {useNavigate} from '@tanstack/react-router';
 import {useLiveQuery} from 'dexie-react-hooks';
-import React, {useEffect} from 'react';
+import {useEffect, useState} from 'react';
 import {ErrorBoundary} from 'react-error-boundary';
 
 import type {BlueprintFetchResult} from '../fetching/blueprintFetcher';
 import {logger} from '../lib/sentry';
-import {extractBlueprint} from '../parsing/blueprintParser';
+import {BlueprintError, extractBlueprint} from '../parsing/blueprintParser';
 import type {BlueprintString} from '../parsing/types';
 import {type RootSearch, Route} from '../routes';
 import {updateBlueprintMetadata} from '../state/blueprintLocalStorage';
@@ -32,19 +32,44 @@ function getFactorioprintsUrl(id?: string): string | undefined {
 export function BlueprintPlayground() {
 	const {pasted, selection: selectedPath, focusTextarea}: RootSearch = Route.useSearch();
 	const loaderData: BlueprintFetchResult = Route.useLoaderData();
+	const [selectionError, setSelectionError] = useState<string | undefined>(undefined);
+	const [selectedBlueprint, setSelectedBlueprint] = useState<BlueprintString | undefined>(undefined);
 
 	const navigate = useNavigate({from: Route.fullPath});
 	const rootBlueprint: BlueprintString | undefined = loaderData?.success ? loaderData.blueprintString : undefined;
 	const error = loaderData?.success ? undefined : loaderData?.error;
 	const disqusId: string | undefined = loaderData?.success ? loaderData.id : undefined;
 
-	React.useEffect(() => {
+	useEffect(() => {
 		if (error) {
 			console.error('Blueprint error:', error);
 		}
 	}, [error]);
 
-	const selectedBlueprint = rootBlueprint && extractBlueprint(rootBlueprint, selectedPath);
+	useEffect(() => {
+		setSelectionError(undefined);
+
+		if (!rootBlueprint) {
+			setSelectedBlueprint(undefined);
+			return;
+		}
+
+		if (!selectedPath) {
+			setSelectedBlueprint(rootBlueprint);
+			return;
+		}
+
+		try {
+			const extracted = extractBlueprint(rootBlueprint, selectedPath);
+			setSelectedBlueprint(extracted);
+		} catch (e) {
+			if (e instanceof BlueprintError) {
+				setSelectionError(e.message);
+				console.error('Selection error:', e.message);
+			}
+			setSelectedBlueprint(undefined);
+		}
+	}, [rootBlueprint, selectedPath]);
 
 	const existingBlueprint = useLiveQuery(async () => {
 		if (!pasted) return null;
@@ -95,7 +120,10 @@ export function BlueprintPlayground() {
 				/>
 			</Panel>
 
-			{error ? <ErrorAlert error={error} /> : null}
+			<div style={{width: '100%'}}>
+				{error ? <ErrorAlert error={error} /> : null}
+				{selectionError ? <ErrorAlert error={selectionError} /> : null}
+			</div>
 
 			<ErrorBoundary FallbackComponent={BlueprintErrorFallback}>
 				<div className="panels2">

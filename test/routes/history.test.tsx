@@ -94,6 +94,7 @@ function SimplifiedHistory() {
 					};
 					return (
 						<button
+							type="button"
 							key={createdOn}
 							data-testid="blueprint-item"
 							onClick={(): void => toggleSelection(createdOn)}
