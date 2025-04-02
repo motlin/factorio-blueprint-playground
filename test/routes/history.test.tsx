@@ -86,12 +86,19 @@ function SimplifiedHistory() {
 			<div>
 				{blueprints.map((bp) => {
 					const createdOn = bp.createdOn;
+					const handleKeyDown = (event: React.KeyboardEvent) => {
+						if (event.key === 'Enter' || event.key === ' ') {
+							event.preventDefault();
+							toggleSelection(createdOn);
+						}
+					};
 					return (
 						<button
 							key={createdOn}
 							data-testid="blueprint-item"
 							onClick={(): void => toggleSelection(createdOn)}
-							type="button"
+							onKeyDown={handleKeyDown}
+							tabIndex={0}
 						>
 							<input
 								type="checkbox"

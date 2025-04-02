@@ -20,7 +20,7 @@ export interface RootSearch {
 
 export const searchSchema = z.object({
 	pasted: z.string().catch(undefined),
-	selection: z.string().catch(undefined),
+	selection: z.string().optional().catch(undefined),
 	focusTextarea: z.boolean().catch(undefined),
 });
 
