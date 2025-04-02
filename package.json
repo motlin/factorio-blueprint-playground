@@ -23,7 +23,7 @@
     "@tanstack/react-query-devtools": "^5.71.3",
     "@tanstack/react-router": "^1.114.32",
     "fflate": "^0.8.2",
-    "lucide-react": "^0.486.0",
+    "lucide-react": "^0.487.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "zod": "^3.24.2"
