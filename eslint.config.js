@@ -3,6 +3,7 @@ import {fileURLToPath} from 'url';
 
 import {includeIgnoreFile} from '@eslint/compat';
 import js from '@eslint/js';
+import pluginRouter from '@tanstack/eslint-plugin-router';
 import typescript from '@typescript-eslint/eslint-plugin';
 import typescriptParser from '@typescript-eslint/parser';
 import importPlugin from 'eslint-plugin-import';
@@ -204,4 +205,7 @@ export default [
             'line-comment-position': ['error', { 'position': 'above' }],
         },
     },
+
+    // TanStack Router ESLint plugin
+    ...pluginRouter.configs['flat/recommended'],
 ];
