@@ -29,7 +29,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20250415.0",
+    "@cloudflare/workers-types": "^4.20250416.0",
     "@eslint/compat": "^1.2.8",
     "@eslint/js": "^9.23.0",
     "@playwright/test": "^1.51.1",
