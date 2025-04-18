@@ -74,7 +74,7 @@ const DynamicNavigation = () => {
 					<nav>
 						<Link
 							to="/"
-							search={mostRecentData}
+							search={{...mostRecentData, focusTextarea: true}}
 							className="blue nowrap"
 							activeProps={{
 								className: 'yellow bold',

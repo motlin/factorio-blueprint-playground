@@ -27,7 +27,7 @@ function getFactorioprintsUrl(id?: string): string | undefined {
 }
 
 export function BlueprintPlayground() {
-	const {pasted, selection: selectedPath}: RootSearch = Route.useSearch();
+	const {pasted, selection: selectedPath, focusTextarea}: RootSearch = Route.useSearch();
 	const loaderData: BlueprintFetchResult = Route.useLoaderData();
 
 	const navigate = useNavigate({from: Route.fullPath});
@@ -84,7 +84,7 @@ export function BlueprintPlayground() {
 			<h1>Factorio Blueprint Playground</h1>
 
 			<Panel title="Blueprint Input">
-				<BlueprintSourceHandler pasted={pasted} />
+				<BlueprintSourceHandler pasted={pasted} autoFocus={focusTextarea ?? false} />
 			</Panel>
 
 			{error && <ErrorAlert error={error} />}
