@@ -20,7 +20,7 @@ jobs:
 
       - run: npm ci
 
-      - run: npm run generate:routes
+      - run: npx @tanstack/router-cli generate --routesDirectory ./src/routes --generatedRouteTree ./src/routeTree.gen.ts
 
       - run: npm run ci:eslint
         continue-on-error: true
@@ -53,6 +53,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Generate route files
+        run: npx @tanstack/router-cli generate --routesDirectory ./src/routes --generatedRouteTree ./src/routeTree.gen.ts
 
       - name: Type Check
         run: npm run ci:typecheck
@@ -109,6 +112,10 @@ jobs:
           cache: 'npm'
 
       - run: npm ci
+      
+      - name: Generate route files
+        run: npx @tanstack/router-cli generate --routesDirectory ./src/routes --generatedRouteTree ./src/routeTree.gen.ts
+      
       - run: npm run build
 
       - name: Upload build artifacts
@@ -131,6 +138,9 @@ jobs:
           cache: 'npm'
 
       - run: npm ci
+
+      - name: Generate route files
+        run: npx @tanstack/router-cli generate --routesDirectory ./src/routes --generatedRouteTree ./src/routeTree.gen.ts
 
       - run: npm run build:types
 
