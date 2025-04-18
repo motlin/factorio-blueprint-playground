@@ -16,7 +16,7 @@
     "ci:eslint": "eslint . --format json --output-file eslint_report.json",
     "ci:prettier": "prettier --check \"{src,functions}/**/*.{js,jsx,ts,tsx,css,md,json}\"",
     "ci:typecheck": "tsc --noEmit",
-    "all": "npm run lint:fix && npm run ci:typecheck && npm run build && npm run ci:test"
+    "all": "npm run generate:routes && npm run lint:fix && npm run ci:typecheck && npm run build && npm run ci:test"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.74.4",
