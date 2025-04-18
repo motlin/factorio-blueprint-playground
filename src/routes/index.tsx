@@ -10,15 +10,18 @@ import {addBlueprint} from '../state/blueprintLocalStorage';
 /**
  * - pasted: Whatever was pasted, a blueprint string, json, or url
  * - selection: Optional path within a blueprint book (e.g. "1.2.3")
+ * - focusTextarea: Whether to focus the textarea when the component mounts
  */
 export interface RootSearch {
 	pasted?: string;
 	selection?: string;
+	focusTextarea?: boolean;
 }
 
 export const searchSchema = z.object({
 	pasted: z.string().catch(undefined),
 	selection: z.string().catch(undefined),
+	focusTextarea: z.boolean().catch(undefined),
 });
 
 // Simple cache for the current fetch result to prevent excessive network requests

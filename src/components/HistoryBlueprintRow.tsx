@@ -86,7 +86,14 @@ Updated: ${new Date(blueprint.metadata.lastUpdatedOn).toLocaleString()}`}
 
 			{/* Actions column */}
 			<div>
-				<Link to="/" search={{pasted: blueprint.metadata.data, selection: blueprint.metadata.selection}}>
+				<Link
+					to="/"
+					search={{
+						pasted: blueprint.metadata.data,
+						selection: blueprint.metadata.selection,
+						focusTextarea: true,
+					}}
+				>
 					<ButtonGreen data-testid="blueprint-open">Open</ButtonGreen>
 				</Link>
 			</div>

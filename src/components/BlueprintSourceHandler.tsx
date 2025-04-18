@@ -1,14 +1,16 @@
 import {useNavigate} from '@tanstack/react-router';
-import React, {useCallback} from 'react';
+import React, {useCallback, useEffect, useRef} from 'react';
 
 import {Route} from '../routes';
 
 interface BlueprintSourceHandlerProps {
 	pasted?: string;
+	autoFocus?: boolean;
 }
 
-export const BlueprintSourceHandler = ({pasted}: BlueprintSourceHandlerProps) => {
+export const BlueprintSourceHandler = ({pasted, autoFocus = false}: BlueprintSourceHandlerProps) => {
 	const navigate = useNavigate({from: Route.fullPath});
+	const textareaRef = useRef<HTMLTextAreaElement>(null);
 
 	/**
 	 * Handles change events for the blueprint input textarea.
@@ -43,10 +45,17 @@ export const BlueprintSourceHandler = ({pasted}: BlueprintSourceHandlerProps) =>
 		e.currentTarget.select();
 	}, []);
 
+	useEffect(() => {
+		if (autoFocus && textareaRef.current) {
+			textareaRef.current.focus();
+		}
+	}, [autoFocus]);
+
 	// TODO: 2024-11-30: Show error alert for router errors
 	return (
 		<div>
 			<textarea
+				ref={textareaRef}
 				placeholder="Paste blueprint string, JSON, or URL here..."
 				onChange={handleChange}
 				onFocus={handleFocus}
