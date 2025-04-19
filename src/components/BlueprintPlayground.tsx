@@ -1,5 +1,7 @@
+import {useQueryClient} from '@tanstack/react-query';
 import {useNavigate} from '@tanstack/react-router';
 import {useLiveQuery} from 'dexie-react-hooks';
+import {RefreshCw} from 'lucide-react';
 import React, {useEffect} from 'react';
 import {ErrorBoundary} from 'react-error-boundary';
 
@@ -27,6 +29,30 @@ function getFactorioprintsUrl(id?: string): string | undefined {
 		return undefined;
 	}
 	return `https://factorioprints.com/view/${id}`;
+}
+
+interface RefreshButtonProps {
+	isUrlBlueprint: boolean;
+	onRefresh: () => void;
+}
+
+function RefreshButton({isUrlBlueprint, onRefresh}: RefreshButtonProps) {
+	if (!isUrlBlueprint) {
+		return null;
+	}
+
+	return (
+		<span className="header-action">
+			<button
+				type="button"
+				onClick={onRefresh}
+				className="button square-sm"
+				title="Refresh Blueprint"
+			>
+				<RefreshCw size={16} />
+			</button>
+		</span>
+	);
 }
 
 export function BlueprintPlayground() {
@@ -84,6 +110,21 @@ export function BlueprintPlayground() {
 		}
 	}, [selectedPath, pasted, rootBlueprint, loaderData?.success, existingBlueprint]);
 
+	const queryClient = useQueryClient();
+	const isUrlBlueprint = loaderData?.fetchMethod === 'url';
+
+	const handleRefresh = () => {
+		if (pasted && isUrlBlueprint) {
+			const queryKey = ['blueprint-url', pasted];
+			void queryClient.invalidateQueries({
+				queryKey,
+			});
+			console.log('Invalidated', {queryKey});
+		} else {
+			throw new Error('Handle refresh but data is not refreshable');
+		}
+	};
+
 	return (
 		<div className="container">
 			<h1>Factorio Blueprint Playground</h1>
@@ -101,11 +142,20 @@ export function BlueprintPlayground() {
 				<div className="panels2">
 					{/* Left side */}
 					<div>
-						<ExportActions
-							blueprint={rootBlueprint}
-							path={undefined}
+						<Panel
 							title="Root Blueprint"
-						/>
+							headerContent={
+								<RefreshButton
+									isUrlBlueprint={isUrlBlueprint}
+									onRefresh={handleRefresh}
+								/>
+							}
+						>
+							<ExportActions
+								blueprint={rootBlueprint}
+								path={undefined}
+							/>
+						</Panel>
 
 						<BlueprintTree
 							rootBlueprint={rootBlueprint}
@@ -116,11 +166,12 @@ export function BlueprintPlayground() {
 
 					{/* Right side */}
 					<div>
-						<ExportActions
-							blueprint={selectedBlueprint}
-							path={selectedPath}
-							title="Selected Blueprint"
-						/>
+						<Panel title="Selected Blueprint">
+							<ExportActions
+								blueprint={selectedBlueprint}
+								path={selectedPath}
+							/>
+						</Panel>
 						<BasicInfoPanel blueprint={selectedBlueprint} />
 						<BlueprintInfoPanels blueprint={selectedBlueprint} />
 					</div>

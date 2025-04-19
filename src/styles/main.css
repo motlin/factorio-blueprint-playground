@@ -219,3 +219,16 @@ body {
 	justify-content: center;
 	align-items: flex-start;
 }
+
+.header-action {
+	float: right;
+	margin-left: auto;
+	font-size: 14px;
+	font-weight: normal;
+}
+
+.header-refresh-button button {
+	font-size: 100%;
+	padding: 5px 12px;
+	min-width: auto;
+}

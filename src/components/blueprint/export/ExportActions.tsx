@@ -6,14 +6,12 @@ import {serializeBlueprint} from '../../../parsing/blueprintParser';
 import type {BlueprintString} from '../../../parsing/types';
 import {ButtonGreen} from '../../ui/ButtonGreen';
 import {InsetLight} from '../../ui/InsetLight';
-import {Panel} from '../../ui/Panel';
 
 const IOS_DEVICE_REGEX = /ipad|ipod|iphone/i;
 
 interface ExportActionsProps {
 	blueprint?: BlueprintString;
 	path?: string;
-	title: string;
 }
 
 async function copyToClipboard(text: string): Promise<boolean> {
@@ -139,7 +137,7 @@ const ButtonWithIcon = ({icon: Icon, text, onClick}: ButtonWithIconProps) => (
 	</ButtonGreen>
 );
 
-const ExportActionsComponent = ({blueprint, path, title}: ExportActionsProps) => {
+const ExportActionsComponent = ({blueprint, path}: ExportActionsProps) => {
 	if (!blueprint) return null;
 
 	const handleCopyString = () => {
@@ -159,28 +157,25 @@ const ExportActionsComponent = ({blueprint, path, title}: ExportActionsProps) =>
 	};
 
 	return (
-		<Panel title={`Export ${title}`}>
-			<InsetLight>
-				<h3>{title}</h3>
-				<div className="flex-space-between">
-					<ButtonWithIcon
-						icon={ClipboardCopy}
-						text="Copy String"
-						onClick={handleCopyString}
-					/>
-					<ButtonWithIcon
-						icon={FileJson}
-						text="Copy JSON"
-						onClick={handleCopyJSON}
-					/>
-					<ButtonWithIcon
-						icon={Download}
-						text="Download String"
-						onClick={handleDownloadString}
-					/>
-				</div>
-			</InsetLight>
-		</Panel>
+		<InsetLight>
+			<div className="flex-space-between">
+				<ButtonWithIcon
+					icon={ClipboardCopy}
+					text="Copy String"
+					onClick={handleCopyString}
+				/>
+				<ButtonWithIcon
+					icon={FileJson}
+					text="Copy JSON"
+					onClick={handleCopyJSON}
+				/>
+				<ButtonWithIcon
+					icon={Download}
+					text="Download String"
+					onClick={handleDownloadString}
+				/>
+			</div>
+		</InsetLight>
 	);
 };
 
