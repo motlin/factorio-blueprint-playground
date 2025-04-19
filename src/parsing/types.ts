@@ -213,14 +213,16 @@ interface ControlBehavior {
 	};
 }
 
-interface ItemStack {
+export interface ItemStack {
 	id: {
 		name: string;
+		quality?: Quality;
 	};
 	items: {
 		in_inventory: {
 			inventory: number;
 			stack: number;
+			count?: number;
 		}[];
 	};
 }
