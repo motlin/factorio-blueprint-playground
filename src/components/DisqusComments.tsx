@@ -1,4 +1,4 @@
-import {useEffect, useState, useRef} from 'react';
+import {useEffect, useRef} from 'react';
 
 import {Panel} from './ui';
 
@@ -25,9 +25,10 @@ interface DisqusCommentsProps {
 
 declare const window: DisqusWindow;
 
+let isDisqusLoading = false;
+
 const DisqusComments = ({identifier, url, title}: DisqusCommentsProps) => {
-	const prevIdentifierRef = useRef<string | undefined>();
-	const [isLoading, setIsLoading] = useState(false);
+	const prevIdentifierRef = useRef<string | undefined>(undefined);
 
 	useEffect(() => {
 		if (!identifier || !url || (prevIdentifierRef.current === identifier && window.DISQUS)) {
@@ -38,8 +39,6 @@ const DisqusComments = ({identifier, url, title}: DisqusCommentsProps) => {
 
 		// If Disqus is already loaded, reset it instead of reloading
 		if (window.DISQUS) {
-			// eslint-disable-next-line no-console
-			console.log('Resetting Disqus for:', identifier);
 			window.DISQUS.reset({
 				reload: true,
 				config: function (this: DisqusConfig) {
@@ -51,40 +50,39 @@ const DisqusComments = ({identifier, url, title}: DisqusCommentsProps) => {
 			return;
 		}
 
-		// If we're not already loading Disqus, load it
-		if (!isLoading) {
-			// eslint-disable-next-line no-console
-			console.log('Loading Disqus for:', identifier);
-			setIsLoading(true);
-
-			window.disqus_config = function (this: DisqusConfig) {
-				this.page.url = url;
-				this.page.identifier = identifier;
-				if (title) this.page.title = title;
-			};
-
-			const script = document.createElement('script');
-			script.src = 'https://factorio-blueprints.disqus.com/embed.js';
-			script.setAttribute('data-timestamp', (+new Date()).toString());
-			script.async = true;
-
-			script.onload = () => {
-				setIsLoading(false);
-			};
-
-			document.body.appendChild(script);
-
-			return () => {
-				if (prevIdentifierRef.current !== identifier) {
-					if (document.body.contains(script)) {
-						document.body.removeChild(script);
-					}
-					delete window.disqus_config;
-					setIsLoading(false);
-				}
-			};
+		if (isDisqusLoading) {
+			return;
 		}
-	}, [url, identifier, title, isLoading]);
+
+		isDisqusLoading = true;
+
+		window.disqus_config = function (this: DisqusConfig) {
+			this.page.url = url;
+			this.page.identifier = identifier;
+			if (title) this.page.title = title;
+		};
+
+		const script = document.createElement('script');
+		script.src = 'https://factorio-blueprints.disqus.com/embed.js';
+		script.setAttribute('data-timestamp', (+new Date()).toString());
+		script.async = true;
+
+		script.onload = () => {
+			isDisqusLoading = false;
+		};
+
+		document.body.appendChild(script);
+
+		return () => {
+			if (prevIdentifierRef.current !== identifier) {
+				if (document.body.contains(script)) {
+					document.body.removeChild(script);
+				}
+				delete window.disqus_config;
+				isDisqusLoading = false;
+			}
+		};
+	}, [url, identifier, title]);
 
 	if (!identifier || !url) {
 		return null;

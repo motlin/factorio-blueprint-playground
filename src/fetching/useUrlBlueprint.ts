@@ -2,10 +2,6 @@ import {useQuery} from '@tanstack/react-query';
 
 import {fetchUrl} from './blueprintFetcher';
 
-/**
- * Custom hook for fetching blueprints from URLs using TanStack Query
- * Only used for actual URLs, not JSON or blueprint data
- */
 export function useUrlBlueprint(url: string | undefined) {
 	return useQuery({
 		queryKey: ['blueprint-url', url],
