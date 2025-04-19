@@ -1,3 +1,4 @@
+import {QueryClient} from '@tanstack/react-query';
 import {describe, expect, test, vi, beforeEach} from 'vitest';
 
 vi.mock('../../src/fetching/blueprintFetcher');
@@ -24,9 +25,22 @@ import {extractBlueprint} from '../../src/parsing/blueprintParser';
 import * as IndexRoute from '../../src/routes/index';
 import {addBlueprint} from '../../src/state/blueprintLocalStorage';
 
-// Create our own version of the loader that doesn't use caching
 const originalLoader = IndexRoute.Route.options.loader;
+const queryClient = new QueryClient({
+    defaultOptions: {
+        queries: {
+            staleTime: Infinity,
+            gcTime: Infinity,
+        },
+    },
+});
+
 const loader = async (params: any): Promise<unknown> => {
+    params.context = {
+        ...params.context,
+        queryClient,
+    };
+
     const result = await originalLoader(params);
     return result;
 };
@@ -53,7 +67,7 @@ describe('Index route loader', () => {
             deps: {pasted: 'test'} as Record<string, unknown>,
         });
 
-        expect(mockFetchBlueprint).toHaveBeenCalledWith({pasted: 'test'});
+        expect(mockFetchBlueprint).toHaveBeenCalledWith({pasted: 'test'}, queryClient);
         expect(result).toEqual({
             success: false,
             error: new Error('Test error'),

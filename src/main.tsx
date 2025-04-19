@@ -1,3 +1,5 @@
+import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
+import {ReactQueryDevtools} from '@tanstack/react-query-devtools';
 import {createRouter, RouterProvider} from '@tanstack/react-router';
 import {StrictMode, Suspense} from 'react';
 import {createRoot} from 'react-dom/client';
@@ -7,7 +9,21 @@ import {routeTree} from './routeTree.gen';
 import './styles/factorio-a76ef767.css';
 import './styles/main.css';
 
-const router = createRouter({routeTree: routeTree});
+const queryClient = new QueryClient({
+	defaultOptions: {
+		queries: {
+			staleTime: Infinity,
+			gcTime: Infinity,
+		},
+	},
+});
+
+const router = createRouter({
+	routeTree: routeTree,
+	context: {
+		queryClient,
+	},
+});
 
 declare module '@tanstack/react-router' {
 	interface Register {
@@ -20,9 +36,12 @@ if (rootElement && !rootElement.innerHTML) {
 	const root = createRoot(rootElement);
 	root.render(
 		<StrictMode>
-			<Suspense fallback={<div className="loading">Loading...</div>}>
-				<RouterProvider router={router} />
-			</Suspense>
+			<QueryClientProvider client={queryClient}>
+				<Suspense fallback={<div className="loading">Loading...</div>}>
+					<RouterProvider router={router} />
+				</Suspense>
+				<ReactQueryDevtools initialIsOpen={false} />
+			</QueryClientProvider>
 		</StrictMode>,
 	);
 }
