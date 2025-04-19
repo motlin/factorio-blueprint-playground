@@ -1,4 +1,4 @@
-import {blueprintStorage, BlueprintGameData, BlueprintStorageMetadata} from '../storage/blueprints';
+import {BlueprintGameData, BlueprintStorageMetadata, db} from '../storage/db';
 
 export async function addBlueprint(
 	data: string,
@@ -6,7 +6,7 @@ export async function addBlueprint(
 	selection?: string,
 	fetchMethod?: 'url' | 'json' | 'data',
 ) {
-	const blueprint = await blueprintStorage.addNew(data, parsedGameData, selection, fetchMethod);
+	const blueprint = await db.addBlueprint(data, parsedGameData, selection, fetchMethod);
 	return blueprint;
 }
 
@@ -18,7 +18,7 @@ export async function updateBlueprint(
 	},
 	updateTimestamp = true,
 ) {
-	const updated = await blueprintStorage.update(sha, changes, {updateTimestamp});
+	const updated = await db.updateBlueprint(sha, changes, {updateTimestamp});
 	if (!updated) return null;
 	return updated;
 }
