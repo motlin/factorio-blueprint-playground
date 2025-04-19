@@ -8,8 +8,7 @@ import {InsetDark, InsetLight, Panel, Button, ErrorAlert} from '../components/ui
 import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
 import {deserializeBlueprintNoThrow, serializeBlueprint} from '../parsing/blueprintParser';
 import type {BlueprintString, Icon, BlueprintStringWithIndex} from '../parsing/types';
-import {blueprintStorage, DatabaseBlueprint} from '../storage/blueprints';
-import {db} from '../storage/db';
+import {DatabaseBlueprint, db} from '../storage/db';
 
 export const Route = createLazyFileRoute('/history')({
 	component: History,
@@ -143,7 +142,7 @@ export function History() {
 
 		try {
 			const selectedItemsArray: string[] = Array.from(selectedItems);
-			await blueprintStorage.removeAll(selectedItemsArray);
+			await db.removeBulkBlueprints(selectedItemsArray);
 			setSelectedItems(new Set<string>());
 		} catch (error: unknown) {
 			console.error('Failed to delete blueprints:', error);

@@ -3,7 +3,7 @@ import type {ComponentType} from 'react';
 import {lazy, Suspense, useEffect, useState} from 'react';
 
 import {ErrorComponent} from '../components/ErrorComponent';
-import {blueprintStorage} from '../storage/blueprints';
+import {db} from '../storage/db';
 
 import type {RootSearch} from './index';
 
@@ -55,7 +55,7 @@ const DynamicNavigation = () => {
 
 	useEffect(() => {
 		const loadMostRecent = async () => {
-			const recentBlueprint = await blueprintStorage.getMostRecent();
+			const recentBlueprint = await db.getMostRecent();
 			if (recentBlueprint) {
 				setMostRecentData({
 					pasted: recentBlueprint.metadata.data,

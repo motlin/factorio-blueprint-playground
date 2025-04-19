@@ -7,8 +7,7 @@ import {extractBlueprint} from '../parsing/blueprintParser';
 import type {BlueprintString} from '../parsing/types';
 import {RootSearch, Route} from '../routes';
 import {updateBlueprintMetadata} from '../state/blueprintLocalStorage';
-import {generateSha} from '../storage/blueprints';
-import {db} from '../storage/db';
+import {generateSha, db} from '../storage/db';
 
 import {BasicInfoPanel} from './BasicInfoPanel';
 import {BlueprintInfoPanels} from './BlueprintInfoPanels';
