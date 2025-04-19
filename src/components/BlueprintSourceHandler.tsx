@@ -19,10 +19,11 @@ export const BlueprintSourceHandler = ({pasted, autoFocus = false}: BlueprintSou
 	const handleChange = useCallback(
 		(e: React.ChangeEvent<HTMLTextAreaElement>) => {
 			e.preventDefault();
-			const pasted = e.target.value;
+			const pastedRaw = e.target.value;
+			const pasted = pastedRaw.trim();
 
 			void (async () => {
-				if (!pasted || !pasted.trim()) {
+				if (!pasted) {
 					await navigate({
 						search: {pasted: undefined, selection: undefined},
 					});
