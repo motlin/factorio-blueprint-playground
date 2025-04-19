@@ -267,7 +267,7 @@ const SOURCE_CONFIGS: Record<string, BlueprintFetchSource> = {
 	'www.factoriobin.com': factorioBinDirectSourceConfig,
 };
 
-async function fetchUrl(pasted: string): Promise<BlueprintFetchSuccess | BlueprintFetchFailure> {
+async function fetchUrlImpl(pasted: string): Promise<BlueprintFetchSuccess | BlueprintFetchFailure> {
 	try {
 		const url = new URL(pasted);
 		const domain = url.hostname;
@@ -311,6 +311,24 @@ async function fetchUrl(pasted: string): Promise<BlueprintFetchSuccess | Bluepri
 	}
 }
 
+export async function fetchUrl<
+	TQueryClient extends {
+		fetchQuery: <T>(options: {
+			queryKey: unknown[];
+			queryFn: () => Promise<T>;
+			staleTime?: number;
+			gcTime?: number;
+		}) => Promise<T>;
+	},
+>(pasted: string, queryClient?: TQueryClient): Promise<BlueprintFetchSuccess | BlueprintFetchFailure> {
+	return await queryClient.fetchQuery({
+		queryKey: ['blueprint-url', pasted],
+		queryFn: async () => fetchUrlImpl(pasted),
+		staleTime: Infinity,
+		gcTime: Infinity,
+	});
+}
+
 function fetchJson(pasted: string, blueprintString: BlueprintString): BlueprintFetchSuccess | BlueprintFetchFailure {
 	return {
 		success: true,
@@ -340,7 +358,16 @@ function fetchData(pasted: string): BlueprintFetchSuccess | BlueprintFetchFailur
 	}
 }
 
-export async function fetchBlueprint(deps: {pasted: string | undefined}): Promise<BlueprintFetchResult> {
+export async function fetchBlueprint<
+	TQueryClient extends {
+		fetchQuery: <T>(options: {
+			queryKey: unknown[];
+			queryFn: () => Promise<T>;
+			staleTime?: number;
+			gcTime?: number;
+		}) => Promise<T>;
+	},
+>(deps: {pasted: string | undefined}, queryClient: TQueryClient): Promise<BlueprintFetchResult> {
 	const pasted = deps.pasted;
 	if (!pasted) {
 		return undefined;
@@ -348,7 +375,7 @@ export async function fetchBlueprint(deps: {pasted: string | undefined}): Promis
 
 	// Simple URL detection
 	if (pasted.match(/^https?:\/\//i)) {
-		return await fetchUrl(pasted);
+		return await fetchUrl(pasted, queryClient);
 	}
 
 	// Simple JSON detection - try parsing as JSON

@@ -2,7 +2,7 @@ import {createFileRoute} from '@tanstack/react-router';
 import {z} from 'zod';
 
 import {BlueprintPlayground} from '../components/BlueprintPlayground';
-import {BlueprintFetchResult, fetchBlueprint} from '../fetching/blueprintFetcher.ts';
+import {fetchBlueprint} from '../fetching/blueprintFetcher';
 import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
 import {extractBlueprint} from '../parsing/blueprintParser';
 import {addBlueprint} from '../state/blueprintLocalStorage';
@@ -24,31 +24,29 @@ export const searchSchema = z.object({
 	focusTextarea: z.boolean().catch(undefined),
 });
 
-// Simple cache for the current fetch result to prevent excessive network requests
-// This is cleared whenever the route changes
-// TODO 2025-04-18: Replace this with TanStack Query
-let currentFetchCache: {
-	pasted: string | undefined;
-	result: BlueprintFetchResult;
-} | null = null;
-
 export const Route = createFileRoute('/')({
 	component: BlueprintPlayground,
 	validateSearch: searchSchema,
 	loaderDeps: ({search: {pasted}}) => ({pasted}),
-	loader: async ({deps: {pasted}, search}: {deps: {pasted: string}; search: Record<string, unknown>}) => {
-		if (currentFetchCache && currentFetchCache.pasted === pasted) {
-			// eslint-disable-next-line no-console
-			console.log('Using cached blueprint data');
-			return currentFetchCache.result;
-		}
-
-		const result = await fetchBlueprint({pasted});
-
-		currentFetchCache = {
-			pasted,
-			result,
+	loader: async ({
+		deps: {pasted},
+		search,
+		context: {queryClient},
+	}: {
+		deps: {pasted: string};
+		search: Record<string, unknown>;
+		context: {
+			queryClient: {
+				fetchQuery: <T>(options: {
+					queryKey: unknown[];
+					queryFn: () => Promise<T>;
+					staleTime?: number;
+					gcTime?: number;
+				}) => Promise<T>;
+			};
 		};
+	}) => {
+		const result = await fetchBlueprint({pasted}, queryClient);
 
 		// If successful, save to history
 		if (result?.success && result.blueprintString) {
