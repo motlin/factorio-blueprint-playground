@@ -5,6 +5,7 @@ import {
 	BlueprintString,
 	DeconstructionPlanner,
 	Entity,
+	ItemStack,
 	Quality,
 	SignalType,
 	Tile,
@@ -16,8 +17,11 @@ import FilterRowsDisplay from './FilterRowsDisplay';
 import {Cell, IconCell, Row, Spreadsheet, TextCell} from './spreadsheet';
 import {Panel} from './ui';
 
-// Count occurrences of items in an array, including quality
-function countItems<T>(getKey: (item: T) => {name: string; quality?: string} | undefined, items?: T[]) {
+function countItems<T>(
+	getKey: (item: T) => {name: string; quality?: string} | undefined,
+	items?: T[],
+	getCount?: (item: T) => number,
+) {
 	const counts = new Map<string, number>();
 	if (!items) return counts;
 
@@ -26,7 +30,8 @@ function countItems<T>(getKey: (item: T) => {name: string; quality?: string} | u
 		if (!keyObj) continue;
 
 		const key = JSON.stringify(keyObj);
-		counts.set(key, (counts.get(key) ?? 0) + 1);
+		const count = getCount ? getCount(item) : 1;
+		counts.set(key, (counts.get(key) ?? 0) + count);
 	}
 	return counts;
 }
@@ -92,15 +97,62 @@ const ContentsPanelComponent = ({blueprint}: PanelProps) => {
 		};
 	};
 
+	const getItemKey = (item: ItemStack) => {
+		return {
+			name: item.id.name,
+			quality: item.id.quality,
+		};
+	};
+
+	const getItemCount = (item: ItemStack): number => {
+		let total = 0;
+		for (const location of item.items.in_inventory) {
+			total += location.count || 1;
+		}
+		return total;
+	};
+
+	// Separate modules items (like productivity/speed modules in machines) from inventory items (like fuel, ammo)
+	const processEntitiesItems = (entities?: Entity[]): {moduleItems: ItemStack[]; inventoryItems: ItemStack[]} => {
+		if (!entities) return {moduleItems: [], inventoryItems: []};
+
+		const moduleItems: ItemStack[] = [];
+		const inventoryItems: ItemStack[] = [];
+
+		for (const entity of entities) {
+			if (entity.items && entity.items.length > 0) {
+				for (const item of entity.items) {
+					// Check if the item is in a module slot (inventory type 4 is typically modules)
+					// Other slots: fuel, ammo, etc. are considered inventory items
+					const isModuleItem = item.items.in_inventory.some((loc) => loc.inventory === 4);
+
+					if (isModuleItem) {
+						moduleItems.push(item);
+					} else {
+						inventoryItems.push(item);
+					}
+				}
+			}
+		}
+
+		return {moduleItems, inventoryItems};
+	};
+
 	const entityCounts = countItems(getEntityKey, blueprintContent.entities);
 	const tileCounts = countItems(getTileKey, blueprintContent.tiles);
 	const recipeCounts = countItems(getRecipeKey, blueprintContent.entities);
+
+	const {moduleItems, inventoryItems} = processEntitiesItems(blueprintContent.entities);
+	const itemCounts = countItems(getItemKey, moduleItems, getItemCount);
+	const inventoryCounts = countItems(getItemKey, inventoryItems, getItemCount);
 
 	return (
 		<>
 			<ItemPanel title="Entities" items={entityCounts} type={'entity'} />
 			<ItemPanel title="Recipes" items={recipeCounts} type={'recipe'} />
 			<ItemPanel title="Tiles" items={tileCounts} type={'tile'} />
+			<ItemPanel title="Items" items={itemCounts} type={'item'} />
+			<ItemPanel title="Inventory" items={inventoryCounts} type={'item'} />
 		</>
 	);
 };
