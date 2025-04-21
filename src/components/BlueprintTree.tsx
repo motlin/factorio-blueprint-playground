@@ -50,7 +50,7 @@ function isNodeActive(node: TreeNode, parentNode?: TreeNode): boolean {
  */
 function buildNode(blueprint: BlueprintString, path: string): TreeNode {
 	const children =
-		blueprint.blueprint_book?.blueprints.map((child, index) => {
+		blueprint.blueprint_book?.blueprints?.map((child, index) => {
 			const childPath = path ? `${path}.${index + 1}` : `${index + 1}`;
 			return buildNode(child, childPath);
 		}) ?? [];
@@ -138,9 +138,11 @@ const BlueprintTreeComponent = ({rootBlueprint, selectedPath, onSelect}: Bluepri
 			/>,
 		);
 
-		node.children.forEach((child) => {
-			rows.push(...renderNode(child, level + 1, node));
-		});
+		if (node.children && Array.isArray(node.children)) {
+			node.children.forEach((child) => {
+				rows.push(...renderNode(child, level + 1, node));
+			});
+		}
 
 		return rows;
 	}
