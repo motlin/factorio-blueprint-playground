@@ -1,6 +1,7 @@
 import {useNavigate} from '@tanstack/react-router';
 import {useLiveQuery} from 'dexie-react-hooks';
 import React, {useEffect} from 'react';
+import {ErrorBoundary} from 'react-error-boundary';
 
 import {BlueprintFetchResult} from '../fetching/blueprintFetcher';
 import {extractBlueprint} from '../parsing/blueprintParser';
@@ -16,7 +17,7 @@ import {BlueprintTree} from './BlueprintTree';
 import DisqusComments from './DisqusComments';
 import {ExportActions} from './ExportActions';
 import {ParametersPanel} from './ParametersPanel';
-import {ErrorAlert, Panel} from './ui';
+import {ButtonGreen, ErrorAlert, InsetDark, Panel} from './ui';
 
 function getFactorioprintsUrl(id?: string): string | undefined {
 	if (!id) {
@@ -78,6 +79,17 @@ export function BlueprintPlayground() {
 		}
 	}, [selectedPath, pasted, rootBlueprint, loaderData?.success, existingBlueprint]);
 
+	const BlueprintErrorFallback = ({error, resetErrorBoundary}: {error: Error; resetErrorBoundary: () => void}) => (
+		<Panel title="Blueprint Error">
+			<InsetDark>
+				<p>There was an error displaying the blueprint: {error.message}</p>
+				<p>Please try pasting a different blueprint string above.</p>
+				<p />
+				<ButtonGreen onClick={resetErrorBoundary}>Try Again</ButtonGreen>
+			</InsetDark>
+		</Panel>
+	);
+
 	return (
 		<div className="container">
 			<h1>Factorio Blueprint Playground</h1>
@@ -88,33 +100,35 @@ export function BlueprintPlayground() {
 
 			{error && <ErrorAlert error={error} />}
 
-			<div className="panels2">
-				{/* Left side */}
-				<div>
-					<ExportActions blueprint={rootBlueprint} path={undefined} title="Root Blueprint" />
+			<ErrorBoundary FallbackComponent={BlueprintErrorFallback}>
+				<div className="panels2">
+					{/* Left side */}
+					<div>
+						<ExportActions blueprint={rootBlueprint} path={undefined} title="Root Blueprint" />
 
-					<BlueprintTree
-						rootBlueprint={rootBlueprint}
-						onSelect={onSelect}
-						selectedPath={selectedPath || ''}
-					/>
+						<BlueprintTree
+							rootBlueprint={rootBlueprint}
+							onSelect={onSelect}
+							selectedPath={selectedPath || ''}
+						/>
+					</div>
+
+					{/* Right side */}
+					<div>
+						<ExportActions blueprint={selectedBlueprint} path={selectedPath} title="Selected Blueprint" />
+						<BasicInfoPanel blueprint={selectedBlueprint} />
+						<BlueprintInfoPanels blueprint={selectedBlueprint} />
+					</div>
 				</div>
 
-				{/* Right side */}
-				<div>
-					<ExportActions blueprint={selectedBlueprint} path={selectedPath} title="Selected Blueprint" />
-					<BasicInfoPanel blueprint={selectedBlueprint} />
-					<BlueprintInfoPanels blueprint={selectedBlueprint} />
-				</div>
-			</div>
+				<ParametersPanel blueprintString={selectedBlueprint} />
 
-			<ParametersPanel blueprintString={selectedBlueprint} />
-
-			<DisqusComments
-				identifier={disqusId}
-				url={getFactorioprintsUrl(disqusId)}
-				title={rootBlueprint?.blueprint?.label}
-			/>
+				<DisqusComments
+					identifier={disqusId}
+					url={getFactorioprintsUrl(disqusId)}
+					title={rootBlueprint?.blueprint?.label}
+				/>
+			</ErrorBoundary>
 		</div>
 	);
 }
