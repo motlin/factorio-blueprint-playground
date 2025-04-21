@@ -2,8 +2,8 @@ import React from 'react';
 
 import type {Filter, SignalType} from '../parsing/types';
 
-import {FactorioIcon} from './FactorioIcon';
 import FilterCondition from './blueprint/panels/deconstruction/FilterCondition';
+import {FactorioIcon} from './core/icons/FactorioIcon';
 import {Cell, Row, Spreadsheet} from './spreadsheet';
 
 interface FilterRowsProps {

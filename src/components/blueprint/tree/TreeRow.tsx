@@ -2,8 +2,8 @@ import React from 'react';
 
 import {BlueprintWrapper} from '../../../parsing/BlueprintWrapper';
 import {Icon} from '../../../parsing/types';
-import {FactorioIcon, Placeholder} from '../../FactorioIcon';
 import {RichText} from '../../RichText';
+import {FactorioIcon, Placeholder} from '../../core/icons/FactorioIcon';
 
 import {TreeNode} from './types';
 

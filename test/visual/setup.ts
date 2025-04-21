@@ -47,7 +47,7 @@ afterAll(async () => {
 export async function renderToHtmlFile(html: string, testName: string): Promise<string> {
     const factorioCssPath = path.resolve(__dirname, '../../src/styles/factorio-a76ef767.css');
     const mainCssPath = path.resolve(__dirname, '../../src/styles/main.css');
-    const factorioIconCssPath = path.resolve(__dirname, '../../src/components/FactorioIcon.module.css');
+    const factorioIconCssPath = path.resolve(__dirname, '../../src/components/core/icons/FactorioIcon.module.css');
 
     const factorioCss = await fs.readFile(factorioCssPath, 'utf-8');
     const mainCss = await fs.readFile(mainCssPath, 'utf-8');

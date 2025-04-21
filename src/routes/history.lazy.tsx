@@ -1,13 +1,13 @@
 import {createLazyFileRoute} from '@tanstack/react-router';
-import {formatDistanceToNow, isAfter, sub, format} from 'date-fns';
+import {format, formatDistanceToNow, isAfter, sub} from 'date-fns';
 import {useLiveQuery} from 'dexie-react-hooks';
 import {useState} from 'react';
 
 import {HistoryBlueprintRow} from '../components/HistoryBlueprintRow';
-import {InsetDark, InsetLight, Panel, Button, ErrorAlert} from '../components/ui';
+import {Button, ErrorAlert, InsetDark, InsetLight, Panel} from '../components/ui';
 import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
 import {deserializeBlueprintNoThrow, serializeBlueprint} from '../parsing/blueprintParser';
-import type {BlueprintString, Icon, BlueprintStringWithIndex} from '../parsing/types';
+import type {BlueprintString, BlueprintStringWithIndex, Icon} from '../parsing/types';
 import {DatabaseBlueprint, db} from '../storage/db';
 
 export const Route = createLazyFileRoute('/history')({
