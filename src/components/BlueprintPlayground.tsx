@@ -13,10 +13,10 @@ import {generateSha, db} from '../storage/db';
 import {BasicInfoPanel} from './BasicInfoPanel';
 import {BlueprintInfoPanels} from './BlueprintInfoPanels';
 import BlueprintSourceHandler from './BlueprintSourceHandler';
-import {BlueprintTree} from './BlueprintTree';
 import DisqusComments from './DisqusComments';
 import {ExportActions} from './ExportActions';
 import {ParametersPanel} from './ParametersPanel';
+import {BlueprintTree} from './blueprint/tree';
 import {ButtonGreen, ErrorAlert, InsetDark, Panel} from './ui';
 
 function getFactorioprintsUrl(id?: string): string | undefined {

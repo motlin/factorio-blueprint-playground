@@ -3,11 +3,11 @@ import React from 'react';
 import { describe, it } from 'vitest';
 
 import { BasicInfoPanel } from '../../src/components/BasicInfoPanel';
-import { BlueprintTree } from '../../src/components/BlueprintTree';
 import { ParametersPanel } from '../../src/components/ParametersPanel';
 import { ContentsPanel } from '../../src/components/blueprint/panels/contents/ContentsPanel';
 import { DeconstructionPlannerPanel } from '../../src/components/blueprint/panels/deconstruction/DeconstructionPlannerPanel';
 import { UpgradePlannerPanel } from '../../src/components/blueprint/panels/upgrade/UpgradePlannerPanel';
+import { BlueprintTree } from '../../src/components/blueprint/tree';
 
 import { compareScreenshots } from './setup';
 
