@@ -48,7 +48,7 @@ vi.mock('@tanstack/react-router', () => ({
   ),
 }));
 
-vi.mock('../../src/components/FactorioIcon', () => ({
+vi.mock('../../src/components/core/icons/FactorioIcon', () => ({
   FactorioIcon: ({type, name, size}: {type: string; name: string; size?: number}) => (
     <div
       data-testid="factorio-icon"

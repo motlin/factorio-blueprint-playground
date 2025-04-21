@@ -4,9 +4,9 @@ import type {ReactNode} from 'react';
 import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
 import type {BlueprintString, Icon} from '../parsing/types';
 
-import {FactorioIcon, Placeholder} from './FactorioIcon';
 import {RichText} from './RichText';
 import {Version} from './Version';
+import {FactorioIcon, Placeholder} from './core/icons/FactorioIcon';
 import {Panel} from './ui';
 
 interface InfoRowProps {

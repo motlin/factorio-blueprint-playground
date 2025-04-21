@@ -1,7 +1,7 @@
 import React from 'react';
 
 import type {Filter} from '../../../../parsing/types';
-import {FactorioIcon} from '../../../FactorioIcon';
+import {FactorioIcon} from '../../../core/icons/FactorioIcon';
 
 function FilterCondition({filter}: {filter: Filter}) {
 	const parts: React.ReactNode[] = [];
