@@ -1,52 +1,13 @@
 import {memo} from 'react';
 
 import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
-import {BlueprintString, DeconstructionPlanner, UpgradePlanner} from '../parsing/types';
+import {BlueprintString, DeconstructionPlanner} from '../parsing/types';
 
-import {FactorioIcon} from './FactorioIcon';
 import FilterRowsDisplay from './FilterRowsDisplay';
 import {ContentsPanel} from './blueprint/panels/contents/ContentsPanel';
+import {UpgradePlannerPanel} from './blueprint/panels/upgrade/UpgradePlannerPanel';
 import {Cell, Row, Spreadsheet} from './spreadsheet';
 import {Panel} from './ui';
-
-const UpgradePlannerPanelComponent = ({blueprint}: {blueprint: BlueprintString}) => {
-	const wrapper = new BlueprintWrapper(blueprint);
-	const {content} = wrapper.getInfo();
-
-	if (!('upgrade_planner' in blueprint)) return null;
-
-	const {settings} = content as UpgradePlanner;
-	if (!settings.mappers.length) return null;
-
-	return (
-		<Panel title="Upgrade Mappings">
-			<Spreadsheet>
-				{settings.mappers
-					.sort((a, b) => a.index - b.index)
-					.map((mapping, index) => (
-						<Row key={index}>
-							<Cell grow>
-								<div style={{margin: 'auto'}}>
-									<FactorioIcon icon={mapping.from} size={'large'} />
-								</div>
-							</Cell>
-							<Cell width="40px" align="center">
-								→
-							</Cell>
-							<Cell grow>
-								<div style={{margin: 'auto'}}>
-									<FactorioIcon icon={mapping.to} size={'large'} />
-								</div>
-							</Cell>
-						</Row>
-					))}
-			</Spreadsheet>
-		</Panel>
-	);
-};
-
-UpgradePlannerPanelComponent.displayName = 'UpgradePlannerPanel';
-export const UpgradePlannerPanel = memo(UpgradePlannerPanelComponent);
 
 function getFilterModeText(mode?: number): string {
 	if (mode === 1) return 'Banned list: Remove only filtered items';
