@@ -5,48 +5,9 @@ import {BlueprintString, DeconstructionPlanner, UpgradePlanner} from '../parsing
 
 import {FactorioIcon} from './FactorioIcon';
 import FilterRowsDisplay from './FilterRowsDisplay';
-import {ItemPanel} from './blueprint/panels/contents/ItemPanel';
-import {
-	countItems,
-	getEntityKey,
-	getItemCount,
-	getItemKey,
-	getRecipeKey,
-	getTileKey,
-	processEntitiesItems,
-} from './blueprint/panels/contents/countUtils';
+import {ContentsPanel} from './blueprint/panels/contents/ContentsPanel';
 import {Cell, Row, Spreadsheet} from './spreadsheet';
 import {Panel} from './ui';
-
-interface PanelProps {
-	blueprint: BlueprintString;
-}
-
-const ContentsPanelComponent = ({blueprint}: PanelProps) => {
-	const blueprintContent = blueprint.blueprint;
-
-	if (!blueprintContent) return null;
-
-	if (!blueprintContent.entities?.length && !blueprintContent.tiles?.length) return null;
-
-	const entityCounts = countItems(getEntityKey, blueprintContent.entities);
-	const tileCounts = countItems(getTileKey, blueprintContent.tiles);
-	const recipeCounts = countItems(getRecipeKey, blueprintContent.entities);
-
-	const {moduleItems, inventoryItems} = processEntitiesItems(blueprintContent.entities);
-	const itemCounts = countItems(getItemKey, moduleItems, getItemCount);
-	const inventoryCounts = countItems(getItemKey, inventoryItems, getItemCount);
-
-	return (
-		<>
-			<ItemPanel title="Entities" items={entityCounts} type={'entity'} />
-			<ItemPanel title="Recipes" items={recipeCounts} type={'recipe'} />
-			<ItemPanel title="Tiles" items={tileCounts} type={'tile'} />
-			<ItemPanel title="Items" items={itemCounts} type={'item'} />
-			<ItemPanel title="Inventory" items={inventoryCounts} type={'item'} />
-		</>
-	);
-};
 
 const UpgradePlannerPanelComponent = ({blueprint}: {blueprint: BlueprintString}) => {
 	const wrapper = new BlueprintWrapper(blueprint);
@@ -163,9 +124,6 @@ const BlueprintInfoPanelsComponent = ({blueprint}: {blueprint?: BlueprintString}
 		</>
 	);
 };
-
-ContentsPanelComponent.displayName = 'ContentsPanel';
-export const ContentsPanel = memo(ContentsPanelComponent);
 
 DeconstructionPlannerPanelComponent.displayName = 'DeconstructionPlannerPanel';
 export const DeconstructionPlannerPanel = memo(DeconstructionPlannerPanelComponent);
