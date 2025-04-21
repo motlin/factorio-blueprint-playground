@@ -75,7 +75,6 @@ interface PanelProps {
 const ContentsPanelComponent = ({blueprint}: PanelProps) => {
 	const blueprintContent = blueprint.blueprint;
 
-	// Type guard to ensure we're working with a Blueprint type
 	if (!blueprintContent) return null;
 
 	if (!blueprintContent.entities?.length && !blueprintContent.tiles?.length) return null;
@@ -157,12 +156,10 @@ const ContentsPanelComponent = ({blueprint}: PanelProps) => {
 	);
 };
 
-// Upgrade Planner Panel
 const UpgradePlannerPanelComponent = ({blueprint}: {blueprint: BlueprintString}) => {
 	const wrapper = new BlueprintWrapper(blueprint);
 	const {content} = wrapper.getInfo();
 
-	// Type guard to ensure we're working with an upgrade planner
 	if (!('upgrade_planner' in blueprint)) return null;
 
 	const {settings} = content as UpgradePlanner;
@@ -198,18 +195,15 @@ const UpgradePlannerPanelComponent = ({blueprint}: {blueprint: BlueprintString})
 UpgradePlannerPanelComponent.displayName = 'UpgradePlannerPanel';
 export const UpgradePlannerPanel = memo(UpgradePlannerPanelComponent);
 
-// Helper to get filter mode text
 function getFilterModeText(mode?: number): string {
 	if (mode === 1) return 'Banned list: Remove only filtered items';
 	return 'Allowed list: Remove everything except filtered items';
 }
 
-// Deconstruction Planner Panel
 const DeconstructionPlannerPanelComponent = ({blueprint}: {blueprint: BlueprintString}) => {
 	const wrapper = new BlueprintWrapper(blueprint);
 	const {content} = wrapper.getInfo();
 
-	// Type guard to ensure we're working with a deconstruction planner
 	if (!('deconstruction_planner' in blueprint)) return null;
 
 	const {settings} = content as DeconstructionPlanner;
@@ -266,7 +260,6 @@ const DeconstructionPlannerPanelComponent = ({blueprint}: {blueprint: BlueprintS
 	);
 };
 
-// Main wrapper component that shows the appropriate panels
 const BlueprintInfoPanelsComponent = ({blueprint}: {blueprint?: BlueprintString}) => {
 	if (!blueprint) return null;
 	return (
