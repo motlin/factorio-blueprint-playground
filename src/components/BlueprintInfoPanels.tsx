@@ -1,72 +1,22 @@
 import {memo} from 'react';
 
 import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
-import {
-	BlueprintString,
-	DeconstructionPlanner,
-	Entity,
-	ItemStack,
-	Quality,
-	SignalType,
-	Tile,
-	UpgradePlanner,
-} from '../parsing/types';
+import {BlueprintString, DeconstructionPlanner, UpgradePlanner} from '../parsing/types';
 
 import {FactorioIcon} from './FactorioIcon';
 import FilterRowsDisplay from './FilterRowsDisplay';
-import {Cell, IconCell, Row, Spreadsheet, TextCell} from './spreadsheet';
+import {ItemPanel} from './blueprint/panels/contents/ItemPanel';
+import {
+	countItems,
+	getEntityKey,
+	getItemCount,
+	getItemKey,
+	getRecipeKey,
+	getTileKey,
+	processEntitiesItems,
+} from './blueprint/panels/contents/countUtils';
+import {Cell, Row, Spreadsheet} from './spreadsheet';
 import {Panel} from './ui';
-
-function countItems<T>(
-	getKey: (item: T) => {name: string; quality?: string} | undefined,
-	items?: T[],
-	getCount?: (item: T) => number,
-) {
-	const counts = new Map<string, number>();
-	if (!items) return counts;
-
-	for (const item of items) {
-		const keyObj = getKey(item);
-		if (!keyObj) continue;
-
-		const key = JSON.stringify(keyObj);
-		const count = getCount ? getCount(item) : 1;
-		counts.set(key, (counts.get(key) ?? 0) + count);
-	}
-	return counts;
-}
-
-function mapToSortedArray(counts: Map<string, number>): {name: string; quality: Quality; count: number}[] {
-	const parsedArray = Array.from(counts.entries()).map(([key, count]) => {
-		const parsed = JSON.parse(key) as {name: string; quality: Quality};
-		return {...parsed, count};
-	});
-	// Sort by count in descending order
-	return parsedArray.sort((a, b) => b.count - a.count);
-}
-
-// Multi-column list component for showing icon, name, count
-function ItemPanel({title, items, type}: {title: string; items: Map<string, number>; type: SignalType}) {
-	if (!items.size) return null;
-
-	const sortedItems: {name: string; quality: Quality; count: number}[] = mapToSortedArray(items);
-
-	return (
-		<Panel title={title}>
-			<Spreadsheet>
-				{sortedItems.map(({name, quality, count}) => (
-					<Row key={JSON.stringify({type, name, quality})}>
-						<IconCell icon={{type, name, quality}} />
-						<TextCell grow>{name}</TextCell>
-						<TextCell width="80px" align="right" grow={false}>
-							{count}
-						</TextCell>
-					</Row>
-				))}
-			</Spreadsheet>
-		</Panel>
-	);
-}
 
 interface PanelProps {
 	blueprint: BlueprintString;
@@ -78,64 +28,6 @@ const ContentsPanelComponent = ({blueprint}: PanelProps) => {
 	if (!blueprintContent) return null;
 
 	if (!blueprintContent.entities?.length && !blueprintContent.tiles?.length) return null;
-
-	const getEntityKey = (entity: Entity) => ({name: entity.name, quality: entity.quality});
-
-	const getTileKey = (tile: Tile) => ({
-		name: tile.name,
-		quality: undefined,
-	});
-
-	const getRecipeKey = (entity: Entity) => {
-		if (!entity.recipe) {
-			return undefined;
-		}
-		return {
-			name: entity.recipe,
-			quality: entity.recipe_quality,
-		};
-	};
-
-	const getItemKey = (item: ItemStack) => {
-		return {
-			name: item.id.name,
-			quality: item.id.quality,
-		};
-	};
-
-	const getItemCount = (item: ItemStack): number => {
-		let total = 0;
-		for (const location of item.items.in_inventory) {
-			total += location.count || 1;
-		}
-		return total;
-	};
-
-	// Separate modules items (like productivity/speed modules in machines) from inventory items (like fuel, ammo)
-	const processEntitiesItems = (entities?: Entity[]): {moduleItems: ItemStack[]; inventoryItems: ItemStack[]} => {
-		if (!entities) return {moduleItems: [], inventoryItems: []};
-
-		const moduleItems: ItemStack[] = [];
-		const inventoryItems: ItemStack[] = [];
-
-		for (const entity of entities) {
-			if (entity.items && entity.items.length > 0) {
-				for (const item of entity.items) {
-					// Check if the item is in a module slot (inventory type 4 is typically modules)
-					// Other slots: fuel, ammo, etc. are considered inventory items
-					const isModuleItem = item.items.in_inventory.some((loc) => loc.inventory === 4);
-
-					if (isModuleItem) {
-						moduleItems.push(item);
-					} else {
-						inventoryItems.push(item);
-					}
-				}
-			}
-		}
-
-		return {moduleItems, inventoryItems};
-	};
 
 	const entityCounts = countItems(getEntityKey, blueprintContent.entities);
 	const tileCounts = countItems(getTileKey, blueprintContent.tiles);
