@@ -3,9 +3,10 @@ import React from 'react';
 import { describe, it } from 'vitest';
 
 import { BasicInfoPanel } from '../../src/components/BasicInfoPanel';
-import { ContentsPanel , UpgradePlannerPanel, DeconstructionPlannerPanel } from '../../src/components/BlueprintInfoPanels';
+import { UpgradePlannerPanel, DeconstructionPlannerPanel } from '../../src/components/BlueprintInfoPanels';
 import { BlueprintTree } from '../../src/components/BlueprintTree';
 import { ParametersPanel } from '../../src/components/ParametersPanel';
+import { ContentsPanel } from '../../src/components/blueprint/panels/contents/ContentsPanel';
 
 import { compareScreenshots } from './setup';
 
