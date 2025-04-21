@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import React from 'react';
 import {describe, expect, it, vi} from 'vitest';
 
-import {BlueprintTree} from '../../src/components/BlueprintTree';
+import {BlueprintTree} from '../../src/components/blueprint/tree';
 import type {BlueprintString} from '../../src/parsing/types';
 
 /**
