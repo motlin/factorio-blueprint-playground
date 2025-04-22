@@ -36,7 +36,7 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250422.0",
     "@eslint/compat": "^1.2.8",
-    "@eslint/js": "^9.25.0",
+    "@eslint/js": "^9.25.1",
     "@playwright/test": "^1.52.0",
     "@tanstack/eslint-plugin-router": "^1.114.29",
     "@tanstack/react-router-devtools": "^1.116.0",
