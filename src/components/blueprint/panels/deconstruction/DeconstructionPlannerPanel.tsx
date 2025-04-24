@@ -2,9 +2,10 @@ import {memo} from 'react';
 
 import {BlueprintWrapper} from '../../../../parsing/BlueprintWrapper';
 import {BlueprintString, DeconstructionPlanner} from '../../../../parsing/types';
-import FilterRowsDisplay from '../../../FilterRowsDisplay';
 import {Cell, Row, Spreadsheet} from '../../../spreadsheet';
 import {Panel} from '../../../ui';
+
+import FilterRowsDisplay from './FilterRowsDisplay';
 
 function getFilterModeText(mode?: number): string {
 	if (mode === 1) return 'Banned list: Remove only filtered items';
