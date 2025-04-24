@@ -1,8 +1,7 @@
 import React from 'react';
 
-import {Quality, SignalID, SignalType} from '../parsing/types.ts';
-
-import {FactorioIcon} from './core/icons/FactorioIcon';
+import {Quality, SignalID, SignalType} from '../../../parsing/types.ts';
+import {FactorioIcon} from '../icons/FactorioIcon';
 
 const COLOR_MAP: Record<string, string> = {
 	red: '#eb5c5f',
