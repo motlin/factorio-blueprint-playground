@@ -1,7 +1,7 @@
 import {useNavigate} from '@tanstack/react-router';
 import React, {useCallback, useEffect, useRef} from 'react';
 
-import {Route} from '../routes';
+import {Route} from '../../../routes';
 
 interface BlueprintSourceHandlerProps {
 	pasted?: string;
