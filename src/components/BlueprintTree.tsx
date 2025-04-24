@@ -3,8 +3,8 @@ import React, {memo, type ReactNode} from 'react';
 import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
 import {type BlueprintString, Icon} from '../parsing/types';
 
-import {RichText} from './RichText';
 import {FactorioIcon, Placeholder} from './core/icons/FactorioIcon';
+import {RichText} from './core/text/RichText';
 import {InsetLight, Panel} from './ui';
 
 // Types for tree structure

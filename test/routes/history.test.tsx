@@ -61,7 +61,7 @@ vi.mock('../../src/components/core/icons/FactorioIcon', () => ({
   ),
 }));
 
-vi.mock('../../src/components/RichText', () => ({
+vi.mock('../../src/components/core/text/RichText', () => ({
   RichText: ({children}: {children: React.ReactNode}) => <span data-testid="rich-text">{children}</span>,
 }));
 
