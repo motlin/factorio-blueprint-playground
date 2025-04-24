@@ -1,4 +1,4 @@
-import {parseVersion3} from '../parsing/blueprintParser';
+import {parseVersion3} from '../../../parsing/blueprintParser';
 
 export const Version = ({number}: {number: number}) => {
 	const text = parseVersion3(number);

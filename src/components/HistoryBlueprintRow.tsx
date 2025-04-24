@@ -3,9 +3,9 @@ import {Link} from '@tanstack/react-router';
 import {getSourceLabel} from '../fetching/blueprintFetcher';
 import {DatabaseBlueprint} from '../storage/db';
 
-import {Version} from './Version';
 import {FactorioIcon} from './core/icons/FactorioIcon';
 import {RichText} from './core/text/RichText';
+import {Version} from './core/text/Version';
 import {ButtonGreen} from './ui';
 
 interface HistoryBlueprintRowProps {

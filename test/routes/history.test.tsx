@@ -65,7 +65,7 @@ vi.mock('../../src/components/core/text/RichText', () => ({
   RichText: ({children}: {children: React.ReactNode}) => <span data-testid="rich-text">{children}</span>,
 }));
 
-vi.mock('../../src/components/Version', () => ({
+vi.mock('../../src/components/core/text/Version', () => ({
   Version: ({version}: {version: number}) => <span data-testid="version">{version}</span>,
 }));
 
