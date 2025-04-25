@@ -1,10 +1,10 @@
 import {memo} from 'react';
 
-import {BlueprintString} from '../parsing/types';
+import {BlueprintString} from '../../parsing/types';
 
-import {ContentsPanel} from './blueprint/panels/contents/ContentsPanel';
-import {DeconstructionPlannerPanel} from './blueprint/panels/deconstruction/DeconstructionPlannerPanel';
-import {UpgradePlannerPanel} from './blueprint/panels/upgrade/UpgradePlannerPanel';
+import {ContentsPanel} from './panels/contents/ContentsPanel';
+import {DeconstructionPlannerPanel} from './panels/deconstruction/DeconstructionPlannerPanel';
+import {UpgradePlannerPanel} from './panels/upgrade/UpgradePlannerPanel';
 
 const BlueprintInfoPanelsComponent = ({blueprint}: {blueprint?: BlueprintString}) => {
 	if (!blueprint) return null;

@@ -11,10 +11,10 @@ import {updateBlueprintMetadata} from '../state/blueprintLocalStorage';
 import {generateSha, db} from '../storage/db';
 
 import {BasicInfoPanel} from './BasicInfoPanel';
-import {BlueprintInfoPanels} from './BlueprintInfoPanels';
 import DisqusComments from './DisqusComments';
 import {ExportActions} from './ExportActions';
 import {ParametersPanel} from './ParametersPanel';
+import {BlueprintInfoPanels} from './blueprint/BlueprintInfoPanels';
 import BlueprintSourceHandler from './blueprint/input/BlueprintSourceHandler';
 import {BlueprintTree} from './blueprint/tree';
 import {ButtonGreen, ErrorAlert, InsetDark, Panel} from './ui';
