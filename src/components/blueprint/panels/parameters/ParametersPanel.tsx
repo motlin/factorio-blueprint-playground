@@ -1,9 +1,9 @@
 import {memo} from 'react';
 
-import {BlueprintString} from '../parsing/types';
+import {BlueprintString} from '../../../../parsing/types';
+import {Panel} from '../../../ui';
 
-import {ParametersList} from './blueprint/panels/parameters/ParametersList';
-import {Panel} from './ui';
+import {ParametersList} from './ParametersList';
 
 const ParametersPanelComponent = ({blueprintString}: {blueprintString?: BlueprintString}) => {
 	if (!blueprintString?.blueprint?.parameters?.length) return null;
