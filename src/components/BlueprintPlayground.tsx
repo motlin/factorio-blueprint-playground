@@ -11,8 +11,8 @@ import {updateBlueprintMetadata} from '../state/blueprintLocalStorage';
 import {db, generateSha} from '../storage/db';
 
 import DisqusComments from './DisqusComments';
-import {ExportActions} from './ExportActions';
 import {BlueprintInfoPanels} from './blueprint/BlueprintInfoPanels';
+import {ExportActions} from './blueprint/export/ExportActions';
 import BlueprintSourceHandler from './blueprint/input/BlueprintSourceHandler';
 import {BasicInfoPanel} from './blueprint/panels/info/BasicInfoPanel';
 import {ParametersPanel} from './blueprint/panels/parameters/ParametersPanel';

@@ -1,11 +1,10 @@
 import {ClipboardCopy, Download, FileJson, LucideIcon} from 'lucide-react';
 import {memo} from 'react';
 
-import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
-import {serializeBlueprint} from '../parsing/blueprintParser';
-import {BlueprintString} from '../parsing/types';
-
-import {ButtonGreen, InsetLight, Panel} from './ui';
+import {BlueprintWrapper} from '../../../parsing/BlueprintWrapper';
+import {serializeBlueprint} from '../../../parsing/blueprintParser';
+import {BlueprintString} from '../../../parsing/types';
+import {ButtonGreen, InsetLight, Panel} from '../../ui';
 
 interface ExportActionsProps {
 	blueprint?: BlueprintString;
