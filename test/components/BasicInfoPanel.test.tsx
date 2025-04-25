@@ -5,7 +5,7 @@ import {render} from '@testing-library/react';
 import React from 'react';
 import {describe, expect, test} from 'vitest';
 
-import {BasicInfoPanel} from '../../src/components/BasicInfoPanel';
+import {BasicInfoPanel} from '../../src/components/blueprint/panels/info/BasicInfoPanel';
 import '../../test/setup';
 
 // Load the simple.txt blueprint string directly

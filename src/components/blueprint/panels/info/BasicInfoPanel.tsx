@@ -1,13 +1,12 @@
 import {memo} from 'react';
 import type {ReactNode} from 'react';
 
-import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
-import type {BlueprintString, Icon} from '../parsing/types';
-
-import {FactorioIcon, Placeholder} from './core/icons/FactorioIcon';
-import {RichText} from './core/text/RichText';
-import {Version} from './core/text/Version';
-import {Panel} from './ui';
+import {BlueprintWrapper} from '../../../../parsing/BlueprintWrapper';
+import type {BlueprintString, Icon} from '../../../../parsing/types';
+import {FactorioIcon, Placeholder} from '../../../core/icons/FactorioIcon';
+import {RichText} from '../../../core/text/RichText';
+import {Version} from '../../../core/text/Version';
+import {Panel} from '../../../ui';
 
 interface InfoRowProps {
 	label: string;
