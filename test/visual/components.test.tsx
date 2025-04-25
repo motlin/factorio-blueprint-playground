@@ -2,10 +2,10 @@ import { render } from '@testing-library/react';
 import React from 'react';
 import { describe, it } from 'vitest';
 
-import { ParametersPanel } from '../../src/components/ParametersPanel';
 import { ContentsPanel } from '../../src/components/blueprint/panels/contents/ContentsPanel';
 import { DeconstructionPlannerPanel } from '../../src/components/blueprint/panels/deconstruction/DeconstructionPlannerPanel';
 import { BasicInfoPanel } from '../../src/components/blueprint/panels/info/BasicInfoPanel';
+import { ParametersPanel } from '../../src/components/blueprint/panels/parameters/ParametersPanel';
 import { UpgradePlannerPanel } from '../../src/components/blueprint/panels/upgrade/UpgradePlannerPanel';
 import { BlueprintTree } from '../../src/components/blueprint/tree';
 
