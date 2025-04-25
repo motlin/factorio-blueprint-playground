@@ -10,8 +10,8 @@ import {RootSearch, Route} from '../routes';
 import {updateBlueprintMetadata} from '../state/blueprintLocalStorage';
 import {db, generateSha} from '../storage/db';
 
-import DisqusComments from './DisqusComments';
 import {BlueprintInfoPanels} from './blueprint/BlueprintInfoPanels';
+import DisqusComments from './blueprint/disqus/DisqusComments';
 import {ExportActions} from './blueprint/export/ExportActions';
 import BlueprintSourceHandler from './blueprint/input/BlueprintSourceHandler';
 import {BasicInfoPanel} from './blueprint/panels/info/BasicInfoPanel';
