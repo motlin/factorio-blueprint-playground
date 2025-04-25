@@ -8,14 +8,14 @@ import {extractBlueprint} from '../parsing/blueprintParser';
 import type {BlueprintString} from '../parsing/types';
 import {RootSearch, Route} from '../routes';
 import {updateBlueprintMetadata} from '../state/blueprintLocalStorage';
-import {generateSha, db} from '../storage/db';
+import {db, generateSha} from '../storage/db';
 
-import {BasicInfoPanel} from './BasicInfoPanel';
 import DisqusComments from './DisqusComments';
 import {ExportActions} from './ExportActions';
 import {ParametersPanel} from './ParametersPanel';
 import {BlueprintInfoPanels} from './blueprint/BlueprintInfoPanels';
 import BlueprintSourceHandler from './blueprint/input/BlueprintSourceHandler';
+import {BasicInfoPanel} from './blueprint/panels/info/BasicInfoPanel';
 import {BlueprintTree} from './blueprint/tree';
 import {ButtonGreen, ErrorAlert, InsetDark, Panel} from './ui';
 
