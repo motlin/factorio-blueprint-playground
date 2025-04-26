@@ -3,7 +3,7 @@ import {format, formatDistanceToNow, isAfter, sub} from 'date-fns';
 import {useLiveQuery} from 'dexie-react-hooks';
 import {useState} from 'react';
 
-import {HistoryBlueprintRow} from '../components/HistoryBlueprintRow';
+import {BlueprintHistoryTable} from '../components/history/table/BlueprintHistoryTable';
 import {Button, ErrorAlert, InsetDark, InsetLight, Panel} from '../components/ui';
 import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
 import {deserializeBlueprintNoThrow, serializeBlueprint} from '../parsing/blueprintParser';
@@ -259,29 +259,12 @@ export function History() {
 				</Button>
 			</div>
 
-			<div className="history-grid">
-				<div className="history-header"></div>
-				<div className="history-header">Type</div>
-				<div className="history-header">Version</div>
-				<div className="history-header">Icons</div>
-				<div className="history-header">Label</div>
-				<div className="history-header">Source</div>
-				<div className="history-header">Updated</div>
-				<div className="history-header">Actions</div>
-
-				{(blueprints as DatabaseBlueprint[]).map((blueprint: DatabaseBlueprint) => {
-					const isSelected = selectedItems.has(blueprint.metadata.sha);
-					return (
-						<HistoryBlueprintRow
-							key={blueprint.metadata.sha}
-							blueprint={blueprint}
-							isSelected={isSelected}
-							onToggleSelection={toggleSelection}
-							formatDate={formatDate}
-						/>
-					);
-				})}
-			</div>
+			<BlueprintHistoryTable
+				blueprints={blueprints as DatabaseBlueprint[]}
+				selectedItems={selectedItems}
+				toggleSelection={toggleSelection}
+				formatDate={formatDate}
+			/>
 		</Panel>
 	);
 }
