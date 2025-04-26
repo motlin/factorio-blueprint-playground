@@ -3,6 +3,8 @@ import React from 'react';
 import type {DatabaseBlueprint} from '../../../storage/db';
 import {HistoryBlueprintRow} from '../../HistoryBlueprintRow';
 
+import {TableHeader} from './TableHeader';
+
 interface BlueprintHistoryTableProps {
 	blueprints: DatabaseBlueprint[];
 	selectedItems: Set<string>;
@@ -18,14 +20,14 @@ export function BlueprintHistoryTable({
 }: BlueprintHistoryTableProps) {
 	return (
 		<div className="history-grid">
-			<div className="history-header"></div>
-			<div className="history-header">Type</div>
-			<div className="history-header">Version</div>
-			<div className="history-header">Icons</div>
-			<div className="history-header">Label</div>
-			<div className="history-header">Source</div>
-			<div className="history-header">Updated</div>
-			<div className="history-header">Actions</div>
+			<TableHeader label="" />
+			<TableHeader label="Type" />
+			<TableHeader label="Version" />
+			<TableHeader label="Icons" />
+			<TableHeader label="Label" />
+			<TableHeader label="Source" />
+			<TableHeader label="Updated" />
+			<TableHeader label="Actions" />
 
 			{blueprints.map((blueprint: DatabaseBlueprint) => {
 				const isSelected = selectedItems.has(blueprint.metadata.sha);
