@@ -1,9 +1,9 @@
 import {createLazyFileRoute} from '@tanstack/react-router';
-import {format, formatDistanceToNow, isAfter, sub} from 'date-fns';
 import {useLiveQuery} from 'dexie-react-hooks';
 import {useState} from 'react';
 
 import {BlueprintHistoryTable} from '../components/history/table/BlueprintHistoryTable';
+import {formatDateForExport} from '../components/history/utils/dateUtils';
 import {Button, ErrorAlert, InsetDark, InsetLight, Panel} from '../components/ui';
 import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
 import {deserializeBlueprintNoThrow, serializeBlueprint} from '../parsing/blueprintParser';
@@ -58,24 +58,6 @@ export function History() {
 		setSelectedItems(new Set<string>());
 	};
 
-	const formatDate = (timestamp: number): string => {
-		const date = new Date(timestamp);
-		const now = new Date();
-
-		// For very recent updates (less than 30 seconds ago)
-		if (isAfter(date, sub(now, {seconds: 30}))) {
-			return 'just now';
-		}
-
-		// For times within the past week, show relative time
-		if (isAfter(date, sub(now, {days: 7}))) {
-			return formatDistanceToNow(date, {addSuffix: true});
-		}
-
-		// For older times, show the date in MM/DD/YY format
-		return format(date, 'MM/dd/yy');
-	};
-
 	const downloadAsBook = (): void => {
 		try {
 			if (!blueprints) return;
@@ -109,7 +91,7 @@ export function History() {
 			}));
 
 			const date = new Date();
-			const formattedDate = format(date, 'yyyy-MM-dd HH:mm');
+			const formattedDate = formatDateForExport(date);
 
 			const blueprintBookData: BlueprintString = {
 				blueprint_book: {
@@ -263,7 +245,6 @@ export function History() {
 				blueprints={blueprints as DatabaseBlueprint[]}
 				selectedItems={selectedItems}
 				toggleSelection={toggleSelection}
-				formatDate={formatDate}
 			/>
 		</Panel>
 	);

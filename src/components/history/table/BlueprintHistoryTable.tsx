@@ -9,15 +9,9 @@ interface BlueprintHistoryTableProps {
 	blueprints: DatabaseBlueprint[];
 	selectedItems: Set<string>;
 	toggleSelection: (sha: string) => void;
-	formatDate: (timestamp: number) => string;
 }
 
-export function BlueprintHistoryTable({
-	blueprints,
-	selectedItems,
-	toggleSelection,
-	formatDate,
-}: BlueprintHistoryTableProps) {
+export function BlueprintHistoryTable({blueprints, selectedItems, toggleSelection}: BlueprintHistoryTableProps) {
 	return (
 		<div className="history-grid">
 			<TableHeader label="" />
@@ -37,7 +31,6 @@ export function BlueprintHistoryTable({
 						blueprint={blueprint}
 						isSelected={isSelected}
 						onToggleSelection={toggleSelection}
-						formatDate={formatDate}
 					/>
 				);
 			})}
