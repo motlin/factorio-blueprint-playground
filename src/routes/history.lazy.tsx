@@ -5,6 +5,7 @@ import {useState} from 'react';
 import {BlueprintHistoryTable} from '../components/history/table/BlueprintHistoryTable';
 import {formatDateForExport} from '../components/history/utils/dateUtils';
 import {downloadBlueprint, sanitizeFilename} from '../components/history/utils/fileUtils';
+import {LoadingState} from '../components/history/views/LoadingState';
 import {Button, ErrorAlert, InsetDark, InsetLight, Panel} from '../components/ui';
 import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
 import {deserializeBlueprintNoThrow, serializeBlueprint} from '../parsing/blueprintParser';
@@ -163,11 +164,7 @@ export function History() {
 	};
 
 	if (isLoading) {
-		return (
-			<Panel title="Blueprint History">
-				<InsetLight>Loading blueprint history...</InsetLight>
-			</Panel>
-		);
+		return <LoadingState />;
 	}
 
 	if (error) {
