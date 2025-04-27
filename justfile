@@ -82,12 +82,16 @@ typecheck:
 format:
     npx prettier --write "**/*.{json,yaml,yml,md}"
 
+# `uv tool run pre-commit run`
+hooks:
+    uv tool run pre-commit run
+
 # Run all checks before committing
 precommit:
     @echo "🔍 Running pre-commit checks..."
-    @just typecheck || (echo "❌ Typecheck failed but continuing...")
     @just lint-fix || (echo "❌ Lint-fix failed but continuing...")
     @just format || (echo "❌ Format failed but continuing...")
+    @just hooks || (echo "❌ Precommit hooks failed but continuing...")
     @echo "✅ Pre-commit checks completed. Review any errors above."
 
 # `npm install`
@@ -95,7 +99,7 @@ install:
     npm install
 
 # Run all checks (lint, typecheck, build, test)
-all: install
+all: install hooks
     npm run all
 
 factorio_home := env('FACTORIO_HOME')
