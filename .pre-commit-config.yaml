@@ -15,7 +15,7 @@ repos:
     rev: v9.23.0
     hooks:
       - id: eslint
-        files: \.(js|ts|tsx)$
+        files: \.(js|ts|jsx|tsx)$
         types: [file]
         additional_dependencies:
           - eslint@9.23.0
