@@ -4,6 +4,7 @@ import {useState} from 'react';
 
 import {BlueprintHistoryTable} from '../components/history/table/BlueprintHistoryTable';
 import {formatDateForExport} from '../components/history/utils/dateUtils';
+import {downloadBlueprint, sanitizeFilename} from '../components/history/utils/fileUtils';
 import {Button, ErrorAlert, InsetDark, InsetLight, Panel} from '../components/ui';
 import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
 import {deserializeBlueprintNoThrow, serializeBlueprint} from '../parsing/blueprintParser';
@@ -159,28 +160,6 @@ export function History() {
 		}
 
 		return icons;
-	};
-
-	// Replace invalid filename characters and spaces
-	const sanitizeFilename = (name: string): string => {
-		return (
-			name
-				.replace(/[/?%*:|"<>]/g, '-')
-				.replace(/\s+/g, '-')
-				.trim() || 'blueprint'
-		);
-	};
-
-	const downloadBlueprint = (blueprintString: string, filename: string): void => {
-		const blob = new Blob([blueprintString], {type: 'text/plain'});
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement('a');
-		a.href = url;
-		a.download = `${sanitizeFilename(filename)}.txt`;
-		document.body.appendChild(a);
-		a.click();
-		document.body.removeChild(a);
-		URL.revokeObjectURL(url);
 	};
 
 	if (isLoading) {
