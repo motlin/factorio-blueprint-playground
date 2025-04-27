@@ -10,10 +10,10 @@ import {RootSearch, Route} from '../routes';
 import {updateBlueprintMetadata} from '../state/blueprintLocalStorage';
 import {db, generateSha} from '../storage/db';
 
-import {BlueprintInfoPanels} from './blueprint/BlueprintInfoPanels';
 import DisqusComments from './blueprint/disqus/DisqusComments';
 import {ExportActions} from './blueprint/export/ExportActions';
 import BlueprintSourceHandler from './blueprint/input/BlueprintSourceHandler';
+import {BlueprintInfoPanels} from './blueprint/panels/BlueprintInfoPanels';
 import {BasicInfoPanel} from './blueprint/panels/info/BasicInfoPanel';
 import {ParametersPanel} from './blueprint/panels/parameters/ParametersPanel';
 import {BlueprintTree} from './blueprint/tree';
