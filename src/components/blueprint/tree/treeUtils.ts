@@ -30,7 +30,7 @@ export function isNodeActive(node: TreeNode, parentNode?: TreeNode): boolean {
  */
 export function buildNode(blueprint: BlueprintString, path: string): TreeNode {
 	const children =
-		blueprint.blueprint_book?.blueprints.map((child, index) => {
+		blueprint.blueprint_book?.blueprints?.map((child, index) => {
 			const childPath = path ? `${path}.${index + 1}` : `${index + 1}`;
 			return buildNode(child, childPath);
 		}) ?? [];

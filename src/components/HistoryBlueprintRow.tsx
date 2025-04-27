@@ -7,16 +7,16 @@ import {FactorioIcon} from './core/icons/FactorioIcon';
 import {RichText} from './core/text/RichText';
 import {Version} from './core/text/Version';
 import {BlueprintTableCheckbox} from './history/table/BlueprintTableCheckbox';
+import {formatDate} from './history/utils/dateUtils';
 import {ButtonGreen} from './ui';
 
 interface HistoryBlueprintRowProps {
 	blueprint: DatabaseBlueprint;
 	isSelected: boolean;
 	onToggleSelection: (sha: string) => void;
-	formatDate: (timestamp: number) => string;
 }
 
-export function HistoryBlueprintRow({blueprint, isSelected, onToggleSelection, formatDate}: HistoryBlueprintRowProps) {
+export function HistoryBlueprintRow({blueprint, isSelected, onToggleSelection}: HistoryBlueprintRowProps) {
 	return (
 		<div
 			key={blueprint.metadata.sha}
