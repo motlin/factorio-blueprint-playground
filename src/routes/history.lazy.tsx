@@ -5,8 +5,9 @@ import {useState} from 'react';
 import {BlueprintHistoryTable} from '../components/history/table/BlueprintHistoryTable';
 import {formatDateForExport} from '../components/history/utils/dateUtils';
 import {downloadBlueprint, sanitizeFilename} from '../components/history/utils/fileUtils';
+import {EmptyHistoryState} from '../components/history/views/EmptyHistoryState';
 import {LoadingState} from '../components/history/views/LoadingState';
-import {Button, ErrorAlert, InsetDark, InsetLight, Panel} from '../components/ui';
+import {Button, ErrorAlert, Panel} from '../components/ui';
 import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
 import {deserializeBlueprintNoThrow, serializeBlueprint} from '../parsing/blueprintParser';
 import type {BlueprintString, BlueprintStringWithIndex, Icon} from '../parsing/types';
@@ -185,17 +186,7 @@ export function History() {
 	}
 
 	if (!blueprints || blueprints.length === 0) {
-		return (
-			<Panel title="Blueprint History">
-				<InsetLight>
-					This panel will show your previously viewed blueprints. Each blueprint will be shown with its label,
-					icons, and when you last viewed it. You&apos;ll be able to quickly reopen blueprints or download
-					selections as a new blueprint book.
-				</InsetLight>
-
-				<InsetDark>No blueprints in history yet. Paste a blueprint in the playground to get started!</InsetDark>
-			</Panel>
-		);
+		return <EmptyHistoryState />;
 	}
 
 	return (
