@@ -6,6 +6,7 @@ import {DatabaseBlueprint} from '../storage/db';
 import {FactorioIcon} from './core/icons/FactorioIcon';
 import {RichText} from './core/text/RichText';
 import {Version} from './core/text/Version';
+import {BlueprintTableCheckbox} from './history/table/BlueprintTableCheckbox';
 import {ButtonGreen} from './ui';
 
 interface HistoryBlueprintRowProps {
@@ -24,17 +25,10 @@ export function HistoryBlueprintRow({blueprint, isSelected, onToggleSelection, f
 			data-testid="blueprint-item"
 		>
 			{/* Checkbox column */}
-			<div className="history-checkbox-container">
-				<input
-					type="checkbox"
-					checked={isSelected}
-					onChange={() => onToggleSelection(blueprint.metadata.sha)}
-					onClick={(e: Event) => {
-						(e as {stopPropagation: () => void}).stopPropagation();
-					}}
-					data-testid="blueprint-checkbox"
-				/>
-			</div>
+			<BlueprintTableCheckbox
+				isSelected={isSelected}
+				onToggle={() => onToggleSelection(blueprint.metadata.sha)}
+			/>
 
 			{/* Type column */}
 			<div className="history-type-container">
