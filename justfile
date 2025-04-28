@@ -42,39 +42,35 @@ build:
     {{echo_command}} "$MESSAGE"
     exit $EXIT_CODE
 
-# Run development server
+# `npm run dev`
 dev:
     npm run dev
 
-# Run Vite preview server
-preview:
-    npm run preview
-
-# Run tests
+# `npm run test`
 test:
     npm run test
 
-# Run tests with coverage
+# `npm run test:coverage`
 test-coverage:
     npm run test:coverage
 
-# Generate route files
+# `npm run generate:routes`
 generate-routes:
     npm run generate:routes
 
-# Run linting with auto-fix
+# `npm run lint:fix`
 lint-fix:
     npm run lint:fix
 
-# Run ESLint and generate report
+# `npm run ci:eslint`
 ci-eslint:
     npm run ci:eslint
 
-# Check formatting with Prettier
+# `npm run ci:prettier`
 ci-prettier:
     npm run ci:prettier
 
-# Run TypeScript type checking
+# `npm run ci:typecheck`
 typecheck:
     npm run ci:typecheck
 
