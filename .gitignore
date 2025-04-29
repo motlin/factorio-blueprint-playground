@@ -35,3 +35,4 @@ dist-ssr
 # wrangler files
 .wrangler
 .dev.vars
+src/routeTree.gen.ts
