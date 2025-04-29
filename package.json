@@ -9,7 +9,7 @@
     "build": "vite build",
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
-    "generate:routes": "npx @tanstack/router-cli generate-routefiles",
+    "generate:routes": "npx @tanstack/router-cli generate",
     "build:types": "npm run generate:routes && tsc --noEmit --project tsconfig.routes.json",
     "lint:fix": "prettier --write \"{src,functions}/**/*.{js,jsx,ts,tsx,css,md,json}\" && eslint . --fix",
     "ci:test": "vitest run",
