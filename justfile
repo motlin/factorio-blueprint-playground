@@ -83,12 +83,9 @@ hooks:
     uv tool run pre-commit run
 
 # Run all checks before committing
-precommit:
+precommit: lint-fix format hooks
     @echo "🔍 Running pre-commit checks..."
-    @just lint-fix || (echo "❌ Lint-fix failed but continuing...")
-    @just format || (echo "❌ Format failed but continuing...")
-    @just hooks || (echo "❌ Precommit hooks failed but continuing...")
-    @echo "✅ Pre-commit checks completed. Review any errors above."
+    @echo "✅ Pre-commit checks completed successfully."
 
 # `npm install`
 install:
