@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import Dexie, {Table} from 'dexie';
 
 import {parseVersion3} from '../parsing/blueprintParser.ts';
@@ -198,7 +199,6 @@ if (typeof window !== 'undefined') {
 		async listAll() {
 			const blueprints = await db.listBlueprints();
 
-			// eslint-disable-next-line no-console
 			console.table(
 				blueprints.map((bp) => ({
 					sha: bp.metadata.sha,
@@ -226,14 +226,14 @@ if (typeof window !== 'undefined') {
 
 		async getBySha(sha: string) {
 			const blueprint = await db.getBlueprint(sha);
-			// eslint-disable-next-line no-console
+
 			console.log(blueprint);
 			return blueprint;
 		},
 
 		async getMostRecent() {
 			const blueprint = await db.getMostRecent();
-			// eslint-disable-next-line no-console
+
 			console.log(blueprint);
 			return blueprint;
 		},
@@ -241,7 +241,7 @@ if (typeof window !== 'undefined') {
 		async clearAll() {
 			if (confirm('Are you sure you want to clear all blueprints?')) {
 				await db.clearAll();
-				// eslint-disable-next-line no-console
+
 				console.log('Database cleared');
 			}
 		},
@@ -251,7 +251,6 @@ if (typeof window !== 'undefined') {
 		},
 
 		help() {
-			// eslint-disable-next-line no-console
 			console.log(`
 Blueprint Database Utilities
 
@@ -277,7 +276,6 @@ const blueprint = await window.blueprintDb.getBySha("a1b2c3...");
 	window.blueprintDb = blueprintDb;
 
 	if (import.meta.env.DEV) {
-		// eslint-disable-next-line no-console
 		console.log('Blueprint database utilities available at window.blueprintDb (try window.blueprintDb.help())');
 	}
 }

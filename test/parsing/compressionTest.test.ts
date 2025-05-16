@@ -78,12 +78,14 @@ describe('compression settings search', () => {
         console.log(`\nTesting ${fixtures.length.toString()} blueprint fixtures:`);
 
         for (const fixture of fixtures) {
+
             console.log(`\nFixture: ${fixture}`);
             const blueprintStr = readFixtureFile(`txt/${fixture}.txt`);
             const {matches} = findMatchingCompression(blueprintStr);
 
             // We're happy if we either found a match, or can at least recreate the blueprint with default settings
             if (matches.length === 0) {
+
                 console.log('No exact matches found, trying with default compression settings...');
                 const expectedJson = deserializeBlueprint(blueprintStr);
                 const serialized = serializeBlueprint(expectedJson, DEFAULT_COMPRESSION_SETTINGS);
