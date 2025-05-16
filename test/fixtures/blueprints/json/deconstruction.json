@@ -1,12 +1,12 @@
 {
-  "deconstruction_planner": {
-    "settings": {
-      "entity_filter_mode": 0,
-      "trees_and_rocks_only": true,
-      "tile_filter_mode": 0,
-      "tile_selection_mode": 0
-    },
-    "item": "deconstruction-planner",
-    "version": 73014509569
-  }
+	"deconstruction_planner": {
+		"settings": {
+			"entity_filter_mode": 0,
+			"trees_and_rocks_only": true,
+			"tile_filter_mode": 0,
+			"tile_selection_mode": 0
+		},
+		"item": "deconstruction-planner",
+		"version": 73014509569
+	}
 }

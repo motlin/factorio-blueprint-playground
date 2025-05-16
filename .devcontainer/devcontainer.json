@@ -1,5 +1,5 @@
 {
-  "tasks": {
-    "build": "npm install && npm run build"
-  }
+	"tasks": {
+		"build": "npm install && npm run build"
+	}
 }
