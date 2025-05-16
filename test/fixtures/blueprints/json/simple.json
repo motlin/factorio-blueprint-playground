@@ -1,236 +1,201 @@
 {
-  "blueprint": {
-    "description": "The RS latch - single decider version, from the Factorio Wiki.\n\nhttps://wiki.factorio.com/Tutorial:Circuit_network_cookbook#Latches\n\nThis is useful for turning on and off parts of the factory without rapid flickering. It can be used for turning off steam power when accumulator charge is high enough, or a mineral patch when contents on the belt is high enough, etc.\n\nhttps://www.factorio.school/view/-OA7pqw3IABaT1GuOsxp",
-    "icons": [
-      {
-        "signal": {
-          "name": "power-switch"
-        },
-        "index": 1
-      }
-    ],
-    "entities": [
-      {
-        "entity_number": 1,
-        "name": "decider-combinator",
-        "position": {
-          "x": 302,
-          "y": 197.5
-        },
-        "direction": 4,
-        "control_behavior": {
-          "decider_conditions": {
-            "conditions": [
-              {
-                "first_signal": {
-                  "name": "parameter-0"
-                },
-                "constant": 80,
-                "comparator": ">"
-              }
-            ],
-            "outputs": [
-              {
-                "signal": {
-                  "type": "virtual",
-                  "name": "signal-red"
-                },
-                "copy_count_from_input": false
-              }
-            ]
-          }
-        },
-        "player_description": "[virtual-signal=signal-R] means Reset\nWhen the level of Item [item=parameter-0] exceeds High, then Reset the latch and turn off power"
-      },
-      {
-        "entity_number": 2,
-        "name": "decider-combinator",
-        "position": {
-          "x": 302,
-          "y": 199.5
-        },
-        "direction": 4,
-        "control_behavior": {
-          "decider_conditions": {
-            "conditions": [
-              {
-                "first_signal": {
-                  "name": "parameter-0"
-                },
-                "constant": 20
-              }
-            ],
-            "outputs": [
-              {
-                "signal": {
-                  "type": "virtual",
-                  "name": "signal-green"
-                },
-                "copy_count_from_input": false
-              }
-            ]
-          }
-        },
-        "player_description": "[virtual-signal=signal-S] means Set\nWhen the level of Item [item=parameter-0] is below Low, then Set the latch and turn on power"
-      },
-      {
-        "entity_number": 3,
-        "name": "medium-electric-pole",
-        "position": {
-          "x": 302.5,
-          "y": 198.5
-        }
-      },
-      {
-        "entity_number": 4,
-        "name": "decider-combinator",
-        "position": {
-          "x": 304,
-          "y": 198.5
-        },
-        "direction": 4,
-        "control_behavior": {
-          "decider_conditions": {
-            "conditions": [
-              {
-                "first_signal": {
-                  "type": "virtual",
-                  "name": "signal-green"
-                },
-                "second_signal": {
-                  "type": "virtual",
-                  "name": "signal-red"
-                },
-                "comparator": ">"
-              }
-            ],
-            "outputs": [
-              {
-                "signal": {
-                  "type": "virtual",
-                  "name": "signal-green"
-                },
-                "copy_count_from_input": false
-              }
-            ]
-          }
-        },
-        "player_description": "The central decider and green feedback wire is the actual RS Latch. It latches the Set signal [virtual-signal=signal-S] until the Reset signal [virtual-signal=signal-R] is received (and vice-versa).\nNB: the latch expects binary inputs ([virtual-signal=signal-S] & [virtual-signal=signal-R] must be 0 or 1) - this is why the previous two deciders are required.\nWhen both inputs are true, the reset signal takes priority and the latch resets. "
-      },
-      {
-        "entity_number": 5,
-        "name": "power-switch",
-        "position": {
-          "x": 307,
-          "y": 198
-        },
-        "control_behavior": {
-          "circuit_enabled": true,
-          "circuit_condition": {
-            "first_signal": {
-              "type": "virtual",
-              "name": "signal-green"
-            },
-            "constant": 0,
-            "comparator": ">"
-          }
-        },
-        "switch_state": false
-      },
-      {
-        "entity_number": 6,
-        "name": "medium-electric-pole",
-        "position": {
-          "x": 312.5,
-          "y": 198.5
-        }
-      }
-    ],
-    "wires": [
-      [
-        1,
-        2,
-        2,
-        2
-      ],
-      [
-        1,
-        3,
-        4,
-        1
-      ],
-      [
-        2,
-        3,
-        4,
-        1
-      ],
-      [
-        3,
-        5,
-        5,
-        5
-      ],
-      [
-        4,
-        2,
-        4,
-        4
-      ],
-      [
-        4,
-        4,
-        5,
-        2
-      ],
-      [
-        5,
-        6,
-        6,
-        5
-      ]
-    ],
-    "parameters": [
-      {
-        "type": "id",
-        "name": "Item",
-        "id": "parameter-0",
-        "quality-condition": {
-          "quality": "normal",
-          "comparator": "="
-        }
-      },
-      {
-        "type": "number",
-        "number": "80",
-        "name": "High"
-      },
-      {
-        "type": "number",
-        "number": "20",
-        "name": "Low"
-      },
-      {
-        "type": "id",
-        "name": "Set",
-        "id": "signal-green",
-        "quality-condition": {
-          "quality": "normal",
-          "comparator": "="
-        }
-      },
-      {
-        "type": "id",
-        "name": "Reset",
-        "id": "signal-red",
-        "quality-condition": {
-          "quality": "normal",
-          "comparator": "="
-        }
-      }
-    ],
-    "item": "blueprint",
-    "label": "RS Latch",
-    "version": 562949954207746
-  }
+	"blueprint": {
+		"description": "The RS latch - single decider version, from the Factorio Wiki.\n\nhttps://wiki.factorio.com/Tutorial:Circuit_network_cookbook#Latches\n\nThis is useful for turning on and off parts of the factory without rapid flickering. It can be used for turning off steam power when accumulator charge is high enough, or a mineral patch when contents on the belt is high enough, etc.\n\nhttps://www.factorio.school/view/-OA7pqw3IABaT1GuOsxp",
+		"icons": [
+			{
+				"signal": {
+					"name": "power-switch"
+				},
+				"index": 1
+			}
+		],
+		"entities": [
+			{
+				"entity_number": 1,
+				"name": "decider-combinator",
+				"position": {
+					"x": 302,
+					"y": 197.5
+				},
+				"direction": 4,
+				"control_behavior": {
+					"decider_conditions": {
+						"conditions": [
+							{
+								"first_signal": {
+									"name": "parameter-0"
+								},
+								"constant": 80,
+								"comparator": ">"
+							}
+						],
+						"outputs": [
+							{
+								"signal": {
+									"type": "virtual",
+									"name": "signal-red"
+								},
+								"copy_count_from_input": false
+							}
+						]
+					}
+				},
+				"player_description": "[virtual-signal=signal-R] means Reset\nWhen the level of Item [item=parameter-0] exceeds High, then Reset the latch and turn off power"
+			},
+			{
+				"entity_number": 2,
+				"name": "decider-combinator",
+				"position": {
+					"x": 302,
+					"y": 199.5
+				},
+				"direction": 4,
+				"control_behavior": {
+					"decider_conditions": {
+						"conditions": [
+							{
+								"first_signal": {
+									"name": "parameter-0"
+								},
+								"constant": 20
+							}
+						],
+						"outputs": [
+							{
+								"signal": {
+									"type": "virtual",
+									"name": "signal-green"
+								},
+								"copy_count_from_input": false
+							}
+						]
+					}
+				},
+				"player_description": "[virtual-signal=signal-S] means Set\nWhen the level of Item [item=parameter-0] is below Low, then Set the latch and turn on power"
+			},
+			{
+				"entity_number": 3,
+				"name": "medium-electric-pole",
+				"position": {
+					"x": 302.5,
+					"y": 198.5
+				}
+			},
+			{
+				"entity_number": 4,
+				"name": "decider-combinator",
+				"position": {
+					"x": 304,
+					"y": 198.5
+				},
+				"direction": 4,
+				"control_behavior": {
+					"decider_conditions": {
+						"conditions": [
+							{
+								"first_signal": {
+									"type": "virtual",
+									"name": "signal-green"
+								},
+								"second_signal": {
+									"type": "virtual",
+									"name": "signal-red"
+								},
+								"comparator": ">"
+							}
+						],
+						"outputs": [
+							{
+								"signal": {
+									"type": "virtual",
+									"name": "signal-green"
+								},
+								"copy_count_from_input": false
+							}
+						]
+					}
+				},
+				"player_description": "The central decider and green feedback wire is the actual RS Latch. It latches the Set signal [virtual-signal=signal-S] until the Reset signal [virtual-signal=signal-R] is received (and vice-versa).\nNB: the latch expects binary inputs ([virtual-signal=signal-S] & [virtual-signal=signal-R] must be 0 or 1) - this is why the previous two deciders are required.\nWhen both inputs are true, the reset signal takes priority and the latch resets. "
+			},
+			{
+				"entity_number": 5,
+				"name": "power-switch",
+				"position": {
+					"x": 307,
+					"y": 198
+				},
+				"control_behavior": {
+					"circuit_enabled": true,
+					"circuit_condition": {
+						"first_signal": {
+							"type": "virtual",
+							"name": "signal-green"
+						},
+						"constant": 0,
+						"comparator": ">"
+					}
+				},
+				"switch_state": false
+			},
+			{
+				"entity_number": 6,
+				"name": "medium-electric-pole",
+				"position": {
+					"x": 312.5,
+					"y": 198.5
+				}
+			}
+		],
+		"wires": [
+			[1, 2, 2, 2],
+			[1, 3, 4, 1],
+			[2, 3, 4, 1],
+			[3, 5, 5, 5],
+			[4, 2, 4, 4],
+			[4, 4, 5, 2],
+			[5, 6, 6, 5]
+		],
+		"parameters": [
+			{
+				"type": "id",
+				"name": "Item",
+				"id": "parameter-0",
+				"quality-condition": {
+					"quality": "normal",
+					"comparator": "="
+				}
+			},
+			{
+				"type": "number",
+				"number": "80",
+				"name": "High"
+			},
+			{
+				"type": "number",
+				"number": "20",
+				"name": "Low"
+			},
+			{
+				"type": "id",
+				"name": "Set",
+				"id": "signal-green",
+				"quality-condition": {
+					"quality": "normal",
+					"comparator": "="
+				}
+			},
+			{
+				"type": "id",
+				"name": "Reset",
+				"id": "signal-red",
+				"quality-condition": {
+					"quality": "normal",
+					"comparator": "="
+				}
+			}
+		],
+		"item": "blueprint",
+		"label": "RS Latch",
+		"version": 562949954207746
+	}
 }

@@ -1,167 +1,166 @@
 on:
-  pull_request:
+    pull_request:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+    group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+    cancel-in-progress: true
 
 jobs:
-  eslint:
-    permissions:
-      pull-requests: read
-      checks: write
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22.x'
-          cache: 'npm'
+    eslint:
+        permissions:
+            pull-requests: read
+            checks: write
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: '22.x'
+                  cache: 'npm'
 
-      - run: npm ci
+            - run: npm ci
 
-      - run: npx @tanstack/router-cli generate --routesDirectory ./src/routes --generatedRouteTree ./src/routeTree.gen.ts
+            - run: npx @tanstack/router-cli generate --routesDirectory ./src/routes --generatedRouteTree ./src/routeTree.gen.ts
 
-      - run: npm run ci:eslint
-        continue-on-error: true
+            - run: npm run ci:eslint
+              continue-on-error: true
 
-      - uses: ataylorme/eslint-annotate-action@v3
+            - uses: ataylorme/eslint-annotate-action@v3
 
-  prettier:
-    runs-on: ubuntu-latest
+    prettier:
+        runs-on: ubuntu-latest
 
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22.x'
-          cache: 'npm'
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: '22.x'
+                  cache: 'npm'
 
-      - run: npm ci
+            - run: npm ci
 
-      - run: npm run ci:prettier
+            - run: npm run ci:prettier
 
-  typecheck:
-    name: Type Check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22.x'
-          cache: 'npm'
+    typecheck:
+        name: Type Check
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: '22.x'
+                  cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci
+            - name: Install dependencies
+              run: npm ci
 
-      - name: Generate route files
-        run: npx @tanstack/router-cli generate --routesDirectory ./src/routes --generatedRouteTree ./src/routeTree.gen.ts
+            - name: Generate route files
+              run: npx @tanstack/router-cli generate --routesDirectory ./src/routes --generatedRouteTree ./src/routeTree.gen.ts
 
-      - name: Type Check
-        run: npm run ci:typecheck
+            - name: Type Check
+              run: npm run ci:typecheck
 
-  test:
-    name: Test (Node ${{ matrix.node-version }})
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [21.x, 22.x]
-      # Don't cancel other matrix jobs if one fails
-      fail-fast: false
+    test:
+        name: Test (Node ${{ matrix.node-version }})
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                node-version: [21.x, 22.x]
+            # Don't cancel other matrix jobs if one fails
+            fail-fast: false
 
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'npm'
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ matrix.node-version }}
+                  cache: 'npm'
 
-      - run: npm ci
+            - run: npm ci
 
-      - run: npm test
+            - run: npm test
 
-  coverage:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+    coverage:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22.x'
-          cache: 'npm'
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: '22.x'
+                  cache: 'npm'
 
-      - run: npm ci
+            - run: npm ci
 
-      - run: npm run test:coverage
+            - run: npm run test:coverage
 
-      - name: Upload coverage report
-        if: matrix.node-version == '22.x'
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report
-          path: coverage/
-          retention-days: 14
+            - name: Upload coverage report
+              if: matrix.node-version == '22.x'
+              uses: actions/upload-artifact@v4
+              with:
+                  name: coverage-report
+                  path: coverage/
+                  retention-days: 14
 
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22.x'
-          cache: 'npm'
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: '22.x'
+                  cache: 'npm'
 
-      - run: npm ci
-      
-      - name: Generate route files
-        run: npx @tanstack/router-cli generate --routesDirectory ./src/routes --generatedRouteTree ./src/routeTree.gen.ts
-      
-      - run: npm run build
+            - run: npm ci
 
-      - name: Upload build artifacts
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist
-          path: dist/
-          retention-days: 1
+            - name: Generate route files
+              run: npx @tanstack/router-cli generate --routesDirectory ./src/routes --generatedRouteTree ./src/routeTree.gen.ts
 
+            - run: npm run build
 
-  build-types:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+            - name: Upload build artifacts
+              if: success()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: dist
+                  path: dist/
+                  retention-days: 1
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22.x'
-          cache: 'npm'
+    build-types:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
 
-      - run: npm ci
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: '22.x'
+                  cache: 'npm'
 
-      - name: Generate route files
-        run: npx @tanstack/router-cli generate --routesDirectory ./src/routes --generatedRouteTree ./src/routeTree.gen.ts
+            - run: npm ci
 
-      - run: npm run build:types
+            - name: Generate route files
+              run: npx @tanstack/router-cli generate --routesDirectory ./src/routes --generatedRouteTree ./src/routeTree.gen.ts
 
-  all-checks:
-    name: All checks
-    needs: [eslint, prettier, typecheck, test, coverage, build, build-types]
-    runs-on: ubuntu-latest
-    steps:
-      - name: All checks passed
-        run: echo "All checks passed!"
+            - run: npm run build:types
 
-  automerge-dependabot:
-    if: github.event.pull_request.user.login == 'dependabot[bot]'
-    runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
+    all-checks:
+        name: All checks
+        needs: [eslint, prettier, typecheck, test, coverage, build, build-types]
+        runs-on: ubuntu-latest
+        steps:
+            - name: All checks passed
+              run: echo "All checks passed!"
 
-      - name: Enable auto-merge for Dependabot PR
-        run: gh pr merge --rebase --auto "${{ github.event.pull_request.number }}"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    automerge-dependabot:
+        if: github.event.pull_request.user.login == 'dependabot[bot]'
+        runs-on: ubuntu-latest
+        permissions:
+            pull-requests: write
+            contents: write
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Enable auto-merge for Dependabot PR
+              run: gh pr merge --rebase --auto "${{ github.event.pull_request.number }}"
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
