@@ -133,32 +133,6 @@ export default [
         },
     },
 
-    // Test environment
-    {
-        files: [
-            'test/**/*.{js,ts,jsx,tsx}',
-            'test/fixtures/**/*.{js,ts}',
-        ],
-        languageOptions: {
-            globals: {
-                ...node,
-                ...vitest,
-                ...browser,
-            },
-        },
-        rules: {
-            '@typescript-eslint/no-explicit-any': 'off',
-            '@typescript-eslint/no-non-null-assertion': 'off',
-            '@typescript-eslint/no-floating-promises': 'off',
-            '@typescript-eslint/no-unsafe-call': 'off',
-            '@typescript-eslint/no-unsafe-member-access': 'off',
-            '@typescript-eslint/no-unsafe-assignment': 'off',
-            '@typescript-eslint/no-unsafe-argument': 'off',
-            '@typescript-eslint/no-unsafe-return': 'off',
-            'no-console': 'off',
-        },
-    },
-
     // React configuration
     {
         files: ['**/*.{jsx,tsx}'],
@@ -211,6 +185,32 @@ export default [
             'no-trailing-spaces': 'error',
             'comma-dangle': ['error', 'always-multiline'],
             'line-comment-position': ['error', { 'position': 'above' }],
+        },
+    },
+
+    // Test environment
+    {
+        files: [
+            'test/**/*.{js,ts,jsx,tsx}',
+            'test/fixtures/**/*.{js,ts}',
+        ],
+        languageOptions: {
+            globals: {
+                ...node,
+                ...vitest,
+                ...browser,
+            },
+        },
+        rules: {
+            '@typescript-eslint/no-explicit-any': 'off',
+            '@typescript-eslint/no-non-null-assertion': 'off',
+            '@typescript-eslint/no-floating-promises': 'off',
+            '@typescript-eslint/no-unsafe-call': 'off',
+            '@typescript-eslint/no-unsafe-member-access': 'off',
+            '@typescript-eslint/no-unsafe-assignment': 'off',
+            '@typescript-eslint/no-unsafe-argument': 'off',
+            '@typescript-eslint/no-unsafe-return': 'off',
+            'no-console': 'off',
         },
     },
 

@@ -5,14 +5,14 @@ vi.mock('../../src/fetching/blueprintFetcher');
 vi.mock('../../src/parsing/BlueprintWrapper');
 vi.mock('../../src/state/blueprintLocalStorage', () => ({
     addBlueprint: vi.fn().mockImplementation((...args) => {
-        // eslint-disable-next-line no-console
+
         console.log('addBlueprint called with:', JSON.stringify(args));
         return Promise.resolve({} as unknown);
     }),
 }));
 vi.mock('../../src/parsing/blueprintParser', () => ({
     extractBlueprint: vi.fn().mockImplementation((...args) => {
-        // eslint-disable-next-line no-console
+
         console.log('extractBlueprint called with:', JSON.stringify(args));
         return {} as unknown;
     }),
