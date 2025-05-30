@@ -74,6 +74,10 @@ ci-prettier:
 typecheck:
     npm run ci:typecheck
 
+# `npm run ci:test`
+ci-test:
+    npm run ci:test
+
 # `npx prettier --write ...`
 format:
     npx prettier --write "**/*.{json,yaml,yml,md}"
@@ -82,18 +86,13 @@ format:
 hooks:
     uv tool run pre-commit run
 
-# Run all checks before committing
-precommit: lint-fix format hooks
-    @echo "🔍 Running pre-commit checks..."
-    @echo "✅ Pre-commit checks completed successfully."
-
 # `npm install`
 install:
     npm install
 
-# Run all checks (lint, typecheck, build, test)
-all: install hooks
-    npm run all
+# Run all checks before committing
+precommit: install generate-routes lint-fix format hooks typecheck build ci-test
+    @echo "✅ All pre-commit checks completed successfully."
 
 factorio_home := env('FACTORIO_HOME')
 
