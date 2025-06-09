@@ -43,39 +43,39 @@ build:
     exit $EXIT_CODE
 
 # `npm run dev`
-dev:
+dev: install
     npm run dev
 
 # `npm run test`
-test:
+test: install
     npm run test
 
 # `npm run test:coverage`
-test-coverage:
+test-coverage: install
     npm run test:coverage
 
 # `npm run generate:routes`
-generate-routes:
+generate-routes: install
     npm run generate:routes
 
 # `npm run lint:fix`
-lint-fix:
+lint-fix: install
     npm run lint:fix
 
 # `npm run ci:eslint`
-ci-eslint:
+ci-eslint: install
     npm run ci:eslint
 
 # `npm run ci:prettier`
-ci-prettier:
+ci-prettier: install
     npm run ci:prettier
 
 # `npm run ci:typecheck`
-typecheck:
+typecheck: install
     npm run ci:typecheck
 
 # `npm run ci:test`
-ci-test:
+ci-test: install
     npm run ci:test
 
 # `npx prettier --write ...`
