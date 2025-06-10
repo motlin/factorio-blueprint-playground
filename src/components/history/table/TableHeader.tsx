@@ -17,7 +17,10 @@ export function TableHeader({label, className = 'history-header', sortDirection 
 	};
 
 	return (
-		<div className={onSort ? `${className} sortable` : className} onClick={onSort ? handleClick : undefined}>
+		<div
+			className={onSort ? `${className} sortable` : className}
+			onClick={onSort ? handleClick : undefined}
+		>
 			{label}
 			{onSort && <SortIndicator direction={sortDirection} />}
 		</div>

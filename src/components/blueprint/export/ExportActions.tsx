@@ -127,7 +127,10 @@ const ButtonWithIcon = ({icon: Icon, text, onClick}: ButtonWithIconProps) => (
 		}}
 	>
 		{' '}
-		<Icon size={18} className="mr8" />
+		<Icon
+			size={18}
+			className="mr8"
+		/>
 		{text}
 	</ButtonGreen>
 );
@@ -156,9 +159,21 @@ const ExportActionsComponent = ({blueprint, path, title}: ExportActionsProps) =>
 			<InsetLight>
 				<h3>{title}</h3>
 				<div className="flex-space-between">
-					<ButtonWithIcon icon={ClipboardCopy} text="Copy String" onClick={handleCopyString} />
-					<ButtonWithIcon icon={FileJson} text="Copy JSON" onClick={handleCopyJSON} />
-					<ButtonWithIcon icon={Download} text="Download String" onClick={handleDownloadString} />
+					<ButtonWithIcon
+						icon={ClipboardCopy}
+						text="Copy String"
+						onClick={handleCopyString}
+					/>
+					<ButtonWithIcon
+						icon={FileJson}
+						text="Copy JSON"
+						onClick={handleCopyJSON}
+					/>
+					<ButtonWithIcon
+						icon={Download}
+						text="Download String"
+						onClick={handleDownloadString}
+					/>
 				</div>
 			</InsetLight>
 		</Panel>

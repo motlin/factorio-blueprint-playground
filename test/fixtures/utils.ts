@@ -1,5 +1,5 @@
-import { readdirSync, readFileSync } from 'fs';
-import { join } from 'path';
+import {readdirSync, readFileSync} from 'fs';
+import {join} from 'path';
 
 /**
  * Get list of blueprint fixture filenames (without extension)
@@ -7,18 +7,16 @@ import { join } from 'path';
  * @returns Array of fixture filenames without extensions
  */
 export function getFixtureFiles(): string[] {
-    try {
-        const fixturesDir = join(__dirname, 'blueprints', 'txt');
-        const files = readdirSync(fixturesDir);
+	try {
+		const fixturesDir = join(__dirname, 'blueprints', 'txt');
+		const files = readdirSync(fixturesDir);
 
-        return files
-            .filter((f): f is string =>
-                typeof f === 'string' && f.endsWith('.txt'),
-            )
-            .map((f: string) => f.replace(/\.txt$/, ''));
-    } catch (error) {
-        throw new Error(`Failed to read fixture files: ${error instanceof Error ? error.message : String(error)}`);
-    }
+		return files
+			.filter((f): f is string => typeof f === 'string' && f.endsWith('.txt'))
+			.map((f: string) => f.replace(/\.txt$/, ''));
+	} catch (error) {
+		throw new Error(`Failed to read fixture files: ${error instanceof Error ? error.message : String(error)}`);
+	}
 }
 
 /**
@@ -28,16 +26,18 @@ export function getFixtureFiles(): string[] {
  * @returns Contents of the fixture file
  */
 export function readFixtureFile(relativePath: string): string {
-    try {
-        const fullPath = join(__dirname, 'blueprints', relativePath);
-        const content = readFileSync(fullPath, 'utf-8');
+	try {
+		const fullPath = join(__dirname, 'blueprints', relativePath);
+		const content = readFileSync(fullPath, 'utf-8');
 
-        if (typeof content !== 'string') {
-            throw new Error('File content is not a string');
-        }
+		if (typeof content !== 'string') {
+			throw new Error('File content is not a string');
+		}
 
-        return content.trim();
-    } catch (error) {
-        throw new Error(`Failed to read fixture file ${relativePath}: ${error instanceof Error ? error.message : String(error)}`);
-    }
+		return content.trim();
+	} catch (error) {
+		throw new Error(
+			`Failed to read fixture file ${relativePath}: ${error instanceof Error ? error.message : String(error)}`,
+		);
+	}
 }

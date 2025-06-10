@@ -13,7 +13,11 @@ export const ParametersList = ({parameters}: ParametersListProps) => {
 	return (
 		<InsetDark>
 			{parameters.map((param, index) => (
-				<ParameterRow key={index} param={param} parameters={parameters} />
+				<ParameterRow
+					key={index}
+					param={param}
+					parameters={parameters}
+				/>
 			))}
 		</InsetDark>
 	);

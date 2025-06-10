@@ -95,7 +95,10 @@ export function BlueprintPlayground() {
 			<h1>Factorio Blueprint Playground</h1>
 
 			<Panel title="Blueprint Input">
-				<BlueprintSourceHandler pasted={pasted} autoFocus={focusTextarea ?? false} />
+				<BlueprintSourceHandler
+					pasted={pasted}
+					autoFocus={focusTextarea ?? false}
+				/>
 			</Panel>
 
 			{error && <ErrorAlert error={error} />}
@@ -104,7 +107,11 @@ export function BlueprintPlayground() {
 				<div className="panels2">
 					{/* Left side */}
 					<div>
-						<ExportActions blueprint={rootBlueprint} path={undefined} title="Root Blueprint" />
+						<ExportActions
+							blueprint={rootBlueprint}
+							path={undefined}
+							title="Root Blueprint"
+						/>
 
 						<BlueprintTree
 							rootBlueprint={rootBlueprint}
@@ -115,7 +122,11 @@ export function BlueprintPlayground() {
 
 					{/* Right side */}
 					<div>
-						<ExportActions blueprint={selectedBlueprint} path={selectedPath} title="Selected Blueprint" />
+						<ExportActions
+							blueprint={selectedBlueprint}
+							path={selectedPath}
+							title="Selected Blueprint"
+						/>
 						<BasicInfoPanel blueprint={selectedBlueprint} />
 						<BlueprintInfoPanels blueprint={selectedBlueprint} />
 					</div>

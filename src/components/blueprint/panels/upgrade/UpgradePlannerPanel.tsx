@@ -24,15 +24,24 @@ const UpgradePlannerPanelComponent = ({blueprint}: {blueprint: BlueprintString})
 						<Row key={index}>
 							<Cell grow>
 								<div style={{margin: 'auto'}}>
-									<FactorioIcon icon={mapping.from} size={'large'} />
+									<FactorioIcon
+										icon={mapping.from}
+										size={'large'}
+									/>
 								</div>
 							</Cell>
-							<Cell width="40px" align="center">
+							<Cell
+								width="40px"
+								align="center"
+							>
 								→
 							</Cell>
 							<Cell grow>
 								<div style={{margin: 'auto'}}>
-									<FactorioIcon icon={mapping.to} size={'large'} />
+									<FactorioIcon
+										icon={mapping.to}
+										size={'large'}
+									/>
 								</div>
 							</Cell>
 						</Row>

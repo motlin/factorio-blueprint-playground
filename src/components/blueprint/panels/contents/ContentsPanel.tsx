@@ -34,11 +34,31 @@ const ContentsPanelComponent = ({blueprint}: PanelProps) => {
 
 	return (
 		<>
-			<ItemPanel title="Entities" items={entityCounts} type={'entity'} />
-			<ItemPanel title="Recipes" items={recipeCounts} type={'recipe'} />
-			<ItemPanel title="Tiles" items={tileCounts} type={'tile'} />
-			<ItemPanel title="Items" items={itemCounts} type={'item'} />
-			<ItemPanel title="Inventory" items={inventoryCounts} type={'item'} />
+			<ItemPanel
+				title="Entities"
+				items={entityCounts}
+				type={'entity'}
+			/>
+			<ItemPanel
+				title="Recipes"
+				items={recipeCounts}
+				type={'recipe'}
+			/>
+			<ItemPanel
+				title="Tiles"
+				items={tileCounts}
+				type={'tile'}
+			/>
+			<ItemPanel
+				title="Items"
+				items={itemCounts}
+				type={'item'}
+			/>
+			<ItemPanel
+				title="Inventory"
+				items={inventoryCounts}
+				type={'item'}
+			/>
 		</>
 	);
 };

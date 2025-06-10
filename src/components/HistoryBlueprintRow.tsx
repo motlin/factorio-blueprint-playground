@@ -32,7 +32,10 @@ export function HistoryBlueprintRow({blueprint, isSelected, onToggleSelection}: 
 
 			{/* Type column */}
 			<div className="history-type-container">
-				<FactorioIcon icon={{type: 'item', name: blueprint.gameData.type.replace(/_/g, '-')}} size="small" />
+				<FactorioIcon
+					icon={{type: 'item', name: blueprint.gameData.type.replace(/_/g, '-')}}
+					size="small"
+				/>
 			</div>
 
 			{/* Version column */}
@@ -47,7 +50,11 @@ export function HistoryBlueprintRow({blueprint, isSelected, onToggleSelection}: 
 			{/* Icons column */}
 			<div className="history-icons-container">
 				{blueprint.gameData.icons.map((icon, index) => (
-					<FactorioIcon key={index} icon={{type: icon.type || 'item', name: icon.name}} size="small" />
+					<FactorioIcon
+						key={index}
+						icon={{type: icon.type || 'item', name: icon.name}}
+						size="small"
+					/>
 				))}
 				{blueprint.gameData.icons.length === 0 && <span style={{opacity: 0.5}}>No icon</span>}
 			</div>
@@ -55,7 +62,10 @@ export function HistoryBlueprintRow({blueprint, isSelected, onToggleSelection}: 
 			{/* Label column */}
 			<div className="history-label-container">
 				{blueprint.gameData.label ? (
-					<RichText text={blueprint.gameData.label} iconSize="small" />
+					<RichText
+						text={blueprint.gameData.label}
+						iconSize="small"
+					/>
 				) : (
 					<span style={{opacity: 0.5}}>No label</span>
 				)}
