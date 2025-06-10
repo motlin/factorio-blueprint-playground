@@ -41,16 +41,18 @@ afterAll(async () => {
 			await fs.unlink(path.join(tempDir, file));
 		}
 	}
-});
+}, 30000);
 
 export async function renderToHtmlFile(html: string, testName: string): Promise<string> {
 	const factorioCssPath = path.resolve(__dirname, '../../src/styles/factorio-a76ef767.css');
 	const mainCssPath = path.resolve(__dirname, '../../src/styles/main.css');
 	const factorioIconCssPath = path.resolve(__dirname, '../../src/components/core/icons/FactorioIcon.module.css');
+	const editableLabelDescriptionCssPath = path.resolve(__dirname, '../../src/styles/EditableLabelDescription.css');
 
 	const factorioCss = await fs.readFile(factorioCssPath, 'utf-8');
 	const mainCss = await fs.readFile(mainCssPath, 'utf-8');
 	const factorioIconCss = await fs.readFile(factorioIconCssPath, 'utf-8');
+	const editableLabelDescriptionCss = await fs.readFile(editableLabelDescriptionCssPath, 'utf-8');
 
 	const htmlContent = `
     <!DOCTYPE html>
@@ -64,6 +66,9 @@ export async function renderToHtmlFile(html: string, testName: string): Promise<
         </style>
         <style>
             ${mainCss}
+        </style>
+        <style>
+            ${editableLabelDescriptionCss}
         </style>
         <style>
             /* Transform CSS module classes to match runtime behavior */
@@ -103,12 +108,22 @@ export async function compareScreenshots(testName: string, html: string, selecto
 	await page.goto(fileUrl);
 	await page.waitForSelector(selector);
 
+	// Wait for fonts and CSS to be fully loaded
+	await page.waitForLoadState('networkidle');
+
 	const element = await page.$(selector);
 	if (!element) {
 		throw new Error(`Element ${selector} not found`);
 	}
 
-	await element.screenshot({path: tempPath});
+	await element.screenshot({path: tempPath, timeout: 30000});
+
+	// Check if we should update snapshots
+	if (process.env.UPDATE_SNAPSHOTS === 'true') {
+		await fs.rename(tempPath, snapshotPath);
+		console.log(`✅ Updated snapshot for ${testName}`);
+		return;
+	}
 
 	try {
 		const baseline = await fs.readFile(snapshotPath);
@@ -117,9 +132,16 @@ export async function compareScreenshots(testName: string, html: string, selecto
 		await fs.unlink(tempPath);
 	} catch (error: unknown) {
 		if (error instanceof Error && 'code' in error && (error as {code?: string}).code === 'ENOENT') {
-			// No baseline exists, create it
-			await fs.rename(tempPath, snapshotPath);
-			console.warn(`Created new baseline for ${testName}`);
+			// Check if we're trying to read the baseline or the temp file
+			try {
+				await fs.access(tempPath);
+				// Temp file exists, so baseline doesn't exist - create it
+				await fs.rename(tempPath, snapshotPath);
+				console.warn(`Created new baseline for ${testName}`);
+			} catch {
+				// Temp file doesn't exist - screenshot failed
+				throw new Error(`Failed to create screenshot for ${testName}`);
+			}
 		} else {
 			throw error;
 		}

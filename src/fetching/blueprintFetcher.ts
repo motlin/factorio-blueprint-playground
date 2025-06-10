@@ -2,7 +2,7 @@ import {logger} from '../lib/sentry';
 import {deserializeBlueprint} from '../parsing/blueprintParser';
 import type {BlueprintString} from '../parsing/types';
 
-export type BlueprintFetchMethod = 'url' | 'json' | 'data';
+export type BlueprintFetchMethod = 'url' | 'json' | 'data' | 'edit';
 
 export function getSourceLabel(fetchMethod?: BlueprintFetchMethod): string {
 	switch (fetchMethod) {
@@ -12,6 +12,8 @@ export function getSourceLabel(fetchMethod?: BlueprintFetchMethod): string {
 			return 'JSON Import';
 		case 'data':
 			return 'Direct Paste';
+		case 'edit':
+			return 'Edited Blueprint';
 		default:
 			return 'Unknown';
 	}
@@ -370,10 +372,33 @@ export async function fetchBlueprint<
 			gcTime?: number;
 		}) => Promise<T>;
 	},
->(deps: {pasted: string | undefined}, queryClient: TQueryClient): Promise<BlueprintFetchResult> {
+>(
+	deps: {pasted: string | undefined; fetchType?: BlueprintFetchMethod},
+	queryClient: TQueryClient,
+): Promise<BlueprintFetchResult> {
 	const pasted = deps.pasted;
 	if (!pasted) {
 		return undefined;
+	}
+
+	// If fetchType is provided, respect it (particularly for 'edit' type)
+	if (deps.fetchType === 'edit') {
+		try {
+			const blueprintString: BlueprintString = deserializeBlueprint(pasted);
+			return {
+				success: true,
+				fetchMethod: 'edit' as const,
+				pasted,
+				blueprintString,
+			};
+		} catch (error) {
+			return {
+				success: false,
+				error: error instanceof Error ? error : new Error(String(error)),
+				pasted,
+				fetchMethod: 'edit',
+			};
+		}
 	}
 
 	// Simple URL detection

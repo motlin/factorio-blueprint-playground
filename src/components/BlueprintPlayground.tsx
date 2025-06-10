@@ -16,7 +16,6 @@ import {BlueprintErrorFallback} from './blueprint/error/BlueprintErrorFallback';
 import {ExportActions} from './blueprint/export/ExportActions';
 import BlueprintSourceHandler from './blueprint/input/BlueprintSourceHandler';
 import {BlueprintInfoPanels} from './blueprint/panels/BlueprintInfoPanels';
-import {BasicInfoPanel} from './blueprint/panels/info/BasicInfoPanel';
 import {ParametersPanel} from './blueprint/panels/parameters/ParametersPanel';
 import {BlueprintTree} from './blueprint/tree';
 import {ErrorAlert, Panel} from './ui';
@@ -120,8 +119,11 @@ export function BlueprintPlayground() {
 							path={selectedPath}
 							title="Selected Blueprint"
 						/>
-						<BasicInfoPanel blueprint={selectedBlueprint} />
-						<BlueprintInfoPanels blueprint={selectedBlueprint} />
+						<BlueprintInfoPanels
+							blueprint={selectedBlueprint}
+							rootBlueprint={rootBlueprint}
+							selectedPath={selectedPath}
+						/>
 					</div>
 				</div>
 

@@ -28,7 +28,7 @@ export interface BlueprintStorageMetadata {
 	data: string;
 	// Current selection path
 	selection?: string;
-	fetchMethod?: 'url' | 'json' | 'data';
+	fetchMethod?: 'url' | 'json' | 'data' | 'edit';
 }
 
 export interface DatabaseBlueprint {
@@ -64,7 +64,7 @@ export class BlueprintDatabase extends Dexie {
 		data: string,
 		parsedGameData: Omit<BlueprintGameData, 'createdOn' | 'lastUpdatedOn'>,
 		selection?: string,
-		fetchMethod?: 'url' | 'json' | 'data',
+		fetchMethod?: 'url' | 'json' | 'data' | 'edit',
 	): Promise<DatabaseBlueprint> {
 		const sha = await generateSha(data);
 

@@ -1,5 +1,6 @@
 import {describe, expect, it} from 'vitest';
 
+import {BlueprintFetchMethod} from '../../src/fetching/blueprintFetcher';
 import {searchSchema} from '../../src/routes';
 
 describe('Root route search schema', () => {
@@ -47,6 +48,8 @@ describe('Root route search schema', () => {
 			expect(result).toEqual({
 				pasted: 'blueprint',
 				selection: '1',
+				fetchType: undefined,
+				focusTextarea: undefined,
 			});
 		});
 
@@ -59,7 +62,50 @@ describe('Root route search schema', () => {
 			expect(result).toEqual({
 				pasted: undefined,
 				selection: undefined,
+				fetchType: undefined,
+				focusTextarea: undefined,
 			});
+		});
+
+		it('should accept valid fetchType parameter', () => {
+			const result = searchSchema.parse({
+				pasted: 'some-blueprint-string',
+				selection: '1.2.3',
+				fetchType: 'edit' as BlueprintFetchMethod,
+			});
+
+			expect(result).toEqual({
+				pasted: 'some-blueprint-string',
+				selection: '1.2.3',
+				fetchType: 'edit',
+				focusTextarea: undefined,
+			});
+		});
+
+		it('should reject invalid fetchType parameter', () => {
+			const result = searchSchema.parse({
+				pasted: 'some-blueprint-string',
+				fetchType: 'invalid-type',
+			} as Record<string, unknown>);
+
+			expect(result).toEqual({
+				pasted: 'some-blueprint-string',
+				selection: undefined,
+				fetchType: undefined,
+				focusTextarea: undefined,
+			});
+		});
+	});
+
+	describe('deep linking to edited blueprints', () => {
+		it('should handle edited blueprint links', () => {
+			const result = searchSchema.parse({
+				pasted: 'some-blueprint-string',
+				selection: '1.2.3',
+				fetchType: 'edit' as BlueprintFetchMethod,
+			});
+
+			expect(result.fetchType).toBe('edit');
 		});
 	});
 });

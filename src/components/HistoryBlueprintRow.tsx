@@ -42,15 +42,19 @@ export function HistoryBlueprintRow({blueprint, isSelected, onToggleSelection}: 
 
 			{/* Type column */}
 			<div className="history-type-container">
-				<FactorioIcon
-					icon={{type: 'item', name: blueprint.gameData.type.replace(/_/g, '-')}}
-					size="small"
-				/>
+				{blueprint.gameData?.type ? (
+					<FactorioIcon
+						icon={{type: 'item', name: blueprint.gameData.type.replace(/_/g, '-')}}
+						size="small"
+					/>
+				) : (
+					<span>Unknown</span>
+				)}
 			</div>
 
 			{/* Version column */}
 			<div className="history-version-container">
-				{blueprint.gameData.gameVersion ? (
+				{blueprint.gameData?.gameVersion ? (
 					<Version number={Number(blueprint.gameData.gameVersion)} />
 				) : (
 					<span>Unknown</span>
@@ -59,19 +63,21 @@ export function HistoryBlueprintRow({blueprint, isSelected, onToggleSelection}: 
 
 			{/* Icons column */}
 			<div className="history-icons-container">
-				{blueprint.gameData.icons.map((icon) => (
+				{blueprint.gameData?.icons?.map((icon) => (
 					<FactorioIcon
 						key={`${icon.type || 'item'}-${icon.name}`}
 						icon={{type: icon.type || 'item', name: icon.name}}
 						size="small"
 					/>
 				))}
-				{blueprint.gameData.icons.length === 0 && <span style={{opacity: 0.5}}>No icon</span>}
+				{(!blueprint.gameData?.icons || blueprint.gameData.icons.length === 0) && (
+					<span style={{opacity: 0.5}}>No icon</span>
+				)}
 			</div>
 
 			{/* Label column */}
 			<div className="history-label-container">
-				{blueprint.gameData.label ? (
+				{blueprint.gameData?.label ? (
 					<RichText
 						text={blueprint.gameData.label}
 						iconSize="small"

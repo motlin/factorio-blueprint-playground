@@ -136,6 +136,18 @@ test-ci: install-ci
 coverage-ci: install-ci
     npm run test:coverage
 
+# Update visual test snapshots
+update-snapshots:
+    @echo "📸 Updating visual test snapshots..."
+    UPDATE_SNAPSHOTS=true npm test test/visual/ -- --run
+    @echo "✅ Visual test snapshots updated successfully."
+
+# Update visual test snapshots for a specific test file
+update-snapshots-file FILE:
+    @echo "📸 Updating visual test snapshots for {{FILE}}..."
+    UPDATE_SNAPSHOTS=true npm test test/visual/{{FILE}} -- --run
+    @echo "✅ Visual test snapshots updated for {{FILE}}."
+
 factorio_home := env('FACTORIO_HOME', '')
 
 # `factorio --dump-icon-sprites`

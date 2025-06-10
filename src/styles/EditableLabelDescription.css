@@ -1,0 +1,107 @@
+.blueprint-info-display,
+.blueprint-info-edit {
+	margin: 0;
+	padding: 8px;
+	width: 100%;
+}
+
+.info-field {
+	margin-bottom: 16px;
+}
+
+.info-label {
+	font-weight: bold;
+	color: #ff9b00;
+	margin-bottom: 4px;
+}
+
+.info-value {
+	position: relative;
+	padding: 8px;
+	cursor: pointer;
+	border: 1px dashed transparent;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	min-height: 40px;
+	background-color: #3e3e3e;
+	border-radius: 4px;
+}
+
+.info-value:hover {
+	border-color: #ff9b00;
+}
+
+.info-value .edit-icon {
+	opacity: 0;
+	color: #ff9b00;
+	margin-left: 8px;
+	transition: opacity 0.2s;
+}
+
+.info-value:hover .edit-icon {
+	opacity: 1;
+}
+
+.blueprint-info-edit .editable-field {
+	margin-bottom: 16px;
+	width: 100%;
+}
+
+.blueprint-info-edit label {
+	display: block;
+	font-weight: bold;
+	color: #ff9b00;
+	margin-bottom: 4px;
+}
+
+.blueprint-info-edit .field-help {
+	font-size: 0.85em;
+	color: #888;
+	margin-top: 4px;
+	text-align: right;
+}
+
+.blueprint-info-edit .editable-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+	margin-top: 16px;
+}
+
+.editable-input,
+.editable-textarea {
+	background-color: #414040 !important;
+	color: #fff !important;
+	border: 1px solid #ff9b00 !important;
+	padding: 8px;
+	width: 100%;
+	border-radius: 4px;
+	height: auto !important;
+}
+
+.editable-input:focus,
+.editable-textarea:focus {
+	outline: none !important;
+	border-color: #f1be64 !important;
+	box-shadow: 0 0 0 2px rgba(255, 155, 0, 0.2) !important;
+	background-color: #414040 !important;
+}
+
+.editable-placeholder {
+	color: #888;
+	font-style: italic;
+}
+
+/* Override panel-hole width constraints for edit form */
+dl.panel-hole .blueprint-info-edit {
+	grid-column: 1 / -1;
+	width: 100%;
+}
+
+/* When editing, ensure the form spans full width */
+dl.basic-info .blueprint-info-edit {
+	display: block;
+	width: 100%;
+	max-width: 100%;
+}
