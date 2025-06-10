@@ -24,7 +24,11 @@ const ItemPanelComponent = ({title, items, type}: ItemPanelProps) => {
 					<Row key={JSON.stringify({type, name, quality})}>
 						<IconCell icon={{type, name, quality}} />
 						<TextCell grow>{name}</TextCell>
-						<TextCell width="80px" align="right" grow={false}>
+						<TextCell
+							width="80px"
+							align="right"
+							grow={false}
+						>
 							{count}
 						</TextCell>
 					</Row>

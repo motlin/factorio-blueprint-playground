@@ -48,7 +48,11 @@ export const FactorioIcon = ({id, icon, size}: FactorioIconProps) => {
 	const qualityNode = getQualityNode(icon);
 
 	return (
-		<div data-testid="iconParent" className={`${styles.iconParent} ${sizeClass}`} id={id}>
+		<div
+			data-testid="iconParent"
+			className={`${styles.iconParent} ${sizeClass}`}
+			id={id}
+		>
 			<img
 				data-testid="icon"
 				loading="lazy"

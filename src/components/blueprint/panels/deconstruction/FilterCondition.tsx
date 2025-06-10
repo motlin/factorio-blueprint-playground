@@ -12,7 +12,10 @@ function FilterCondition({filter}: {filter: Filter}) {
 
 	if (filter.quality) {
 		parts.push(
-			<span key="quality" style={{display: 'inline-flex', alignItems: 'center', marginRight: '4px'}}>
+			<span
+				key="quality"
+				style={{display: 'inline-flex', alignItems: 'center', marginRight: '4px'}}
+			>
 				<FactorioIcon
 					icon={{
 						type: 'quality',

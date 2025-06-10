@@ -31,28 +31,57 @@ export const BasicInfoPanelComponent = ({blueprint}: {blueprint?: BlueprintStrin
 
 	function getIconElement(index: number, icon?: Icon) {
 		if (icon) {
-			return <FactorioIcon key={index} icon={icon.signal} size="large" />;
+			return (
+				<FactorioIcon
+					key={index}
+					icon={icon.signal}
+					size="large"
+				/>
+			);
 		}
 
-		return <Placeholder key={index} size={'large'} />;
+		return (
+			<Placeholder
+				key={index}
+				size={'large'}
+			/>
+		);
 	}
 
 	return (
 		<Panel title="Basic Information">
 			<dl className="panel-hole basic-info">
 				<InfoRow label="Type">
-					<FactorioIcon icon={{type: 'item', name: type}} size={'large'} />
+					<FactorioIcon
+						icon={{type: 'item', name: type}}
+						size={'large'}
+					/>
 				</InfoRow>
 
-				<InfoRow label="Label" hidden={!label}>
-					<RichText text={label} iconSize={'large'} />
+				<InfoRow
+					label="Label"
+					hidden={!label}
+				>
+					<RichText
+						text={label}
+						iconSize={'large'}
+					/>
 				</InfoRow>
 
-				<InfoRow label="Description" hidden={!description}>
-					<RichText text={description} iconSize={'large'} />
+				<InfoRow
+					label="Description"
+					hidden={!description}
+				>
+					<RichText
+						text={description}
+						iconSize={'large'}
+					/>
 				</InfoRow>
 
-				<InfoRow label="Icons" hidden={!icons?.length}>
+				<InfoRow
+					label="Icons"
+					hidden={!icons?.length}
+				>
 					<div className="flex flex-items-center">
 						{[1, 2, 3, 4].map((index) => {
 							const icon = icons?.find((icon) => icon.index === index);

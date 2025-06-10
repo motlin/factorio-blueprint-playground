@@ -38,7 +38,13 @@ export const ParameterRow = ({param, parameters}: ParameterRowProps) => {
 		}
 
 		const icon: SignalID = detectSignalType(ingredientOfParam.id);
-		return <FactorioIcon id={'ingredientOf'} icon={icon} size={'large'} />;
+		return (
+			<FactorioIcon
+				id={'ingredientOf'}
+				icon={icon}
+				size={'large'}
+			/>
+		);
 	}
 
 	function getIngredientOfElement() {
@@ -48,7 +54,10 @@ export const ParameterRow = ({param, parameters}: ParameterRowProps) => {
 
 		return (
 			<div className="flex flex-items-center">
-				<label className="mr2" htmlFor={'ingredientOf'}>
+				<label
+					className="mr2"
+					htmlFor={'ingredientOf'}
+				>
 					Ingredient of:
 				</label>
 				<span className="flex flex-items-center">{getIngredientOfIcon()}</span>
@@ -60,34 +69,70 @@ export const ParameterRow = ({param, parameters}: ParameterRowProps) => {
 		if (param.type === 'id' && iconInfo) {
 			return (
 				<span className="flex flex-items-center">
-					<FactorioIcon id={'value'} icon={iconInfo} size={'large'} />
+					<FactorioIcon
+						id={'value'}
+						icon={iconInfo}
+						size={'large'}
+					/>
 				</span>
 			);
 		}
 
-		return <input id={'value'} type="text" value={param.number} style={{width: '60px'}} readOnly />;
+		return (
+			<input
+				id={'value'}
+				type="text"
+				value={param.number}
+				style={{width: '60px'}}
+				readOnly
+			/>
+		);
 	}
 
 	return (
-		<div className="flex flex-items-center p4" style={{minHeight: '48px'}}>
+		<div
+			className="flex flex-items-center p4"
+			style={{minHeight: '48px'}}
+		>
 			{/* Name field */}
-			<div className="flex flex-items-center mr8" style={{minWidth: '200px'}}>
-				<label className="mr2" htmlFor={'name'}>
+			<div
+				className="flex flex-items-center mr8"
+				style={{minWidth: '200px'}}
+			>
+				<label
+					className="mr2"
+					htmlFor={'name'}
+				>
 					Name:
 				</label>
-				<input id={'name'} type="text" value={param.name} style={{width: '120px'}} readOnly />
+				<input
+					id={'name'}
+					type="text"
+					value={param.name}
+					style={{width: '120px'}}
+					readOnly
+				/>
 			</div>
 
 			{/* Value field - either icon or number */}
-			<div className="flex flex-items-center mr8" style={{minWidth: '120px'}}>
-				<label className="mr2" htmlFor={'value'}>
+			<div
+				className="flex flex-items-center mr8"
+				style={{minWidth: '120px'}}
+			>
+				<label
+					className="mr2"
+					htmlFor={'value'}
+				>
 					Value:
 				</label>
 				{getValueElement()}
 			</div>
 
 			{/* Parameter checkbox */}
-			<div className="flex flex-items-center mr8" style={{minWidth: '120px'}}>
+			<div
+				className="flex flex-items-center mr8"
+				style={{minWidth: '120px'}}
+			>
 				<input
 					type="checkbox"
 					checked={!param['not-parametrised']}
@@ -101,8 +146,14 @@ export const ParameterRow = ({param, parameters}: ParameterRowProps) => {
 			{/* Conditional fields based on type */}
 			{param.type === 'number' ? (
 				<>
-					<div className="flex flex-items-center mr8" style={{minWidth: '200px'}}>
-						<label className="mr2" htmlFor={'variable'}>
+					<div
+						className="flex flex-items-center mr8"
+						style={{minWidth: '200px'}}
+					>
+						<label
+							className="mr2"
+							htmlFor={'variable'}
+						>
 							Variable:
 						</label>
 						<input
@@ -114,9 +165,20 @@ export const ParameterRow = ({param, parameters}: ParameterRowProps) => {
 						/>
 					</div>
 
-					<div className="flex flex-items-center" style={{minWidth: '240px'}}>
-						<input type="checkbox" checked={!!param.formula} readOnly className="mr2" />
-						<label className="mr2" htmlFor={'formula'}>
+					<div
+						className="flex flex-items-center"
+						style={{minWidth: '240px'}}
+					>
+						<input
+							type="checkbox"
+							checked={!!param.formula}
+							readOnly
+							className="mr2"
+						/>
+						<label
+							className="mr2"
+							htmlFor={'formula'}
+						>
 							Formula:
 						</label>
 						<input

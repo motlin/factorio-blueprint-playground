@@ -26,7 +26,10 @@ export const Cell = ({children, grow = false, shrink = false, width, align = 'le
 	};
 
 	return (
-		<div className={classNames.join(' ')} style={style}>
+		<div
+			className={classNames.join(' ')}
+			style={style}
+		>
 			{children}
 		</div>
 	);

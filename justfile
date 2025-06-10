@@ -62,13 +62,17 @@ generate-routes: install
 lint-fix: install
     npm run lint:fix
 
-# `npm run ci:eslint`
-ci-eslint: install
-    npm run ci:eslint
+# `npm run format:css`
+format-css: install
+    npm run format:css
 
-# `npm run ci:prettier`
-ci-prettier: install
-    npm run ci:prettier
+# `npm run ci:lint`
+ci-lint: install
+    npm run ci:lint
+
+# `npm run ci:format`
+ci-format: install
+    npm run ci:format
 
 # `npm run ci:typecheck`
 typecheck: install
@@ -78,9 +82,8 @@ typecheck: install
 ci-test: install
     npm run ci:test
 
-# `npx prettier --write ...`
-format:
-    npx prettier --write "**/*.{json,yaml,yml,md}"
+# Format all files: Biome for JS/TS, Prettier for CSS
+format: lint-fix format-css
 
 # `uv tool run pre-commit run`
 hooks:

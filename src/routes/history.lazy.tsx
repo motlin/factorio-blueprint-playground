@@ -192,7 +192,11 @@ export function History() {
 	return (
 		<Panel title="Blueprint History">
 			<div>
-				<Button disabled={selectedItems.size === 0} onClick={downloadAsBook} data-testid="download-button">
+				<Button
+					disabled={selectedItems.size === 0}
+					onClick={downloadAsBook}
+					data-testid="download-button"
+				>
 					Download Selected as Book
 				</Button>
 				<Button
@@ -203,7 +207,10 @@ export function History() {
 					Delete Selected
 				</Button>
 				<Button onClick={selectAll}>Select All</Button>
-				<Button onClick={selectNone} disabled={selectedItems.size === 0}>
+				<Button
+					onClick={selectNone}
+					disabled={selectedItems.size === 0}
+				>
 					Clear Selection
 				</Button>
 			</div>

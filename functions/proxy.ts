@@ -132,7 +132,7 @@ export const onRequest = async (context: EventContext<Env, string, Record<string
 			responseHeaders.set('Access-Control-Expose-Headers', exposedHeaders.join(','));
 			responseHeaders.set('cors-received-headers', JSON.stringify(allResponseHeaders));
 
-			let responseBody = response.status === 304 || isPreflightRequest ? null : await response.arrayBuffer();
+			const responseBody = response.status === 304 || isPreflightRequest ? null : await response.arrayBuffer();
 			return new Response(responseBody, {
 				headers: responseHeaders,
 				status: isPreflightRequest ? 200 : response.status,

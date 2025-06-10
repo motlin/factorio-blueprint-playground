@@ -125,7 +125,13 @@ const processRichTextLine = ({text, iconSize}: RichTextProps): React.ReactNode[]
 						quality: quality as Quality,
 					};
 
-					parts.push(<FactorioIcon key={parts.length} icon={icon} size={iconSize} />);
+					parts.push(
+						<FactorioIcon
+							key={parts.length}
+							icon={icon}
+							size={iconSize}
+						/>,
+					);
 					break;
 				}
 				case 'item':
@@ -146,13 +152,26 @@ const processRichTextLine = ({text, iconSize}: RichTextProps): React.ReactNode[]
 						quality: quality as Quality,
 					};
 
-					parts.push(<FactorioIcon key={parts.length} icon={icon} size={iconSize} />);
+					parts.push(
+						<FactorioIcon
+							key={parts.length}
+							icon={icon}
+							size={iconSize}
+						/>,
+					);
 					break;
 				}
 				// We could add special handling for gps, special-item, armor, train, etc. here
 				default:
 					// For unhandled tags, just render them as text
-					parts.push(<StyledText key={parts.length} text={match[0]} color={currentColor} bold={isBold} />);
+					parts.push(
+						<StyledText
+							key={parts.length}
+							text={match[0]}
+							color={currentColor}
+							bold={isBold}
+						/>,
+					);
 			}
 		}
 
@@ -162,7 +181,12 @@ const processRichTextLine = ({text, iconSize}: RichTextProps): React.ReactNode[]
 	// Add remaining text
 	if (currentIndex < text.length) {
 		parts.push(
-			<StyledText key={parts.length} text={text.slice(currentIndex)} color={currentColor} bold={isBold} />,
+			<StyledText
+				key={parts.length}
+				text={text.slice(currentIndex)}
+				color={currentColor}
+				bold={isBold}
+			/>,
 		);
 	}
 
@@ -182,7 +206,10 @@ export const RichText = ({text, iconSize}: RichTextProps) => {
 	));
 
 	return (
-		<div className="richtext" data-testid={'richtext'}>
+		<div
+			className="richtext"
+			data-testid={'richtext'}
+		>
 			{processedLines}
 		</div>
 	);
