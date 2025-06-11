@@ -37,7 +37,7 @@
     "@cloudflare/workers-types": "^4.20250610.0",
     "@eslint/compat": "^1.2.9",
     "@eslint/js": "^9.28.0",
-    "@playwright/test": "^1.52.0",
+    "@playwright/test": "^1.53.0",
     "@tanstack/eslint-plugin-router": "^1.120.17",
     "@tanstack/react-router-devtools": "^1.121.0",
     "@tanstack/router-cli": "^1.121.0",
