@@ -144,16 +144,16 @@ const wrappedOnRequest = async (context: EventContext<Env, string, Record<string
 		} catch (error) {
 			Sentry.withScope((scope) => {
 				scope.setTags({
-					function: 'proxy',
-					targetUrl,
-					origin: originHeader,
-				});
+						function: 'proxy',
+						targetUrl,
+						origin: originHeader,
+					});
 				scope.setExtras({
-					userAgent: request.headers.get('User-Agent'),
-					cfRay: request.headers.get('CF-Ray'),
-					connectingIp,
-				});
-				Sentry.captureException(error);
+						userAgent: request.headers.get('User-Agent'),
+						cfRay: request.headers.get('CF-Ray'),
+						connectingIp,
+					});
+					Sentry.captureException(error);
 			});
 			return new Response('Error fetching resource', {status: 500});
 		}
