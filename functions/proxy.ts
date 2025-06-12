@@ -142,17 +142,18 @@ const wrappedOnRequest = async (context: EventContext<Env, string, Record<string
 				statusText: isPreflightRequest ? 'OK' : response.statusText,
 			});
 		} catch (error) {
-			Sentry.captureException(error, {
-				tags: {
+			Sentry.withScope((scope) => {
+				scope.setTags({
 					function: 'proxy',
 					targetUrl,
 					origin: originHeader,
-				},
-				extra: {
+				});
+				scope.setExtras({
 					userAgent: request.headers.get('User-Agent'),
 					cfRay: request.headers.get('CF-Ray'),
 					connectingIp,
-				},
+				});
+				Sentry.captureException(error);
 			});
 			return new Response('Error fetching resource', {status: 500});
 		}
