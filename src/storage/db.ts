@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 import Dexie, {Table} from 'dexie';
-
+import {logger} from '../lib/sentry.ts';
 import {parseVersion3} from '../parsing/blueprintParser.ts';
 
 export type DatabaseBlueprintType = 'blueprint' | 'blueprint_book' | 'upgrade_planner' | 'deconstruction_planner';
@@ -100,7 +100,7 @@ export class BlueprintDatabase extends Dexie {
 
 			return this.getBlueprint(recentRecord.sha);
 		} catch (error) {
-			console.error('Error getting most recent blueprint:', error);
+			logger.error('Error getting most recent blueprint', error);
 			return null;
 		}
 	}
@@ -163,14 +163,14 @@ export class BlueprintDatabase extends Dexie {
 		try {
 			return await this.blueprints.orderBy('metadata.lastUpdatedOn').reverse().toArray();
 		} catch (error) {
-			console.error('Error accessing blueprint database:', error);
+			logger.error('Error accessing blueprint database', error);
 			await this.clearAll();
 			return [];
 		}
 	}
 
 	async clearAll(): Promise<void> {
-		console.warn('Clearing blueprint database due to structure mismatch');
+		logger.warn('Clearing blueprint database due to structure mismatch');
 		await this.blueprints.clear();
 		await this.recent.clear();
 	}
