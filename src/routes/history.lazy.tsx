@@ -8,6 +8,7 @@ import {downloadBlueprint, sanitizeFilename} from '../components/history/utils/f
 import {EmptyHistoryState} from '../components/history/views/EmptyHistoryState';
 import {LoadingState} from '../components/history/views/LoadingState';
 import {Button, ErrorAlert, Panel} from '../components/ui';
+import {logger} from '../lib/sentry';
 import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
 import {deserializeBlueprintNoThrow, serializeBlueprint} from '../parsing/blueprintParser';
 import type {BlueprintString, BlueprintStringWithIndex, Icon} from '../parsing/types';
@@ -27,7 +28,13 @@ export function History() {
 				const result = await db.blueprints.orderBy('metadata.lastUpdatedOn').reverse().toArray();
 				return result;
 			} catch (error: unknown) {
-				console.error('Failed to load blueprint history:', error);
+				logger.error(
+					'Failed to load blueprint history',
+					error instanceof Error ? error : new Error(String(error)),
+					{
+						context: 'History.useLiveQuery',
+					},
+				);
 				setError(error instanceof Error ? error : new Error('Unknown error loading blueprints'));
 				return [];
 			}
@@ -110,7 +117,10 @@ export function History() {
 			const serializedBook = serializeBlueprint(blueprintBookData);
 			downloadBlueprint(serializedBook, 'blueprint-history-export');
 		} catch (error: unknown) {
-			console.error('Failed to create blueprint book:', error);
+			logger.error('Failed to create blueprint book', error instanceof Error ? error : new Error(String(error)), {
+				context: 'History.createBlueprintBook',
+				selectedCount: selectedItems.size,
+			});
 			setError(error instanceof Error ? error : new Error('Failed to create blueprint book'));
 		}
 	};
@@ -130,7 +140,11 @@ export function History() {
 			await db.removeBulkBlueprints(selectedItemsArray);
 			setSelectedItems(new Set<string>());
 		} catch (error: unknown) {
-			console.error('Failed to delete blueprints:', error);
+			logger.error('Failed to delete blueprints', error instanceof Error ? error : new Error(String(error)), {
+				context: 'History.deleteSelected',
+				selectedCount: selectedItems.size,
+				selectedItems: Array.from(selectedItems),
+			});
 			setError(error instanceof Error ? error : new Error('Failed to delete blueprints'));
 		}
 	};

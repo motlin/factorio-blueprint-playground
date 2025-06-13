@@ -1,6 +1,7 @@
 // Inspired by https://raw.githubusercontent.com/Zibri/cloudflare-cors-anywhere/refs/heads/master/index.js
 
 import type {EventContext} from '@cloudflare/workers-types';
+import * as Sentry from '@sentry/cloudflare';
 
 type CustomHeaders = Record<string, string>;
 
@@ -54,9 +55,11 @@ function setupCORSHeaders(
 
 interface Env {
 	KV: KVNamespace;
+	SENTRY_DSN?: string;
+	ENVIRONMENT?: string;
 }
 
-export const onRequest = async (context: EventContext<Env, string, Record<string, unknown>>) => {
+const wrappedOnRequest = async (context: EventContext<Env, string, Record<string, unknown>>) => {
 	const request = context.request;
 	const isPreflightRequest = request.method === 'OPTIONS';
 	const originUrl = new URL(request.url);
@@ -138,7 +141,19 @@ export const onRequest = async (context: EventContext<Env, string, Record<string
 				status: isPreflightRequest ? 200 : response.status,
 				statusText: isPreflightRequest ? 'OK' : response.statusText,
 			});
-		} catch (_e) {
+		} catch (error) {
+			Sentry.captureException(error, {
+				tags: {
+					function: 'proxy',
+					targetUrl,
+					origin: originHeader,
+				},
+				extra: {
+					userAgent: request.headers.get('User-Agent'),
+					cfRay: request.headers.get('CF-Ray'),
+					connectingIp,
+				},
+			});
 			return new Response('Error fetching resource', {status: 500});
 		}
 	}
@@ -164,3 +179,12 @@ export const onRequest = async (context: EventContext<Env, string, Record<string
 		},
 	);
 };
+
+export const onRequest = Sentry.sentryPagesPlugin(
+	(context: EventContext<Env>) => ({
+		dsn: context.env.SENTRY_DSN,
+		environment: context.env.ENVIRONMENT || 'production',
+		tracesSampleRate: 1.0,
+	}),
+	wrappedOnRequest,
+);

@@ -4,9 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "preview": "vite preview",
-    "build": "vite build",
+    "dev": "wrangler pages dev --port 5173 -- vite",
+    "preview": "wrangler pages dev dist --port 5174",
+    "build": "vite build && wrangler pages functions build",
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
     "generate:routes": "npx @tanstack/router-cli generate",
@@ -20,6 +20,9 @@
     "all": "npm run generate:routes && npm run lint:fix && npm run ci:typecheck && npm run build && npm run ci:test"
   },
   "dependencies": {
+    "@sentry/browser": "^9.28.1",
+    "@sentry/cloudflare": "^9.28.1",
+    "@sentry/react": "^9.28.1",
     "@tanstack/react-query": "^5.80.10",
     "@tanstack/react-query-devtools": "^5.80.10",
     "@tanstack/react-router": "^1.121.27",
