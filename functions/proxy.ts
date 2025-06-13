@@ -1,5 +1,6 @@
 // Inspired by https://raw.githubusercontent.com/Zibri/cloudflare-cors-anywhere/refs/heads/master/index.js
 
+import {Toucan} from '@sentry/cloudflare';
 import type {EventContext} from '@cloudflare/workers-types';
 
 type CustomHeaders = Record<string, string>;
@@ -54,9 +55,22 @@ function setupCORSHeaders(
 
 interface Env {
 	KV: KVNamespace;
+	SENTRY_DSN?: string;
+	ENVIRONMENT?: string;
 }
 
 export const onRequest = async (context: EventContext<Env, string, Record<string, unknown>>) => {
+	// Initialize Sentry for error tracking
+	const sentry = new Toucan({
+		dsn: context.env.SENTRY_DSN,
+		environment: context.env.ENVIRONMENT || 'production',
+		context: context,
+		requestDataOptions: {
+			allowedHeaders: ['user-agent', 'cf-ray', 'cf-connecting-ip'],
+			allowedSearchParams: true,
+		},
+	});
+
 	const request = context.request;
 	const isPreflightRequest = request.method === 'OPTIONS';
 	const originUrl = new URL(request.url);
@@ -138,7 +152,19 @@ export const onRequest = async (context: EventContext<Env, string, Record<string
 				status: isPreflightRequest ? 200 : response.status,
 				statusText: isPreflightRequest ? 'OK' : response.statusText,
 			});
-		} catch (_e) {
+		} catch (error) {
+			sentry.captureException(error, {
+				tags: {
+					function: 'proxy',
+					targetUrl,
+					origin: originHeader,
+				},
+				extra: {
+					userAgent: request.headers.get('User-Agent'),
+					cfRay: request.headers.get('CF-Ray'),
+					connectingIp,
+				},
+			});
 			return new Response('Error fetching resource', {status: 500});
 		}
 	}

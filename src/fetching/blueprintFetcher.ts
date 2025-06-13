@@ -1,3 +1,4 @@
+import {logger} from '../lib/sentry';
 import {deserializeBlueprint} from '../parsing/blueprintParser';
 import type {BlueprintString} from '../parsing/types';
 
@@ -172,7 +173,11 @@ const factorioPrintsSourceConfig: BlueprintFetchSource = {
 				};
 			}
 		} catch (error) {
-			console.warn('CDN fetch failed, falling back to Firebase:', error);
+			logger.warn('CDN fetch failed, falling back to Firebase', {
+				context: 'fetchFromFactorioSchool',
+				cdnUrl,
+				error: error instanceof Error ? error.message : String(error),
+			});
 		}
 
 		// Fallback to Firebase

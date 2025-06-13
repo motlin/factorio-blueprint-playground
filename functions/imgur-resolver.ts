@@ -1,3 +1,4 @@
+import {Toucan} from '@sentry/cloudflare';
 import type {EventContext} from '@cloudflare/workers-types';
 
 interface ParsedImgurUrl {
@@ -34,6 +35,8 @@ interface ImgurApiResponse {
 
 interface Env {
 	IMGUR_CLIENT_ID: string;
+	SENTRY_DSN?: string;
+	ENVIRONMENT?: string;
 }
 
 function parseImgurUrl(url: string): ImgurUrlParseResult {
@@ -148,8 +151,7 @@ function parseImgurUrl(url: string): ImgurUrlParseResult {
 	}
 }
 
-// Call Imgur API to resolve image data
-async function resolveImgurImage(parsedUrl: ParsedImgurUrl, clientId: string): Promise<ImgurApiResponse> {
+async function resolveImgurImage(parsedUrl: ParsedImgurUrl, clientId: string, sentry?: any): Promise<ImgurApiResponse> {
 	const headers = {
 		Authorization: `Client-ID ${clientId}`,
 		'User-Agent': 'FactorioPrints/1.0',
@@ -239,7 +241,20 @@ async function resolveImgurImage(parsedUrl: ParsedImgurUrl, clientId: string): P
 				error: `Imgur API error: ${response.status}`,
 			};
 		}
-	} catch (_error) {
+	} catch (error) {
+		if (sentry) {
+			sentry.captureException(error, {
+				tags: {
+					function: 'resolveImgurImage',
+					imageId: parsedUrl.id,
+				},
+				extra: {
+					imageType: parsedUrl.type,
+					isDirect: parsedUrl.isDirect,
+					isFromAlbum: parsedUrl.isFromAlbum,
+				},
+			});
+		}
 		return {
 			success: false,
 			error: 'Failed to connect to Imgur API',
@@ -277,6 +292,17 @@ function setupCORSHeaders(headers: Headers, originHeader: string | null, isPrefl
 }
 
 export const onRequest = async (context: EventContext<Env, string, Record<string, unknown>>) => {
+	// Initialize Sentry for error tracking
+	const sentry = new Toucan({
+		dsn: context.env.SENTRY_DSN,
+		environment: context.env.ENVIRONMENT || 'production',
+		context: context,
+		requestDataOptions: {
+			allowedHeaders: ['user-agent', 'cf-ray', 'cf-connecting-ip'],
+			allowedSearchParams: true,
+		},
+	});
+
 	const request = context.request;
 	const env = context.env;
 	const isPreflightRequest = request.method === 'OPTIONS';
@@ -341,7 +367,7 @@ export const onRequest = async (context: EventContext<Env, string, Record<string
 		}
 
 		// Resolve the image via Imgur API
-		const resolveResult = await resolveImgurImage(parseResult.data!, env.IMGUR_CLIENT_ID);
+		const resolveResult = await resolveImgurImage(parseResult.data!, env.IMGUR_CLIENT_ID, sentry);
 
 		const headers = setupCORSHeaders(new Headers(), originHeader, false);
 		const status = resolveResult.success ? 200 : 400;
@@ -353,7 +379,19 @@ export const onRequest = async (context: EventContext<Env, string, Record<string
 				'Content-Type': 'application/json',
 			},
 		});
-	} catch (_error) {
+	} catch (error) {
+		sentry.captureException(error, {
+			tags: {
+				function: 'imgur-resolver',
+				stage: 'request-parsing',
+			},
+			extra: {
+				userAgent: request.headers.get('User-Agent'),
+				cfRay: request.headers.get('CF-Ray'),
+				origin: originHeader,
+			},
+		});
+
 		const headers = setupCORSHeaders(new Headers(), originHeader, false);
 		return new Response(
 			JSON.stringify({

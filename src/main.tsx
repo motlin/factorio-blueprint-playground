@@ -5,9 +5,13 @@ import {StrictMode, Suspense} from 'react';
 import {createRoot} from 'react-dom/client';
 
 import {routeTree} from './routeTree.gen';
+import {initSentry} from './lib/sentry';
 
 import './styles/factorio-a76ef767.css';
 import './styles/main.css';
+
+// Initialize Sentry before app starts
+initSentry();
 
 const queryClient = new QueryClient({
 	defaultOptions: {

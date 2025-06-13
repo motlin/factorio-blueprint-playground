@@ -2,6 +2,7 @@ import {DeflateOptions, unzlibSync, zlibSync} from 'fflate';
 
 import {DEFAULT_COMPRESSION_SETTINGS} from './compressionSettings';
 import {getErrorMessage} from './errors';
+import {logger} from '../lib/sentry';
 import type {BlueprintString} from './types';
 
 export class BlueprintError extends Error {
@@ -40,7 +41,11 @@ export function deserializeBlueprintNoThrow(data: string): BlueprintString | nul
 	try {
 		return deserializeBlueprint(data);
 	} catch (error) {
-		console.error('Failed to parse blueprint:', error);
+		logger.error('Failed to parse blueprint', error instanceof Error ? error : new Error(String(error)), {
+			context: 'deserializeBlueprintNoThrow',
+			inputLength: data?.length,
+			inputStart: data?.substring(0, 100), // First 100 chars for debugging
+		});
 		return null;
 	}
 }

@@ -2,5 +2,13 @@ name = "factorio-blueprint-playground"
 compatibility_date = "2024-11-23"
 pages_build_output_dir = "dist"
 
-[env]
-production = { }
+# Environment variables for development
+[vars]
+ENVIRONMENT = "development"
+
+[env.production]
+# Production environment variables are set in Cloudflare Pages dashboard
+# Required variables:
+# - IMGUR_CLIENT_ID: Imgur API client ID
+# - SENTRY_DSN: Sentry DSN for error tracking
+# - ENVIRONMENT: "production"
