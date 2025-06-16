@@ -2,7 +2,6 @@ import {QueryClient} from '@tanstack/react-query';
 import {beforeEach, describe, expect, test, vi} from 'vitest';
 
 vi.mock('../../src/fetching/blueprintFetcher');
-vi.mock('../../src/parsing/BlueprintWrapper');
 vi.mock('../../src/state/blueprintLocalStorage', () => ({
 	addBlueprint: vi.fn().mockImplementation((...args) => {
 		console.log('addBlueprint called with:', JSON.stringify(args));
@@ -73,15 +72,10 @@ describe('Index route loader', () => {
 		});
 	});
 
-	// TODO: Fix test mocking for addBlueprint and extractBlueprint functions
-	// The issue is that the cache mechanism prevents the tests from running the full loader logic
-	// A more comprehensive solution would involve restructuring the index.tsx loader to make it more testable
-	test.skip('saves blueprint to history on success', async () => {
+	test('saves blueprint to history on success', async () => {
 		const mockFetchBlueprint = vi.mocked(fetchBlueprint);
-		const mockBlueprintWrapper = vi.mocked(BlueprintWrapper);
 		const mockAddBlueprint = vi.mocked(addBlueprint);
 
-		mockBlueprintWrapper.mockClear();
 		mockAddBlueprint.mockClear();
 		mockFetchBlueprint.mockClear();
 
@@ -99,18 +93,6 @@ describe('Index route loader', () => {
 			blueprintString: mockBlueprint,
 			pasted: 'test',
 			fetchMethod: 'data',
-		});
-
-		// TODO 2025-04-18: Don't mock BlueprintWrapper
-		mockBlueprintWrapper.mockImplementation(function () {
-			this.getType = vi.fn().mockReturnValue('blueprint');
-			this.getContent = vi.fn().mockReturnValue({
-				label: 'Test Blueprint',
-				description: 'Test Description',
-				version: 123456,
-				icons: [{signal: {type: 'item', name: 'test-icon'}}],
-			});
-			return this as unknown as BlueprintWrapper;
 		});
 
 		await loader({
@@ -134,13 +116,11 @@ describe('Index route loader', () => {
 		);
 	});
 
-	test.skip('saves valid selection path to history', async () => {
+	test('saves valid selection path to history', async () => {
 		const mockFetchBlueprint = vi.mocked(fetchBlueprint);
-		const mockBlueprintWrapper = vi.mocked(BlueprintWrapper);
 		const mockAddBlueprint = vi.mocked(addBlueprint);
 		const mockExtractBlueprint = vi.mocked(extractBlueprint);
 
-		mockBlueprintWrapper.mockClear();
 		mockAddBlueprint.mockClear();
 		mockExtractBlueprint.mockClear();
 		mockFetchBlueprint.mockClear();
@@ -169,16 +149,6 @@ describe('Index route loader', () => {
 			},
 		});
 
-		mockBlueprintWrapper.mockImplementation(function () {
-			this.getType = vi.fn().mockReturnValue('blueprint-book');
-			this.getContent = vi.fn().mockReturnValue({
-				label: 'Test Book',
-				version: 123456,
-				blueprints: [{blueprint: {label: 'Nested Blueprint', version: 123456, item: 'blueprint'}}],
-			});
-			return this as unknown as BlueprintWrapper;
-		});
-
 		await loader({
 			context: {},
 			params: {},
@@ -193,13 +163,11 @@ describe('Index route loader', () => {
 		expect(mockAddBlueprint).toHaveBeenCalledWith('test', expect.any(Object), '1', 'data');
 	});
 
-	test.skip('validates and discards invalid selection path', async () => {
+	test('validates and discards invalid selection path', async () => {
 		const mockFetchBlueprint = vi.mocked(fetchBlueprint);
-		const mockBlueprintWrapper = vi.mocked(BlueprintWrapper);
 		const mockAddBlueprint = vi.mocked(addBlueprint);
 		const mockExtractBlueprint = vi.mocked(extractBlueprint);
 
-		mockBlueprintWrapper.mockClear();
 		mockAddBlueprint.mockClear();
 		mockExtractBlueprint.mockClear();
 		mockFetchBlueprint.mockClear();
@@ -221,16 +189,6 @@ describe('Index route loader', () => {
 
 		mockExtractBlueprint.mockImplementation(() => {
 			throw new Error('Invalid path 6.1: no blueprint book at 6.1');
-		});
-
-		// TODO 2025-04-18: Don't mock BlueprintWrapper
-		mockBlueprintWrapper.mockImplementation(function () {
-			this.getType = vi.fn().mockReturnValue('blueprint');
-			this.getContent = vi.fn().mockReturnValue({
-				label: 'Simple Blueprint',
-				version: 123456,
-			});
-			return this as unknown as BlueprintWrapper;
 		});
 
 		await loader({
