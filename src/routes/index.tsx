@@ -85,7 +85,7 @@ export const Route = createFileRoute('/')({
 						})(),
 					};
 
-					let validSelection: string | undefined = undefined;
+					let validSelection: string | undefined;
 					try {
 						if (typeof search?.selection === 'string' && search.selection) {
 							extractBlueprint(result.blueprintString, search.selection);

@@ -1,5 +1,5 @@
 import {QueryClient} from '@tanstack/react-query';
-import {describe, expect, test, vi, beforeEach} from 'vitest';
+import {beforeEach, describe, expect, test, vi} from 'vitest';
 
 vi.mock('../../src/fetching/blueprintFetcher');
 vi.mock('../../src/parsing/BlueprintWrapper');

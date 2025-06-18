@@ -1,8 +1,6 @@
 import {memo} from 'react';
 
 import {BlueprintString} from '../../../../parsing/types';
-
-import {ItemPanel} from './ItemPanel';
 import {
 	countItems,
 	getEntityKey,
@@ -12,6 +10,7 @@ import {
 	getTileKey,
 	processEntitiesItems,
 } from './countUtils';
+import {ItemPanel} from './ItemPanel';
 
 interface PanelProps {
 	blueprint: BlueprintString;
