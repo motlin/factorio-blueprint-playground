@@ -1,7 +1,6 @@
+import {render} from '@testing-library/react';
 import {readFileSync} from 'fs';
 import {join} from 'path';
-
-import {render} from '@testing-library/react';
 import React from 'react';
 import {describe, expect, test} from 'vitest';
 

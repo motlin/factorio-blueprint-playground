@@ -1,10 +1,9 @@
-export {Panel} from './Panel';
 export {Button} from './Button';
-export {Textarea} from './Textarea';
 export {ButtonGreen} from './ButtonGreen';
-export {InsetLight} from './InsetLight';
-export {InsetDark} from './InsetDark';
 export {ErrorAlert} from './ErrorAlert';
-
+export {InsetDark} from './InsetDark';
+export {InsetLight} from './InsetLight';
 export type {PanelProps} from './Panel';
+export {Panel} from './Panel';
 export type {TextareaProps} from './Textarea';
+export {Textarea} from './Textarea';

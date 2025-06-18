@@ -1,6 +1,6 @@
 import React from 'react';
 
-import {SortIndicator, type SortDirection} from './SortIndicator';
+import {type SortDirection, SortIndicator} from './SortIndicator';
 
 interface TableHeaderProps {
 	label: string;

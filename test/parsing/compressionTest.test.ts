@@ -3,7 +3,7 @@ import {describe, expect, it} from 'vitest';
 
 import {deserializeBlueprint, serializeBlueprint} from '../../src/parsing/blueprintParser';
 import {DEFAULT_COMPRESSION_SETTINGS} from '../../src/parsing/compressionSettings';
-import {readFixtureFile, getFixtureFiles} from '../fixtures/utils';
+import {getFixtureFiles, readFixtureFile} from '../fixtures/utils';
 
 function* generateCompressionSettings(): Generator<DeflateOptions> {
 	const levels: (0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9)[] = [2, 3, 4, 5, 6, 7, 8, 9];

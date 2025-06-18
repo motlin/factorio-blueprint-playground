@@ -1,6 +1,6 @@
 import {render, screen, waitFor} from '@testing-library/react';
-import React, {useState, useEffect} from 'react';
-import {describe, expect, it, vi, beforeEach, afterEach} from 'vitest';
+import React, {useEffect, useState} from 'react';
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 vi.mock('../../src/components/ui', () => ({
 	Panel: ({title, children}: {title: string; children: React.ReactNode}) => (
@@ -15,7 +15,12 @@ vi.mock('../../src/components/ui', () => ({
 		style,
 		onClick,
 		...props
-	}: {children: React.ReactNode; style?: React.CSSProperties; onClick?: () => void; [key: string]: unknown}) => (
+	}: {
+		children: React.ReactNode;
+		style?: React.CSSProperties;
+		onClick?: () => void;
+		[key: string]: unknown;
+	}) => (
 		<div
 			data-testid="inset-dark"
 			style={style}
@@ -53,7 +58,12 @@ vi.mock('../../src/components/ui', () => ({
 		onClick,
 		disabled,
 		style,
-	}: {children: React.ReactNode; onClick?: () => void; disabled?: boolean; style?: React.CSSProperties}) => (
+	}: {
+		children: React.ReactNode;
+		onClick?: () => void;
+		disabled?: boolean;
+		style?: React.CSSProperties;
+	}) => (
 		<button
 			data-testid="button-green"
 			onClick={onClick}

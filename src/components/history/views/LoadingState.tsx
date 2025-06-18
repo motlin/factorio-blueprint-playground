@@ -1,4 +1,4 @@
-import {Panel, InsetLight} from '../../ui';
+import {InsetLight, Panel} from '../../ui';
 
 export function LoadingState() {
 	return (

@@ -1,8 +1,7 @@
+import {chromium} from '@playwright/test';
 import fs from 'fs/promises';
 import path from 'path';
-
-import {chromium} from '@playwright/test';
-import {beforeAll, afterAll, expect} from 'vitest';
+import {afterAll, beforeAll, expect} from 'vitest';
 
 let browser: ReturnType<typeof chromium.launch> | null = null;
 let page: Awaited<ReturnType<Awaited<ReturnType<typeof chromium.launch>>['newPage']>> | null = null;

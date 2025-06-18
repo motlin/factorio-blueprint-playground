@@ -1,8 +1,8 @@
 {
-	"$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+	"$schema": "https://biomejs.dev/schemas/2.0.0/schema.json",
 	"files": {
-		"include": ["src/**/*", "functions/**/*", "test/**/*"],
-		"ignore": [
+		"includes": ["src/**/*", "functions/**/*", "test/**/*"],
+		"experimentalScannerIgnores": [
 			".llm/**/*",
 			"node_modules/**/*",
 			"dist/**/*",
@@ -10,8 +10,10 @@
 			"coverage/**/*",
 			"package.json",
 			"package-lock.json",
-			"**/*.css"
-		]
+			"**/*.css",
+			"src/routeTree.gen.ts"
+		],
+		"ignoreUnknown": true
 	},
 	"formatter": {
 		"enabled": true,
@@ -21,9 +23,6 @@
 		"lineWidth": 120,
 		"lineEnding": "lf"
 	},
-	"organizeImports": {
-		"enabled": false
-	},
 	"linter": {
 		"enabled": true,
 		"rules": {
@@ -31,16 +30,18 @@
 			"a11y": {
 				"useKeyWithClickEvents": "off",
 				"useButtonType": "off",
-				"noLabelWithoutControl": "off"
+				"noLabelWithoutControl": "off",
+				"noStaticElementInteractions": "off"
 			},
 			"complexity": {
 				"noExtraBooleanCast": "error",
-				"noMultipleSpacesInRegularExpressionLiterals": "error",
+				"noAdjacentSpacesInRegex": "error",
 				"noUselessCatch": "error",
 				"noUselessTypeConstraint": "error",
 				"noForEach": "off",
 				"noStaticOnlyClass": "off",
-				"noThisInStatic": "off"
+				"noThisInStatic": "off",
+				"useDateNow": "off"
 			},
 			"correctness": {
 				"noConstAssign": "error",
@@ -49,7 +50,7 @@
 				"noEmptyPattern": "error",
 				"noGlobalObjectCalls": "error",
 				"noInvalidConstructorSuper": "error",
-				"noInvalidNewBuiltin": "error",
+				"noInvalidBuiltinInstantiation": "error",
 				"noNonoctalDecimalEscape": "error",
 				"noPrecisionLoss": "error",
 				"noSelfAssign": "error",
@@ -62,6 +63,7 @@
 				"noUnsafeOptionalChaining": "error",
 				"noUnusedLabels": "error",
 				"noUnusedVariables": "error",
+				"noUnusedImports": "off",
 				"useIsNan": "error",
 				"useValidForDirection": "error",
 				"useYield": "error",
@@ -72,15 +74,18 @@
 				"noDelete": "off"
 			},
 			"style": {
-				"noArguments": "error",
-				"noVar": "error",
 				"useConst": "error",
 				"useImportType": "off",
 				"useNumberNamespace": "off",
 				"useTemplate": "off",
 				"useNodejsImportProtocol": "off",
 				"noUselessElse": "off",
-				"noNonNullAssertion": "off"
+				"noNonNullAssertion": "off",
+				"noDescendingSpecificity": "off"
+			},
+			"nursery": {
+				"noNestedComponentDefinitions": "off",
+				"useUniqueElementIds": "off"
 			},
 			"suspicious": {
 				"noAsyncPromiseExecutor": "error",
@@ -109,7 +114,6 @@
 				"noUnsafeDeclarationMerging": "error",
 				"noUnsafeNegation": "error",
 				"useGetterReturn": "error",
-				"useValidTypeof": "error",
 				"noArrayIndexKey": "off",
 				"noGlobalIsNan": "off",
 				"noImplicitAnyLet": "off",
@@ -134,7 +138,7 @@
 	},
 	"overrides": [
 		{
-			"include": ["test/**/*"],
+			"includes": ["test/**/*"],
 			"linter": {
 				"rules": {
 					"suspicious": {
