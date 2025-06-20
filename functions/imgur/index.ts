@@ -1,8 +1,8 @@
-import * as Sentry from '@sentry/cloudflare';
 import type {EventContext} from '@cloudflare/workers-types';
-import {parseImgurUrl} from './url-parser';
+import * as Sentry from '@sentry/cloudflare';
 import {resolveImgurImage} from './api-client';
 import {createJsonResponse, createRequestHandlers} from './http-helpers';
+import {parseImgurUrl} from './url-parser';
 
 interface Env {
 	IMGUR_CLIENT_ID: string;
