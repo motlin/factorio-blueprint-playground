@@ -64,7 +64,7 @@ const DisqusComments = ({identifier, url, title}: DisqusCommentsProps) => {
 
 		const script = document.createElement('script');
 		script.src = 'https://factorio-blueprints.disqus.com/embed.js';
-		script.setAttribute('data-timestamp', (+new Date()).toString());
+		script.setAttribute('data-timestamp', Date.now().toString());
 		script.async = true;
 
 		script.onload = () => {
