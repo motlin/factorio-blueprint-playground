@@ -1,5 +1,3 @@
-import React from 'react';
-
 import type {DatabaseBlueprint} from '../../../storage/db';
 import {HistoryBlueprintRow} from '../../HistoryBlueprintRow';
 

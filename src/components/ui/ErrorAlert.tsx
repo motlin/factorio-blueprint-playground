@@ -1,5 +1,4 @@
 import {XCircle} from 'lucide-react';
-import React from 'react';
 
 type ErrorType = Error | string | undefined;
 

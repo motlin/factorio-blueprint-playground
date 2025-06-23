@@ -1,5 +1,3 @@
-import React from 'react';
-
 import {type SortDirection, SortIndicator} from './SortIndicator';
 
 interface TableHeaderProps {
