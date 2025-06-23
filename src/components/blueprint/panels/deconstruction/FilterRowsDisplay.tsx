@@ -1,5 +1,3 @@
-import React from 'react';
-
 import type {Filter, SignalType} from '../../../../parsing/types';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
 import {Cell, Row, Spreadsheet} from '../../spreadsheet';
