@@ -40,8 +40,7 @@
 				"noUselessTypeConstraint": "error",
 				"noForEach": "off",
 				"noStaticOnlyClass": "off",
-				"noThisInStatic": "off",
-				"useDateNow": "off"
+				"noThisInStatic": "off"
 			},
 			"correctness": {
 				"noConstAssign": "error",
