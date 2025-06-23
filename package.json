@@ -38,7 +38,7 @@
     "zod": "^3.25.67"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.0.0",
+    "@biomejs/biome": "^2.0.4",
     "@cloudflare/workers-types": "^4.20250620.0",
     "@playwright/test": "^1.53.1",
     "@tanstack/eslint-plugin-router": "^1.121.21",
