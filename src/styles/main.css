@@ -159,14 +159,14 @@ body {
 	display: contents;
 }
 
-.history-blueprint-item.selected > div {
-	background-color: rgba(94, 182, 99, 0.2);
-}
-
 .history-blueprint-item > div {
 	padding: 0.25rem;
 	background-color: #3e3e3e;
 	border: 0.75px solid #262626;
+}
+
+.history-blueprint-item.selected > div {
+	background-color: rgba(94, 182, 99, 0.2);
 }
 
 .history-checkbox-container {

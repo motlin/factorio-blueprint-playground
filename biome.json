@@ -79,8 +79,7 @@
 				"useTemplate": "off",
 				"useNodejsImportProtocol": "off",
 				"noUselessElse": "off",
-				"noNonNullAssertion": "off",
-				"noDescendingSpecificity": "off"
+				"noNonNullAssertion": "off"
 			},
 			"nursery": {
 				"noNestedComponentDefinitions": "off",
