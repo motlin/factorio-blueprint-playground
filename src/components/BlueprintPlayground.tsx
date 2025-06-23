@@ -12,6 +12,7 @@ import {updateBlueprintMetadata} from '../state/blueprintLocalStorage';
 import {db, generateSha} from '../storage/db';
 
 import DisqusComments from './blueprint/disqus/DisqusComments';
+import {BlueprintErrorFallback} from './blueprint/error/BlueprintErrorFallback';
 import {ExportActions} from './blueprint/export/ExportActions';
 import BlueprintSourceHandler from './blueprint/input/BlueprintSourceHandler';
 import {BlueprintInfoPanels} from './blueprint/panels/BlueprintInfoPanels';
@@ -81,19 +82,6 @@ export function BlueprintPlayground() {
 			});
 		}
 	}, [selectedPath, pasted, rootBlueprint, loaderData?.success, existingBlueprint]);
-
-	const BlueprintErrorFallback = ({error, resetErrorBoundary}: {error: Error; resetErrorBoundary: () => void}) => {
-		return (
-			<Panel title="Blueprint Error">
-				<InsetDark>
-					<p>There was an error displaying the blueprint: {error.message}</p>
-					<p>Please try pasting a different blueprint string above.</p>
-					<p />
-					<ButtonGreen onClick={resetErrorBoundary}>Try Again</ButtonGreen>
-				</InsetDark>
-			</Panel>
-		);
-	};
 
 	return (
 		<div className="container">
