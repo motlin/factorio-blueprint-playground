@@ -31,7 +31,7 @@
     "dexie": "^4.0.11",
     "dexie-react-hooks": "^1.1.7",
     "fflate": "^0.8.2",
-    "lucide-react": "^0.518.0",
+    "lucide-react": "^0.523.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-error-boundary": "^6.0.0",
