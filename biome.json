@@ -88,8 +88,7 @@
 				"noNonNullAssertion": "off"
 			},
 			"nursery": {
-				"noNestedComponentDefinitions": "off",
-				"useUniqueElementIds": "off"
+				"noNestedComponentDefinitions": "off"
 			},
 			"suspicious": {
 				"noAsyncPromiseExecutor": "error",
