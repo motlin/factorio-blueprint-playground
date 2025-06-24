@@ -55,6 +55,7 @@ export const TreeRow = ({node, indentLevel, isSelected, isActive, onSelect}: Tre
 				paddingLeft: `${indentPx}px`,
 			}}
 			onClick={handleClick}
+			tabIndex={0}
 		>
 			<div className="flex flex-items-center">
 				<FactorioIcon
