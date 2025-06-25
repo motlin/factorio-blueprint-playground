@@ -1,5 +1,3 @@
-import React from 'react';
-
 import {ButtonGreen, InsetDark, Panel} from '../../ui';
 
 interface BlueprintErrorFallbackProps {
