@@ -17,7 +17,6 @@ vi.mock('../../src/parsing/blueprintParser', () => ({
 }));
 
 import {fetchBlueprint} from '../../src/fetching/blueprintFetcher';
-import {BlueprintWrapper} from '../../src/parsing/BlueprintWrapper';
 import {extractBlueprint} from '../../src/parsing/blueprintParser';
 import * as IndexRoute from '../../src/routes/index';
 import {addBlueprint} from '../../src/state/blueprintLocalStorage';
