@@ -22,7 +22,7 @@
   "dependencies": {
     "@sentry/browser": "^9.32.0",
     "@sentry/cloudflare": "^9.31.0",
-    "@sentry/react": "^9.31.0",
+    "@sentry/react": "^9.32.0",
     "@tanstack/react-query": "^5.81.2",
     "@tanstack/react-query-devtools": "^5.81.2",
     "@tanstack/react-router": "^1.121.34",
