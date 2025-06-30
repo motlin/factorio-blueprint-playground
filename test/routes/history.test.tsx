@@ -25,6 +25,8 @@ vi.mock('../../src/components/ui', () => ({
 			data-testid="inset-dark"
 			style={style}
 			onClick={onClick}
+			role={onClick ? 'button' : undefined}
+			tabIndex={onClick ? 0 : undefined}
 			{...props}
 		>
 			{children}
@@ -235,6 +237,8 @@ function SimplifiedHistory() {
 							key={createdOn}
 							data-testid="blueprint-item"
 							onClick={(): void => toggleSelection(createdOn)}
+							role="row"
+							tabIndex={0}
 						>
 							<input
 								type="checkbox"
