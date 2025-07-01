@@ -20,7 +20,7 @@
     "all": "npm run generate:routes && npm run lint:fix && npm run ci:typecheck && npm run build && npm run ci:test"
   },
   "dependencies": {
-    "@sentry/browser": "^9.33.0",
+    "@sentry/browser": "^9.34.0",
     "@sentry/cloudflare": "^9.34.0",
     "@sentry/react": "^9.33.0",
     "@tanstack/react-query": "^5.81.5",
