@@ -19,7 +19,7 @@ import {BlueprintInfoPanels} from './blueprint/panels/BlueprintInfoPanels';
 import {BasicInfoPanel} from './blueprint/panels/info/BasicInfoPanel';
 import {ParametersPanel} from './blueprint/panels/parameters/ParametersPanel';
 import {BlueprintTree} from './blueprint/tree';
-import {ButtonGreen, ErrorAlert, InsetDark, Panel} from './ui';
+import {ErrorAlert, Panel} from './ui';
 
 function getFactorioprintsUrl(id?: string): string | undefined {
 	if (!id) {

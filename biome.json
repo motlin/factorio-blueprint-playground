@@ -68,7 +68,7 @@
 				"noUnsafeOptionalChaining": "error",
 				"noUnusedLabels": "error",
 				"noUnusedVariables": "error",
-				"noUnusedImports": "off",
+				"noUnusedImports": "error",
 				"useIsNan": "error",
 				"useValidForDirection": "error",
 				"useYield": "error",
