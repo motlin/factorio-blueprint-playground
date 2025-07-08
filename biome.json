@@ -1,5 +1,5 @@
 {
-	"$schema": "https://biomejs.dev/schemas/2.0.4/schema.json",
+	"$schema": "https://biomejs.dev/schemas/2.0.6/schema.json",
 	"files": {
 		"includes": ["src/**/*", "functions/**/*", "test/**/*"],
 		"experimentalScannerIgnores": [
@@ -87,10 +87,18 @@
 				"useNodejsImportProtocol": "off",
 				"noUselessElse": "off",
 				"noNonNullAssertion": "off",
-				"noDescendingSpecificity": "error"
+				"noDescendingSpecificity": "error",
+				"noParameterAssign": "error",
+				"useAsConstAssertion": "error",
+				"useDefaultParameterLast": "error",
+				"useEnumInitializers": "error",
+				"useSelfClosingElements": "error",
+				"useSingleVarDeclarator": "error",
+				"noUnusedTemplateLiteral": "error",
+				"noInferrableTypes": "error"
 			},
 			"nursery": {
-				"noNestedComponentDefinitions": "off"
+				"noNestedComponentDefinitions": "error"
 			},
 			"suspicious": {
 				"noAsyncPromiseExecutor": "error",
