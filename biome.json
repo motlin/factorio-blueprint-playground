@@ -36,7 +36,7 @@
 				"useKeyWithClickEvents": "off",
 				"useButtonType": "off",
 				"noLabelWithoutControl": "off",
-				"noStaticElementInteractions": "off",
+				"noStaticElementInteractions": "error",
 				"noNoninteractiveTabindex": "off"
 			},
 			"complexity": {

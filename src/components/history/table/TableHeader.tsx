@@ -14,14 +14,18 @@ export function TableHeader({label, className = 'history-header', sortDirection 
 		}
 	};
 
-	return (
-		<div
-			className={onSort ? `${className} sortable` : className}
-			onClick={onSort ? handleClick : undefined}
-			tabIndex={onSort ? 0 : undefined}
-		>
-			{label}
-			{onSort && <SortIndicator direction={sortDirection} />}
-		</div>
-	);
+	if (onSort) {
+		return (
+			<button
+				className={`${className} sortable`}
+				onClick={handleClick}
+				type="button"
+			>
+				{label}
+				<SortIndicator direction={sortDirection} />
+			</button>
+		);
+	}
+
+	return <div className={className}>{label}</div>;
 }

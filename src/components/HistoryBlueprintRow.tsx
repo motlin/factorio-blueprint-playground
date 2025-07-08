@@ -18,6 +18,7 @@ interface HistoryBlueprintRowProps {
 
 export function HistoryBlueprintRow({blueprint, isSelected, onToggleSelection}: HistoryBlueprintRowProps) {
 	return (
+		// biome-ignore lint/a11y/noStaticElementInteractions: Grid layout requires div with interactive handlers
 		<div
 			key={blueprint.metadata.sha}
 			className={`history-blueprint-item ${isSelected ? 'selected' : ''}`}
