@@ -21,14 +21,15 @@ vi.mock('../../src/components/ui', () => ({
 		onClick?: () => void;
 		[key: string]: unknown;
 	}) => (
-		<div
+		<button
 			data-testid="inset-dark"
 			style={style}
 			onClick={onClick}
+			type="button"
 			{...props}
 		>
 			{children}
-		</div>
+		</button>
 	),
 	Button: ({
 		children,
@@ -231,10 +232,11 @@ function SimplifiedHistory() {
 				{blueprints.map((bp) => {
 					const createdOn = bp.createdOn;
 					return (
-						<div
+						<button
 							key={createdOn}
 							data-testid="blueprint-item"
 							onClick={(): void => toggleSelection(createdOn)}
+							type="button"
 						>
 							<input
 								type="checkbox"
@@ -247,7 +249,7 @@ function SimplifiedHistory() {
 							/>
 							<span data-testid="rich-text">{bp.label}</span>
 							<button data-testid="blueprint-open">Open</button>
-						</div>
+						</button>
 					);
 				})}
 			</div>
