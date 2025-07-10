@@ -1,4 +1,4 @@
-import {useEffect, useRef} from 'react';
+import {useEffect, useId, useRef} from 'react';
 
 import {Panel} from '../../ui';
 
@@ -28,6 +28,8 @@ declare const window: DisqusWindow;
 let isDisqusLoading = false;
 
 const DisqusComments = ({identifier, url, title}: DisqusCommentsProps) => {
+	const containerId = useId();
+	const containerRef = useRef<HTMLDivElement>(null);
 	const prevIdentifierRef = useRef<string | undefined>(undefined);
 
 	useEffect(() => {
@@ -36,6 +38,11 @@ const DisqusComments = ({identifier, url, title}: DisqusCommentsProps) => {
 		}
 
 		prevIdentifierRef.current = identifier;
+
+		// Temporarily set the container ID to what Disqus expects
+		if (containerRef.current) {
+			containerRef.current.id = 'disqus_thread';
+		}
 
 		// If Disqus is already loaded, reset it instead of reloading
 		if (window.DISQUS) {
@@ -47,6 +54,12 @@ const DisqusComments = ({identifier, url, title}: DisqusCommentsProps) => {
 					if (title) this.page.title = title;
 				},
 			});
+			// Restore unique ID after Disqus processes
+			setTimeout(() => {
+				if (containerRef.current) {
+					containerRef.current.id = containerId;
+				}
+			}, 100);
 			return;
 		}
 
@@ -69,6 +82,12 @@ const DisqusComments = ({identifier, url, title}: DisqusCommentsProps) => {
 
 		script.onload = () => {
 			isDisqusLoading = false;
+			// Restore unique ID after Disqus loads
+			setTimeout(() => {
+				if (containerRef.current) {
+					containerRef.current.id = containerId;
+				}
+			}, 100);
 		};
 
 		document.body.appendChild(script);
@@ -82,7 +101,7 @@ const DisqusComments = ({identifier, url, title}: DisqusCommentsProps) => {
 				isDisqusLoading = false;
 			}
 		};
-	}, [url, identifier, title]);
+	}, [url, identifier, title, containerId]);
 
 	if (!identifier || !url) {
 		return null;
@@ -91,7 +110,10 @@ const DisqusComments = ({identifier, url, title}: DisqusCommentsProps) => {
 	return (
 		<Panel title="Comments">
 			<div className="mt-8">
-				<div id="disqus_thread" />
+				<div
+					ref={containerRef}
+					id={containerId}
+				/>
 				<noscript>
 					Please enable JavaScript to view the{' '}
 					<a
