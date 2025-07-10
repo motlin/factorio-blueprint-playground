@@ -98,7 +98,8 @@
 				"noInferrableTypes": "error"
 			},
 			"nursery": {
-				"noNestedComponentDefinitions": "error"
+				"noNestedComponentDefinitions": "error",
+				"useUniqueElementIds": "error"
 			},
 			"suspicious": {
 				"noAsyncPromiseExecutor": "error",
