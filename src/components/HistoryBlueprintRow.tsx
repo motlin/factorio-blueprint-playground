@@ -24,7 +24,6 @@ export function HistoryBlueprintRow({blueprint, isSelected, onToggleSelection}: 
 			className={`history-blueprint-item ${isSelected ? 'selected' : ''}`}
 			onClick={() => onToggleSelection(blueprint.metadata.sha)}
 			data-testid="blueprint-item"
-			tabIndex={0}
 		>
 			{/* Checkbox column */}
 			<BlueprintTableCheckbox
