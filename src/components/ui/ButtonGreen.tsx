@@ -10,6 +10,7 @@ export const ButtonGreen = ({
 	disabled?: boolean;
 }) => (
 	<button
+		type="button"
 		onClick={onClick}
 		disabled={disabled}
 		className={`button-green-right ${disabled ? 'disabled' : ''}`}
