@@ -157,6 +157,14 @@ body {
 .history-blueprint-item {
 	cursor: pointer;
 	display: contents;
+	background: none;
+	border: none;
+	padding: 0;
+	margin: 0;
+	font: inherit;
+	color: inherit;
+	text-align: inherit;
+	width: 100%;
 }
 
 .history-blueprint-item > div {

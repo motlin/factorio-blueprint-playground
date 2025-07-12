@@ -17,12 +17,20 @@ interface HistoryBlueprintRowProps {
 }
 
 export function HistoryBlueprintRow({blueprint, isSelected, onToggleSelection}: HistoryBlueprintRowProps) {
+	const handleKeyDown = (event: React.KeyboardEvent) => {
+		if (event.key === 'Enter' || event.key === ' ') {
+			event.preventDefault();
+			onToggleSelection(blueprint.metadata.sha);
+		}
+	};
+
 	return (
-		// biome-ignore lint/a11y/noStaticElementInteractions: Grid layout requires div with interactive handlers
-		<div
+		<button
 			key={blueprint.metadata.sha}
 			className={`history-blueprint-item ${isSelected ? 'selected' : ''}`}
 			onClick={() => onToggleSelection(blueprint.metadata.sha)}
+			onKeyDown={handleKeyDown}
+			aria-pressed={isSelected}
 			data-testid="blueprint-item"
 		>
 			{/* Checkbox column */}
@@ -102,6 +110,6 @@ Updated: ${new Date(blueprint.metadata.lastUpdatedOn).toLocaleString()}`}
 					<ButtonGreen data-testid="blueprint-open">Open</ButtonGreen>
 				</Link>
 			</div>
-		</div>
+		</button>
 	);
 }
