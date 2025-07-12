@@ -48,6 +48,13 @@ export const TreeRow = ({node, indentLevel, isSelected, isActive, onSelect}: Tre
 		onSelect(node.path);
 	};
 
+	const handleKeyDown = (e: React.KeyboardEvent) => {
+		if (e.key === 'Enter' || e.key === ' ') {
+			e.preventDefault();
+			onSelect(node.path);
+		}
+	};
+
 	return (
 		<div
 			className={classes}
@@ -55,6 +62,7 @@ export const TreeRow = ({node, indentLevel, isSelected, isActive, onSelect}: Tre
 				paddingLeft: `${indentPx}px`,
 			}}
 			onClick={handleClick}
+			onKeyDown={handleKeyDown}
 			tabIndex={0}
 			role="treeitem"
 		>
