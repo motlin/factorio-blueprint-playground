@@ -48,27 +48,25 @@ interface BlueprintFetchSource {
 	fetchBlueprint: (url: URL) => Promise<SourceFetchResult>;
 }
 
-class CdnUtils {
-	/**
-	 * Splits a blueprint key into CDN-compatible prefix and suffix.
-	 * @param key Full blueprint key
-	 * @returns Object containing 3-char prefix and remaining suffix
-	 */
-	static splitBlueprintKey(key: string): {prefix: string; suffix: string} {
-		const prefix = key.slice(0, 3);
-		const suffix = key.slice(3);
-		return {prefix, suffix};
-	}
+/**
+ * Splits a blueprint key into CDN-compatible prefix and suffix.
+ * @param key Full blueprint key
+ * @returns Object containing 3-char prefix and remaining suffix
+ */
+function splitBlueprintKey(key: string): {prefix: string; suffix: string} {
+	const prefix = key.slice(0, 3);
+	const suffix = key.slice(3);
+	return {prefix, suffix};
+}
 
-	/**
-	 * Constructs a CDN URL for a given blueprint key.
-	 * @param key Blueprint key to fetch
-	 * @returns Full CDN URL for the blueprint
-	 */
-	static constructUrl(key: string): string {
-		const {prefix, suffix} = this.splitBlueprintKey(key);
-		return `https://factorio-blueprint-key-cdn.pages.dev/${prefix}/${suffix}.txt`;
-	}
+/**
+ * Constructs a CDN URL for a given blueprint key.
+ * @param key Blueprint key to fetch
+ * @returns Full CDN URL for the blueprint
+ */
+function constructCdnUrl(key: string): string {
+	const {prefix, suffix} = splitBlueprintKey(key);
+	return `https://factorio-blueprint-key-cdn.pages.dev/${prefix}/${suffix}.txt`;
 }
 
 const factorioSchoolSourceConfig: BlueprintFetchSource = {
@@ -84,7 +82,7 @@ const factorioSchoolSourceConfig: BlueprintFetchSource = {
 		try {
 			const key = match[1];
 
-			const cdnUrl = CdnUtils.constructUrl(key);
+			const cdnUrl = constructCdnUrl(key);
 			const cdnResponse = await fetch(cdnUrl).catch(() => null);
 
 			if (cdnResponse?.ok) {
@@ -161,7 +159,7 @@ const factorioPrintsSourceConfig: BlueprintFetchSource = {
 
 		// Try CDN first
 		try {
-			const cdnUrl = CdnUtils.constructUrl(key);
+			const cdnUrl = constructCdnUrl(key);
 			const cdnResponse = await fetch(cdnUrl);
 
 			if (cdnResponse.ok) {
