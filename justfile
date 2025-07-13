@@ -1,6 +1,3 @@
-set shell := ["bash", "-O", "globstar", "-c"]
-set dotenv-filename := ".envrc"
-
 import ".just/git.just"
 import ".just/git-rebase.just"
 import ".just/git-test.just"
