@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import Dexie, {Table} from 'dexie';
 import {logger} from '../lib/sentry.ts';
 import {parseVersion3} from '../parsing/blueprintParser.ts';
