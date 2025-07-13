@@ -17,7 +17,7 @@
 	},
 	"css": {
 		"linter": {
-			"enabled": false
+			"enabled": true
 		}
 	},
 	"formatter": {
@@ -46,7 +46,7 @@
 				"noUselessTypeConstraint": "error",
 				"noForEach": "off",
 				"noStaticOnlyClass": "error",
-				"noThisInStatic": "off",
+				"noThisInStatic": "error",
 				"useDateNow": "error"
 			},
 			"correctness": {
@@ -74,7 +74,7 @@
 				"useValidForDirection": "error",
 				"useYield": "error",
 				"useExhaustiveDependencies": "off",
-				"noUnknownProperty": "off"
+				"noUnknownProperty": "error"
 			},
 			"performance": {
 				"noDelete": "off"
