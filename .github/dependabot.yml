@@ -7,17 +7,13 @@ updates:
           time: '07:00'
           timezone: 'America/New_York'
       open-pull-requests-limit: 25
+      labels:
+          - "dependencies"
       groups:
           typescript-ecosystem:
               patterns:
                   - 'typescript'
                   - '@typescript-eslint/*'
-          react-ecosystem:
-              patterns:
-                  - 'preact'
-                  - '@preact/*'
-                  - 'react'
-                  - '@types/react*'
           vite-ecosystem:
               patterns:
                   - 'vite'
@@ -28,12 +24,16 @@ updates:
                   - '@vitest/*'
                   - '@testing-library/*'
                   - 'playwright'
+          react-ecosystem:
+              patterns:
+                  - 'react'
+                  - '@types/react*'
+                  - 'react-*'
           tanstack:
               patterns:
                   - '@tanstack/*'
       commit-message:
           prefix: 'dependabot'
-          prefix-development: 'dependabot'
           include: 'scope'
 
     - package-ecosystem: 'github-actions'
@@ -43,6 +43,8 @@ updates:
           time: '07:00'
           timezone: 'America/New_York'
       open-pull-requests-limit: 25
+      labels:
+          - "dependencies"
       commit-message:
           prefix: 'dependabot'
           include: 'scope'
