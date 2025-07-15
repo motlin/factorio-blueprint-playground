@@ -10,6 +10,7 @@ export const Button = ({
 	disabled?: boolean;
 }) => (
 	<button
+		type="button"
 		onClick={onClick}
 		disabled={disabled}
 		className={`button ${disabled ? 'disabled' : ''}`}
