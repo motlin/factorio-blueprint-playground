@@ -70,11 +70,4 @@ async function handleRequest(context: EventContext<Env, string, Record<string, u
 	}
 }
 
-export const onRequest = Sentry.sentryPagesPlugin(
-	(context) => ({
-		dsn: context.env.SENTRY_DSN,
-		environment: context.env.ENVIRONMENT || 'production',
-		tracesSampleRate: 1.0,
-	}),
-	handleRequest,
-);
+export const onRequest = handleRequest;

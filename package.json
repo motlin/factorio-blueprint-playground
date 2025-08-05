@@ -4,7 +4,9 @@
 	"version": "0.0.0",
 	"type": "module",
 	"scripts": {
-		"dev": "wrangler pages dev --port 5173 -- vite",
+		"dev": "vite",
+		"dev:pages": "wrangler pages dev --proxy=5173 --port=8788",
+		"dev:functions": "wrangler pages dev . --port=8788",
 		"preview": "wrangler pages dev dist --port 5174",
 		"build": "vite build && wrangler pages functions build",
 		"test": "vitest",
@@ -42,6 +44,7 @@
 		"@cloudflare/workers-types": "^4.20250805.0",
 		"@playwright/test": "^1.54.2",
 		"@tanstack/eslint-plugin-router": "^1.130.12",
+		"@tanstack/react-router-devtools": "^1.130.13",
 		"@tanstack/router-cli": "^1.130.15",
 		"@tanstack/router-plugin": "^1.130.15",
 		"@testing-library/jest-dom": "^6.6.4",

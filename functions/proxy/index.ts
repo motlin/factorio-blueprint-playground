@@ -1,5 +1,3 @@
-// Inspired by https://raw.githubusercontent.com/Zibri/cloudflare-cors-anywhere/refs/heads/master/index.js
-
 import type {EventContext} from '@cloudflare/workers-types';
 import * as Sentry from '@sentry/cloudflare';
 
@@ -26,7 +24,13 @@ const config: ProxyConfig = {
 		'https://ny\\.storage\\.bunnycdn\\.com/factorio-blueprints/blueprints/by-key/.*/.*',
 		'https://ny\\.storage\\.bunnycdn\\.com/factorio-blueprints/blueprints/by-key/.*',
 	],
-	allowListOrigins: ['http://localhost.*', 'https://factorio-blueprint-playground.pages.dev.*'],
+	allowListOrigins: [
+		'http://localhost.*',
+		'https://factorio-blueprint-playground.pages.dev.*',
+		'https://.*\\.factorio-blueprint-playground.pages.dev.*',
+		'https://.*\\.factorio-prints.pages.dev.*',
+		'https://factorioprints.com.*',
+	],
 };
 
 function isListedIn(uri: string | null, listing: string[]): boolean {
@@ -88,13 +92,11 @@ const wrappedOnRequest = async (context: EventContext<Env, string, Record<string
 		try {
 			customHeaders = JSON.parse(corsHeadersStr) as CustomHeaders;
 		} catch {
-			// Invalid JSON in custom headers - ignore
+			// Invalid JSON in custom headers
 		}
 	}
 
-	// Handle actual request with URL
 	if (originUrl.search.startsWith('?')) {
-		// Filter and prepare headers
 		const filteredHeaders: Record<string, string> = {};
 		for (const [key, value] of [...request.headers]) {
 			if (!/^(origin|eferer|^cf-|^x-forw|^x-cors-headers)/.test(key)) {
@@ -107,7 +109,6 @@ const wrappedOnRequest = async (context: EventContext<Env, string, Record<string
 		}
 
 		try {
-			// Forward the request
 			const response = await fetch(targetUrl, {
 				method: request.method,
 				headers: filteredHeaders,
@@ -159,7 +160,6 @@ const wrappedOnRequest = async (context: EventContext<Env, string, Record<string
 		}
 	}
 
-	// Handle informational request (no URL provided)
 	const responseHeaders = setupCORSHeaders(new Headers(), originHeader, isPreflightRequest);
 	const cf = request.cf as CloudflareRequestCF | undefined;
 
@@ -181,11 +181,4 @@ const wrappedOnRequest = async (context: EventContext<Env, string, Record<string
 	);
 };
 
-export const onRequest = Sentry.sentryPagesPlugin(
-	(context: EventContext<Env>) => ({
-		dsn: context.env.SENTRY_DSN,
-		environment: context.env.ENVIRONMENT || 'production',
-		tracesSampleRate: 1.0,
-	}),
-	wrappedOnRequest,
-);
+export const onRequest = wrappedOnRequest;
