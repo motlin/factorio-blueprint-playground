@@ -38,7 +38,7 @@ function parseColor(color?: string): string | undefined {
 		}
 
 		// Try parsing as 0-255 range
-		const rgb255 = parts.map((n) => parseInt(n));
+		const rgb255 = parts.map((n) => parseInt(n, 10));
 		if (rgb255.every((n) => !isNaN(n) && n >= 0 && n <= 255)) {
 			return `rgb(${rgb255.join(',')})`;
 		}

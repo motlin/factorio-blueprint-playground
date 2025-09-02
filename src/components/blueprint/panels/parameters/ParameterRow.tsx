@@ -21,7 +21,7 @@ export const ParameterRow = ({param, parameters}: ParameterRowProps) => {
 	// Helper to find parameter by reference
 	const findIngredientParam = (ref?: string) => {
 		if (!ref) return null;
-		const paramIndex = parseInt(ref.replace('parameter-', '')) - 1;
+		const paramIndex = parseInt(ref.replace('parameter-', ''), 10) - 1;
 		return parameters[paramIndex];
 	};
 

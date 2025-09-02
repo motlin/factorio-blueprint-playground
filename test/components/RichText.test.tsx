@@ -5,7 +5,6 @@ import {RichText} from '../../src/components/core/text/RichText';
 import '../../test/setup';
 
 describe('RichText', () => {
-	// Test empty and null input
 	it('handles empty input', () => {
 		const {container} = render(<RichText text="" />);
 		expect(container.firstChild).toBe(null);
@@ -17,7 +16,6 @@ describe('RichText', () => {
 		expect(container.firstChild).toBe(null);
 	});
 
-	// Test basic item tags
 	it('renders item tags correctly', () => {
 		const {getByTestId} = render(<RichText text="[item=blueprint-book]" />);
 		const icon = getByTestId('icon');
@@ -25,7 +23,6 @@ describe('RichText', () => {
 		expect(icon.getAttribute('title')).toBe('item: blueprint-book');
 	});
 
-	// Test quality parameter
 	it('renders items with quality correctly', () => {
 		const renderResult = render(<RichText text="[item=iron-plate,quality=normal]" />);
 
@@ -39,7 +36,6 @@ describe('RichText', () => {
 		expect(qualityIcon.getAttribute('src')).toBe('https://factorio-icon-cdn.pages.dev/quality/normal.webp');
 	});
 
-	// Test entity tags with quality
 	it('renders entities with quality correctly', () => {
 		const renderResult = render(<RichText text="[entity=small-biter,quality=uncommon]" />);
 
@@ -139,12 +135,10 @@ describe('RichText', () => {
 		);
 	});
 
-	// Test color tags with different formats
 	describe('color tags', () => {
 		it('handles named colors', () => {
 			const renderedResult = render(<RichText text="[color=red]Red text[/color]" />);
 			const span = renderedResult.getByText('Red text');
-			// #eb5c5f
 			expect(span.style.color).toBe('rgb(235, 92, 95)');
 			expect(span.textContent).toBe('Red text');
 		});
@@ -171,7 +165,6 @@ describe('RichText', () => {
 		});
 	});
 
-	// Test font tags
 	it('renders bold font correctly', () => {
 		const renderedResult = render(<RichText text="[font=default-bold]Bold text[/font]" />);
 		const span = renderedResult.getByText('Bold text');
@@ -179,92 +172,72 @@ describe('RichText', () => {
 		expect(span.textContent).toBe('Bold text');
 	});
 
-	// Test nested formatting
 	it('handles nested formatting correctly', () => {
 		const {getByTestId} = render(<RichText text="[color=red][font=default-bold]Bold red text[/font][/color]" />);
 		const span = getByTestId('formatted-text');
-		// #eb5c5f
 		expect(span.style.color).toBe('rgb(235, 92, 95)');
 		expect(span.style.fontWeight).toBe('bold');
 		expect(span.textContent).toBe('Bold red text');
 	});
 
-	// Test complex mixed content
 	it('handles mixed content correctly', () => {
 		const complexText =
 			'[item=iron-plate,quality=normal] Iron plate with [color=red]red[/color] text and [font=default-bold]bold[/font] styling';
 		const renderedResult = render(<RichText text={complexText} />);
 
-		// Check root structure
 		const richTextDiv = within(renderedResult.container).getByTestId('richtext');
 		expect(richTextDiv).toBeInTheDocument();
 
-		// Check icon wrapper
 		const wrapper = within(richTextDiv).getByTestId('iconParent');
 		expect(wrapper).toBeInTheDocument();
-		// Instead of checking exact class names, verify the wrapper has some classes
 		expect(wrapper.className).not.toBe('');
 
-		// Check main icon properties
 		const mainIcon = within(wrapper).getByTestId('icon');
 		expect(mainIcon).toHaveAttribute('src', 'https://factorio-icon-cdn.pages.dev/item/iron-plate.webp');
 		expect(mainIcon).toHaveAttribute('title', 'item: iron-plate');
 		expect(mainIcon).toHaveAttribute('alt', 'iron-plate');
 		expect(mainIcon).toHaveAttribute('loading', 'lazy');
-		// Verify icon has a class without checking exact name
 		expect(mainIcon.className).not.toBe('');
 
-		// Check quality icon properties
 		const qualityIcon = within(wrapper).getByTestId('quality');
 		expect(qualityIcon).toHaveAttribute('src', 'https://factorio-icon-cdn.pages.dev/quality/normal.webp');
 		expect(qualityIcon).toHaveAttribute('title', 'Quality: normal');
 		expect(qualityIcon).toHaveAttribute('alt', 'normal');
 		expect(qualityIcon).toHaveAttribute('loading', 'lazy');
-		// Verify quality icon has a class without checking exact name
 		expect(qualityIcon.className).not.toBe('');
 
-		// Check all formatted text spans
 		const formattedSpans = within(richTextDiv).getAllByTestId('formatted-text');
 		expect(formattedSpans).toHaveLength(5);
 
-		// First span (plain text before red)
 		expect(formattedSpans[0]).toHaveStyle({fontWeight: 'normal'});
 		expect(formattedSpans[0].textContent).toBe(' Iron plate with ');
 
-		// Second span (red text)
 		expect(formattedSpans[1]).toHaveStyle({
 			color: 'rgb(235, 92, 95)',
 			fontWeight: 'normal',
 		});
 		expect(formattedSpans[1].textContent).toBe('red');
 
-		// Third span (plain text between red and bold)
 		expect(formattedSpans[2]).toHaveStyle({fontWeight: 'normal'});
 		expect(formattedSpans[2].textContent).toBe(' text and ');
 
-		// Fourth span (bold text)
 		expect(formattedSpans[3]).toHaveStyle({fontWeight: 'bold'});
 		expect(formattedSpans[3].textContent).toBe('bold');
 
-		// Fifth span (plain text after bold)
 		expect(formattedSpans[4]).toHaveStyle({fontWeight: 'normal'});
 		expect(formattedSpans[4].textContent).toBe(' styling');
 
-		// Verify the complete text content
 		expect(richTextDiv.textContent.trim()).toBe('Iron plate with red text and bold styling');
 	});
 
-	// Test invalid/malformed tags
 	it('handles invalid tags gracefully', () => {
 		const {container} = render(<RichText text="[invalid]test[/invalid]" />);
 		expect(container.textContent).toBe('[invalid]test[/invalid]');
 	});
 
-	// Test unclosed tags
 	it('handles unclosed tags gracefully', () => {
 		const renderedResult = render(<RichText text="[color=red]text without closing tag" />);
 		const span = renderedResult.getByText('text without closing tag');
-		// #eb5c5f
 		expect(span.style.color).toBe('rgb(235, 92, 95)');
 		expect(span.textContent).toBe('text without closing tag');
 	});
