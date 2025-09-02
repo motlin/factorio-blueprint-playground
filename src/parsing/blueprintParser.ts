@@ -81,7 +81,7 @@ export function extractBlueprint(blueprint: BlueprintString, path?: string): Blu
 
 		// Navigate through the path
 		for (const part of parts) {
-			const index = parseInt(part) - 1;
+			const index = parseInt(part, 10) - 1;
 			traversedPath += (traversedPath ? '.' : '') + part;
 
 			if (!current.blueprint_book?.blueprints) {

@@ -1,5 +1,5 @@
 {
-	"$schema": "https://biomejs.dev/schemas/2.1.1/schema.json",
+	"$schema": "https://biomejs.dev/schemas/2.2.6/schema.json",
 	"files": {
 		"includes": ["src/**", "functions/**", "test/**", "*.json", "*.json5", "*.ts", "*.html"],
 		"experimentalScannerIgnores": [
@@ -47,7 +47,8 @@
 				"noForEach": "off",
 				"noStaticOnlyClass": "error",
 				"noThisInStatic": "error",
-				"useDateNow": "error"
+				"useDateNow": "error",
+				"noImportantStyles": "off"
 			},
 			"correctness": {
 				"noConstAssign": "error",
@@ -74,7 +75,9 @@
 				"useValidForDirection": "error",
 				"useYield": "error",
 				"useExhaustiveDependencies": "off",
-				"noUnknownProperty": "error"
+				"noUnknownProperty": "error",
+				"noNestedComponentDefinitions": "error",
+				"useUniqueElementIds": "error"
 			},
 			"performance": {
 				"noDelete": "off"
@@ -97,10 +100,7 @@
 				"noUnusedTemplateLiteral": "error",
 				"noInferrableTypes": "error"
 			},
-			"nursery": {
-				"noNestedComponentDefinitions": "error",
-				"useUniqueElementIds": "error"
-			},
+			"nursery": {},
 			"suspicious": {
 				"noAsyncPromiseExecutor": "error",
 				"noCatchAssign": "error",
