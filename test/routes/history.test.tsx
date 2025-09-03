@@ -66,6 +66,7 @@ vi.mock('../../src/components/ui', () => ({
 		style?: React.CSSProperties;
 	}) => (
 		<button
+			type="button"
 			data-testid="button-green"
 			onClick={onClick}
 			disabled={disabled}
@@ -215,12 +216,14 @@ function SimplifiedHistory() {
 		<div data-testid="panel">
 			<div data-testid="download-buttons">
 				<button
+					type="button"
 					data-testid="download-button"
 					disabled={selectedItems.size === 0}
 				>
 					Download Selected as Book
 				</button>
 				<button
+					type="button"
 					data-testid="delete-button"
 					disabled={selectedItems.size === 0}
 				>
@@ -248,7 +251,12 @@ function SimplifiedHistory() {
 								data-testid="blueprint-checkbox"
 							/>
 							<span data-testid="rich-text">{bp.label}</span>
-							<button data-testid="blueprint-open">Open</button>
+							<button
+								type="button"
+								data-testid="blueprint-open"
+							>
+								Open
+							</button>
 						</button>
 					);
 				})}

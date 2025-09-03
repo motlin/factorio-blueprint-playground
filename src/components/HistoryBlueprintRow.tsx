@@ -26,6 +26,7 @@ export function HistoryBlueprintRow({blueprint, isSelected, onToggleSelection}: 
 
 	return (
 		<button
+			type="button"
 			key={blueprint.metadata.sha}
 			className={`history-blueprint-item ${isSelected ? 'selected' : ''}`}
 			onClick={() => onToggleSelection(blueprint.metadata.sha)}

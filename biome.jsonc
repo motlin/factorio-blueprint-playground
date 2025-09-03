@@ -34,7 +34,7 @@
 			"recommended": true,
 			"a11y": {
 				"useKeyWithClickEvents": "error",
-				"useButtonType": "off",
+				"useButtonType": "error",
 				"noLabelWithoutControl": "off",
 				"noStaticElementInteractions": "error",
 				"noNoninteractiveTabindex": "error"
