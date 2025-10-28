@@ -44,7 +44,7 @@
 		"@cloudflare/workers-types": "^4.20251014.0",
 		"@playwright/test": "^1.56.1",
 		"@tanstack/eslint-plugin-router": "^1.133.19",
-		"@tanstack/react-router-devtools": "^1.133.32",
+		"@tanstack/react-router-devtools": "^1.133.34",
 		"@tanstack/router-cli": "^1.133.29",
 		"@tanstack/router-plugin": "^1.133.32",
 		"@testing-library/jest-dom": "^6.9.1",
