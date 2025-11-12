@@ -57,7 +57,7 @@
 		"@vitest/coverage-v8": "^4.0.8",
 		"fake-indexeddb": "^6.2.5",
 		"globals": "^16.5.0",
-		"jsdom": "^27.1.0",
+		"jsdom": "^27.2.0",
 		"sharp": "^0.34.5",
 		"tsx": "^4.20.6",
 		"typescript": "~5.9.3",
