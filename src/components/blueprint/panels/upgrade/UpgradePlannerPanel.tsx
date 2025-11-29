@@ -20,8 +20,8 @@ const UpgradePlannerPanelComponent = ({blueprint}: {blueprint: BlueprintString})
 			<Spreadsheet>
 				{settings.mappers
 					.sort((a, b) => a.index - b.index)
-					.map((mapping, index) => (
-						<Row key={index}>
+					.map((mapping) => (
+						<Row key={mapping.index}>
 							<Cell grow>
 								<div style={{margin: 'auto'}}>
 									<FactorioIcon

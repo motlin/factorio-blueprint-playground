@@ -133,7 +133,7 @@
 				"noUnsafeDeclarationMerging": "error",
 				"noUnsafeNegation": "error",
 				"useGetterReturn": "error",
-				"noArrayIndexKey": "off",
+				"noArrayIndexKey": "error",
 				"noGlobalIsNan": "off",
 				"noImplicitAnyLet": "off",
 				"noAssignInExpressions": "off",
