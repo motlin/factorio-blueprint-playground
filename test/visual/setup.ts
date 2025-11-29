@@ -1,6 +1,6 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import {chromium} from '@playwright/test';
-import fs from 'fs/promises';
-import path from 'path';
 import {afterAll, beforeAll, expect} from 'vitest';
 
 let browser: ReturnType<typeof chromium.launch> | null = null;

@@ -1,6 +1,6 @@
+import {readFileSync} from 'node:fs';
+import {join} from 'node:path';
 import {render} from '@testing-library/react';
-import {readFileSync} from 'fs';
-import {join} from 'path';
 import React from 'react';
 import {describe, expect, test} from 'vitest';
 
