@@ -1,4 +1,4 @@
-import {SignalID} from '../../../parsing/types';
+import type {SignalID} from '../../../parsing/types';
 import {FactorioIcon} from '../../core/icons/FactorioIcon';
 
 interface IconCellProps {

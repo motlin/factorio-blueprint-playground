@@ -1,5 +1,5 @@
 import {fireEvent, render} from '@testing-library/react';
-import React from 'react';
+import type React from 'react';
 import {describe, expect, it, vi} from 'vitest';
 
 import {ButtonGreen} from '../../src/components/ui/ButtonGreen';

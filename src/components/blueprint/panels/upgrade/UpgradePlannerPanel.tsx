@@ -1,7 +1,7 @@
 import {memo} from 'react';
 
 import {BlueprintWrapper} from '../../../../parsing/BlueprintWrapper';
-import {BlueprintString, UpgradePlanner} from '../../../../parsing/types';
+import type {BlueprintString, UpgradePlanner} from '../../../../parsing/types';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
 import {Panel} from '../../../ui';
 import {Cell, Row, Spreadsheet} from '../../spreadsheet';

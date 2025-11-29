@@ -1,9 +1,9 @@
-import {ClipboardCopy, Download, FileJson, LucideIcon} from 'lucide-react';
+import {ClipboardCopy, Download, FileJson, type LucideIcon} from 'lucide-react';
 import {memo} from 'react';
 
 import {BlueprintWrapper} from '../../../parsing/BlueprintWrapper';
 import {serializeBlueprint} from '../../../parsing/blueprintParser';
-import {BlueprintString} from '../../../parsing/types';
+import type {BlueprintString} from '../../../parsing/types';
 import {ButtonGreen, InsetLight, Panel} from '../../ui';
 
 interface ExportActionsProps {

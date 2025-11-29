@@ -1,4 +1,4 @@
-import {Parameter, SignalID} from '../../../../parsing/types';
+import type {Parameter, SignalID} from '../../../../parsing/types';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
 
 // Helper function to detect if a string looks like a signal ID

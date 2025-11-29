@@ -1,11 +1,11 @@
-import React from 'react';
+import type React from 'react';
 
 import {BlueprintWrapper} from '../../../parsing/BlueprintWrapper';
-import {Icon} from '../../../parsing/types';
+import type {Icon} from '../../../parsing/types';
 import {FactorioIcon, Placeholder} from '../../core/icons/FactorioIcon';
 import {RichText} from '../../core/text/RichText';
 
-import {TreeNode} from './types';
+import type {TreeNode} from './types';
 
 export interface TreeRowProps {
 	node: TreeNode;

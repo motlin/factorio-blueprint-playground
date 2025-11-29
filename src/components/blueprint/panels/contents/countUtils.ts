@@ -1,4 +1,4 @@
-import {Entity, ItemStack, Quality, Tile} from '../../../../parsing/types';
+import type {Entity, ItemStack, Quality, Tile} from '../../../../parsing/types';
 
 export function countItems<T>(
 	getKey: (item: T) => {name: string; quality?: string} | undefined,

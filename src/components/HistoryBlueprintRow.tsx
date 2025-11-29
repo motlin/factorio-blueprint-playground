@@ -1,7 +1,7 @@
 import {Link} from '@tanstack/react-router';
 
 import {getSourceLabel} from '../fetching/blueprintFetcher';
-import {DatabaseBlueprint} from '../storage/db';
+import type {DatabaseBlueprint} from '../storage/db';
 
 import {FactorioIcon} from './core/icons/FactorioIcon';
 import {RichText} from './core/text/RichText';

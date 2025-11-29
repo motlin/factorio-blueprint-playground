@@ -1,11 +1,11 @@
 import {memo, type ReactNode} from 'react';
 
-import {BlueprintString} from '../../../parsing/types';
+import type {BlueprintString} from '../../../parsing/types';
 import {InsetLight, Panel} from '../../ui';
 
 import {TreeRow} from './TreeRow';
 import {buildNode, isNodeActive} from './treeUtils';
-import {TreeNode} from './types';
+import type {TreeNode} from './types';
 
 interface BlueprintTreeProps {
 	rootBlueprint?: BlueprintString;

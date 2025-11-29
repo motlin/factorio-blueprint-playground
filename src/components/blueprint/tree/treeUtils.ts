@@ -1,6 +1,6 @@
-import {BlueprintString} from '../../../parsing/types';
+import type {BlueprintString} from '../../../parsing/types';
 
-import {TreeNode} from './types';
+import type {TreeNode} from './types';
 
 /**
  * Determines if a node is active based on its parent's active_index.

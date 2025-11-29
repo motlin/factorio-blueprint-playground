@@ -1,5 +1,6 @@
 import {render, screen, waitFor} from '@testing-library/react';
-import React, {useEffect, useState} from 'react';
+import type React from 'react';
+import {useEffect, useState} from 'react';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 vi.mock('../../src/components/ui', () => ({

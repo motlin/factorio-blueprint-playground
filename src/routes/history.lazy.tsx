@@ -12,7 +12,7 @@ import {logger} from '../lib/sentry';
 import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
 import {deserializeBlueprintNoThrow, serializeBlueprint} from '../parsing/blueprintParser';
 import type {BlueprintString, BlueprintStringWithIndex, Icon} from '../parsing/types';
-import {DatabaseBlueprint, db} from '../storage/db';
+import {type DatabaseBlueprint, db} from '../storage/db';
 
 export const Route = createLazyFileRoute('/history')({
 	component: History,

@@ -1,4 +1,4 @@
-import {DeflateOptions} from 'fflate/esm/browser';
+import type {DeflateOptions} from 'fflate/esm/browser';
 import {describe, expect, it} from 'vitest';
 
 import {deserializeBlueprint, serializeBlueprint} from '../../src/parsing/blueprintParser';

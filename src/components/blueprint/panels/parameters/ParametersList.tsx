@@ -1,4 +1,4 @@
-import {Parameter} from '../../../../parsing/types';
+import type {Parameter} from '../../../../parsing/types';
 import {InsetDark} from '../../../ui';
 
 import {ParameterRow} from './ParameterRow';

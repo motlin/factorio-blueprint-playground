@@ -3,11 +3,11 @@ import {useLiveQuery} from 'dexie-react-hooks';
 import React, {useEffect} from 'react';
 import {ErrorBoundary} from 'react-error-boundary';
 
-import {BlueprintFetchResult} from '../fetching/blueprintFetcher';
+import type {BlueprintFetchResult} from '../fetching/blueprintFetcher';
 import {logger} from '../lib/sentry';
 import {extractBlueprint} from '../parsing/blueprintParser';
 import type {BlueprintString} from '../parsing/types';
-import {RootSearch, Route} from '../routes';
+import {type RootSearch, Route} from '../routes';
 import {updateBlueprintMetadata} from '../state/blueprintLocalStorage';
 import {db, generateSha} from '../storage/db';
 
