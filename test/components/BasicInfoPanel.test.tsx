@@ -55,7 +55,7 @@ describe('BasicInfoPanel memoization test', () => {
 
 		// Re-render with different props
 		// Just make it different
-		const differentBlueprint = simpleBlueprintString + '1';
+		const differentBlueprint = `${simpleBlueprintString}1`;
 		rerender(<CountRenders blueprint={differentBlueprint} />);
 
 		// Both should render with different props

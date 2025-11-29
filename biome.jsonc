@@ -91,7 +91,7 @@
 				"useConst": "error",
 				"useImportType": "off",
 				"useNumberNamespace": "off",
-				"useTemplate": "off",
+				"useTemplate": "error",
 				"useNodejsImportProtocol": "off",
 				"noUselessElse": "off",
 				"noNonNullAssertion": "off",

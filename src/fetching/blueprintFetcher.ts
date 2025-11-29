@@ -279,7 +279,7 @@ async function fetchUrlImpl(pasted: string): Promise<BlueprintFetchSuccess | Blu
 		if (!fetchConfig) {
 			return {
 				success: false,
-				error: new Error('Unsupported blueprint source: ' + domain),
+				error: new Error(`Unsupported blueprint source: ${domain}`),
 				pasted,
 				fetchMethod: 'url',
 			};

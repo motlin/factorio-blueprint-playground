@@ -204,7 +204,7 @@ if (typeof window !== 'undefined') {
 					label: bp.gameData.label || '(no label)',
 					description: bp.gameData.description
 						? bp.gameData.description.length > 30
-							? bp.gameData.description.substring(0, 30) + '...'
+							? `${bp.gameData.description.substring(0, 30)}...`
 							: bp.gameData.description
 						: '(none)',
 					type: bp.gameData.type,
