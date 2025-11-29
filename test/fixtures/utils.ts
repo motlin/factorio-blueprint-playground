@@ -1,5 +1,5 @@
-import {readdirSync, readFileSync} from 'fs';
-import {join} from 'path';
+import {readdirSync, readFileSync} from 'node:fs';
+import {join} from 'node:path';
 
 /**
  * Get list of blueprint fixture filenames (without extension)
