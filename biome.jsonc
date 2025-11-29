@@ -136,7 +136,7 @@
 				"noArrayIndexKey": "error",
 				"noGlobalIsNan": "off",
 				"noImplicitAnyLet": "error",
-				"noAssignInExpressions": "off",
+				"noAssignInExpressions": "error",
 				"noShorthandPropertyOverrides": "off"
 			}
 		}

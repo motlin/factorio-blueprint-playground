@@ -81,9 +81,7 @@ const processRichTextLine = ({text, iconSize}: RichTextProps): React.ReactNode[]
 	const tagRegex =
 		/\[((?:color|font)=([^\]]+)|(?:\/?(?:color|font))|(?:img|item|fluid|virtual-signal|entity|technology|recipe|item-group|tile|achievement|quality|gps|special-item|armor|train|train-stop|tooltip|planet|space-location)=([^,\]]+)(?:,quality=([^,\]]+))?)\]/g;
 
-	let match: RegExpExecArray | null;
-
-	while ((match = tagRegex.exec(text)) !== null) {
+	for (let match = tagRegex.exec(text); match !== null; match = tagRegex.exec(text)) {
 		// Add text before the tag
 		if (match.index > currentIndex) {
 			parts.push(
