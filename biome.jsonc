@@ -135,7 +135,7 @@
 				"useGetterReturn": "error",
 				"noArrayIndexKey": "error",
 				"noGlobalIsNan": "off",
-				"noImplicitAnyLet": "off",
+				"noImplicitAnyLet": "error",
 				"noAssignInExpressions": "off",
 				"noShorthandPropertyOverrides": "off"
 			}
