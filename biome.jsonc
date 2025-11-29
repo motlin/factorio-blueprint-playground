@@ -53,7 +53,7 @@
 				"noStaticOnlyClass": "error",
 				"noThisInStatic": "error",
 				"useDateNow": "error",
-				"noImportantStyles": "off"
+				"noImportantStyles": "error"
 			},
 			"correctness": {
 				"noConstAssign": "error",
@@ -167,6 +167,16 @@
 				"rules": {
 					"suspicious": {
 						"noExplicitAny": "off"
+					}
+				}
+			}
+		},
+		{
+			"includes": ["src/styles/factorio-*.css"],
+			"linter": {
+				"rules": {
+					"complexity": {
+						"noImportantStyles": "off"
 					}
 				}
 			}
