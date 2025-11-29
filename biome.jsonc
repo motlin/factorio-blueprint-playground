@@ -137,7 +137,7 @@
 				"noGlobalIsNan": "off",
 				"noImplicitAnyLet": "error",
 				"noAssignInExpressions": "error",
-				"noShorthandPropertyOverrides": "off"
+				"noShorthandPropertyOverrides": "error"
 			}
 		}
 	},

@@ -81,8 +81,8 @@ video {
 	margin: 0;
 	padding: 0;
 	border: 0;
-	font-size: 100%;
 	font: inherit;
+	font-size: 100%;
 	vertical-align: baseline;
 }
 
@@ -138,7 +138,6 @@ html {
 }
 
 body {
-	background-color: #201810;
 	background: #201810;
 	background-image: url("https://webcdn.factorio.com/assets/img/web/bg_v4-85.jpg"), var(--factorio-bg-fallback);
 	background-size: 2048px 3072px;
