@@ -3,6 +3,10 @@
 on:
     pull_request:
 
+permissions:
+    contents: write
+    pull-requests: write
+
 jobs:
     lint:
         name: Lint (Biome)
@@ -161,3 +165,126 @@ jobs:
               run: gh pr merge --rebase --auto "${{ github.event.pull_request.number }}"
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    biome-lint-fix:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+            pull-requests: write
+        steps:
+            - uses: actions/checkout@v6
+              with:
+                  ref: ${{ github.event.pull_request.head.ref }}
+                  repository: ${{ github.event.pull_request.head.repo.full_name }}
+                  token: ${{ secrets.GITHUB_TOKEN }}
+
+            - uses: actions/setup-node@v6
+              with:
+                  node-version: '22.x'
+                  cache: 'npm'
+
+            - name: Configure Git
+              run: |
+                  git config --global user.name "GitHub Actions"
+                  git config --global user.email "github-actions@github.com"
+
+            - name: Run Biome Lint Fix
+              run: |
+                  npm ci
+                  npx @biomejs/biome lint --write .
+
+                  if [[ -n $(git status --porcelain) ]]; then
+                    FIX_BRANCH="fix-${{ github.event.pull_request.number }}-biome-lint"
+                    git switch --create $FIX_BRANCH
+
+                    git add --all
+                    git commit --message "Auto-fix: Apply Biome lint fixes"
+                    git push --force origin $FIX_BRANCH
+
+                    echo "Biome lint fixes have been pushed to the $FIX_BRANCH branch."
+                    exit 1
+                  else
+                    echo "No changes needed by Biome lint"
+                  fi
+
+    biome-format-fix:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+            pull-requests: write
+        steps:
+            - uses: actions/checkout@v6
+              with:
+                  ref: ${{ github.event.pull_request.head.ref }}
+                  repository: ${{ github.event.pull_request.head.repo.full_name }}
+                  token: ${{ secrets.GITHUB_TOKEN }}
+
+            - uses: actions/setup-node@v6
+              with:
+                  node-version: '22.x'
+                  cache: 'npm'
+
+            - name: Configure Git
+              run: |
+                  git config --global user.name "GitHub Actions"
+                  git config --global user.email "github-actions@github.com"
+
+            - name: Run Biome Format
+              run: |
+                  npm ci
+                  npx @biomejs/biome format --write .
+
+                  if [[ -n $(git status --porcelain) ]]; then
+                    FIX_BRANCH="fix-${{ github.event.pull_request.number }}-biome-format"
+                    git switch --create $FIX_BRANCH
+
+                    git add --all
+                    git commit --message "Auto-fix: Apply Biome formatting"
+                    git push --force origin $FIX_BRANCH
+
+                    echo "Biome formatting fixes have been pushed to the $FIX_BRANCH branch."
+                    exit 1
+                  else
+                    echo "No changes needed by Biome format"
+                  fi
+
+    prettier-fix:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+            pull-requests: write
+        steps:
+            - uses: actions/checkout@v6
+              with:
+                  ref: ${{ github.event.pull_request.head.ref }}
+                  repository: ${{ github.event.pull_request.head.repo.full_name }}
+                  token: ${{ secrets.GITHUB_TOKEN }}
+
+            - uses: actions/setup-node@v6
+              with:
+                  node-version: '22.x'
+                  cache: 'npm'
+
+            - name: Configure Git
+              run: |
+                  git config --global user.name "GitHub Actions"
+                  git config --global user.email "github-actions@github.com"
+
+            - name: Run Prettier Fix
+              run: |
+                  npm ci
+                  npx prettier --write "src/**/*.css"
+
+                  if [[ -n $(git status --porcelain) ]]; then
+                    FIX_BRANCH="fix-${{ github.event.pull_request.number }}-prettier"
+                    git switch --create $FIX_BRANCH
+
+                    git add --all
+                    git commit --message "Auto-fix: Apply Prettier formatting"
+                    git push --force origin $FIX_BRANCH
+
+                    echo "Prettier fixes have been pushed to the $FIX_BRANCH branch."
+                    exit 1
+                  else
+                    echo "No changes needed by Prettier"
+                  fi
