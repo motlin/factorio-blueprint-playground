@@ -33,13 +33,13 @@ function parseColor(color?: string): string | undefined {
 	if (parts.length === 3) {
 		// Try parsing as 0-1 range first
 		const rgb01 = parts.map((n) => parseFloat(n));
-		if (rgb01.every((n) => !isNaN(n) && n >= 0 && n <= 1)) {
+		if (rgb01.every((n) => !Number.isNaN(n) && n >= 0 && n <= 1)) {
 			return `rgb(${rgb01.map((n) => Math.round(n * 255)).join(',')})`;
 		}
 
 		// Try parsing as 0-255 range
 		const rgb255 = parts.map((n) => parseInt(n, 10));
-		if (rgb255.every((n) => !isNaN(n) && n >= 0 && n <= 255)) {
+		if (rgb255.every((n) => !Number.isNaN(n) && n >= 0 && n <= 255)) {
 			return `rgb(${rgb255.join(',')})`;
 		}
 	}
