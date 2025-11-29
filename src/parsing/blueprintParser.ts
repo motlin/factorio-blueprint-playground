@@ -1,4 +1,4 @@
-import {DeflateOptions, unzlibSync, zlibSync} from 'fflate';
+import {type DeflateOptions, unzlibSync, zlibSync} from 'fflate';
 import {logger} from '../lib/sentry';
 import {DEFAULT_COMPRESSION_SETTINGS} from './compressionSettings';
 import {getErrorMessage} from './errors';

@@ -1,6 +1,6 @@
 import {memo} from 'react';
 
-import {Quality, SignalType} from '../../../../parsing/types';
+import type {Quality, SignalType} from '../../../../parsing/types';
 import {Panel} from '../../../ui';
 import {IconCell, Row, Spreadsheet, TextCell} from '../../spreadsheet';
 

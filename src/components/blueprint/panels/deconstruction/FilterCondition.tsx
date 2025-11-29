@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 
 import type {Filter} from '../../../../parsing/types';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';

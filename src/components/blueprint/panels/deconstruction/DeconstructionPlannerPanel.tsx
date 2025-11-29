@@ -1,7 +1,7 @@
 import {memo} from 'react';
 
 import {BlueprintWrapper} from '../../../../parsing/BlueprintWrapper';
-import {BlueprintString, DeconstructionPlanner} from '../../../../parsing/types';
+import type {BlueprintString, DeconstructionPlanner} from '../../../../parsing/types';
 import {Panel} from '../../../ui';
 import {Cell, Row, Spreadsheet} from '../../spreadsheet';
 

@@ -1,4 +1,4 @@
-import {BlueprintGameData, BlueprintStorageMetadata, db} from '../storage/db';
+import {type BlueprintGameData, type BlueprintStorageMetadata, db} from '../storage/db';
 
 export async function addBlueprint(
 	data: string,

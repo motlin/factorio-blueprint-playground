@@ -1,6 +1,6 @@
 import {memo} from 'react';
 
-import {BlueprintString} from '../../../parsing/types';
+import type {BlueprintString} from '../../../parsing/types';
 
 import {ContentsPanel} from './contents/ContentsPanel';
 import {DeconstructionPlannerPanel} from './deconstruction/DeconstructionPlannerPanel';

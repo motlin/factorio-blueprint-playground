@@ -1,4 +1,4 @@
-import {SignalID, SignalType} from '../../../parsing/types';
+import type {SignalID, SignalType} from '../../../parsing/types';
 
 import styles from './FactorioIcon.module.css';
 

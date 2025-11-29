@@ -2,7 +2,7 @@ import {render, screen} from '@testing-library/react';
 import {describe, expect, test} from 'vitest';
 
 import {BlueprintInfoPanels} from '../../src/components/blueprint/panels/BlueprintInfoPanels';
-import {BlueprintString} from '../../src/parsing/types';
+import type {BlueprintString} from '../../src/parsing/types';
 
 describe('BlueprintInfoPanels', () => {
 	test('renders nothing when no blueprint is provided', () => {

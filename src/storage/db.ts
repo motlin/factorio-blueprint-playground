@@ -1,4 +1,4 @@
-import Dexie, {Table} from 'dexie';
+import Dexie, {type Table} from 'dexie';
 import {logger} from '../lib/sentry.ts';
 import {parseVersion3} from '../parsing/blueprintParser.ts';
 

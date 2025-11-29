@@ -89,7 +89,7 @@
 			},
 			"style": {
 				"useConst": "error",
-				"useImportType": "off",
+				"useImportType": "error",
 				"useNumberNamespace": "off",
 				"useTemplate": "error",
 				"useNodejsImportProtocol": "off",
