@@ -1,7 +1,7 @@
 import * as Sentry from '@sentry/react';
-import type {Router} from '@tanstack/react-router';
+import type {AnyRouter} from '@tanstack/react-router';
 
-export function initSentry(router: Router<any, any>) {
+export function initSentry(router: AnyRouter) {
 	if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
 		Sentry.init({
 			dsn: import.meta.env.VITE_SENTRY_DSN,
@@ -41,7 +41,7 @@ export function initSentry(router: Router<any, any>) {
 }
 
 export const logger = {
-	debug: (message: string, extra?: Record<string, any>) => {
+	debug: (message: string, extra?: Record<string, unknown>) => {
 		console.debug(message, extra);
 		Sentry.addBreadcrumb({
 			message,
@@ -51,7 +51,7 @@ export const logger = {
 		});
 	},
 
-	info: (message: string, extra?: Record<string, any>) => {
+	info: (message: string, extra?: Record<string, unknown>) => {
 		console.info(message, extra);
 		Sentry.addBreadcrumb({
 			message,
@@ -61,7 +61,7 @@ export const logger = {
 		});
 	},
 
-	warn: (message: string, extra?: Record<string, any>) => {
+	warn: (message: string, extra?: Record<string, unknown>) => {
 		console.warn(message, extra);
 		Sentry.addBreadcrumb({
 			message,
@@ -71,7 +71,7 @@ export const logger = {
 		});
 	},
 
-	error: (message: string, error?: Error | unknown, extra?: Record<string, any>) => {
+	error: (message: string, error?: Error | unknown, extra?: Record<string, unknown>) => {
 		console.error(message, error, extra);
 
 		// Send to Sentry as an error event
