@@ -199,7 +199,7 @@ export const RichText = ({text, iconSize}: RichTextProps) => {
 	const lines = text.split(/\r\n|\r|\n/);
 
 	const processedLines = lines.map((line, index) => (
-		<React.Fragment key={index}>
+		<React.Fragment key={`line-${index}-${line.slice(0, 20)}`}>
 			{index > 0 && <br />}
 			<div className="richtext-line">{processRichTextLine({text: line, iconSize})}</div>
 		</React.Fragment>

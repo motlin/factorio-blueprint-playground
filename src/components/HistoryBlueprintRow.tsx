@@ -58,9 +58,9 @@ export function HistoryBlueprintRow({blueprint, isSelected, onToggleSelection}: 
 
 			{/* Icons column */}
 			<div className="history-icons-container">
-				{blueprint.gameData.icons.map((icon, index) => (
+				{blueprint.gameData.icons.map((icon) => (
 					<FactorioIcon
-						key={index}
+						key={`${icon.type || 'item'}-${icon.name}`}
 						icon={{type: icon.type || 'item', name: icon.name}}
 						size="small"
 					/>

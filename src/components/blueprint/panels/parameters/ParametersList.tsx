@@ -12,9 +12,9 @@ export const ParametersList = ({parameters}: ParametersListProps) => {
 
 	return (
 		<InsetDark>
-			{parameters.map((param, index) => (
+			{parameters.map((param) => (
 				<ParameterRow
-					key={index}
+					key={param.name}
 					param={param}
 					parameters={parameters}
 				/>
