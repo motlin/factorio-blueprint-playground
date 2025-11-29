@@ -89,7 +89,7 @@ export function extractBlueprint(blueprint: BlueprintString, path?: string): Blu
 			}
 
 			// Check if index is valid
-			if (isNaN(index)) {
+			if (Number.isNaN(index)) {
 				throw new BlueprintError(`Invalid path ${path}: "${part}" is not a valid number at ${traversedPath}`);
 			}
 
