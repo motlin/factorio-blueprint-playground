@@ -48,7 +48,7 @@ async function handleRequest(context: EventContext<Env, string, Record<string, u
 			return createJsonResponse(parseResult, 400, originHeader);
 		}
 
-		const resolveResult = await resolveImgurImage(parseResult.data!, env.IMGUR_CLIENT_ID, Sentry);
+		const resolveResult = await resolveImgurImage(parseResult.data, env.IMGUR_CLIENT_ID, Sentry);
 		const status = resolveResult.success ? 200 : 400;
 
 		return createJsonResponse(resolveResult, status, originHeader);

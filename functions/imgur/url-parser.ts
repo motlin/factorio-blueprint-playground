@@ -7,11 +7,7 @@ export interface ParsedImgurUrl {
 	warnings: string[];
 }
 
-export interface ImgurUrlParseResult {
-	success: boolean;
-	data?: ParsedImgurUrl;
-	error?: string;
-}
+export type ImgurUrlParseResult = {success: true; data: ParsedImgurUrl} | {success: false; error: string};
 
 type PipelineResult<T> = {success: true; data: T} | {success: false; error: string};
 
