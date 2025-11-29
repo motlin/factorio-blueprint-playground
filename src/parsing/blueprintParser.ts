@@ -63,7 +63,7 @@ export function serializeBlueprint(
 	const compressed = zlibSync(bytes, settings);
 
 	// Convert to base64 and add version prefix
-	return '0' + btoa(compressed.reduce((data, byte) => data + String.fromCharCode(byte), ''));
+	return `0${btoa(compressed.reduce((data, byte) => data + String.fromCharCode(byte), ''))}`;
 }
 
 /**

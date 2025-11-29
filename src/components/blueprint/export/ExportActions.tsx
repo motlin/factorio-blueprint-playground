@@ -150,7 +150,7 @@ const ExportActionsComponent = ({blueprint, path, title}: ExportActionsProps) =>
 
 	const handleDownloadString = () => {
 		const str = serializeBlueprint(blueprint);
-		const filename = getFilename(blueprint, path) + '.txt';
+		const filename = `${getFilename(blueprint, path)}.txt`;
 		downloadFile(filename, str);
 	};
 
