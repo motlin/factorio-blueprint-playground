@@ -17,10 +17,34 @@ export interface ImgurApiResponse {
 	error?: string;
 }
 
+interface ImgurImageData {
+	id: string;
+	link?: string;
+	type?: string;
+	width?: number;
+	height?: number;
+	title?: string;
+}
+
+interface ImgurAlbumData {
+	title?: string;
+	images?: ImgurImageData[];
+}
+
+interface SentryLike {
+	withScope: (
+		callback: (scope: {
+			setTags: (tags: Record<string, string>) => void;
+			setExtras: (extras: Record<string, unknown>) => void;
+		}) => void,
+	) => void;
+	captureException: (error: unknown) => void;
+}
+
 export async function resolveImgurImage(
 	parsedUrl: ParsedImgurUrl,
 	clientId: string,
-	sentry?: any,
+	sentry?: SentryLike,
 ): Promise<ImgurApiResponse> {
 	const headers = {
 		Authorization: `Client-ID ${clientId}`,
@@ -33,7 +57,7 @@ export async function resolveImgurImage(
 		return match ? match[1] : 'png';
 	}
 
-	function buildImageResponse(imageData: any): ImgurApiResponse {
+	function buildImageResponse(imageData: ImgurImageData): ImgurApiResponse {
 		const extension = extractExtension(imageData.link);
 
 		return {
@@ -51,7 +75,7 @@ export async function resolveImgurImage(
 		};
 	}
 
-	function buildAlbumResponse(albumData: any): ImgurApiResponse {
+	function buildAlbumResponse(albumData: ImgurAlbumData): ImgurApiResponse {
 		if (!(albumData.images && albumData.images.length > 0)) {
 			return {
 				success: false,
@@ -108,7 +132,7 @@ export async function resolveImgurImage(
 		const singleImageResponse = await fetch(`https://api.imgur.com/3/image/${parsedUrl.id}`, {headers});
 
 		if (singleImageResponse.ok) {
-			const data = (await singleImageResponse.json()) as any;
+			const data = (await singleImageResponse.json()) as {data: ImgurImageData};
 			return buildImageResponse(data.data);
 		}
 
@@ -117,7 +141,7 @@ export async function resolveImgurImage(
 			const albumResponse = await fetch(`https://api.imgur.com/3/album/${parsedUrl.id}`, {headers});
 
 			if (albumResponse.ok) {
-				const data = (await albumResponse.json()) as any;
+				const data = (await albumResponse.json()) as {data: ImgurAlbumData};
 				return buildAlbumResponse(data.data);
 			}
 

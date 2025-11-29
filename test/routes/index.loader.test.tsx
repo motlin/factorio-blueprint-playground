@@ -31,13 +31,22 @@ const queryClient = new QueryClient({
 	},
 });
 
-const loader = async (params: any): Promise<unknown> => {
+interface LoaderParams {
+	context: Record<string, unknown>;
+	params: Record<string, unknown>;
+	search: Record<string, unknown>;
+	location: Record<string, unknown>;
+	abortController: AbortController;
+	deps: Record<string, unknown>;
+}
+
+const loader = async (params: LoaderParams): Promise<unknown> => {
 	params.context = {
 		...params.context,
 		queryClient,
 	};
 
-	const result = await originalLoader(params);
+	const result = await originalLoader(params as Parameters<typeof originalLoader>[0]);
 	return result;
 };
 

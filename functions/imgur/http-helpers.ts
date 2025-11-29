@@ -26,7 +26,7 @@ export function setupCORSHeaders(headers: Headers, originHeader: string | null, 
 	return headers;
 }
 
-export function createJsonResponse(body: any, status: number, originHeader: string | null): Response {
+export function createJsonResponse(body: unknown, status: number, originHeader: string | null): Response {
 	const headers = setupCORSHeaders(new Headers(), originHeader, false);
 	return new Response(JSON.stringify(body), {
 		status,
