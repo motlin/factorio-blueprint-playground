@@ -1,17 +1,23 @@
 {
-	"$schema": "https://biomejs.dev/schemas/2.2.6/schema.json",
+	"$schema": "https://biomejs.dev/schemas/2.3.8/schema.json",
 	"files": {
-		"includes": ["src/**", "functions/**", "test/**", "*.json", "*.json5", "*.ts", "*.html"],
-		"experimentalScannerIgnores": [
-			".llm/**/*",
-			"node_modules",
-			"dist",
-			"build",
-			"coverage",
-			"package-lock.json",
-			"pnpm-lock.yaml",
-			"yarn.lock",
-			"src/routeTree.gen.ts"
+		"includes": [
+			"src/**",
+			"functions/**",
+			"test/**",
+			"*.json",
+			"*.json5",
+			"*.ts",
+			"*.html",
+			"!!**/.llm/**/*",
+			"!!**/node_modules",
+			"!!**/dist",
+			"!!**/build",
+			"!!**/coverage",
+			"!!**/package-lock.json",
+			"!!**/pnpm-lock.yaml",
+			"!!**/yarn.lock",
+			"!!**/src/routeTree.gen.ts"
 		],
 		"ignoreUnknown": true
 	},
