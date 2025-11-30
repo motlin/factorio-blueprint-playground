@@ -8,7 +8,6 @@
 			"*.json",
 			"*.json5",
 			"*.ts",
-			"*.html",
 			"!!**/.llm/**/*",
 			"!!**/node_modules",
 			"!!**/dist",
