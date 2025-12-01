@@ -157,8 +157,14 @@ jobs:
 
     all-checks:
         name: All checks
+        if: always()
         needs: [lint, format, typecheck, test, coverage, build, build-types, pre-commit]
         runs-on: ubuntu-latest
         steps:
-            - name: All checks passed
-              run: echo "All checks passed!"
+            - name: Verify all checks passed
+              run: |
+                  if [[ "${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
+                    echo "One or more required checks failed or were cancelled"
+                    exit 1
+                  fi
+                  echo "All checks passed!"
