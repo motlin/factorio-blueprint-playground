@@ -1,28 +1,20 @@
 # Jobs that run on push to main, after pull requests are merged. Jobs here can be a subset of the jobs that run on merge_group. These jobs should never fail since the jobs in merge_group already passed.
 
 on:
-    push:
-        branches:
-            - main
+  push:
+    branches:
+      - main
 
 concurrency:
-    group: ${{ github.workflow }}-${{ github.ref }}
-    cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-    build:
-        runs-on: ubuntu-latest
-        timeout-minutes: 10
-        steps:
-            - uses: actions/checkout@v6
-            - uses: actions/setup-node@v6
-              with:
-                  node-version: '22.x'
-                  cache: 'npm'
+  install-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: jdx/mise-action@v3
 
-            - run: npm ci
-
-            - name: Generate route files
-              run: npx @tanstack/router-cli generate --routesDirectory ./src/routes --generatedRouteTree ./src/routeTree.gen.ts
-
-            - run: npm run build
+      - run: just install-ci
+      - run: just build-ci
