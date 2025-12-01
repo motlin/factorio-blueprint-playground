@@ -90,9 +90,47 @@ hooks:
 install:
     npm install
 
+# `npm ci`
+install-ci:
+    npm ci
+
 # Run all checks before committing
 precommit: install generate-routes lint-fix format hooks typecheck build ci-test
     @echo "✅ All pre-commit checks completed successfully."
+
+# CI recipes: use npm ci and handle dependencies automatically
+
+# `npm ci && npm run generate:routes`
+generate-routes-ci: install-ci
+    npm run generate:routes
+
+# `npm ci && npm run generate:routes && npm run ci:lint`
+lint-ci: install-ci generate-routes-ci
+    npm run ci:lint
+
+# `npm ci && npm run ci:format`
+format-ci: install-ci
+    npm run ci:format
+
+# `npm ci && npm run generate:routes && npm run ci:typecheck`
+typecheck-ci: install-ci generate-routes-ci
+    npm run ci:typecheck
+
+# `npm ci && npm run generate:routes && npm run build`
+build-ci: install-ci generate-routes-ci
+    npm run build
+
+# `npm ci && npm run generate:routes && npm run build:types`
+build-types-ci: install-ci generate-routes-ci
+    npm run build:types
+
+# `npm ci && npm run ci:test`
+test-ci: install-ci
+    npm run ci:test
+
+# `npm ci && npm run test:coverage`
+coverage-ci: install-ci
+    npm run test:coverage
 
 factorio_home := env('FACTORIO_HOME')
 
