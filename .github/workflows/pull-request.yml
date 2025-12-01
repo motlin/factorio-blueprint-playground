@@ -125,17 +125,13 @@ jobs:
 
     all-checks:
         name: All checks
-        if: always()
+        if: ${{ !cancelled() }}
         needs: [lint, format, typecheck, test, coverage, build, build-types]
         runs-on: ubuntu-latest
         steps:
-            - name: Verify all checks passed
-              run: |
-                  if [[ "${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
-                    echo "One or more required checks failed or were cancelled"
-                    exit 1
-                  fi
-                  echo "All checks passed!"
+            - uses: re-actors/alls-green@release/v1
+              with:
+                  jobs: ${{ toJSON(needs) }}
 
     automerge-dependabot:
         if: github.event.pull_request.user.login == 'dependabot[bot]'
