@@ -41,7 +41,7 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.3.8",
-		"@cloudflare/workers-types": "^4.20251205.0",
+		"@cloudflare/workers-types": "^4.20251209.0",
 		"@playwright/test": "^1.57.0",
 		"@tanstack/eslint-plugin-router": "^1.140.0",
 		"@tanstack/react-router-devtools": "^1.140.0",
