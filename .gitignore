@@ -37,3 +37,6 @@ dist-ssr
 .dev.vars
 _worker.bundle
 src/routeTree.gen.ts
+
+*storybook.log
+storybook-static

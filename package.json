@@ -19,7 +19,10 @@
 		"ci:format": "npx @biomejs/biome format .",
 		"format:css": "npx prettier --write \"src/**/*.css\"",
 		"ci:typecheck": "tsc --noEmit",
-		"all": "npm run generate:routes && npm run lint:fix && npm run ci:typecheck && npm run build && npm run ci:test"
+		"all": "npm run generate:routes && npm run lint:fix && npm run ci:typecheck && npm run build && npm run ci:test",
+		"storybook": "storybook dev -p 6006",
+		"storybook:test": "vitest run --config vitest.storybook.config.ts",
+		"build-storybook": "storybook build"
 	},
 	"dependencies": {
 		"@sentry/browser": "^10.27.0",
@@ -64,6 +67,14 @@
 		"typescript": "~5.9.3",
 		"vite": "^7.3.0",
 		"vitest": "^4.0.12",
-		"wrangler": "^4.56.0"
+		"wrangler": "^4.56.0",
+		"storybook": "^10.1.9",
+		"@storybook/react-vite": "^10.1.9",
+		"@chromatic-com/storybook": "^4.1.3",
+		"@storybook/addon-a11y": "^10.1.9",
+		"@storybook/addon-docs": "^10.1.9",
+		"@storybook/addon-onboarding": "^10.1.9",
+		"@storybook/addon-vitest": "^10.1.9",
+		"@vitest/browser-playwright": "^4.0.12"
 	}
 }

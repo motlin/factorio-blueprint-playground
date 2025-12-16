@@ -43,6 +43,10 @@ build:
 dev: install
     npm run dev
 
+# `npm run storybook`
+storybook: install
+    npm run storybook
+
 # `npm run test`
 test: install
     npm run test
