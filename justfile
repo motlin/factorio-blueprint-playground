@@ -132,7 +132,7 @@ test-ci: install-ci
 coverage-ci: install-ci
     npm run test:coverage
 
-factorio_home := env('FACTORIO_HOME')
+factorio_home := env('FACTORIO_HOME', '')
 
 # `factorio --dump-icon-sprites`
 dump-icon-sprites:
