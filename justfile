@@ -86,9 +86,9 @@ ci-test: install
 # Format all files: Biome for JS/TS, Prettier for CSS
 format: lint-fix format-css
 
-# `uv tool run pre-commit run`
+# `uv tool run pre-commit run --all-files`
 hooks:
-    uv tool run pre-commit run
+    uv tool run pre-commit run --all-files
 
 # `npm install`
 install:
