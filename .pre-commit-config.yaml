@@ -23,6 +23,13 @@ repos:
 
     - repo: local
       hooks:
+          - id: biome-migrate
+            name: biome migrate
+            entry: npx biome migrate --write
+            language: system
+            pass_filenames: false
+            files: biome\.jsonc?$
+
           - id: biome
             name: biome
             entry: npx biome check --write
