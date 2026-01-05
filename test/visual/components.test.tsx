@@ -1,6 +1,6 @@
 import {render} from '@testing-library/react';
 import type React from 'react';
-import {describe, it} from 'vitest';
+import {describe, it, vi} from 'vitest';
 
 import {ContentsPanel} from '../../src/components/blueprint/panels/contents/ContentsPanel';
 import {DeconstructionPlannerPanel} from '../../src/components/blueprint/panels/deconstruction/DeconstructionPlannerPanel';
@@ -69,7 +69,7 @@ describe('Visual regression tests', () => {
 			<BlueprintTree
 				rootBlueprint={mockBlueprint}
 				selectedPath=""
-				onSelect={() => {}}
+				onSelect={vi.fn()}
 			/>,
 		);
 
