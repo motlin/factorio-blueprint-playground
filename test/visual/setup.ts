@@ -1,7 +1,9 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {chromium} from '@playwright/test';
-import {afterAll, beforeAll, expect} from 'vitest';
+import pixelmatch from 'pixelmatch';
+import {PNG} from 'pngjs';
+import {afterAll, beforeAll} from 'vitest';
 
 let browser: ReturnType<typeof chromium.launch> | null = null;
 let page: Awaited<ReturnType<Awaited<ReturnType<typeof chromium.launch>>['newPage']>> | null = null;
@@ -111,9 +113,37 @@ export async function compareScreenshots(testName: string, html: string, selecto
 	await element.screenshot({path: tempPath});
 
 	try {
-		const baseline = await fs.readFile(snapshotPath);
-		const current = await fs.readFile(tempPath);
-		expect(current).toEqual(baseline);
+		const baselineBuffer = await fs.readFile(snapshotPath);
+		const currentBuffer = await fs.readFile(tempPath);
+
+		const baseline = PNG.sync.read(baselineBuffer);
+		const current = PNG.sync.read(currentBuffer);
+
+		if (baseline.width !== current.width || baseline.height !== current.height) {
+			throw new Error(
+				`Screenshot dimensions mismatch for ${testName}: ` +
+					`baseline ${baseline.width}x${baseline.height} vs current ${current.width}x${current.height}`,
+			);
+		}
+
+		const diff = new PNG({width: baseline.width, height: baseline.height});
+		const mismatchedPixels = pixelmatch(baseline.data, current.data, diff.data, baseline.width, baseline.height, {
+			threshold: 0.1,
+		});
+
+		const totalPixels = baseline.width * baseline.height;
+		const mismatchPercentage = (mismatchedPixels / totalPixels) * 100;
+
+		// Allow up to 0.1% pixel difference to account for anti-aliasing variations
+		if (mismatchPercentage > 0.1) {
+			const diffPath = path.join(tempDir, `${testName}-diff.png`);
+			await fs.writeFile(diffPath, PNG.sync.write(diff));
+			throw new Error(
+				`Screenshot mismatch for ${testName}: ${mismatchPercentage.toFixed(2)}% pixels differ. ` +
+					`Diff saved to ${diffPath}`,
+			);
+		}
+
 		await fs.unlink(tempPath);
 	} catch (error: unknown) {
 		if (error instanceof Error && 'code' in error && (error as {code?: string}).code === 'ENOENT') {
