@@ -10,12 +10,12 @@ const meta: Meta<typeof IconCell> = {
 	},
 	tags: ['autodocs'],
 	decorators: [
-		(Story) => (
+		(StoryComponent) => (
 			<div
 				className="spreadsheet-container"
 				style={{minWidth: '200px'}}
 			>
-				<Story />
+				<StoryComponent />
 			</div>
 		),
 	],

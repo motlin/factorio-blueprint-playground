@@ -10,9 +10,9 @@ const meta: Meta<typeof BlueprintInfoPanels> = {
 	},
 	tags: ['autodocs'],
 	decorators: [
-		(Story) => (
+		(StoryComponent) => (
 			<div style={{minWidth: '600px'}}>
-				<Story />
+				<StoryComponent />
 			</div>
 		),
 	],

@@ -27,15 +27,15 @@ export function History() {
 			try {
 				const result = await db.blueprints.orderBy('metadata.lastUpdatedOn').reverse().toArray();
 				return result;
-			} catch (error: unknown) {
+			} catch (loadError: unknown) {
 				logger.error(
 					'Failed to load blueprint history',
-					error instanceof Error ? error : new Error(String(error)),
+					loadError instanceof Error ? loadError : new Error(String(loadError)),
 					{
 						context: 'History.useLiveQuery',
 					},
 				);
-				setError(error instanceof Error ? error : new Error('Unknown error loading blueprints'));
+				setError(loadError instanceof Error ? loadError : new Error('Unknown error loading blueprints'));
 				return [];
 			}
 		},
@@ -116,12 +116,16 @@ export function History() {
 
 			const serializedBook = serializeBlueprint(blueprintBookData);
 			downloadBlueprint(serializedBook, 'blueprint-history-export');
-		} catch (error: unknown) {
-			logger.error('Failed to create blueprint book', error instanceof Error ? error : new Error(String(error)), {
-				context: 'History.createBlueprintBook',
-				selectedCount: selectedItems.size,
-			});
-			setError(error instanceof Error ? error : new Error('Failed to create blueprint book'));
+		} catch (bookError: unknown) {
+			logger.error(
+				'Failed to create blueprint book',
+				bookError instanceof Error ? bookError : new Error(String(bookError)),
+				{
+					context: 'History.createBlueprintBook',
+					selectedCount: selectedItems.size,
+				},
+			);
+			setError(bookError instanceof Error ? bookError : new Error('Failed to create blueprint book'));
 		}
 	};
 
@@ -139,21 +143,25 @@ export function History() {
 			const selectedItemsArray: string[] = Array.from(selectedItems);
 			await db.removeBulkBlueprints(selectedItemsArray);
 			setSelectedItems(new Set<string>());
-		} catch (error: unknown) {
-			logger.error('Failed to delete blueprints', error instanceof Error ? error : new Error(String(error)), {
-				context: 'History.deleteSelected',
-				selectedCount: selectedItems.size,
-				selectedItems: Array.from(selectedItems),
-			});
-			setError(error instanceof Error ? error : new Error('Failed to delete blueprints'));
+		} catch (deleteError: unknown) {
+			logger.error(
+				'Failed to delete blueprints',
+				deleteError instanceof Error ? deleteError : new Error(String(deleteError)),
+				{
+					context: 'History.deleteSelected',
+					selectedCount: selectedItems.size,
+					selectedItems: Array.from(selectedItems),
+				},
+			);
+			setError(deleteError instanceof Error ? deleteError : new Error('Failed to delete blueprints'));
 		}
 	};
 
-	const createBookIcons = (blueprints: DatabaseBlueprint[]): Icon[] => {
+	const createBookIcons = (selectedBlueprints: DatabaseBlueprint[]): Icon[] => {
 		const icons: Icon[] = [];
 
 		// Take the first icon from the first 4 blueprints that have icons
-		for (const bp of blueprints) {
+		for (const bp of selectedBlueprints) {
 			if (bp.gameData.icons.length > 0 && icons.length < 4) {
 				icons.push({
 					signal: {

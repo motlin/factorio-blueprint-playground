@@ -11,9 +11,9 @@ const meta: Meta<typeof BlueprintTree> = {
 	},
 	tags: ['autodocs'],
 	decorators: [
-		(Story) => (
+		(StoryComponent) => (
 			<div style={{minWidth: '500px'}}>
-				<Story />
+				<StoryComponent />
 			</div>
 		),
 	],

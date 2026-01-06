@@ -10,9 +10,9 @@ const meta: Meta<typeof ParameterRow> = {
 	},
 	tags: ['autodocs'],
 	decorators: [
-		(Story) => (
+		(StoryComponent) => (
 			<div style={{minWidth: '800px', padding: '16px'}}>
-				<Story />
+				<StoryComponent />
 			</div>
 		),
 	],

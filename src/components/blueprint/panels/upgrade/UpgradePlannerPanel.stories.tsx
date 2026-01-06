@@ -10,9 +10,9 @@ const meta: Meta<typeof UpgradePlannerPanel> = {
 	},
 	tags: ['autodocs'],
 	decorators: [
-		(Story) => (
+		(StoryComponent) => (
 			<div style={{minWidth: '400px'}}>
-				<Story />
+				<StoryComponent />
 			</div>
 		),
 	],

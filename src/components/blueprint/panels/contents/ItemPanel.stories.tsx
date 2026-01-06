@@ -10,9 +10,9 @@ const meta: Meta<typeof ItemPanel> = {
 	},
 	tags: ['autodocs'],
 	decorators: [
-		(Story) => (
+		(StoryComponent) => (
 			<div style={{minWidth: '400px'}}>
-				<Story />
+				<StoryComponent />
 			</div>
 		),
 	],

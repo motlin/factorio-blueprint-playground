@@ -19,7 +19,7 @@ export const TreeRow = ({node, indentLevel, isSelected, isActive, onSelect}: Tre
 	const wrapper = new BlueprintWrapper(node.blueprint);
 
 	function getIconElement(index: number) {
-		const icon: Icon | undefined = wrapper.getIcons()?.find((icon) => icon.index === index);
+		const icon: Icon | undefined = wrapper.getIcons()?.find((i) => i.index === index);
 		if (icon) {
 			return (
 				<FactorioIcon

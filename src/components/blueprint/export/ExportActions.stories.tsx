@@ -10,9 +10,9 @@ const meta: Meta<typeof ExportActions> = {
 	},
 	tags: ['autodocs'],
 	decorators: [
-		(Story) => (
+		(StoryComponent) => (
 			<div style={{minWidth: '500px'}}>
-				<Story />
+				<StoryComponent />
 			</div>
 		),
 	],
