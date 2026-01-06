@@ -94,7 +94,7 @@ export function BlueprintPlayground() {
 				/>
 			</Panel>
 
-			{error && <ErrorAlert error={error} />}
+			{error ? <ErrorAlert error={error} /> : null}
 
 			<ErrorBoundary FallbackComponent={BlueprintErrorFallback}>
 				<div className="panels2">

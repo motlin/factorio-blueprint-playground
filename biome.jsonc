@@ -105,7 +105,9 @@
 				"noUnusedTemplateLiteral": "error",
 				"noInferrableTypes": "error"
 			},
-			"nursery": {},
+			"nursery": {
+				"noLeakedRender": "error"
+			},
 			"suspicious": {
 				"noAsyncPromiseExecutor": "error",
 				"noCatchAssign": "error",

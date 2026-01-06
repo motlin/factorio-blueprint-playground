@@ -36,7 +36,7 @@ const DeconstructionPlannerPanelComponent = ({blueprint}: {blueprint: BlueprintS
 	return (
 		<Panel title="Deconstruction Settings">
 			<Spreadsheet>
-				{settings.trees_and_rocks_only && (
+				{settings.trees_and_rocks_only ? (
 					<Row>
 						<Cell
 							width="120px"
@@ -46,8 +46,8 @@ const DeconstructionPlannerPanelComponent = ({blueprint}: {blueprint: BlueprintS
 						</Cell>
 						<Cell grow>Only trees and rocks will be marked for deconstruction</Cell>
 					</Row>
-				)}
-				{settings.entity_filter_mode !== undefined && (
+				) : null}
+				{settings.entity_filter_mode !== undefined ? (
 					<Row>
 						<Cell
 							width="120px"
@@ -57,15 +57,15 @@ const DeconstructionPlannerPanelComponent = ({blueprint}: {blueprint: BlueprintS
 						</Cell>
 						<Cell grow>{getFilterModeText(settings.entity_filter_mode)}</Cell>
 					</Row>
-				)}
+				) : null}
 
-				{settings.entity_filters && (
+				{settings.entity_filters ? (
 					<FilterRowsDisplay
 						filters={settings.entity_filters}
 						type="entity"
 						label="Entity Filters"
 					/>
-				)}
+				) : null}
 
 				<Row>
 					<Cell
@@ -77,13 +77,13 @@ const DeconstructionPlannerPanelComponent = ({blueprint}: {blueprint: BlueprintS
 					<Cell grow>{getTileSelectionText(settings.tile_selection_mode)}</Cell>
 				</Row>
 
-				{settings.tile_filters && (
+				{settings.tile_filters ? (
 					<FilterRowsDisplay
 						filters={settings.tile_filters}
 						type="tile"
 						label="Tile Filters"
 					/>
-				)}
+				) : null}
 			</Spreadsheet>
 		</Panel>
 	);

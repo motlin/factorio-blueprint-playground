@@ -15,7 +15,7 @@ export const IconCell = ({icon, label}: IconCellProps) => {
 					icon={icon}
 					size={'large'}
 				/>
-				{label && <span>{label}</span>}
+				{label ? <span>{label}</span> : null}
 			</div>
 		</div>
 	);
