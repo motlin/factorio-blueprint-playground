@@ -106,7 +106,8 @@
 				"noInferrableTypes": "error"
 			},
 			"nursery": {
-				"noLeakedRender": "error"
+				"noLeakedRender": "error",
+				"noShadow": "error"
 			},
 			"suspicious": {
 				"noAsyncPromiseExecutor": "error",

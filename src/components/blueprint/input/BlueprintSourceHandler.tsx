@@ -21,10 +21,10 @@ export const BlueprintSourceHandler = ({pasted, autoFocus = false}: BlueprintSou
 		(e: React.ChangeEvent<HTMLTextAreaElement>) => {
 			e.preventDefault();
 			const pastedRaw = e.target.value;
-			const pasted = pastedRaw.trim();
+			const pastedValue = pastedRaw.trim();
 
 			void (async () => {
-				if (!pasted) {
+				if (!pastedValue) {
 					await navigate({
 						search: {pasted: undefined, selection: undefined},
 					});
@@ -32,7 +32,7 @@ export const BlueprintSourceHandler = ({pasted, autoFocus = false}: BlueprintSou
 				}
 
 				await navigate({
-					search: {pasted, selection: ''},
+					search: {pasted: pastedValue, selection: ''},
 				});
 			})();
 		},

@@ -29,15 +29,15 @@ interface ExtractedInfo {
 
 export function parseImgurUrl(url: string): ImgurUrlParseResult {
 	// Nested validation functions
-	function validateUrl(url: string): PipelineResult<ValidatedUrl> {
-		if (!url) {
+	function validateUrl(urlString: string): PipelineResult<ValidatedUrl> {
+		if (!urlString) {
 			return {
 				success: false,
 				error: 'URL is required and must be a string',
 			};
 		}
 
-		const trimmedUrl = url.trim();
+		const trimmedUrl = urlString.trim();
 		if (!trimmedUrl) {
 			return {
 				success: false,

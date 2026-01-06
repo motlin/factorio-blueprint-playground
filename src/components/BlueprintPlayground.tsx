@@ -51,8 +51,8 @@ export function BlueprintPlayground() {
 		try {
 			const sha = await generateSha(pasted);
 			return await db.blueprints.get(sha);
-		} catch (error) {
-			logger.error('Error finding blueprint in database', error, {
+		} catch (dbError) {
+			logger.error('Error finding blueprint in database', dbError, {
 				context: 'BlueprintPlayground.useLiveQuery',
 				pasted: pasted?.substring(0, 100),
 			});

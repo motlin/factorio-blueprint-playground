@@ -95,9 +95,9 @@ describe('BlueprintInfoPanels', () => {
 		// Create a test component that counts renders
 		let renderCount = 0;
 
-		function TestComponent({blueprint}: {blueprint?: BlueprintString}) {
+		function TestComponent({blueprint: blueprintProp}: {blueprint?: BlueprintString}) {
 			renderCount++;
-			return <BlueprintInfoPanels blueprint={blueprint} />;
+			return <BlueprintInfoPanels blueprint={blueprintProp} />;
 		}
 
 		const blueprint: BlueprintString = {

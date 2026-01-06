@@ -10,9 +10,9 @@ const meta: Meta<typeof DeconstructionPlannerPanel> = {
 	},
 	tags: ['autodocs'],
 	decorators: [
-		(Story) => (
+		(StoryComponent) => (
 			<div style={{minWidth: '600px'}}>
-				<Story />
+				<StoryComponent />
 			</div>
 		),
 	],

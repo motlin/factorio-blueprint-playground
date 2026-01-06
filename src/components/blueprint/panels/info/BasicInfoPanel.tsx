@@ -84,7 +84,7 @@ export const BasicInfoPanelComponent = ({blueprint}: {blueprint?: BlueprintStrin
 				>
 					<div className="flex flex-items-center">
 						{[1, 2, 3, 4].map((index) => {
-							const icon = icons?.find((icon) => icon.index === index);
+							const icon = icons?.find((i) => i.index === index);
 							return getIconElement(index, icon);
 						})}
 					</div>
