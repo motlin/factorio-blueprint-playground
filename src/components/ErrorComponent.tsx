@@ -8,7 +8,7 @@ export function ErrorComponent({error}: {error: RouteError}) {
 		<div className="panel alert alert-error">
 			<h2>Error</h2>
 			<p>{error.message}</p>
-			{error.status && <p>Status: {error.status}</p>}
+			{error.status ? <p>Status: {error.status}</p> : null}
 		</div>
 	);
 }

@@ -11,9 +11,9 @@ const BlueprintInfoPanelsComponent = ({blueprint}: {blueprint?: BlueprintString}
 	return (
 		<>
 			{/* Show type-specific panels */}
-			{blueprint.blueprint && <ContentsPanel blueprint={blueprint} />}
-			{blueprint.upgrade_planner && <UpgradePlannerPanel blueprint={blueprint} />}
-			{blueprint.deconstruction_planner && <DeconstructionPlannerPanel blueprint={blueprint} />}
+			{blueprint.blueprint ? <ContentsPanel blueprint={blueprint} /> : null}
+			{blueprint.upgrade_planner ? <UpgradePlannerPanel blueprint={blueprint} /> : null}
+			{blueprint.deconstruction_planner ? <DeconstructionPlannerPanel blueprint={blueprint} /> : null}
 		</>
 	);
 };

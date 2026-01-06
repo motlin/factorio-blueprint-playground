@@ -26,7 +26,9 @@ export const ErrorAlert = ({error}: {error: ErrorType}) => {
 				<XCircle className="h-4 w-4" />
 				<span>{message}</span>
 			</div>
-			{stack && <pre className="mt-2 max-h-48 overflow-auto bg-red-950 p-4 text-sm text-red-100">{stack}</pre>}
+			{stack ? (
+				<pre className="mt-2 max-h-48 overflow-auto bg-red-950 p-4 text-sm text-red-100">{stack}</pre>
+			) : null}
 		</div>
 	);
 };

@@ -7,7 +7,7 @@ export interface PanelProps {
 
 export const Panel = ({children, title}: PanelProps) => (
 	<div className="panel">
-		{title && <h2>{title}</h2>}
+		{title ? <h2>{title}</h2> : null}
 		{children}
 	</div>
 );
