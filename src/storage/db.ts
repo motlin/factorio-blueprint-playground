@@ -93,7 +93,7 @@ export class BlueprintDatabase extends Dexie {
 	async getMostRecent(): Promise<DatabaseBlueprint | null> {
 		try {
 			const recentRecord = await this.recent.get('__most_recent');
-			if (!recentRecord || !recentRecord.sha) {
+			if (!(recentRecord && recentRecord.sha)) {
 				return null;
 			}
 
