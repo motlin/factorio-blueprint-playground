@@ -8,7 +8,7 @@ import {RichText} from './core/text/RichText';
 import {Version} from './core/text/Version';
 import {BlueprintTableCheckbox} from './history/table/BlueprintTableCheckbox';
 import {formatDate} from './history/utils/dateUtils';
-import {ButtonGreen} from './ui';
+import {ButtonGreen} from './ui/ButtonGreen';
 
 interface HistoryBlueprintRowProps {
 	blueprint: DatabaseBlueprint;

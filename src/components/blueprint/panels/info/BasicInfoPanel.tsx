@@ -6,7 +6,7 @@ import type {BlueprintString, Icon} from '../../../../parsing/types';
 import {FactorioIcon, Placeholder} from '../../../core/icons/FactorioIcon';
 import {RichText} from '../../../core/text/RichText';
 import {Version} from '../../../core/text/Version';
-import {Panel} from '../../../ui';
+import {Panel} from '../../../ui/Panel';
 
 interface InfoRowProps {
 	label: string;

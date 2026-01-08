@@ -2,8 +2,10 @@ import {memo} from 'react';
 
 import {BlueprintWrapper} from '../../../../parsing/BlueprintWrapper';
 import type {BlueprintString, DeconstructionPlanner} from '../../../../parsing/types';
-import {Panel} from '../../../ui';
-import {Cell, Row, Spreadsheet} from '../../spreadsheet';
+import {Panel} from '../../../ui/Panel';
+import {Cell} from '../../spreadsheet/Cell';
+import {Row} from '../../spreadsheet/Row';
+import {Spreadsheet} from '../../spreadsheet/Spreadsheet';
 
 import FilterRowsDisplay from './FilterRowsDisplay';
 

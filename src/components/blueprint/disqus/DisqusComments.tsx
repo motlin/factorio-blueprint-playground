@@ -1,6 +1,6 @@
 import {useEffect, useId, useRef} from 'react';
 
-import {Panel} from '../../ui';
+import {Panel} from '../../ui/Panel';
 
 interface DisqusConfig {
 	page: {

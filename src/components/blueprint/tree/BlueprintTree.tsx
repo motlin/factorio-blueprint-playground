@@ -1,7 +1,8 @@
 import {memo, type ReactNode} from 'react';
 
 import type {BlueprintString} from '../../../parsing/types';
-import {InsetLight, Panel} from '../../ui';
+import {InsetLight} from '../../ui/InsetLight';
+import {Panel} from '../../ui/Panel';
 
 import {TreeRow} from './TreeRow';
 import {buildNode, isNodeActive} from './treeUtils';

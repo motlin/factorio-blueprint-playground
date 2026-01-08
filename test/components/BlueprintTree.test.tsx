@@ -2,7 +2,7 @@ import {render} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {describe, expect, it, vi} from 'vitest';
 
-import {BlueprintTree} from '../../src/components/blueprint/tree';
+import {BlueprintTree} from '../../src/components/blueprint/tree/BlueprintTree';
 import type {BlueprintString} from '../../src/parsing/types';
 
 /**

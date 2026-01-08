@@ -1,6 +1,8 @@
 import type {Filter, SignalType} from '../../../../parsing/types';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
-import {Cell, Row, Spreadsheet} from '../../spreadsheet';
+import {Cell} from '../../spreadsheet/Cell';
+import {Row} from '../../spreadsheet/Row';
+import {Spreadsheet} from '../../spreadsheet/Spreadsheet';
 
 import FilterCondition from './FilterCondition';
 
