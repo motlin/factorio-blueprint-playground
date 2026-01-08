@@ -69,6 +69,7 @@ export function serializeBlueprint(
 /**
  * Takes a blueprint from inside a blueprint book and converts it to a standalone blueprint
  */
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Blueprint extraction requires nested path traversal
 export function extractBlueprint(blueprint: BlueprintString, path?: string): BlueprintString {
 	if (!path) {
 		return blueprint;
