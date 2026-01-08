@@ -87,7 +87,8 @@
 				"useUniqueElementIds": "error"
 			},
 			"performance": {
-				"noDelete": "off"
+				"noDelete": "off",
+				"noBarrelFile": "error"
 			},
 			"style": {
 				"useConst": "error",

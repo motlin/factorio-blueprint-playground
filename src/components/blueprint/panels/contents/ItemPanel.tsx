@@ -1,8 +1,11 @@
 import {memo} from 'react';
 
 import type {Quality, SignalType} from '../../../../parsing/types';
-import {Panel} from '../../../ui';
-import {IconCell, Row, Spreadsheet, TextCell} from '../../spreadsheet';
+import {Panel} from '../../../ui/Panel';
+import {IconCell} from '../../spreadsheet/IconCell';
+import {Row} from '../../spreadsheet/Row';
+import {Spreadsheet} from '../../spreadsheet/Spreadsheet';
+import {TextCell} from '../../spreadsheet/TextCell';
 
 import {mapToSortedArray} from './countUtils';
 

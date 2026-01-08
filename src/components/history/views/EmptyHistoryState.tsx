@@ -1,4 +1,6 @@
-import {InsetDark, InsetLight, Panel} from '../../ui';
+import {InsetDark} from '../../ui/InsetDark';
+import {InsetLight} from '../../ui/InsetLight';
+import {Panel} from '../../ui/Panel';
 
 export function EmptyHistoryState() {
 	return (

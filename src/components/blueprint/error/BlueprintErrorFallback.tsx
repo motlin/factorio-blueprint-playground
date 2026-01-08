@@ -1,4 +1,6 @@
-import {ButtonGreen, InsetDark, Panel} from '../../ui';
+import {ButtonGreen} from '../../ui/ButtonGreen';
+import {InsetDark} from '../../ui/InsetDark';
+import {Panel} from '../../ui/Panel';
 
 interface BlueprintErrorFallbackProps {
 	error: Error;

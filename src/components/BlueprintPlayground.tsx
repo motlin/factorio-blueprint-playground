@@ -18,8 +18,9 @@ import BlueprintSourceHandler from './blueprint/input/BlueprintSourceHandler';
 import {BlueprintInfoPanels} from './blueprint/panels/BlueprintInfoPanels';
 import {BasicInfoPanel} from './blueprint/panels/info/BasicInfoPanel';
 import {ParametersPanel} from './blueprint/panels/parameters/ParametersPanel';
-import {BlueprintTree} from './blueprint/tree';
-import {ErrorAlert, Panel} from './ui';
+import {BlueprintTree} from './blueprint/tree/BlueprintTree';
+import {ErrorAlert} from './ui/ErrorAlert';
+import {Panel} from './ui/Panel';
 
 function getFactorioprintsUrl(id?: string): string | undefined {
 	if (!id) {

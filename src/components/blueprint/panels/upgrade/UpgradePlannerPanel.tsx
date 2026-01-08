@@ -3,8 +3,10 @@ import {memo} from 'react';
 import {BlueprintWrapper} from '../../../../parsing/BlueprintWrapper';
 import type {BlueprintString, UpgradePlanner} from '../../../../parsing/types';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
-import {Panel} from '../../../ui';
-import {Cell, Row, Spreadsheet} from '../../spreadsheet';
+import {Panel} from '../../../ui/Panel';
+import {Cell} from '../../spreadsheet/Cell';
+import {Row} from '../../spreadsheet/Row';
+import {Spreadsheet} from '../../spreadsheet/Spreadsheet';
 
 const UpgradePlannerPanelComponent = ({blueprint}: {blueprint: BlueprintString}) => {
 	const wrapper = new BlueprintWrapper(blueprint);

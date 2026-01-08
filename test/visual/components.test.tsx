@@ -7,7 +7,7 @@ import {DeconstructionPlannerPanel} from '../../src/components/blueprint/panels/
 import {BasicInfoPanel} from '../../src/components/blueprint/panels/info/BasicInfoPanel';
 import {ParametersPanel} from '../../src/components/blueprint/panels/parameters/ParametersPanel';
 import {UpgradePlannerPanel} from '../../src/components/blueprint/panels/upgrade/UpgradePlannerPanel';
-import {BlueprintTree} from '../../src/components/blueprint/tree';
+import {BlueprintTree} from '../../src/components/blueprint/tree/BlueprintTree';
 
 import {compareScreenshots} from './setup';
 

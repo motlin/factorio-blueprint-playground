@@ -4,7 +4,9 @@ import {memo} from 'react';
 import {BlueprintWrapper} from '../../../parsing/BlueprintWrapper';
 import {serializeBlueprint} from '../../../parsing/blueprintParser';
 import type {BlueprintString} from '../../../parsing/types';
-import {ButtonGreen, InsetLight, Panel} from '../../ui';
+import {ButtonGreen} from '../../ui/ButtonGreen';
+import {InsetLight} from '../../ui/InsetLight';
+import {Panel} from '../../ui/Panel';
 
 interface ExportActionsProps {
 	blueprint?: BlueprintString;

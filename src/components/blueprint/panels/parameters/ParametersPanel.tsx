@@ -1,7 +1,7 @@
 import {memo} from 'react';
 
 import type {BlueprintString} from '../../../../parsing/types';
-import {Panel} from '../../../ui';
+import {Panel} from '../../../ui/Panel';
 
 import {ParametersList} from './ParametersList';
 
