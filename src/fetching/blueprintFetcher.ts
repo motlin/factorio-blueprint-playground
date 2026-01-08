@@ -124,7 +124,7 @@ const factorioSchoolSourceConfig: BlueprintFetchSource = {
 			}
 
 			const typedData = jsonData as FactorioSchoolResponse;
-			if (!typedData.blueprintString || !typedData.blueprintString.blueprintString) {
+			if (!(typedData.blueprintString && typedData.blueprintString.blueprintString)) {
 				return {
 					success: false,
 					error: new Error('Blueprint data missing in API response'),
@@ -287,7 +287,7 @@ async function fetchUrlImpl(pasted: string): Promise<BlueprintFetchSuccess | Blu
 
 		const result = await fetchConfig.fetchBlueprint(url);
 
-		if (!result.success || !result.blueprintString) {
+		if (!(result.success && result.blueprintString)) {
 			return {
 				success: false,
 				error: result.error ?? new Error('Unknown fetch error'),

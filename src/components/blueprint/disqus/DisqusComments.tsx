@@ -33,7 +33,7 @@ const DisqusComments = ({identifier, url, title}: DisqusCommentsProps) => {
 	const prevIdentifierRef = useRef<string | undefined>(undefined);
 
 	useEffect(() => {
-		if (!identifier || !url || (prevIdentifierRef.current === identifier && window.DISQUS)) {
+		if (!(identifier && url) || (prevIdentifierRef.current === identifier && window.DISQUS)) {
 			return;
 		}
 
@@ -103,7 +103,7 @@ const DisqusComments = ({identifier, url, title}: DisqusCommentsProps) => {
 		};
 	}, [url, identifier, title, containerId]);
 
-	if (!identifier || !url) {
+	if (!(identifier && url)) {
 		return null;
 	}
 

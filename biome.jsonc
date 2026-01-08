@@ -53,7 +53,8 @@
 				"noStaticOnlyClass": "error",
 				"noThisInStatic": "error",
 				"useDateNow": "error",
-				"noImportantStyles": "error"
+				"noImportantStyles": "error",
+				"useSimplifiedLogicExpression": "error"
 			},
 			"correctness": {
 				"noConstAssign": "error",

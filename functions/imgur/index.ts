@@ -39,7 +39,7 @@ async function handleRequest(context: EventContext<Env, string, Record<string, u
 	try {
 		const body = await parseRequestBody(request);
 
-		if (!body || !body.url) {
+		if (!(body && body.url)) {
 			return handlers.handleMissingUrl();
 		}
 

@@ -21,7 +21,7 @@ const ContentsPanelComponent = ({blueprint}: PanelProps) => {
 
 	if (!blueprintContent) return null;
 
-	if (!blueprintContent.entities?.length && !blueprintContent.tiles?.length) return null;
+	if (!(blueprintContent.entities?.length || blueprintContent.tiles?.length)) return null;
 
 	const entityCounts = countItems(getEntityKey, blueprintContent.entities);
 	const tileCounts = countItems(getTileKey, blueprintContent.tiles);
