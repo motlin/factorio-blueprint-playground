@@ -54,7 +54,8 @@
 				"noThisInStatic": "error",
 				"useDateNow": "error",
 				"noImportantStyles": "error",
-				"useSimplifiedLogicExpression": "error"
+				"useSimplifiedLogicExpression": "error",
+				"noExcessiveCognitiveComplexity": "error"
 			},
 			"correctness": {
 				"noConstAssign": "error",

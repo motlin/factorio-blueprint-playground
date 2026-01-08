@@ -124,7 +124,7 @@ const factorioSchoolSourceConfig: BlueprintFetchSource = {
 			}
 
 			const typedData = jsonData as FactorioSchoolResponse;
-			if (!(typedData.blueprintString && typedData.blueprintString.blueprintString)) {
+			if (!typedData.blueprintString?.blueprintString) {
 				return {
 					success: false,
 					error: new Error('Blueprint data missing in API response'),

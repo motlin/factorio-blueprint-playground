@@ -65,6 +65,7 @@ export const Route = createFileRoute('/')({
 							const contentIcons = content.icons;
 							const icons = Array.isArray(contentIcons) ? contentIcons : [];
 
+							// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Icon parsing requires type validation
 							return icons.map((icon: unknown) => {
 								if (typeof icon !== 'object' || icon === null) {
 									return {name: 'unknown'};

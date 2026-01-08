@@ -71,6 +71,7 @@ interface RichTextProps {
 	iconSize: 'small' | 'large';
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Rich text parser requires handling many tag types
 const processRichTextLine = ({text, iconSize}: RichTextProps): React.ReactNode[] => {
 	const parts: React.ReactNode[] = [];
 	let currentIndex = 0;

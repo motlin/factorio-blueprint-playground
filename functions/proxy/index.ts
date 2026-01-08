@@ -63,6 +63,7 @@ interface Env {
 	ENVIRONMENT?: string;
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: This is a proxy request handler with inherent complexity from multiple branching conditions
 const wrappedOnRequest = async (context: EventContext<Env, string, Record<string, unknown>>) => {
 	const request = context.request;
 	const isPreflightRequest = request.method === 'OPTIONS';

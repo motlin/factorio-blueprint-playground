@@ -6,7 +6,7 @@ export function useUrlBlueprint(url: string | undefined) {
 	return useQuery({
 		queryKey: ['blueprint-url', url],
 		queryFn: async () => {
-			if (!(url && url.match(/^https?:\/\//i))) {
+			if (!url?.match(/^https?:\/\//i)) {
 				throw new Error('Invalid URL');
 			}
 			return fetchUrl(url);
