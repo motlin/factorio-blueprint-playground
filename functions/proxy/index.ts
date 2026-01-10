@@ -1,6 +1,8 @@
 import type {EventContext} from '@cloudflare/workers-types';
 import * as Sentry from '@sentry/cloudflare';
 
+const FILTERED_HEADERS_REGEX = /^(origin|eferer|^cf-|^x-forw|^x-cors-headers)/;
+
 type CustomHeaders = Record<string, string>;
 
 interface CloudflareRequestCF {
@@ -100,7 +102,7 @@ const wrappedOnRequest = async (context: EventContext<Env, string, Record<string
 	if (originUrl.search.startsWith('?')) {
 		const filteredHeaders: Record<string, string> = {};
 		for (const [key, value] of [...request.headers]) {
-			if (!/^(origin|eferer|^cf-|^x-forw|^x-cors-headers)/.test(key)) {
+			if (!FILTERED_HEADERS_REGEX.test(key)) {
 				filteredHeaders[key] = value;
 			}
 		}

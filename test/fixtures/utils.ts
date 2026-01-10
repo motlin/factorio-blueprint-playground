@@ -1,6 +1,8 @@
 import {readdirSync, readFileSync} from 'node:fs';
 import {join} from 'node:path';
 
+const TXT_EXTENSION_REGEX = /\.txt$/;
+
 /**
  * Get list of blueprint fixture filenames (without extension)
  * @throws {Error} If directory cannot be read
@@ -13,7 +15,7 @@ export function getFixtureFiles(): string[] {
 
 		return files
 			.filter((f): f is string => typeof f === 'string' && f.endsWith('.txt'))
-			.map((f: string) => f.replace(/\.txt$/, ''));
+			.map((f: string) => f.replace(TXT_EXTENSION_REGEX, ''));
 	} catch (error) {
 		throw new Error(`Failed to read fixture files: ${error instanceof Error ? error.message : String(error)}`);
 	}

@@ -9,6 +9,15 @@ import {
 } from '../../src/parsing/blueprintParser';
 import type {BlueprintString} from '../../src/parsing/types';
 
+const UNKNOWN_FORMAT_REGEX = /Unknown blueprint format/;
+const INVALID_CHARACTER_REGEX = /Invalid character/;
+const INVALID_ZLIB_REGEX = /invalid zlib data/;
+const STARTS_WITH_ZERO_REGEX = /^0/;
+const VALID_BASE64_REGEX = /^[0-9A-Za-z+/=]+$/;
+const NO_BOOK_AT_1_REGEX = /no blueprint book at 1/;
+const INDEX_OUT_OF_BOUNDS_REGEX = /Invalid path 3: index 3 is out of bounds at 3/;
+const NESTED_PATH_NO_BOOK_REGEX = /Invalid path 1.2.3: no blueprint book at 1/;
+
 describe('blueprintParser', () => {
 	describe('deserializeBlueprint', () => {
 		it('throws error on empty string', () => {
@@ -16,15 +25,15 @@ describe('blueprintParser', () => {
 		});
 
 		it('throws error on string without 0 prefix', () => {
-			expect(() => deserializeBlueprint('abc123')).toThrow(/Unknown blueprint format/);
+			expect(() => deserializeBlueprint('abc123')).toThrow(UNKNOWN_FORMAT_REGEX);
 		});
 
 		it('throws error on invalid base64', () => {
-			expect(() => deserializeBlueprint('0!@#$')).toThrow(/Invalid character/);
+			expect(() => deserializeBlueprint('0!@#$')).toThrow(INVALID_CHARACTER_REGEX);
 		});
 
 		it('throws error on invalid compression', () => {
-			expect(() => deserializeBlueprint('0YWJj')).toThrow(/invalid zlib data/);
+			expect(() => deserializeBlueprint('0YWJj')).toThrow(INVALID_ZLIB_REGEX);
 		});
 
 		it('parses a simple blueprint', () => {
@@ -54,9 +63,9 @@ describe('blueprintParser', () => {
 			};
 			const result = serializeBlueprint(blueprint);
 			// Should start with 0
-			expect(result).toMatch(/^0/);
+			expect(result).toMatch(STARTS_WITH_ZERO_REGEX);
 			// Should be valid base64
-			expect(result).toMatch(/^[0-9A-Za-z+/=]+$/);
+			expect(result).toMatch(VALID_BASE64_REGEX);
 
 			// Round trip
 			const parsed = deserializeBlueprint(result);
@@ -115,17 +124,15 @@ describe('blueprintParser', () => {
 		});
 
 		it('throws error on invalid path - no book', () => {
-			expect(() => extractBlueprint(book, '1.1')).toThrow(/no blueprint book at 1/);
+			expect(() => extractBlueprint(book, '1.1')).toThrow(NO_BOOK_AT_1_REGEX);
 		});
 
 		it('throws error on invalid path - no child', () => {
-			expect(() => extractBlueprint(book, '3')).toThrow(/Invalid path 3: index 3 is out of bounds at 3/);
+			expect(() => extractBlueprint(book, '3')).toThrow(INDEX_OUT_OF_BOUNDS_REGEX);
 		});
 
 		it('throws error when trying to use nested path on simple blueprint', () => {
-			expect(() => extractBlueprint(simpleBlueprint, '1.2.3')).toThrow(
-				/Invalid path 1.2.3: no blueprint book at 1/,
-			);
+			expect(() => extractBlueprint(simpleBlueprint, '1.2.3')).toThrow(NESTED_PATH_NO_BOOK_REGEX);
 		});
 	});
 

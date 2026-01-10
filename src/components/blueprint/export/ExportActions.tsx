@@ -8,6 +8,8 @@ import {ButtonGreen} from '../../ui/ButtonGreen';
 import {InsetLight} from '../../ui/InsetLight';
 import {Panel} from '../../ui/Panel';
 
+const IOS_DEVICE_REGEX = /ipad|ipod|iphone/i;
+
 interface ExportActionsProps {
 	blueprint?: BlueprintString;
 	path?: string;
@@ -55,7 +57,7 @@ async function copyToClipboard(text: string): Promise<boolean> {
 
 		document.body.appendChild(textArea);
 
-		if (/ipad|ipod|iphone/i.exec(navigator.userAgent)) {
+		if (IOS_DEVICE_REGEX.exec(navigator.userAgent)) {
 			// Handle iOS devices
 			textArea.contentEditable = 'true';
 			textArea.readOnly = false;
