@@ -1,5 +1,7 @@
 import type {ParsedImgurUrl} from './url-parser';
 
+const FILE_EXTENSION_REGEX = /\.([a-zA-Z0-9]{3,4})$/;
+
 export interface ResolvedImgurImage {
 	id: string;
 	type: string; // MIME type
@@ -53,7 +55,7 @@ export async function resolveImgurImage(
 
 	// Nested helper functions
 	function extractExtension(link: string | undefined): string {
-		const match = link?.match(/\.([a-zA-Z0-9]{3,4})$/);
+		const match = link?.match(FILE_EXTENSION_REGEX);
 		return match ? match[1] : 'png';
 	}
 

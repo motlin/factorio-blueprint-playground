@@ -3,6 +3,8 @@ import React from 'react';
 import type {Quality, SignalID, SignalType} from '../../../parsing/types.ts';
 import {FactorioIcon} from '../icons/FactorioIcon';
 
+const LINE_BREAK_REGEX = /\r\n|\r|\n/;
+
 const COLOR_MAP: Record<string, string> = {
 	red: '#eb5c5f',
 	green: '#5eb663',
@@ -195,7 +197,7 @@ const processRichTextLine = ({text, iconSize}: RichTextProps): React.ReactNode[]
 export const RichText = ({text, iconSize}: RichTextProps) => {
 	if (!text) return null;
 
-	const lines = text.split(/\r\n|\r|\n/);
+	const lines = text.split(LINE_BREAK_REGEX);
 
 	const processedLines = lines.map((line, index) => (
 		<React.Fragment key={`line-${index}-${line.slice(0, 20)}`}>

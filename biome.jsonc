@@ -89,7 +89,8 @@
 			"performance": {
 				"noDelete": "off",
 				"noBarrelFile": "error",
-				"noReExportAll": "error"
+				"noReExportAll": "error",
+				"useTopLevelRegex": "error"
 			},
 			"style": {
 				"useConst": "error",

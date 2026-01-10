@@ -1,3 +1,8 @@
+const DIRECT_IMAGE_URL_REGEX = /^\/([a-zA-Z0-9]+)\.([a-zA-Z0-9]{3,4})$/;
+const ALBUM_URL_REGEX = /^\/(?:a|gallery)\/([a-zA-Z0-9]+)$/;
+const ALPHANUMERIC_ID_REGEX = /^[a-zA-Z0-9]+$/;
+const PAGE_URL_REGEX = /^\/([a-zA-Z0-9]+)$/;
+
 export interface ParsedImgurUrl {
 	id: string;
 	type?: string;
@@ -74,13 +79,13 @@ export function parseImgurUrl(url: string): ImgurUrlParseResult {
 
 		// Nested parser functions
 		function parseDirectImageUrl(pathname: string): {id: string; type: string} | null {
-			const match = pathname.match(/^\/([a-zA-Z0-9]+)\.([a-zA-Z0-9]{3,4})$/);
+			const match = pathname.match(DIRECT_IMAGE_URL_REGEX);
 			if (!match) return null;
 			return {id: match[1], type: match[2]};
 		}
 
 		function parseAlbumUrl(pathname: string, hash: string): {id: string; warnings: string[]} | null {
-			const albumMatch = pathname.match(/^\/(?:a|gallery)\/([a-zA-Z0-9]+)$/);
+			const albumMatch = pathname.match(ALBUM_URL_REGEX);
 			if (!albumMatch) return null;
 
 			let id = albumMatch[1];
@@ -88,7 +93,7 @@ export function parseImgurUrl(url: string): ImgurUrlParseResult {
 
 			if (hash) {
 				const hashId = hash.substring(1);
-				if (/^[a-zA-Z0-9]+$/.test(hashId)) {
+				if (ALPHANUMERIC_ID_REGEX.test(hashId)) {
 					id = hashId;
 					warnings.push('Detected hash fragment in album URL - using hash as image ID');
 				}
@@ -100,7 +105,7 @@ export function parseImgurUrl(url: string): ImgurUrlParseResult {
 		}
 
 		function parsePageUrl(pathname: string): string | null {
-			const match = pathname.match(/^\/([a-zA-Z0-9]+)$/);
+			const match = pathname.match(PAGE_URL_REGEX);
 			return match ? match[1] : null;
 		}
 

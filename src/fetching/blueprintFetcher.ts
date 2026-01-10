@@ -2,6 +2,10 @@ import {logger} from '../lib/sentry';
 import {deserializeBlueprint} from '../parsing/blueprintParser';
 import type {BlueprintString} from '../parsing/types';
 
+const FACTORIO_SCHOOL_URL_REGEX = /(?:www\.)?factorio\.school\/view\/([^/\s#]+)/;
+const FACTORIO_PRINTS_URL_REGEX = /(?:www\.)?factorioprints\.com\/view\/([^/\s#]+)/;
+const HTTP_URL_REGEX = /^https?:\/\//i;
+
 export type BlueprintFetchMethod = 'url' | 'json' | 'data';
 
 export function getSourceLabel(fetchMethod?: BlueprintFetchMethod): string {
@@ -71,7 +75,7 @@ function constructCdnUrl(key: string): string {
 
 const factorioSchoolSourceConfig: BlueprintFetchSource = {
 	async fetchBlueprint(url: URL): Promise<SourceFetchResult> {
-		const match = url.href.match(/(?:www\.)?factorio\.school\/view\/([^/\s#]+)/);
+		const match = url.href.match(FACTORIO_SCHOOL_URL_REGEX);
 		if (!match) {
 			return {
 				success: false,
@@ -147,7 +151,7 @@ const factorioSchoolSourceConfig: BlueprintFetchSource = {
 
 const factorioPrintsSourceConfig: BlueprintFetchSource = {
 	async fetchBlueprint(url: URL): Promise<SourceFetchResult> {
-		const match = url.href.match(/(?:www\.)?factorioprints\.com\/view\/([^/\s#]+)/);
+		const match = url.href.match(FACTORIO_PRINTS_URL_REGEX);
 		if (!match) {
 			return {
 				success: false,
@@ -377,7 +381,7 @@ export async function fetchBlueprint<
 	}
 
 	// Simple URL detection
-	if (pasted.match(/^https?:\/\//i)) {
+	if (pasted.match(HTTP_URL_REGEX)) {
 		return await fetchUrl(pasted, queryClient);
 	}
 
