@@ -88,7 +88,8 @@
 			},
 			"performance": {
 				"noDelete": "off",
-				"noBarrelFile": "error"
+				"noBarrelFile": "error",
+				"noReExportAll": "error"
 			},
 			"style": {
 				"useConst": "error",
