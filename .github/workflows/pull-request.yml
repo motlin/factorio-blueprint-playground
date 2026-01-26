@@ -169,6 +169,7 @@ jobs:
             - name: Run Biome Lint Fix
               run: |
                   npm ci
+                  npx @tanstack/router-cli generate --routesDirectory ./src/routes --generatedRouteTree ./src/routeTree.gen.ts
                   npx @biomejs/biome lint --write .
 
                   if [[ -n $(git status --porcelain) ]]; then
