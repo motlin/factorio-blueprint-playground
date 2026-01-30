@@ -29,7 +29,7 @@
 		"@sentry/cloudflare": "^10.37.0",
 		"@sentry/react": "^10.37.0",
 		"@tanstack/react-query": "^5.90.20",
-		"@tanstack/react-query-devtools": "^5.91.2",
+		"@tanstack/react-query-devtools": "^5.91.3",
 		"@tanstack/react-router": "^1.157.16",
 		"@tanstack/react-store": "^0.8.0",
 		"date-fns": "^4.1.0",
