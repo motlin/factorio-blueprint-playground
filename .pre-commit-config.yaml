@@ -28,7 +28,7 @@ repos:
             entry: npx biome migrate --write
             language: system
             pass_filenames: false
-            files: biome\.jsonc?$
+            files: (biome\.jsonc?|package\.json)$
 
           - id: biome
             name: biome
