@@ -69,7 +69,7 @@
 		"vitest": "^4.0.18",
 		"wrangler": "^4.69.0",
 		"storybook": "^10.2.15",
-		"@storybook/react-vite": "^10.2.14",
+		"@storybook/react-vite": "^10.2.15",
 		"@chromatic-com/storybook": "^5.0.1",
 		"@storybook/addon-a11y": "^10.2.14",
 		"@storybook/addon-docs": "^10.2.14",
