@@ -73,7 +73,7 @@
 		"@chromatic-com/storybook": "^5.0.1",
 		"@storybook/addon-a11y": "^10.2.15",
 		"@storybook/addon-docs": "^10.2.16",
-		"@storybook/addon-onboarding": "^10.2.15",
+		"@storybook/addon-onboarding": "^10.2.16",
 		"@storybook/addon-vitest": "^10.2.16",
 		"@vitest/browser-playwright": "^4.0.12"
 	}
