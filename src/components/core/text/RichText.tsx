@@ -200,7 +200,8 @@ export const RichText = ({text, iconSize}: RichTextProps) => {
 	const lines = text.split(LINE_BREAK_REGEX);
 
 	const processedLines = lines.map((line, index) => (
-		<React.Fragment key={`line-${index}-${line.slice(0, 20)}`}>
+		// biome-ignore lint/suspicious/noArrayIndexKey: lines are split from static text, order is stable
+		<React.Fragment key={index}>
 			{index > 0 && <br />}
 			<div className="richtext-line">{processRichTextLine({text: line, iconSize})}</div>
 		</React.Fragment>

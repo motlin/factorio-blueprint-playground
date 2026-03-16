@@ -25,7 +25,6 @@
 		"build-storybook": "storybook build"
 	},
 	"dependencies": {
-		"@sentry/browser": "^10.45.0",
 		"@sentry/cloudflare": "^10.47.0",
 		"@sentry/react": "^10.47.0",
 		"@tanstack/react-query": "^5.96.2",
@@ -36,6 +35,7 @@
 		"dexie": "^4.4.2",
 		"dexie-react-hooks": "^4.4.0",
 		"fflate": "^0.8.2",
+		"json5": "^2.2.3",
 		"lucide-react": "^1.7.0",
 		"react": "^19.2.4",
 		"react-dom": "^19.2.4",
@@ -43,10 +43,15 @@
 		"zod": "^4.3.6"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "2.4.4",
+		"@biomejs/biome": "2.4.6",
+		"@chromatic-com/storybook": "^5.1.1",
 		"@cloudflare/workers-types": "^4.20260403.1",
-		"prettier": "^3.8.1",
 		"@playwright/test": "^1.59.1",
+		"@storybook/addon-a11y": "^10.3.4",
+		"@storybook/addon-docs": "^10.3.4",
+		"@storybook/addon-onboarding": "^10.3.4",
+		"@storybook/addon-vitest": "^10.3.4",
+		"@storybook/react-vite": "^10.3.4",
 		"@tanstack/eslint-plugin-router": "^1.161.6",
 		"@tanstack/react-router-devtools": "^1.166.11",
 		"@tanstack/router-cli": "^1.166.25",
@@ -58,23 +63,18 @@
 		"@types/react": "^19.2.14",
 		"@types/react-dom": "^19.2.3",
 		"@vitejs/plugin-react": "^5.1.4",
+		"@vitest/browser-playwright": "^4.0.12",
 		"@vitest/coverage-v8": "^4.0.18",
 		"fake-indexeddb": "^6.2.5",
 		"globals": "^17.4.0",
 		"jsdom": "^29.0.1",
+		"prettier": "^3.8.1",
 		"sharp": "^0.34.5",
+		"storybook": "^10.3.4",
 		"tsx": "^4.21.0",
 		"typescript": "~5.9.3",
 		"vite": "^7.3.1",
 		"vitest": "^4.0.18",
-		"wrangler": "^4.80.0",
-		"storybook": "^10.3.4",
-		"@storybook/react-vite": "^10.3.4",
-		"@chromatic-com/storybook": "^5.1.1",
-		"@storybook/addon-a11y": "^10.3.4",
-		"@storybook/addon-docs": "^10.3.4",
-		"@storybook/addon-onboarding": "^10.3.4",
-		"@storybook/addon-vitest": "^10.3.4",
-		"@vitest/browser-playwright": "^4.0.12"
+		"wrangler": "^4.80.0"
 	}
 }
