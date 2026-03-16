@@ -1,3 +1,4 @@
+import JSON5 from 'json5';
 import {logger} from '../lib/sentry';
 import {deserializeBlueprint} from '../parsing/blueprintParser';
 import type {BlueprintString} from '../parsing/types';
@@ -385,9 +386,9 @@ export async function fetchBlueprint<
 		return await fetchUrl(pasted, queryClient);
 	}
 
-	// Simple JSON detection - try parsing as JSON
+	// Simple JSON/JSON5 detection - try parsing as JSON or JSON5
 	try {
-		const blueprintString = JSON.parse(pasted) as BlueprintString;
+		const blueprintString = JSON5.parse(pasted) as BlueprintString;
 		return fetchJson(pasted, blueprintString);
 	} catch {
 		// If not URL or JSON, assume it's blueprint data
