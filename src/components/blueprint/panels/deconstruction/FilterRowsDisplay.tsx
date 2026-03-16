@@ -27,8 +27,8 @@ const FilterRowsDisplay = ({filters, type, label}: FilterRowsProps) => {
 				<Spreadsheet>
 					{filters
 						.sort((a, b) => a.index - b.index)
-						.map((filter, idx) => (
-							<Row key={`${filter.name}-${idx}`}>
+						.map((filter) => (
+							<Row key={`${filter.name}-${filter.index}`}>
 								<Cell
 									width="48px"
 									grow={false}
