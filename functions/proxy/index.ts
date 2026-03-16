@@ -1,5 +1,4 @@
 import type {EventContext} from '@cloudflare/workers-types';
-import * as Sentry from '@sentry/cloudflare';
 
 const FILTERED_HEADERS_REGEX = /^(origin|eferer|^cf-|^x-forw|^x-cors-headers)/;
 
@@ -61,7 +60,6 @@ function setupCORSHeaders(
 
 interface Env {
 	KV: KVNamespace;
-	SENTRY_DSN?: string;
 	ENVIRONMENT?: string;
 }
 
@@ -146,19 +144,7 @@ const wrappedOnRequest = async (context: EventContext<Env, string, Record<string
 				statusText: isPreflightRequest ? 'OK' : response.statusText,
 			});
 		} catch (error) {
-			Sentry.withScope((scope) => {
-				scope.setTags({
-					function: 'proxy',
-					targetUrl,
-					origin: originHeader,
-				});
-				scope.setExtras({
-					userAgent: request.headers.get('User-Agent'),
-					cfRay: request.headers.get('CF-Ray'),
-					connectingIp,
-				});
-				Sentry.captureException(error);
-			});
+			console.error('proxy error:', error);
 			return new Response('Error fetching resource', {status: 500});
 		}
 	}

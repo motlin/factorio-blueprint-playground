@@ -3,7 +3,6 @@ import {ReactQueryDevtools} from '@tanstack/react-query-devtools';
 import {createRouter, RouterProvider} from '@tanstack/react-router';
 import {StrictMode, Suspense} from 'react';
 import {createRoot} from 'react-dom/client';
-import {initSentry} from './lib/sentry';
 import {routeTree} from './routeTree.gen';
 
 import './styles/factorio-a76ef767.css';
@@ -24,8 +23,6 @@ const router = createRouter({
 		queryClient,
 	},
 });
-
-initSentry(router);
 
 declare module '@tanstack/react-router' {
 	interface Register {

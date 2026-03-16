@@ -33,21 +33,7 @@ interface ImgurAlbumData {
 	images?: ImgurImageData[];
 }
 
-interface SentryLike {
-	withScope: (
-		callback: (scope: {
-			setTags: (tags: Record<string, string>) => void;
-			setExtras: (extras: Record<string, unknown>) => void;
-		}) => void,
-	) => void;
-	captureException: (error: unknown) => void;
-}
-
-export async function resolveImgurImage(
-	parsedUrl: ParsedImgurUrl,
-	clientId: string,
-	sentry?: SentryLike,
-): Promise<ImgurApiResponse> {
+export async function resolveImgurImage(parsedUrl: ParsedImgurUrl, clientId: string): Promise<ImgurApiResponse> {
 	const headers = {
 		Authorization: `Client-ID ${clientId}`,
 		'User-Agent': 'FactorioPrints/1.0',
@@ -152,20 +138,7 @@ export async function resolveImgurImage(
 
 		return handleApiError(singleImageResponse.status);
 	} catch (error) {
-		if (sentry) {
-			sentry.withScope((scope) => {
-				scope.setTags({
-					function: 'resolveImgurImage',
-					imageId: parsedUrl.id,
-				});
-				scope.setExtras({
-					imageType: parsedUrl.type,
-					isDirect: parsedUrl.isDirect,
-					isFromAlbum: parsedUrl.isFromAlbum,
-				});
-				sentry.captureException(error);
-			});
-		}
+		console.error('resolveImgurImage error:', error);
 		return {
 			success: false,
 			error: 'Failed to connect to Imgur API',
