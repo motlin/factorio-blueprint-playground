@@ -1,12 +1,10 @@
 import type {EventContext} from '@cloudflare/workers-types';
-import * as Sentry from '@sentry/cloudflare';
 import {resolveImgurImage} from './api-client';
 import {createJsonResponse, createRequestHandlers} from './http-helpers';
 import {parseImgurUrl} from './url-parser';
 
 interface Env {
 	IMGUR_CLIENT_ID: string;
-	SENTRY_DSN?: string;
 	ENVIRONMENT?: string;
 }
 
@@ -48,24 +46,12 @@ async function handleRequest(context: EventContext<Env, string, Record<string, u
 			return createJsonResponse(parseResult, 400, originHeader);
 		}
 
-		const resolveResult = await resolveImgurImage(parseResult.data, env.IMGUR_CLIENT_ID, Sentry);
+		const resolveResult = await resolveImgurImage(parseResult.data, env.IMGUR_CLIENT_ID);
 		const status = resolveResult.success ? 200 : 400;
 
 		return createJsonResponse(resolveResult, status, originHeader);
 	} catch (error) {
-		Sentry.withScope((scope) => {
-			scope.setTags({
-				function: 'imgur-resolver',
-				stage: 'request-parsing',
-			});
-			scope.setExtras({
-				userAgent: request.headers.get('User-Agent'),
-				cfRay: request.headers.get('CF-Ray'),
-				origin: originHeader,
-			});
-			Sentry.captureException(error);
-		});
-
+		console.error('imgur-resolver request-parsing error:', error);
 		return createJsonResponse({success: false, error: 'Invalid request body'}, 400, originHeader);
 	}
 }
