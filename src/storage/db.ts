@@ -47,7 +47,7 @@ export async function generateSha(data: string): Promise<string> {
 		.join('');
 }
 
-class BlueprintDatabase extends Dexie {
+export class BlueprintDatabase extends Dexie {
 	blueprints!: Table<DatabaseBlueprint, string>;
 	recent!: Table<{id: string; sha: string}, string>;
 
@@ -148,10 +148,6 @@ class BlueprintDatabase extends Dexie {
 	async getBlueprint(sha: string): Promise<DatabaseBlueprint | null> {
 		const blueprint = await this.blueprints.get(sha);
 		return blueprint ?? null;
-	}
-
-	async removeBlueprint(sha: string): Promise<void> {
-		await this.blueprints.delete(sha);
 	}
 
 	async removeBulkBlueprints(shas: string[]): Promise<void> {

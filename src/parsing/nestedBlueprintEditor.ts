@@ -31,7 +31,7 @@ export function updateNestedBlueprint(
 
 			// We need to go deeper
 			const [nextIndex, ...restPath] = remainingPath;
-			const index = parseInt(nextIndex) - 1;
+			const index = parseInt(nextIndex, 10) - 1;
 
 			if (!current.blueprint_book?.blueprints) {
 				console.error('Expected blueprint book but found none');
