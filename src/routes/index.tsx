@@ -2,7 +2,7 @@ import {createFileRoute} from '@tanstack/react-router';
 import {z} from 'zod';
 
 import {BlueprintPlayground} from '../components/BlueprintPlayground';
-import {fetchBlueprint} from '../fetching/blueprintFetcher';
+import {type BlueprintFetchMethod, fetchBlueprint} from '../fetching/blueprintFetcher';
 import {type BlueprintInfo, BlueprintWrapper} from '../parsing/BlueprintWrapper';
 import {extractBlueprint} from '../parsing/blueprintParser';
 import {addBlueprint} from '../state/blueprintLocalStorage';
@@ -17,20 +17,22 @@ export interface RootSearch {
 	pasted?: string;
 	selection?: string;
 	focusTextarea?: boolean;
+	fetchType?: BlueprintFetchMethod;
 }
 
 export const searchSchema = z.object({
 	pasted: z.string().optional().catch(undefined),
 	selection: z.string().optional().catch(undefined),
 	focusTextarea: z.boolean().optional().catch(undefined),
+	fetchType: z.enum(['url', 'json', 'data', 'edit']).optional().catch(undefined),
 });
 
 export const Route = createFileRoute('/')({
 	component: BlueprintPlayground,
 	validateSearch: searchSchema,
-	loaderDeps: ({search: {pasted, selection}}) => ({pasted, selection}),
-	loader: async ({deps: {pasted, selection}, context: {queryClient}}) => {
-		const result = await fetchBlueprint({pasted}, queryClient);
+	loaderDeps: ({search: {pasted, selection, fetchType}}) => ({pasted, selection, fetchType}),
+	loader: async ({deps: {pasted, selection, fetchType}, context: {queryClient}}) => {
+		const result = await fetchBlueprint({pasted, fetchType}, queryClient);
 
 		// If successful, save to history
 		if (result?.success === true) {
@@ -65,7 +67,8 @@ export const Route = createFileRoute('/')({
 					console.warn('Invalid selection path, not saving to history:', error);
 				}
 
-				await addBlueprint(result.pasted, metadata, validSelection, result.fetchMethod);
+				const effectiveFetchMethod = fetchType ?? result.fetchMethod;
+				await addBlueprint(result.pasted, metadata, validSelection, effectiveFetchMethod);
 			} catch (error) {
 				console.error('Failed to save blueprint to history:', error);
 			}

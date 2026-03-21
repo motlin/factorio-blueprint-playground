@@ -61,5 +61,43 @@ describe('Root route search schema', () => {
 				selection: undefined,
 			});
 		});
+
+		it('should accept valid fetchType parameter', () => {
+			const result = searchSchema.parse({
+				pasted: 'some-blueprint-string',
+				selection: '1.2.3',
+				fetchType: 'edit',
+			});
+
+			expect(result).toEqual({
+				pasted: 'some-blueprint-string',
+				selection: '1.2.3',
+				fetchType: 'edit',
+			});
+		});
+
+		it('should reject invalid fetchType parameter', () => {
+			const result = searchSchema.parse({
+				pasted: 'some-blueprint-string',
+				fetchType: 'invalid-type',
+			});
+
+			expect(result).toEqual({
+				pasted: 'some-blueprint-string',
+				fetchType: undefined,
+			});
+		});
+	});
+
+	describe('deep linking to edited blueprints', () => {
+		it('should handle edited blueprint links', () => {
+			const result = searchSchema.parse({
+				pasted: 'some-blueprint-string',
+				selection: '1.2.3',
+				fetchType: 'edit',
+			});
+
+			expect(result.fetchType).toBe('edit');
+		});
 	});
 });
