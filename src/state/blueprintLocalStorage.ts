@@ -4,7 +4,7 @@ export async function addBlueprint(
 	data: string,
 	parsedGameData: Omit<BlueprintGameData, 'createdOn' | 'lastUpdatedOn'>,
 	selection?: string,
-	fetchMethod?: 'url' | 'json' | 'data',
+	fetchMethod?: BlueprintStorageMetadata['fetchMethod'],
 ) {
 	const blueprint = await db.addBlueprint(data, parsedGameData, selection, fetchMethod);
 	return blueprint;

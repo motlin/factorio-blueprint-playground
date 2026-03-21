@@ -7,7 +7,7 @@ const FACTORIO_SCHOOL_URL_REGEX = /(?:www\.)?factorio\.school\/view\/([^/\s#]+)/
 const FACTORIO_PRINTS_URL_REGEX = /(?:www\.)?factorioprints\.com\/view\/([^/\s#]+)/;
 const HTTP_URL_REGEX = /^https?:\/\//i;
 
-export type BlueprintFetchMethod = 'url' | 'json' | 'data';
+export type BlueprintFetchMethod = 'url' | 'json' | 'data' | 'edit';
 
 export function getSourceLabel(fetchMethod?: BlueprintFetchMethod): string {
 	switch (fetchMethod) {
@@ -17,6 +17,8 @@ export function getSourceLabel(fetchMethod?: BlueprintFetchMethod): string {
 			return 'JSON Import';
 		case 'data':
 			return 'Direct Paste';
+		case 'edit':
+			return 'Edited Blueprint';
 		case undefined:
 			return 'Unknown';
 		default:
@@ -377,12 +379,31 @@ function fetchData(pasted: string): BlueprintFetchSuccess | BlueprintFetchFailur
 }
 
 export async function fetchBlueprint(
-	deps: {pasted: string | undefined},
+	deps: {pasted: string | undefined; fetchType?: BlueprintFetchMethod},
 	queryClient: QueryClientLike,
 ): Promise<BlueprintFetchResult> {
 	const pasted = deps.pasted;
 	if (pasted === undefined || pasted === '') {
 		return undefined;
+	}
+
+	if (deps.fetchType === 'edit') {
+		try {
+			const blueprintString: BlueprintString = deserializeBlueprint(pasted);
+			return {
+				success: true,
+				fetchMethod: 'edit' as const,
+				pasted,
+				blueprintString,
+			};
+		} catch (error) {
+			return {
+				success: false,
+				error: error instanceof Error ? error : new Error(String(error)),
+				pasted,
+				fetchMethod: 'edit',
+			};
+		}
 	}
 
 	// Simple URL detection
