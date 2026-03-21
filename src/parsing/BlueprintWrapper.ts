@@ -14,7 +14,7 @@ export class BlueprintWrapper {
 	private readonly data: BlueprintString;
 
 	constructor(blueprint: BlueprintString) {
-		this.data = blueprint;
+		this.data = structuredClone(blueprint);
 	}
 
 	getInfo(): BlueprintInfo {
@@ -85,5 +85,28 @@ export class BlueprintWrapper {
 	// fallow-ignore-next-line unused-class-member
 	getVersion(): number {
 		return this.getContent().version;
+	}
+
+	getRawBlueprint(): BlueprintString {
+		return this.data;
+	}
+
+	updateLabel(newLabel: string): boolean {
+		this.getContent().label = newLabel;
+		return true;
+	}
+
+	updateDescription(newDescription: string): boolean {
+		const content = this.getContent();
+		if ('settings' in content) {
+			content.settings.description = newDescription;
+		} else {
+			content.description = newDescription;
+		}
+		return true;
+	}
+
+	toString(): string {
+		return JSON.stringify(this.data);
 	}
 }

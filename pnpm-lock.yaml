@@ -32,6 +32,9 @@ importers:
       '@tanstack/react-router':
         specifier: ^1.170.32
         version: 1.170.32(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@tanstack/react-router-devtools':
+        specifier: ^1.167.1
+        version: 1.167.1(@tanstack/react-router@1.170.32(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(@tanstack/router-core@1.171.27)(csstype@3.2.3)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       date-fns:
         specifier: ^4.4.0
         version: 4.4.0
@@ -87,9 +90,6 @@ importers:
       '@storybook/react-vite':
         specifier: ^10.6.5
         version: 10.6.5(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(@voidzero-dev/vite-plus-core@0.2.9(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(typescript@7.0.2))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(storybook@10.6.5(@types/react@19.3.0)(prettier@3.9.6)(react@19.3.1)(vite-plus@0.2.9(@types/node@26.6.6)(@vitest/browser-playwright@5.0.5(@voidzero-dev/vite-plus-core@0.2.9(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(typescript@7.0.2))(@voidzero-dev/vite-plus-test@0.1.24)(playwright@1.64.1))(@vitest/coverage-v8@5.0.5)(@voidzero-dev/vite-plus-core@0.2.9(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(typescript@7.0.2))(esbuild@0.28.2)(jiti@2.7.0)(jsdom@30.0.1)(tsx@4.23.15)(typescript@7.0.2)))(supports-color@10.2.2)(typescript@7.0.2)
-      '@tanstack/react-router-devtools':
-        specifier: ^1.167.1
-        version: 1.167.1(@tanstack/react-router@1.170.32(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(@tanstack/router-core@1.171.27)(csstype@3.2.3)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@tanstack/router-cli':
         specifier: ^1.167.33
         version: 1.167.33(supports-color@10.2.2)
