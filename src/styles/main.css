@@ -219,3 +219,115 @@ body {
 	justify-content: center;
 	align-items: flex-start;
 }
+
+/* Editable Text component styles */
+.editable-container {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+}
+
+.editable-display {
+	position: relative;
+	padding: 8px;
+	cursor: pointer;
+	border: 1px dashed transparent;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.editable-display:hover {
+	border-color: #ff9b00;
+}
+
+.editable-display .edit-icon {
+	opacity: 0;
+	color: #ff9b00;
+	margin-left: 8px;
+	transition: opacity 0.2s;
+}
+
+.editable-display:hover .edit-icon {
+	opacity: 1;
+}
+
+.editable-input,
+.editable-container .textarea-component {
+	background-color: #414040;
+	color: #fff;
+	border: 1px solid #ff9b00;
+	padding: 8px;
+	width: 100%;
+	margin-bottom: 8px;
+}
+
+.editable-input:focus,
+.editable-container .textarea-component:focus {
+	outline: none;
+	border-color: #f1be64;
+}
+
+.editable-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+}
+
+.editable-placeholder {
+	color: #888;
+	font-style: italic;
+}
+
+/* Edit controls */
+.edit-controls {
+	display: flex;
+	justify-content: flex-end;
+	margin: 0 4px 8px;
+}
+
+.edit-buttons-container {
+	display: flex;
+	gap: 8px;
+}
+
+.edit-toggle-button {
+	background-color: #3e3e3e;
+	color: #ff9b00;
+	border: 1px solid #313131;
+	border-radius: 4px;
+	padding: 6px 12px;
+	cursor: pointer;
+	font-weight: bold;
+	transition: all 0.2s;
+}
+
+.edit-toggle-button:hover {
+	background-color: #4a4a4a;
+	border-color: #ff9b00;
+}
+
+.button {
+	background-color: #3e3e3e;
+	color: #ff9b00;
+	border: 1px solid #313131;
+	border-radius: 4px;
+	padding: 6px 12px;
+	cursor: pointer;
+	font-weight: bold;
+	transition: all 0.2s;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.button:hover:not(:disabled) {
+	background-color: #4a4a4a;
+	border-color: #ff9b00;
+}
+
+.button:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
