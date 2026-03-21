@@ -61,11 +61,46 @@ describe('Index route loader', () => {
 			deps: {pasted: 'test'} as Record<string, unknown>,
 		});
 
-		expect(mockFetchBlueprint).toHaveBeenCalledWith({pasted: 'test'}, queryClient);
+		expect(mockFetchBlueprint).toHaveBeenCalledWith({pasted: 'test', fetchType: undefined}, queryClient);
 		expect(result).toEqual({
 			success: false,
 			error: new Error('Test error'),
 			pasted: 'test',
+		});
+	});
+
+	test('calls fetchBlueprint with pasted value and fetchType when provided', async () => {
+		const mockFetchBlueprint = vi.mocked(fetchBlueprint);
+		mockFetchBlueprint.mockResolvedValue({
+			success: true,
+			fetchMethod: 'edit',
+			pasted: 'test',
+			blueprintString: {
+				blueprint: {
+					label: 'Edited Blueprint',
+				},
+			},
+		});
+
+		const result = await loader({
+			context: {},
+			params: {},
+			search: {pasted: 'test', fetchType: 'edit'},
+			location: {} as Record<string, unknown>,
+			abortController: new AbortController(),
+			deps: {pasted: 'test'} as Record<string, unknown>,
+		});
+
+		expect(mockFetchBlueprint).toHaveBeenCalledWith({pasted: 'test', fetchType: 'edit'}, queryClient);
+		expect(result).toEqual({
+			success: true,
+			fetchMethod: 'edit',
+			pasted: 'test',
+			blueprintString: {
+				blueprint: {
+					label: 'Edited Blueprint',
+				},
+			},
 		});
 	});
 
