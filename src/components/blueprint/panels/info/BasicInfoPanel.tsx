@@ -6,6 +6,7 @@ import type {BlueprintString, Icon} from '../../../../parsing/types';
 import {FactorioIcon, Placeholder} from '../../../core/icons/FactorioIcon';
 import {RichText} from '../../../core/text/RichText';
 import {Version} from '../../../core/text/Version';
+import {EditableLabelDescription} from '../../../ui/EditableLabelDescription';
 import {Panel} from '../../../ui/Panel';
 
 interface InfoRowProps {
@@ -24,10 +25,31 @@ const InfoRow = ({label, children, hidden = false}: InfoRowProps) => {
 	);
 };
 
-const BasicInfoPanelComponent = ({blueprint}: {blueprint?: BlueprintString}) => {
+interface BasicInfoPanelProps {
+	blueprint?: BlueprintString;
+	onLabelEdit?: (newLabel: string) => void;
+	onDescriptionEdit?: (newDescription: string) => void;
+	onCancelEdit?: () => void;
+	editable?: boolean;
+}
+
+const doNothing = () => {};
+
+const BasicInfoPanelComponent = ({
+	blueprint,
+	onLabelEdit,
+	onDescriptionEdit,
+	onCancelEdit = doNothing,
+	editable = false,
+}: BasicInfoPanelProps) => {
 	if (!blueprint) return null;
 	const wrapper = new BlueprintWrapper(blueprint);
 	const {type, label, description, icons, version} = wrapper.getInfo();
+
+	const handleSaveEdits = (newLabel: string, newDescription: string) => {
+		onLabelEdit?.(newLabel);
+		onDescriptionEdit?.(newDescription);
+	};
 
 	function getIconElement(index: number, icon?: Icon) {
 		if (icon) {
@@ -44,24 +66,36 @@ const BasicInfoPanelComponent = ({blueprint}: {blueprint?: BlueprintString}) => 
 					<FactorioIcon icon={{type: 'item', name: type}} size={'large'} />
 				</InfoRow>
 
-				<InfoRow label="Label" hidden={label == null || label === ''}>
-					<RichText text={label} iconSize={'large'} />
-				</InfoRow>
+				{editable ? (
+					<EditableLabelDescription
+						label={label ?? ''}
+						description={description ?? ''}
+						onSave={handleSaveEdits}
+						onCancel={onCancelEdit}
+						isEditing={true}
+					/>
+				) : (
+					<>
+						<InfoRow label="Label" hidden={label == null || label === ''}>
+							<RichText text={label} iconSize={'large'} />
+						</InfoRow>
 
-				<InfoRow label="Description" hidden={description == null || description === ''}>
-					<RichText text={description} iconSize={'large'} />
-				</InfoRow>
+						<InfoRow label="Description" hidden={description == null || description === ''}>
+							<RichText text={description} iconSize={'large'} />
+						</InfoRow>
+					</>
+				)}
 
-				<InfoRow label="Icons" hidden={(icons?.length ?? 0) === 0}>
+				<InfoRow label="Icons" hidden={(icons?.length ?? 0) === 0 || editable}>
 					<div className="flex flex-items-center">
 						{[1, 2, 3, 4].map((index) => {
-							const icon = icons?.find((i) => i.index === index);
+							const icon = icons?.find((item) => item.index === index);
 							return getIconElement(index, icon);
 						})}
 					</div>
 				</InfoRow>
 
-				<InfoRow label="Game Version">
+				<InfoRow label="Game Version" hidden={editable}>
 					<Version number={version} />
 				</InfoRow>
 			</dl>

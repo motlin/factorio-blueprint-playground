@@ -7,6 +7,7 @@ import {routeTree} from './routeTree.gen';
 
 import './styles/factorio-a76ef767.css';
 import './styles/main.css';
+import './styles/EditableLabelDescription.css';
 
 const queryClient = new QueryClient({
 	defaultOptions: {
