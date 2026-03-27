@@ -33,7 +33,7 @@
 		"@tanstack/react-router": "^1.168.7",
 		"@tanstack/react-store": "^0.9.2",
 		"date-fns": "^4.1.0",
-		"dexie": "^4.3.0",
+		"dexie": "^4.4.1",
 		"dexie-react-hooks": "^4.4.0",
 		"fflate": "^0.8.2",
 		"lucide-react": "^1.7.0",
