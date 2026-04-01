@@ -203,7 +203,7 @@ describe('Export Verification for Edited Blueprints', () => {
 		expect(retrievedEdited).toEqual(savedEdited);
 
 		// Verify export matches storage
-		const reimported = deserializeBlueprint(retrievedEdited!.metadata.data);
+		const reimported = deserializeBlueprint(retrievedEdited?.metadata.data);
 		expect(reimported).toEqual(editedBlueprint);
 	});
 

@@ -1,8 +1,24 @@
 import {render, screen} from '@testing-library/react';
-import {describe, expect, test} from 'vitest';
+import {describe, expect, test, vi} from 'vitest';
 
 import {BlueprintInfoPanels} from '../../src/components/blueprint/panels/BlueprintInfoPanels';
 import type {BlueprintString} from '../../src/parsing/types';
+
+// Mock the Router hooks since BlueprintInfoPanels requires router context
+vi.mock('../../src/routes', () => ({
+	Route: {
+		useSearch: vi.fn(() => ({pasted: 'test://blueprint'})),
+		fullPath: '/',
+	},
+}));
+
+vi.mock('@tanstack/react-router', async () => {
+	const actual = await vi.importActual('@tanstack/react-router');
+	return {
+		...actual,
+		useNavigate: vi.fn(() => vi.fn()),
+	};
+});
 
 describe('BlueprintInfoPanels', () => {
 	test('renders nothing when no blueprint is provided', () => {

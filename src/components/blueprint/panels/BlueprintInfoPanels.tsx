@@ -41,32 +41,26 @@ const BlueprintInfoPanelsComponent = ({blueprint, rootBlueprint, selectedPath}: 
 		setHasPendingChanges(true);
 	}, []);
 
+	const extractFieldsFromContent = (content: unknown): {label: string; description: string} => {
+		if (typeof content === 'object' && content !== null) {
+			const obj = content as Record<string, unknown>;
+			return {
+				label: (obj.label as string) || '',
+				description: (obj.description as string) || '',
+			};
+		}
+		return {label: '', description: ''};
+	};
+
+	const getEditableFields = (bp: BlueprintString) => {
+		const content = bp.blueprint || bp.blueprint_book || bp.upgrade_planner || bp.deconstruction_planner;
+		return extractFieldsFromContent(content);
+	};
+
 	const startEditing = useCallback(() => {
 		if (!blueprint) return;
 
-		// Initialize edit fields with current values
-		let label = '';
-		let description = '';
-
-		if (blueprint.blueprint) {
-			// Use optional chaining and explicit casting
-			label = (blueprint.blueprint?.label as string) || '';
-			description = (blueprint.blueprint?.description as string) || '';
-		} else if (blueprint.blueprint_book) {
-			// Use optional chaining and explicit casting
-			label = (blueprint.blueprint_book?.label as string) || '';
-			description = (blueprint.blueprint_book?.description as string) || '';
-		} else if (blueprint.upgrade_planner) {
-			// Use optional chaining and explicit casting
-			label = (blueprint.upgrade_planner?.label as string) || '';
-			description = (blueprint.upgrade_planner?.description as string) || '';
-		} else if (blueprint.deconstruction_planner) {
-			// Use optional chaining and explicit casting
-			label = (blueprint.deconstruction_planner?.label as string) || '';
-			description = (blueprint.deconstruction_planner?.description as string) || '';
-		}
-
-		// Type assertion to ensure TypeScript knows these are strings
+		const {label, description} = getEditableFields(blueprint);
 		setEditedLabel(String(label));
 		setEditedDescription(String(description));
 		setIsEditing(true);
@@ -78,52 +72,38 @@ const BlueprintInfoPanelsComponent = ({blueprint, rootBlueprint, selectedPath}: 
 		setHasPendingChanges(false);
 	}, []);
 
+	const updateRootBlueprint = (bp: BlueprintString): BlueprintString | null => {
+		const wrapper = new BlueprintWrapper(bp);
+		let updated = false;
+		updated = wrapper.updateLabel(editedLabel) || updated;
+		updated = wrapper.updateDescription(editedDescription) || updated;
+		return updated ? wrapper.getRawBlueprint() : null;
+	};
+
+	const getUpdatedBlueprint = (): BlueprintString | null => {
+		if (selectedPath && rootBlueprint) {
+			const updater = createLabelDescriptionUpdater(editedLabel, editedDescription);
+			const updated = updateNestedBlueprint(rootBlueprint, selectedPath, updater);
+			if (!updated) {
+				console.error('Failed to update nested blueprint');
+			}
+			return updated;
+		}
+		return updateRootBlueprint(blueprint);
+	};
+
 	const saveChanges = useCallback(async () => {
 		if (!(blueprint && pasted)) return;
 
 		setIsSaving(true);
 
 		try {
-			let blueprintToSave: BlueprintString;
+			const blueprintToSave = getUpdatedBlueprint();
+			if (!blueprintToSave) return;
 
-			// Check if we're editing a nested blueprint
-			if (selectedPath && rootBlueprint) {
-				// Use the immutable update function to update the nested blueprint
-				const updater = createLabelDescriptionUpdater(editedLabel, editedDescription);
-				const updatedRoot = updateNestedBlueprint(rootBlueprint, selectedPath, updater);
-
-				if (!updatedRoot) {
-					console.error('Failed to update nested blueprint');
-					setIsSaving(false);
-					return;
-				}
-
-				blueprintToSave = updatedRoot;
-			} else {
-				// We're editing the root blueprint or don't have a path
-				const wrapper = new BlueprintWrapper(blueprint);
-
-				// Update both label and description
-				let updated = false;
-				updated = wrapper.updateLabel(editedLabel) || updated;
-				updated = wrapper.updateDescription(editedDescription) || updated;
-
-				if (!updated) {
-					setIsSaving(false);
-					return;
-				}
-
-				blueprintToSave = wrapper.getRawBlueprint();
-			}
-
-			// Serialize the blueprint to base64 for storage
 			const serializedBlueprint = serializeBlueprint(blueprintToSave);
-
-			// Add the updated blueprint to the database with 'edit' fetch type
-			// When editing a nested blueprint, we save the entire root structure
 			const result = await addBlueprint(serializedBlueprint, blueprintToSave, selectedPath, 'edit');
 
-			// Update the URL to use the new blueprint
 			if (result) {
 				void navigate({
 					search: (prev: RootSearch): RootSearch => ({

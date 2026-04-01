@@ -216,12 +216,18 @@ Also includes special characters: < > & " ' and some unicode: → ← ↑ ↓`}
 							</div>
 							<div className="editable-actions">
 								<button
+									type="button"
 									className="button-green button-green-disabled"
 									disabled
 								>
 									💾 Save Changes
 								</button>
-								<button className="button-green">✗ Cancel</button>
+								<button
+									type="button"
+									className="button-green"
+								>
+									✗ Cancel
+								</button>
 							</div>
 						</div>
 					</div>
@@ -251,8 +257,18 @@ Also includes special characters: < > & " ' and some unicode: → ← ↑ ↓`}
 								/>
 							</div>
 							<div className="editable-actions">
-								<button className="button-green">💾 Save Changes</button>
-								<button className="button-green">✗ Cancel</button>
+								<button
+									type="button"
+									className="button-green"
+								>
+									💾 Save Changes
+								</button>
+								<button
+									type="button"
+									className="button-green"
+								>
+									✗ Cancel
+								</button>
 							</div>
 						</div>
 					</div>

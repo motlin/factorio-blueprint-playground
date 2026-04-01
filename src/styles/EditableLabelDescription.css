@@ -71,21 +71,21 @@
 
 .editable-input,
 .editable-textarea {
-	background-color: #414040 !important;
-	color: #fff !important;
-	border: 1px solid #ff9b00 !important;
+	background-color: #414040;
+	color: #fff;
+	border: 1px solid #ff9b00;
 	padding: 8px;
 	width: 100%;
 	border-radius: 4px;
-	height: auto !important;
+	height: auto;
 }
 
 .editable-input:focus,
 .editable-textarea:focus {
-	outline: none !important;
-	border-color: #f1be64 !important;
-	box-shadow: 0 0 0 2px rgba(255, 155, 0, 0.2) !important;
-	background-color: #414040 !important;
+	outline: none;
+	border-color: #f1be64;
+	box-shadow: 0 0 0 2px rgba(255, 155, 0, 0.2);
+	background-color: #414040;
 }
 
 .editable-placeholder {

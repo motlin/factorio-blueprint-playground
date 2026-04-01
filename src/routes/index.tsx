@@ -28,6 +28,71 @@ export const searchSchema = z.object({
 	fetchType: z.enum(['url', 'json', 'data', 'edit']).optional().catch(undefined),
 });
 
+const parseFetchType = (search: Record<string, unknown>): BlueprintFetchMethod | undefined => {
+	if (search && typeof search.fetchType === 'string' && ['url', 'json', 'data', 'edit'].includes(search.fetchType)) {
+		return search.fetchType as BlueprintFetchMethod;
+	}
+	return undefined;
+};
+
+const extractBlueprintIcons = (contentIcons: unknown) => {
+	const icons = Array.isArray(contentIcons) ? contentIcons : [];
+
+	return icons.map((icon: unknown) => {
+		if (typeof icon !== 'object' || icon === null) {
+			return {name: 'unknown'};
+		}
+
+		const iconObj = icon as Record<string, unknown>;
+		const signalRaw = iconObj.signal;
+		const signal =
+			typeof signalRaw === 'object' && signalRaw !== null ? (signalRaw as Record<string, unknown>) : {};
+
+		return {
+			type: typeof signal.type === 'string' ? signal.type : undefined,
+			name: typeof signal.name === 'string' ? signal.name : '',
+		};
+	});
+};
+
+const saveToHistory = async (
+	result: {
+		success: boolean;
+		blueprintString: string;
+		pasted: string;
+		fetchMethod: BlueprintFetchMethod;
+	},
+	search: Record<string, unknown>,
+	fetchType: BlueprintFetchMethod | undefined,
+) => {
+	const wrapper = new BlueprintWrapper(result.blueprintString);
+	const type = wrapper.getType()?.replace('-', '_');
+	const content = wrapper.getContent() as Record<string, unknown>;
+
+	if (!(content && type)) return;
+
+	const metadata = {
+		type: type as DatabaseBlueprintType,
+		label: content.label as string | undefined,
+		description: content.description as string | undefined,
+		gameVersion: (content.version as number | undefined)?.toString(),
+		icons: extractBlueprintIcons(content.icons),
+	};
+
+	let validSelection: string | undefined;
+	try {
+		if (typeof search?.selection === 'string' && search.selection) {
+			extractBlueprint(result.blueprintString, search.selection);
+			validSelection = search.selection;
+		}
+	} catch (error) {
+		console.warn('Invalid selection path, not saving to history:', error);
+	}
+
+	const effectiveFetchMethod: BlueprintFetchMethod = fetchType || result.fetchMethod;
+	await addBlueprint(result.pasted, metadata, validSelection, effectiveFetchMethod);
+};
+
 export const Route = createFileRoute('/')({
 	component: BlueprintPlayground,
 	validateSearch: searchSchema,
@@ -50,66 +115,12 @@ export const Route = createFileRoute('/')({
 			};
 		};
 	}) => {
-		// If fetchType is specified in the URL, use it (particularly for handling edited blueprints)
-		const fetchType =
-			search && typeof search.fetchType === 'string' && ['url', 'json', 'data', 'edit'].includes(search.fetchType)
-				? (search.fetchType as BlueprintFetchMethod)
-				: undefined;
+		const fetchType = parseFetchType(search);
 		const result = await fetchBlueprint({pasted, fetchType}, queryClient);
 
-		// If successful, save to history
 		if (result?.success && result.blueprintString) {
 			try {
-				const wrapper = new BlueprintWrapper(result.blueprintString);
-				const type = wrapper.getType()?.replace('-', '_');
-				const content = wrapper.getContent() as Record<string, unknown>;
-
-				if (content && type) {
-					const metadata = {
-						type: type as DatabaseBlueprintType,
-						label: content.label as string | undefined,
-						description: content.description as string | undefined,
-						gameVersion: (content.version as number | undefined)?.toString(),
-						icons: (() => {
-							const contentIcons = content.icons;
-							const icons = Array.isArray(contentIcons) ? contentIcons : [];
-
-							// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Icon parsing requires type validation
-							return icons.map((icon: unknown) => {
-								if (typeof icon !== 'object' || icon === null) {
-									return {name: 'unknown'};
-								}
-
-								const iconObj = icon as Record<string, unknown>;
-								const signalRaw = iconObj.signal;
-								const signal =
-									typeof signalRaw === 'object' && signalRaw !== null
-										? (signalRaw as Record<string, unknown>)
-										: {};
-
-								return {
-									type: typeof signal.type === 'string' ? signal.type : undefined,
-									name: typeof signal.name === 'string' ? signal.name : '',
-								};
-							});
-						})(),
-					};
-
-					let validSelection: string | undefined;
-					try {
-						if (typeof search?.selection === 'string' && search.selection) {
-							extractBlueprint(result.blueprintString, search.selection);
-							validSelection = search.selection;
-						}
-					} catch (error) {
-						console.warn('Invalid selection path, not saving to history:', error);
-					}
-
-					// If a fetchType was specified in the URL (e.g., for restored edits via browser back button),
-					// use that instead of the result's fetchMethod
-					const effectiveFetchMethod: BlueprintFetchMethod = fetchType || result.fetchMethod;
-					await addBlueprint(result.pasted, metadata, validSelection, effectiveFetchMethod);
-				}
+				await saveToHistory(result, search, fetchType);
 			} catch (error) {
 				console.error('Failed to save blueprint to history:', error);
 			}

@@ -49,7 +49,7 @@ describe('Nested Blueprint Edit Integration', () => {
 
 		// Save the updated structure
 		const blueprintDataString = JSON.stringify(updatedRoot);
-		const result = await addBlueprint(blueprintDataString, updatedRoot!, '2', 'edit');
+		const result = await addBlueprint(blueprintDataString, updatedRoot as BlueprintString, '2', 'edit');
 
 		expect(result).toMatchObject({
 			metadata: {
@@ -125,7 +125,7 @@ describe('Nested Blueprint Edit Integration', () => {
 
 		// Save and verify selection path is maintained
 		const blueprintDataString = JSON.stringify(updatedRoot);
-		const result = await addBlueprint(blueprintDataString, updatedRoot!, '1.1', 'edit');
+		const result = await addBlueprint(blueprintDataString, updatedRoot as BlueprintString, '1.1', 'edit');
 
 		expect(result).toMatchObject({
 			metadata: {
