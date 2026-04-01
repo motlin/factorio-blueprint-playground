@@ -81,9 +81,8 @@ export const BasicInfoPanelComponent = ({
 						label={label || ''}
 						description={description || ''}
 						onSave={handleSaveEdits}
-						// This will be handled by the parent component
 						onCancel={() => {
-							// Parent component handles cancel via setEditable(false)
+							/* no-op: parent controls editing state */
 						}}
 						isEditing={true}
 					/>

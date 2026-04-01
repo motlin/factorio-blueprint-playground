@@ -16,6 +16,28 @@ import {DeconstructionPlannerPanel} from './deconstruction/DeconstructionPlanner
 import {BasicInfoPanel} from './info/BasicInfoPanel';
 import {UpgradePlannerPanel} from './upgrade/UpgradePlannerPanel';
 
+const getUpdatedBlueprint = (
+	blueprint: BlueprintString,
+	label: string,
+	description: string,
+	selectedPath?: string,
+	rootBlueprint?: BlueprintString,
+): BlueprintString | null => {
+	if (selectedPath && rootBlueprint) {
+		const updater = createLabelDescriptionUpdater(label, description);
+		const updated = updateNestedBlueprint(rootBlueprint, selectedPath, updater);
+		if (!updated) {
+			console.error('Failed to update nested blueprint');
+		}
+		return updated;
+	}
+	const wrapper = new BlueprintWrapper(blueprint);
+	let updated = false;
+	updated = wrapper.updateLabel(label) || updated;
+	updated = wrapper.updateDescription(description) || updated;
+	return updated ? wrapper.getRawBlueprint() : null;
+};
+
 interface BlueprintInfoPanelsProps {
 	blueprint?: BlueprintString;
 	rootBlueprint?: BlueprintString;
@@ -41,28 +63,12 @@ const BlueprintInfoPanelsComponent = ({blueprint, rootBlueprint, selectedPath}: 
 		setHasPendingChanges(true);
 	}, []);
 
-	const extractFieldsFromContent = (content: unknown): {label: string; description: string} => {
-		if (typeof content === 'object' && content !== null) {
-			const obj = content as Record<string, unknown>;
-			return {
-				label: (obj.label as string) || '',
-				description: (obj.description as string) || '',
-			};
-		}
-		return {label: '', description: ''};
-	};
-
-	const getEditableFields = (bp: BlueprintString) => {
-		const content = bp.blueprint || bp.blueprint_book || bp.upgrade_planner || bp.deconstruction_planner;
-		return extractFieldsFromContent(content);
-	};
-
 	const startEditing = useCallback(() => {
 		if (!blueprint) return;
 
-		const {label, description} = getEditableFields(blueprint);
-		setEditedLabel(String(label));
-		setEditedDescription(String(description));
+		const wrapper = new BlueprintWrapper(blueprint);
+		setEditedLabel(wrapper.getLabel() || '');
+		setEditedDescription(wrapper.getDescription() || '');
 		setIsEditing(true);
 		setHasPendingChanges(false);
 	}, [blueprint]);
@@ -72,33 +78,19 @@ const BlueprintInfoPanelsComponent = ({blueprint, rootBlueprint, selectedPath}: 
 		setHasPendingChanges(false);
 	}, []);
 
-	const updateRootBlueprint = (bp: BlueprintString): BlueprintString | null => {
-		const wrapper = new BlueprintWrapper(bp);
-		let updated = false;
-		updated = wrapper.updateLabel(editedLabel) || updated;
-		updated = wrapper.updateDescription(editedDescription) || updated;
-		return updated ? wrapper.getRawBlueprint() : null;
-	};
-
-	const getUpdatedBlueprint = (): BlueprintString | null => {
-		if (selectedPath && rootBlueprint) {
-			const updater = createLabelDescriptionUpdater(editedLabel, editedDescription);
-			const updated = updateNestedBlueprint(rootBlueprint, selectedPath, updater);
-			if (!updated) {
-				console.error('Failed to update nested blueprint');
-			}
-			return updated;
-		}
-		return updateRootBlueprint(blueprint);
-	};
-
 	const saveChanges = useCallback(async () => {
 		if (!(blueprint && pasted)) return;
 
 		setIsSaving(true);
 
 		try {
-			const blueprintToSave = getUpdatedBlueprint();
+			const blueprintToSave = getUpdatedBlueprint(
+				blueprint,
+				editedLabel,
+				editedDescription,
+				selectedPath,
+				rootBlueprint,
+			);
 			if (!blueprintToSave) return;
 
 			const serializedBlueprint = serializeBlueprint(blueprintToSave);
@@ -124,13 +116,10 @@ const BlueprintInfoPanelsComponent = ({blueprint, rootBlueprint, selectedPath}: 
 		}
 	}, [blueprint, rootBlueprint, pasted, selectedPath, navigate, editedLabel, editedDescription]);
 
-	// If no blueprint is provided, render nothing
 	if (!blueprint) return null;
 
-	// Render panel content
 	return (
 		<>
-			{/* Basic Info Panel with optional editing */}
 			<BasicInfoPanel
 				blueprint={blueprint}
 				onLabelEdit={handleLabelEdit}
@@ -138,7 +127,6 @@ const BlueprintInfoPanelsComponent = ({blueprint, rootBlueprint, selectedPath}: 
 				editable={isEditing}
 			/>
 
-			{/* Edit controls */}
 			<div className="edit-controls">
 				{isEditing ? (
 					<div className="editable-actions">
@@ -167,7 +155,6 @@ const BlueprintInfoPanelsComponent = ({blueprint, rootBlueprint, selectedPath}: 
 				)}
 			</div>
 
-			{/* Show type-specific panels */}
 			{blueprint.blueprint ? <ContentsPanel blueprint={blueprint} /> : null}
 			{blueprint.upgrade_planner ? <UpgradePlannerPanel blueprint={blueprint} /> : null}
 			{blueprint.deconstruction_planner ? <DeconstructionPlannerPanel blueprint={blueprint} /> : null}

@@ -8,12 +8,6 @@ import {extractBlueprint} from '../parsing/blueprintParser';
 import {addBlueprint} from '../state/blueprintLocalStorage';
 import type {DatabaseBlueprintType} from '../storage/db';
 
-/**
- * - pasted: Whatever was pasted, a blueprint string, json, or url
- * - selection: Optional path within a blueprint book (e.g. "1.2.3")
- * - focusTextarea: Whether to focus the textarea when the component mounts
- * - fetchType: The type of fetch operation that produced this blueprint ('edit' when edited)
- */
 export interface RootSearch {
 	pasted?: string;
 	selection?: string;
@@ -28,33 +22,6 @@ export const searchSchema = z.object({
 	fetchType: z.enum(['url', 'json', 'data', 'edit']).optional().catch(undefined),
 });
 
-const parseFetchType = (search: Record<string, unknown>): BlueprintFetchMethod | undefined => {
-	if (search && typeof search.fetchType === 'string' && ['url', 'json', 'data', 'edit'].includes(search.fetchType)) {
-		return search.fetchType as BlueprintFetchMethod;
-	}
-	return undefined;
-};
-
-const extractBlueprintIcons = (contentIcons: unknown) => {
-	const icons = Array.isArray(contentIcons) ? contentIcons : [];
-
-	return icons.map((icon: unknown) => {
-		if (typeof icon !== 'object' || icon === null) {
-			return {name: 'unknown'};
-		}
-
-		const iconObj = icon as Record<string, unknown>;
-		const signalRaw = iconObj.signal;
-		const signal =
-			typeof signalRaw === 'object' && signalRaw !== null ? (signalRaw as Record<string, unknown>) : {};
-
-		return {
-			type: typeof signal.type === 'string' ? signal.type : undefined,
-			name: typeof signal.name === 'string' ? signal.name : '',
-		};
-	});
-};
-
 const saveToHistory = async (
 	result: {
 		success: boolean;
@@ -67,16 +34,16 @@ const saveToHistory = async (
 ) => {
 	const wrapper = new BlueprintWrapper(result.blueprintString);
 	const type = wrapper.getType()?.replace('-', '_');
-	const content = wrapper.getContent() as Record<string, unknown>;
-
-	if (!(content && type)) return;
 
 	const metadata = {
 		type: type as DatabaseBlueprintType,
-		label: content.label as string | undefined,
-		description: content.description as string | undefined,
-		gameVersion: (content.version as number | undefined)?.toString(),
-		icons: extractBlueprintIcons(content.icons),
+		label: wrapper.getLabel(),
+		description: wrapper.getDescription(),
+		gameVersion: wrapper.getVersion()?.toString(),
+		icons: wrapper.getIcons().map((icon) => ({
+			type: icon.signal.type,
+			name: icon.signal.name,
+		})),
 	};
 
 	let validSelection: string | undefined;
@@ -115,7 +82,7 @@ export const Route = createFileRoute('/')({
 			};
 		};
 	}) => {
-		const fetchType = parseFetchType(search);
+		const fetchType = search.fetchType as BlueprintFetchMethod | undefined;
 		const result = await fetchBlueprint({pasted, fetchType}, queryClient);
 
 		if (result?.success && result.blueprintString) {
