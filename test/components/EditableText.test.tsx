@@ -1,19 +1,14 @@
 import {fireEvent, render, screen} from '@testing-library/react';
-import {describe, expect, test, vi} from 'vitest';
+import {describe, expect, test, vi} from 'vite-plus/test';
 
 import {EditableText} from '../../src/components/ui/EditableText';
 import '../setup';
 
 describe('EditableText component', () => {
 	test('renders in display mode initially', () => {
-		const onChange = vi.fn();
+		const onChange = vi.fn<(value: string) => void>();
 
-		render(
-			<EditableText
-				value="Test Value"
-				onChange={onChange}
-			/>,
-		);
+		render(<EditableText value="Test Value" onChange={onChange} />);
 
 		expect(screen.getByText('Test Value')).toBeInTheDocument();
 		expect(screen.getByText('✎')).toBeInTheDocument();
@@ -21,28 +16,17 @@ describe('EditableText component', () => {
 	});
 
 	test('displays placeholder when no value is provided', () => {
-		const onChange = vi.fn();
+		const onChange = vi.fn<(value: string) => void>();
 
-		render(
-			<EditableText
-				value=""
-				onChange={onChange}
-				placeholder="Enter something..."
-			/>,
-		);
+		render(<EditableText value="" onChange={onChange} placeholder="Enter something..." />);
 
 		expect(screen.getByText('Enter something...')).toBeInTheDocument();
 	});
 
 	test('switches to edit mode when clicked', () => {
-		const onChange = vi.fn();
+		const onChange = vi.fn<(value: string) => void>();
 
-		render(
-			<EditableText
-				value="Test Value"
-				onChange={onChange}
-			/>,
-		);
+		render(<EditableText value="Test Value" onChange={onChange} />);
 
 		fireEvent.click(screen.getByText('Test Value'));
 
@@ -53,14 +37,9 @@ describe('EditableText component', () => {
 	});
 
 	test('calls onChange when saving changes', () => {
-		const onChange = vi.fn();
+		const onChange = vi.fn<(value: string) => void>();
 
-		render(
-			<EditableText
-				value="Initial Value"
-				onChange={onChange}
-			/>,
-		);
+		render(<EditableText value="Initial Value" onChange={onChange} />);
 
 		// Click to enter edit mode
 		fireEvent.click(screen.getByText('Initial Value'));
@@ -82,14 +61,9 @@ describe('EditableText component', () => {
 	});
 
 	test('keeps old value when canceling', () => {
-		const onChange = vi.fn();
+		const onChange = vi.fn<(value: string) => void>();
 
-		render(
-			<EditableText
-				value="Original Value"
-				onChange={onChange}
-			/>,
-		);
+		render(<EditableText value="Original Value" onChange={onChange} />);
 
 		// Click to enter edit mode
 		fireEvent.click(screen.getByText('Original Value'));
@@ -110,15 +84,9 @@ describe('EditableText component', () => {
 	});
 
 	test('handles Enter key to save in single line mode', () => {
-		const onChange = vi.fn();
+		const onChange = vi.fn<(value: string) => void>();
 
-		render(
-			<EditableText
-				value="Single Line Text"
-				onChange={onChange}
-				multiline={false}
-			/>,
-		);
+		render(<EditableText value="Single Line Text" onChange={onChange} multiline={false} />);
 
 		// Click to enter edit mode
 		fireEvent.click(screen.getByText('Single Line Text'));
@@ -137,14 +105,9 @@ describe('EditableText component', () => {
 	});
 
 	test('handles Escape key to cancel', () => {
-		const onChange = vi.fn();
+		const onChange = vi.fn<(value: string) => void>();
 
-		render(
-			<EditableText
-				value="Sample Text"
-				onChange={onChange}
-			/>,
-		);
+		render(<EditableText value="Sample Text" onChange={onChange} />);
 
 		// Click to enter edit mode
 		fireEvent.click(screen.getByText('Sample Text'));
@@ -165,25 +128,18 @@ describe('EditableText component', () => {
 		expect(screen.getByText('Sample Text')).toBeInTheDocument();
 	});
 
-	test.skip('renders text area for multiline mode', () => {
-		const onChange = vi.fn();
+	test('renders text area for multiline mode', () => {
+		const onChange = vi.fn<(value: string) => void>();
 
-		render(
-			<EditableText
-				value="Multiline\nText\nContent"
-				onChange={onChange}
-				multiline={true}
-				rows={5}
-			/>,
-		);
+		render(<EditableText value={'Multiline\nText\nContent'} onChange={onChange} multiline={true} rows={5} />);
 
 		// Click to enter edit mode using container query selector since newlines cause issues with getByText
 		const container = screen.getByTitle('Click to edit');
 		fireEvent.click(container);
 
 		// Should render a textarea instead of input
-		const textarea = screen.getByDisplayValue('Multiline\nText\nContent');
-		expect(textarea.tagName).toBe('TEXTAREA');
+		const textarea = screen.getByRole<HTMLTextAreaElement>('textbox');
+		expect(textarea).toHaveValue('Multiline\nText\nContent');
 		expect(textarea).toHaveAttribute('rows', '5');
 	});
 });

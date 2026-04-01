@@ -8,11 +8,6 @@ import {extractBlueprint} from '../parsing/blueprintParser';
 import {addBlueprint} from '../state/blueprintLocalStorage';
 import type {BlueprintGameData, DatabaseBlueprintType} from '../storage/db';
 
-/**
- * - pasted: Whatever was pasted, a blueprint string, json, or url
- * - selection: Optional path within a blueprint book (e.g. "1.2.3")
- * - focusTextarea: Whether to focus the textarea when the component mounts
- */
 export interface RootSearch {
 	pasted?: string;
 	selection?: string;
@@ -34,7 +29,6 @@ export const Route = createFileRoute('/')({
 	loader: async ({deps: {pasted, selection, fetchType}, context: {queryClient}}) => {
 		const result = await fetchBlueprint({pasted, fetchType}, queryClient);
 
-		// If successful, save to history
 		if (result?.success === true) {
 			try {
 				const wrapper = new BlueprintWrapper(result.blueprintString);

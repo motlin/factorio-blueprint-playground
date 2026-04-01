@@ -16,12 +16,14 @@ describe('Nested Blueprint Edit Integration', () => {
 	it('should save entire book structure when editing nested blueprint', async () => {
 		const rootBook: BlueprintString = {
 			blueprint_book: {
+				item: 'blueprint-book',
 				label: 'My Book',
 				version: 1,
 				blueprints: [
 					{
 						index: 0,
 						blueprint: {
+							item: 'blueprint',
 							label: 'First Blueprint',
 							description: 'First Description',
 							version: 1,
@@ -31,6 +33,7 @@ describe('Nested Blueprint Edit Integration', () => {
 					{
 						index: 1,
 						blueprint: {
+							item: 'blueprint',
 							label: 'Second Blueprint',
 							description: 'Second Description',
 							version: 1,
@@ -74,18 +77,21 @@ describe('Nested Blueprint Edit Integration', () => {
 	it('should maintain path integrity through nested book edits', async () => {
 		const deepBook: BlueprintString = {
 			blueprint_book: {
+				item: 'blueprint-book',
 				label: 'Root Book',
 				version: 1,
 				blueprints: [
 					{
 						index: 0,
 						blueprint_book: {
+							item: 'blueprint-book',
 							label: 'Nested Book 1',
 							version: 1,
 							blueprints: [
 								{
 									index: 0,
 									blueprint: {
+										item: 'blueprint',
 										label: 'Deep Blueprint',
 										version: 1,
 										entities: [],

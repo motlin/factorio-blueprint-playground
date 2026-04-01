@@ -167,7 +167,6 @@ const BlueprintInfoPanelsComponent = ({blueprint, rootBlueprint, selectedPath, o
 				)}
 			</div>
 
-			{/* Show type-specific panels */}
 			{blueprint.blueprint ? <ContentsPanel blueprint={blueprint} /> : null}
 			{blueprint.blueprint || blueprint.blueprint_book ? (
 				<LintPanel blueprint={blueprint} selectedPath={selectedPath} onSelect={onSelect} />

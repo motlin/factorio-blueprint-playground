@@ -14,8 +14,8 @@ vi.mock('@tanstack/react-router', async () => {
 	const actual = await vi.importActual<typeof import('@tanstack/react-router')>('@tanstack/react-router');
 	return {
 		...actual,
-		getRouteApi: vi.fn(() => ({id: '/'})),
-		useNavigate: vi.fn(() => vi.fn()),
+		getRouteApi: vi.fn<() => {id: string}>(() => ({id: '/'})),
+		useNavigate: vi.fn<() => () => void>(() => vi.fn<() => void>()),
 	};
 });
 

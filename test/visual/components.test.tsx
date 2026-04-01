@@ -26,7 +26,7 @@ function replaceIconUrls(html: string): string {
 	);
 }
 
-describe.sequential('Visual regression tests', () => {
+describe('Visual regression tests', {concurrent: false}, () => {
 	it('BasicInfoPanel renders consistently', async () => {
 		const mockBlueprint = {
 			blueprint: {

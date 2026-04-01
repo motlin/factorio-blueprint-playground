@@ -22,8 +22,8 @@ describe('BasicInfoPanel editing functionality', () => {
 	});
 
 	test('renders in editable mode when editable prop is true', () => {
-		const onLabelEdit = vi.fn();
-		const onDescriptionEdit = vi.fn();
+		const onLabelEdit = vi.fn<(label: string) => void>();
+		const onDescriptionEdit = vi.fn<(description: string) => void>();
 
 		render(
 			<BasicInfoPanel
@@ -43,8 +43,8 @@ describe('BasicInfoPanel editing functionality', () => {
 	});
 
 	test('calls onLabelEdit when label is changed', () => {
-		const onLabelEdit = vi.fn();
-		const onDescriptionEdit = vi.fn();
+		const onLabelEdit = vi.fn<(label: string) => void>();
+		const onDescriptionEdit = vi.fn<(description: string) => void>();
 
 		render(
 			<BasicInfoPanel
@@ -57,8 +57,8 @@ describe('BasicInfoPanel editing functionality', () => {
 
 		const labelInput = screen.getByLabelText('Label:');
 
-		const descriptionTextarea = screen.getByPlaceholderText('Enter blueprint description...');
-		const currentDescription = descriptionTextarea.value || '';
+		const descriptionTextarea = screen.getByPlaceholderText<HTMLTextAreaElement>('Enter blueprint description...');
+		const currentDescription = descriptionTextarea.value;
 
 		fireEvent.change(labelInput, {
 			target: {value: 'New Label Text'},
@@ -75,8 +75,8 @@ describe('BasicInfoPanel editing functionality', () => {
 	});
 
 	test('calls onDescriptionEdit when description is changed', () => {
-		const onLabelEdit = vi.fn();
-		const onDescriptionEdit = vi.fn();
+		const onLabelEdit = vi.fn<(label: string) => void>();
+		const onDescriptionEdit = vi.fn<(description: string) => void>();
 
 		render(
 			<BasicInfoPanel
@@ -87,8 +87,7 @@ describe('BasicInfoPanel editing functionality', () => {
 			/>,
 		);
 
-		const descriptionTextarea = screen.getByLabelText('Description:');
-		if (!descriptionTextarea) throw new Error('Description textarea not found');
+		const descriptionTextarea = screen.getByLabelText<HTMLTextAreaElement>('Description:');
 
 		fireEvent.change(descriptionTextarea, {
 			target: {value: 'New Description Text'},

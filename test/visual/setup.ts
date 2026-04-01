@@ -10,11 +10,13 @@ let page: Awaited<ReturnType<Awaited<ReturnType<typeof chromium.launch>>['newPag
 
 const skipBrowserTests = process.env.CI === 'true' || process.env.SKIP_BROWSER_TESTS === 'true';
 
-const tempDir = path.join(__dirname, 'temp');
+const tempRoot = path.join(__dirname, 'temp');
+let tempDir: string;
 const snapshotDir = path.join(__dirname, '__snapshots__');
 
 beforeAll(async () => {
-	await fs.mkdir(tempDir, {recursive: true});
+	await fs.mkdir(tempRoot, {recursive: true});
+	tempDir = await fs.mkdtemp(path.join(tempRoot, 'suite-'));
 	await fs.mkdir(snapshotDir, {recursive: true});
 
 	if (skipBrowserTests) {
@@ -40,7 +42,7 @@ afterAll(async () => {
 	const files = await fs.readdir(tempDir);
 	for (const file of files) {
 		if (file.endsWith('-temp.html') || file.endsWith('-temp.png')) {
-			await fs.unlink(path.join(tempDir, file));
+			await fs.rm(path.join(tempDir, file), {force: true});
 		}
 	}
 }, 30_000);

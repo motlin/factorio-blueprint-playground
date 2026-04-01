@@ -1,4 +1,4 @@
-import {beforeEach, describe, expect, it, vi} from 'vitest';
+import {beforeEach, describe, expect, it, vi} from 'vite-plus/test';
 
 // Create mocks before imports to avoid hoisting issues
 vi.mock('../../src/storage/db', () => {

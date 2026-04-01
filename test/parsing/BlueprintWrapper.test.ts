@@ -35,9 +35,6 @@ describe('BlueprintWrapper', () => {
 				version: 0,
 			},
 		});
-		expect(wrapper.toString()).toBe(
-			'{"blueprint":{"description":"Updated description","item":"blueprint","label":"Updated label","version":0}}',
-		);
 	});
 
 	it('updates planner descriptions in settings', () => {

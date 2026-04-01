@@ -1,4 +1,3 @@
-// src/parsing/BlueprintWrapper.ts
 import type {Blueprint, BlueprintBook, BlueprintString, DeconstructionPlanner, Icon, UpgradePlanner} from './types';
 
 export interface BlueprintInfo {
@@ -104,9 +103,5 @@ export class BlueprintWrapper {
 			content.description = newDescription;
 		}
 		return true;
-	}
-
-	toString(): string {
-		return JSON.stringify(this.data);
 	}
 }

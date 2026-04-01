@@ -25,17 +25,17 @@ export const EditableText = ({
 }: EditableTextProps) => {
 	const [isEditing, setIsEditing] = useState(false);
 	const [editValue, setEditValue] = useState(value);
-	const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
+	const inputRef = useRef<HTMLInputElement>(null);
+	const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-	// Update internal state when value prop changes
 	useEffect(() => {
 		setEditValue(value);
 	}, [value]);
 
-	// Focus input when entering edit mode
 	useEffect(() => {
-		if (isEditing && inputRef.current) {
-			inputRef.current.focus();
+		if (isEditing) {
+			inputRef.current?.focus();
+			textareaRef.current?.focus();
 		}
 	}, [isEditing]);
 
@@ -70,17 +70,19 @@ export const EditableText = ({
 						onChange={setEditValue}
 						placeholder={placeholder}
 						rows={rows}
-						ref={inputRef as React.RefObject<HTMLTextAreaElement>}
+						ref={textareaRef}
 						onKeyDown={handleKeyDown}
 					/>
 				) : (
 					<input
 						type="text"
 						value={editValue}
-						onChange={(e) => setEditValue(e.target.value)}
+						onChange={(e) => {
+							setEditValue(e.target.value);
+						}}
 						placeholder={placeholder}
 						className="editable-input w100p"
-						ref={inputRef as React.RefObject<HTMLInputElement>}
+						ref={inputRef}
 						onKeyDown={handleKeyDown}
 					/>
 				)}
@@ -96,10 +98,12 @@ export const EditableText = ({
 		<button
 			type="button"
 			className={`editable-display ${className}`}
-			onClick={() => setIsEditing(true)}
+			onClick={() => {
+				setIsEditing(true);
+			}}
 			title="Click to edit"
 		>
-			{richText || value || <span className="editable-placeholder">{placeholder}</span>}
+			{richText ?? (value === '' ? <span className="editable-placeholder">{placeholder}</span> : value)}
 			<span className="edit-icon">✎</span>
 		</button>
 	);

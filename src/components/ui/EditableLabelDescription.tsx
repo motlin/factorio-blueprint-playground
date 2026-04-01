@@ -7,7 +7,7 @@ interface EditableLabelDescriptionProps {
 	label: string;
 	description: string;
 	onSave: (label: string, description: string) => void;
-	onCancel: () => void;
+	onCancel?: () => void;
 	isEditing: boolean;
 }
 
@@ -24,42 +24,35 @@ export const EditableLabelDescription = ({
 	const labelId = useId();
 	const descriptionId = useId();
 
-	// Update local state when props change
 	useEffect(() => {
 		setEditedLabel(label);
 		setEditedDescription(description);
 	}, [label, description, isEditing]);
 
-	// Focus label input when entering edit mode
 	useEffect(() => {
 		if (isEditing && labelInputRef.current) {
 			labelInputRef.current.focus();
 		}
 	}, [isEditing]);
 
-	// Track changes and notify parent
 	useEffect(() => {
 		const labelChanged = editedLabel !== label;
 		const descriptionChanged = editedDescription !== description;
 
-		// Notify parent of changes so it can enable/disable the save button
 		if (labelChanged || descriptionChanged) {
 			onSave(editedLabel, editedDescription);
 		}
 	}, [editedLabel, editedDescription, label, description, onSave]);
 
-	// Handle keyboard events
 	const handleKeyDown = (e: React.KeyboardEvent) => {
 		if (e.key === 'Escape') {
-			onCancel();
+			onCancel?.();
 		} else if (e.key === 'Enter' && e.ctrlKey) {
-			// Save on Ctrl+Enter
 			e.preventDefault();
 			onSave(editedLabel, editedDescription);
 		}
 	};
 
-	// Component is not rendered in non-editing state now
 	if (!isEditing) {
 		return null;
 	}
@@ -72,7 +65,9 @@ export const EditableLabelDescription = ({
 					id={labelId}
 					type="text"
 					value={editedLabel}
-					onChange={(e) => setEditedLabel(e.target.value)}
+					onChange={(e) => {
+						setEditedLabel(e.target.value);
+					}}
 					placeholder="Enter blueprint label..."
 					className="editable-input w100p"
 					ref={labelInputRef}

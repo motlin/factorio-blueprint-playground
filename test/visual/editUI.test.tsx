@@ -12,14 +12,14 @@ function renderToStaticHTML(element: React.ReactElement): string {
 	return div.innerHTML;
 }
 
-describe.sequential('Edit UI Visual regression tests', () => {
+describe('Edit UI Visual regression tests', {concurrent: false}, () => {
 	it('EditableLabelDescription renders in edit mode with empty fields', async () => {
 		const html = renderToStaticHTML(
 			<EditableLabelDescription
 				label=""
 				description=""
-				onSave={vi.fn()}
-				onCancel={vi.fn()}
+				onSave={vi.fn<() => void>()}
+				onCancel={vi.fn<() => void>()}
 				isEditing={true}
 			/>,
 		);
@@ -31,8 +31,8 @@ describe.sequential('Edit UI Visual regression tests', () => {
 			<EditableLabelDescription
 				label="My Blueprint Label"
 				description="This is a description of my blueprint with some details about what it does."
-				onSave={vi.fn()}
-				onCancel={vi.fn()}
+				onSave={vi.fn<() => void>()}
+				onCancel={vi.fn<() => void>()}
 				isEditing={true}
 			/>,
 		);
@@ -53,8 +53,8 @@ It should handle multiple paragraphs gracefully and show proper text wrapping be
 			<EditableLabelDescription
 				label={longLabel}
 				description={longDescription}
-				onSave={vi.fn()}
-				onCancel={vi.fn()}
+				onSave={vi.fn<() => void>()}
+				onCancel={vi.fn<() => void>()}
 				isEditing={true}
 			/>,
 		);
@@ -71,8 +71,8 @@ It should handle multiple paragraphs gracefully and show proper text wrapping be
 					<EditableLabelDescription
 						label="Editable Blueprint"
 						description="This blueprint is being edited"
-						onSave={vi.fn()}
-						onCancel={vi.fn()}
+						onSave={vi.fn<() => void>()}
+						onCancel={vi.fn<() => void>()}
 						isEditing={true}
 					/>
 				</div>
@@ -91,8 +91,8 @@ It should handle multiple paragraphs gracefully and show proper text wrapping be
 				<EditableLabelDescription
 					label="Mobile Blueprint"
 					description="Testing responsive behavior on mobile devices"
-					onSave={vi.fn()}
-					onCancel={vi.fn()}
+					onSave={vi.fn<() => void>()}
+					onCancel={vi.fn<() => void>()}
 					isEditing={true}
 				/>
 			</MobileWrapper>,
@@ -110,8 +110,8 @@ It should handle multiple paragraphs gracefully and show proper text wrapping be
 				<EditableLabelDescription
 					label="Tablet Blueprint"
 					description="Testing responsive behavior on tablet devices with medium screen width"
-					onSave={vi.fn()}
-					onCancel={vi.fn()}
+					onSave={vi.fn<() => void>()}
+					onCancel={vi.fn<() => void>()}
 					isEditing={true}
 				/>
 			</TabletWrapper>,
@@ -122,10 +122,7 @@ It should handle multiple paragraphs gracefully and show proper text wrapping be
 	it('Edit UI visual consistency with existing panels', async () => {
 		const ConsistencyTestWrapper = () => (
 			<div>
-				<div
-					className="panel"
-					style={{marginBottom: '20px'}}
-				>
+				<div className="panel" style={{marginBottom: '20px'}}>
 					<div className="title-bar">
 						<h3>Standard Panel Style</h3>
 					</div>
@@ -150,8 +147,8 @@ It should handle multiple paragraphs gracefully and show proper text wrapping be
 						<EditableLabelDescription
 							label="Consistency Test"
 							description="Checking visual consistency with existing UI components"
-							onSave={vi.fn()}
-							onCancel={vi.fn()}
+							onSave={vi.fn<() => void>()}
+							onCancel={vi.fn<() => void>()}
 							isEditing={true}
 						/>
 					</div>
@@ -170,8 +167,8 @@ It should handle multiple paragraphs gracefully and show proper text wrapping be
 				description={`Description with [item=iron-plate] game tags and [color=red]colored text[/color].
 
 Also includes special characters: < > & " ' and some unicode: → ← ↑ ↓`}
-				onSave={vi.fn()}
-				onCancel={vi.fn()}
+				onSave={vi.fn<() => void>()}
+				onCancel={vi.fn<() => void>()}
 				isEditing={true}
 			/>,
 		);
@@ -181,10 +178,7 @@ Also includes special characters: < > & " ' and some unicode: → ← ↑ ↓`}
 	it('Edit form button states', async () => {
 		const ButtonStatesWrapper = () => (
 			<div>
-				<div
-					className="panel"
-					style={{marginBottom: '20px'}}
-				>
+				<div className="panel" style={{marginBottom: '20px'}}>
 					<div className="title-bar">
 						<h3>No Changes - Save Disabled</h3>
 					</div>
@@ -192,26 +186,14 @@ Also includes special characters: < > & " ' and some unicode: → ← ↑ ↓`}
 						<div className="blueprint-info-edit">
 							<div className="editable-field">
 								<label>Label:</label>
-								<input
-									className="editable-input w100p"
-									value="Original Label"
-									readOnly
-								/>
+								<input className="editable-input w100p" value="Original Label" readOnly />
 							</div>
 							<div className="editable-field">
 								<label>Description:</label>
-								<textarea
-									className="editable-textarea"
-									value="Original Description"
-									readOnly
-								/>
+								<textarea className="editable-textarea" value="Original Description" readOnly />
 							</div>
 							<div className="editable-actions">
-								<button
-									type="button"
-									className="button-green button-green-disabled"
-									disabled
-								>
+								<button type="button" className="button-green button-green-disabled" disabled>
 									💾 Save Changes
 								</button>
 								<button type="button" className="button-green">
@@ -230,19 +212,11 @@ Also includes special characters: < > & " ' and some unicode: → ← ↑ ↓`}
 						<div className="blueprint-info-edit">
 							<div className="editable-field">
 								<label>Label:</label>
-								<input
-									className="editable-input w100p"
-									value="Modified Label"
-									readOnly
-								/>
+								<input className="editable-input w100p" value="Modified Label" readOnly />
 							</div>
 							<div className="editable-field">
 								<label>Description:</label>
-								<textarea
-									className="editable-textarea"
-									value="Modified Description"
-									readOnly
-								/>
+								<textarea className="editable-textarea" value="Modified Description" readOnly />
 							</div>
 							<div className="editable-actions">
 								<button type="button" className="button-green">

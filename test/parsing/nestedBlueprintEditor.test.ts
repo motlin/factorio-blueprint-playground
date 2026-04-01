@@ -129,9 +129,14 @@ describe('nestedBlueprintEditor', () => {
 			const updater = createLabelDescriptionUpdater('New Upgrade', 'New Upgrade Desc');
 			const result = updateNestedBlueprint(upgradePlanner, '', updater);
 
-			expect(result).toBeTruthy();
-			expect(result?.upgrade_planner?.label).toBe('New Upgrade');
-			expect(result?.upgrade_planner?.settings.description).toBe('New Upgrade Desc');
+			expect(result).toStrictEqual({
+				upgrade_planner: {
+					item: 'upgrade-planner',
+					label: 'New Upgrade',
+					version: 1,
+					settings: {description: 'New Upgrade Desc', mappers: []},
+				},
+			});
 		});
 
 		it('should handle deconstruction planner updates', () => {
@@ -149,9 +154,14 @@ describe('nestedBlueprintEditor', () => {
 			const updater = createLabelDescriptionUpdater('New Decon', 'New Decon Desc');
 			const result = updateNestedBlueprint(deconstructionPlanner, '', updater);
 
-			expect(result).toBeTruthy();
-			expect(result?.deconstruction_planner?.label).toBe('New Decon');
-			expect(result?.deconstruction_planner?.settings.description).toBe('New Decon Desc');
+			expect(result).toStrictEqual({
+				deconstruction_planner: {
+					item: 'deconstruction-planner',
+					label: 'New Decon',
+					version: 1,
+					settings: {description: 'New Decon Desc'},
+				},
+			});
 		});
 
 		it('should update empty planner settings', () => {
@@ -169,9 +179,17 @@ describe('nestedBlueprintEditor', () => {
 			const updater = createLabelDescriptionUpdater('New', 'New Description');
 			const result = updateNestedBlueprint(upgradePlanner, '', updater);
 
-			expect(result).toBeTruthy();
-			expect(result?.upgrade_planner?.settings).toBeDefined();
-			expect(result?.upgrade_planner?.settings.description).toBe('New Description');
+			expect(result).toStrictEqual({
+				upgrade_planner: {
+					item: 'upgrade-planner',
+					label: 'New',
+					version: 1,
+					settings: {
+						description: 'New Description',
+						mappers: [],
+					},
+				},
+			});
 		});
 	});
 

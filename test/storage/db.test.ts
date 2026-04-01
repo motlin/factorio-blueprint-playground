@@ -1,4 +1,4 @@
-import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vite-plus/test';
 import 'fake-indexeddb/auto';
 
 import {BlueprintDatabase, generateSha} from '../../src/storage/db';

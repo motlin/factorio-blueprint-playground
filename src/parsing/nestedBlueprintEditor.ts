@@ -1,35 +1,22 @@
 import type {BlueprintString} from './types';
 
-/**
- * Immutably updates a nested blueprint within a blueprint book structure.
- * Returns a new blueprint structure with the nested blueprint updated.
- *
- * @param rootBlueprint The root blueprint structure
- * @param path The dot-separated path to the nested blueprint (e.g., "1.2")
- * @param updater A function that takes the nested blueprint and returns an updated version
- * @returns A new blueprint structure with the update applied, or null if update failed
- */
 export function updateNestedBlueprint(
 	rootBlueprint: BlueprintString,
 	path: string,
 	updater: (blueprint: BlueprintString) => BlueprintString,
 ): BlueprintString | null {
-	// If no path, we're updating the root
-	if (!path) {
+	if (path === '') {
 		return updater(rootBlueprint);
 	}
 
 	try {
 		const parts = path.split('.');
 
-		// Recursive function to update at the specified path
 		function updateAtPath(current: BlueprintString, remainingPath: string[]): BlueprintString | null {
 			if (remainingPath.length === 0) {
-				// We've reached the target - apply the updater
 				return updater(current);
 			}
 
-			// We need to go deeper
 			const [nextIndex, ...restPath] = remainingPath;
 			const index = parseInt(nextIndex, 10) - 1;
 
@@ -43,18 +30,15 @@ export function updateNestedBlueprint(
 				return null;
 			}
 
-			// Recursively update the nested blueprint
 			const nestedBlueprint = current.blueprint_book.blueprints[index];
 			const updatedNested = updateAtPath(nestedBlueprint, restPath);
-			if (!updatedNested) {
+			if (updatedNested == null) {
 				return null;
 			}
 
-			// Create a new blueprint book with the updated nested blueprint
 			const newBlueprints = [...current.blueprint_book.blueprints];
 			newBlueprints[index] = {...updatedNested, index: nestedBlueprint.index};
 
-			// Return a new blueprint structure with the updated book
 			return {
 				...current,
 				blueprint_book: {
@@ -71,21 +55,13 @@ export function updateNestedBlueprint(
 	}
 }
 
-/**
- * Creates an updater function that updates the label and description of a blueprint
- * @param newLabel The new label to set
- * @param newDescription The new description to set
- * @returns An updater function for use with updateNestedBlueprint
- */
 export function createLabelDescriptionUpdater(
 	newLabel: string,
 	newDescription: string,
 ): (blueprint: BlueprintString) => BlueprintString {
 	return (blueprint: BlueprintString): BlueprintString => {
-		// Deep clone to ensure immutability
 		const updated = structuredClone(blueprint);
 
-		// Update based on blueprint type
 		if (updated.blueprint) {
 			updated.blueprint.label = newLabel;
 			updated.blueprint.description = newDescription;

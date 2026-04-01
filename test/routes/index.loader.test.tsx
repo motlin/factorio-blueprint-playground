@@ -82,7 +82,9 @@ describe('Index route loader', () => {
 			pasted: 'test',
 			blueprintString: {
 				blueprint: {
+					item: 'blueprint',
 					label: 'Edited Blueprint',
+					version: 0,
 				},
 			},
 		});
@@ -103,7 +105,9 @@ describe('Index route loader', () => {
 			pasted: 'test',
 			blueprintString: {
 				blueprint: {
+					item: 'blueprint',
 					label: 'Edited Blueprint',
+					version: 0,
 				},
 			},
 		});

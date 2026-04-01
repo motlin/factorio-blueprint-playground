@@ -33,13 +33,11 @@ interface BasicInfoPanelProps {
 	editable?: boolean;
 }
 
-const doNothing = () => {};
-
 const BasicInfoPanelComponent = ({
 	blueprint,
 	onLabelEdit,
 	onDescriptionEdit,
-	onCancelEdit = doNothing,
+	onCancelEdit,
 	editable = false,
 }: BasicInfoPanelProps) => {
 	if (!blueprint) return null;

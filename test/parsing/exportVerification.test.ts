@@ -47,6 +47,8 @@ describe('Export Verification for Edited Blueprints', () => {
 		const editedBlueprint: BlueprintString = {
 			blueprint: {
 				...originalBlueprint.blueprint,
+				item: 'blueprint',
+				version: originalBlueprint.blueprint?.version ?? 0,
 				label: 'Edited Label',
 				description: 'Edited Description',
 			},
@@ -180,6 +182,8 @@ describe('Export Verification for Edited Blueprints', () => {
 		const editedBlueprint: BlueprintString = {
 			blueprint: {
 				...originalBlueprint.blueprint,
+				item: 'blueprint',
+				version: originalBlueprint.blueprint?.version ?? 0,
 				label: 'Edited Storage Test',
 				description: 'Edited Storage Description',
 			},
@@ -255,6 +259,8 @@ describe('Export Verification for Edited Blueprints', () => {
 		const editedBlueprint: BlueprintString = {
 			blueprint: {
 				...originalBlueprint.blueprint,
+				item: 'blueprint',
+				version: originalBlueprint.blueprint?.version ?? 0,
 				description: 'Edited',
 			},
 		};
