@@ -1,6 +1,6 @@
 import {render, screen} from '@testing-library/react';
 import type {ReactElement} from 'react';
-import {describe, expect, test} from 'vite-plus/test';
+import {describe, expect, test, vi} from 'vite-plus/test';
 
 import {BlueprintInfoPanels} from '../../src/components/blueprint/panels/BlueprintInfoPanels';
 import type {BlueprintString} from '../../src/parsing/types';
@@ -9,6 +9,15 @@ import '../../test/setup';
 function renderPanels(element: ReactElement) {
 	return render(element);
 }
+
+vi.mock('@tanstack/react-router', async () => {
+	const actual = await vi.importActual<typeof import('@tanstack/react-router')>('@tanstack/react-router');
+	return {
+		...actual,
+		getRouteApi: vi.fn(() => ({id: '/'})),
+		useNavigate: vi.fn(() => vi.fn()),
+	};
+});
 
 describe('BlueprintInfoPanels', () => {
 	test('renders nothing when no blueprint is provided', () => {

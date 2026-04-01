@@ -1,4 +1,4 @@
-import {beforeEach, describe, expect, it} from 'vitest';
+import {beforeEach, describe, expect, it} from 'vite-plus/test';
 
 import 'fake-indexeddb/auto';
 import {createLabelDescriptionUpdater, updateNestedBlueprint} from '../../src/parsing/nestedBlueprintEditor';
@@ -45,45 +45,30 @@ describe('Nested Blueprint Edit Integration', () => {
 		const updater = createLabelDescriptionUpdater('Updated Second', 'New Second Description');
 		const updatedRoot = updateNestedBlueprint(rootBook, '2', updater);
 
-		expect(updatedRoot).toBeTruthy();
+		if (updatedRoot == null) {
+			throw new Error('Expected nested blueprint update to succeed');
+		}
 
 		// Save the updated structure
 		const blueprintDataString = JSON.stringify(updatedRoot);
-		const result = await addBlueprint(blueprintDataString, updatedRoot!, '2', 'edit');
+		const gameData = {
+			type: 'blueprint_book' as const,
+			label: 'My Book',
+			gameVersion: '1',
+			icons: [],
+		};
+		const result = await addBlueprint(blueprintDataString, gameData, '2', 'edit');
+		const {sha, createdOn, lastUpdatedOn, ...metadata} = result.metadata;
 
-		expect(result).toMatchObject({
-			metadata: {
-				fetchMethod: 'edit',
-				selection: '2',
-				data: blueprintDataString,
-			},
-			gameData: {
-				blueprint_book: {
-					label: 'My Book',
-					version: 1,
-					blueprints: [
-						{
-							index: 0,
-							blueprint: {
-								label: 'First Blueprint',
-								description: 'First Description',
-								version: 1,
-								entities: [],
-							},
-						},
-						{
-							index: 1,
-							blueprint: {
-								label: 'Updated Second',
-								description: 'New Second Description',
-								version: 1,
-								entities: [],
-							},
-						},
-					],
-				},
-			},
+		expect(sha).toBeTypeOf('string');
+		expect(createdOn).toBeTypeOf('number');
+		expect(lastUpdatedOn).toBeTypeOf('number');
+		expect(metadata).toStrictEqual({
+			fetchMethod: 'edit',
+			selection: '2',
+			data: blueprintDataString,
 		});
+		expect(result.gameData).toStrictEqual(gameData);
 	});
 
 	it('should maintain path integrity through nested book edits', async () => {
@@ -117,48 +102,33 @@ describe('Nested Blueprint Edit Integration', () => {
 		const updater = createLabelDescriptionUpdater('Updated Deep Blueprint', 'New Deep Description');
 		const updatedRoot = updateNestedBlueprint(deepBook, '1.1', updater);
 
-		expect(updatedRoot).toBeTruthy();
+		if (updatedRoot == null) {
+			throw new Error('Expected deep blueprint update to succeed');
+		}
 
 		// Verify the path can still be used to extract the edited blueprint
-		const nestedBook = updatedRoot?.blueprint_book?.blueprints[0].blueprint_book;
+		const nestedBook = updatedRoot.blueprint_book?.blueprints[0].blueprint_book;
 		expect(nestedBook?.blueprints[0].blueprint?.label).toBe('Updated Deep Blueprint');
 
 		// Save and verify selection path is maintained
 		const blueprintDataString = JSON.stringify(updatedRoot);
-		const result = await addBlueprint(blueprintDataString, updatedRoot!, '1.1', 'edit');
+		const gameData = {
+			type: 'blueprint_book' as const,
+			label: 'Root Book',
+			gameVersion: '1',
+			icons: [],
+		};
+		const result = await addBlueprint(blueprintDataString, gameData, '1.1', 'edit');
+		const {sha, createdOn, lastUpdatedOn, ...metadata} = result.metadata;
 
-		expect(result).toMatchObject({
-			metadata: {
-				fetchMethod: 'edit',
-				selection: '1.1',
-				data: blueprintDataString,
-			},
-			gameData: {
-				blueprint_book: {
-					label: 'Root Book',
-					version: 1,
-					blueprints: [
-						{
-							index: 0,
-							blueprint_book: {
-								label: 'Nested Book 1',
-								version: 1,
-								blueprints: [
-									{
-										index: 0,
-										blueprint: {
-											label: 'Updated Deep Blueprint',
-											description: 'New Deep Description',
-											version: 1,
-											entities: [],
-										},
-									},
-								],
-							},
-						},
-					],
-				},
-			},
+		expect(sha).toBeTypeOf('string');
+		expect(createdOn).toBeTypeOf('number');
+		expect(lastUpdatedOn).toBeTypeOf('number');
+		expect(metadata).toStrictEqual({
+			fetchMethod: 'edit',
+			selection: '1.1',
+			data: blueprintDataString,
 		});
+		expect(result.gameData).toStrictEqual(gameData);
 	});
 });

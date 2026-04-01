@@ -1,4 +1,4 @@
-import {afterEach, beforeEach, describe, expect, it} from 'vitest';
+import {afterEach, beforeEach, describe, expect, it} from 'vite-plus/test';
 import 'fake-indexeddb/auto';
 
 import {deserializeBlueprint, serializeBlueprint} from '../../src/parsing/blueprintParser';
@@ -200,11 +200,11 @@ describe('Export Verification for Edited Blueprints', () => {
 
 		// Verify immediately available
 		const retrievedEdited = await db.getBlueprint(savedEdited.metadata.sha);
-		expect(retrievedEdited).toEqual(savedEdited);
+		expect(retrievedEdited).toStrictEqual(savedEdited);
 
 		// Verify export matches storage
-		const reimported = deserializeBlueprint(retrievedEdited!.metadata.data);
-		expect(reimported).toEqual(editedBlueprint);
+		const reimported = deserializeBlueprint(savedEdited.metadata.data);
+		expect(reimported).toStrictEqual(editedBlueprint);
 	});
 
 	it('handles export of blueprints with special characters in labels', () => {
