@@ -12,7 +12,7 @@ export default defineConfig(() => {
 			}),
 		],
 		server: {
-			allowedHosts: process.env['VITE_ALLOWED_HOSTS']?.split(',').filter(Boolean) ?? [],
+			allowedHosts: process.env.VITE_ALLOWED_HOSTS?.split(',').filter(Boolean) ?? [],
 		},
 		build: {
 			rollupOptions: {
