@@ -44,7 +44,7 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.4.11",
-		"@chromatic-com/storybook": "^5.1.1",
+		"@chromatic-com/storybook": "^5.1.2",
 		"@cloudflare/workers-types": "^4.20260413.1",
 		"@playwright/test": "^1.59.1",
 		"@storybook/addon-a11y": "^10.3.5",
