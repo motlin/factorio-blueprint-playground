@@ -46,7 +46,7 @@
 		"@biomejs/biome": "2.4.16",
 		"@chromatic-com/storybook": "^5.1.2",
 		"@cloudflare/workers-types": "^4.20260525.1",
-		"@playwright/test": "^1.59.1",
+		"@playwright/test": "^1.60.0",
 		"@storybook/addon-a11y": "^10.3.6",
 		"@storybook/addon-docs": "^10.3.6",
 		"@storybook/addon-onboarding": "^10.4.1",
