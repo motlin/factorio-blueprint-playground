@@ -304,3 +304,70 @@ jobs:
                   else
                     echo "No changes needed by pre-commit"
                   fi
+
+    deploy-preview:
+        runs-on: ubuntu-latest
+        if: github.actor != 'dependabot[bot]'
+        permissions:
+            contents: read
+            pull-requests: write
+            deployments: write
+        steps:
+            - uses: actions/checkout@v6
+            - uses: jdx/mise-action@v4
+
+            - run: just build-ci
+
+            - name: Deploy to Cloudflare Pages
+              id: cloudflare-deploy
+              uses: cloudflare/wrangler-action@v3
+              with:
+                  apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+                  accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+                  command: pages deploy dist --project-name=factorio-blueprint-playground --branch=${{ github.head_ref }}
+
+            - name: Add Cloudflare preview URL to PR comment
+              uses: actions/github-script@v9
+              env:
+                  DEPLOYMENT_URL: ${{ steps.cloudflare-deploy.outputs.deployment-url }}
+                  HEAD_REF: ${{ github.head_ref }}
+                  HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+              with:
+                  script: |
+                      const deploymentUrl = process.env.DEPLOYMENT_URL;
+                      const projectSubdomain = new URL(deploymentUrl).hostname.split('.').slice(1, -2).join('.');
+                      const branchUrl = `https://${process.env.HEAD_REF}.${projectSubdomain}.pages.dev`;
+                      const headSha = process.env.HEAD_SHA;
+                      const body = [
+                        '## Cloudflare Pages Deployment',
+                        '',
+                        '| | |',
+                        '|---|---|',
+                        `| **Latest commit:** | \`${headSha}\` |`,
+                        '| **Status:** | ✅ Deploy successful! |',
+                        `| **Preview URL:** | ${deploymentUrl} |`,
+                        `| **Branch Preview URL:** | ${branchUrl} |`,
+                      ].join('\n');
+
+                      const { data: comments } = await github.rest.issues.listComments({
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        issue_number: context.issue.number,
+                      });
+                      const botComment = comments.find(c => c.body.includes('Cloudflare Pages Deployment'));
+
+                      if (botComment) {
+                        await github.rest.issues.updateComment({
+                          owner: context.repo.owner,
+                          repo: context.repo.repo,
+                          comment_id: botComment.id,
+                          body,
+                        });
+                      } else {
+                        await github.rest.issues.createComment({
+                          owner: context.repo.owner,
+                          repo: context.repo.repo,
+                          issue_number: context.issue.number,
+                          body,
+                        });
+                      }
