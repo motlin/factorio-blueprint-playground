@@ -285,12 +285,16 @@ jobs:
                   git config --global user.name "GitHub Actions"
                   git config --global user.email "github-actions@github.com"
 
-            - name: Run pre-commit Fix
+            - name: Install dependencies
               run: |
                   npm ci
                   npx @tanstack/router-cli generate --routesDirectory ./src/routes --generatedRouteTree ./src/routeTree.gen.ts
-                  pre-commit run --all-files || true
 
+            - uses: pre-commit/action@v3.0.1
+              continue-on-error: true
+
+            - name: Push pre-commit Fix
+              run: |
                   if [[ -n $(git status --porcelain) ]]; then
                     FIX_BRANCH="fix-${{ github.event.pull_request.number }}-pre-commit"
                     git switch --create $FIX_BRANCH
