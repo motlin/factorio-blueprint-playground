@@ -30,30 +30,21 @@ export const WithRows: Story = {
 				<Row>
 					<Cell width="100px">Item 1</Cell>
 					<Cell grow>Description of item 1</Cell>
-					<Cell
-						width="80px"
-						align="right"
-					>
+					<Cell width="80px" align="right">
 						100
 					</Cell>
 				</Row>
 				<Row>
 					<Cell width="100px">Item 2</Cell>
 					<Cell grow>Description of item 2</Cell>
-					<Cell
-						width="80px"
-						align="right"
-					>
+					<Cell width="80px" align="right">
 						250
 					</Cell>
 				</Row>
 				<Row>
 					<Cell width="100px">Item 3</Cell>
 					<Cell grow>Description of item 3</Cell>
-					<Cell
-						width="80px"
-						align="right"
-					>
+					<Cell width="80px" align="right">
 						75
 					</Cell>
 				</Row>

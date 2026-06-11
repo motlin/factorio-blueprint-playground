@@ -3,9 +3,9 @@ import path from 'node:path';
 import {chromium} from '@playwright/test';
 import pixelmatch from 'pixelmatch';
 import {PNG} from 'pngjs';
-import {afterAll, beforeAll} from 'vitest';
+import {afterAll, beforeAll} from 'vite-plus/test';
 
-let browser: ReturnType<typeof chromium.launch> | null = null;
+let browser: Awaited<ReturnType<typeof chromium.launch>> | null = null;
 let page: Awaited<ReturnType<Awaited<ReturnType<typeof chromium.launch>>['newPage']>> | null = null;
 
 const skipBrowserTests = process.env.CI === 'true' || process.env.SKIP_BROWSER_TESTS === 'true';
@@ -43,9 +43,9 @@ afterAll(async () => {
 			await fs.unlink(path.join(tempDir, file));
 		}
 	}
-});
+}, 30_000);
 
-export async function renderToHtmlFile(html: string, testName: string): Promise<string> {
+async function renderToHtmlFile(html: string, testName: string): Promise<string> {
 	const factorioCssPath = path.resolve(__dirname, '../../src/styles/factorio-a76ef767.css');
 	const mainCssPath = path.resolve(__dirname, '../../src/styles/main.css');
 	const factorioIconCssPath = path.resolve(__dirname, '../../src/components/core/icons/FactorioIcon.module.css');
@@ -146,7 +146,7 @@ export async function compareScreenshots(testName: string, html: string, selecto
 
 		await fs.unlink(tempPath);
 	} catch (error: unknown) {
-		if (error instanceof Error && 'code' in error && (error as {code?: string}).code === 'ENOENT') {
+		if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
 			// No baseline exists, create it
 			await fs.rename(tempPath, snapshotPath);
 			console.warn(`Created new baseline for ${testName}`);

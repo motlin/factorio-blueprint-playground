@@ -1,6 +1,5 @@
 import {memo} from 'react';
 
-import {BlueprintWrapper} from '../../../../parsing/BlueprintWrapper';
 import type {BlueprintString, UpgradePlanner} from '../../../../parsing/types';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
 import {Panel} from '../../../ui/Panel';
@@ -9,13 +8,11 @@ import {Row} from '../../spreadsheet/Row';
 import {Spreadsheet} from '../../spreadsheet/Spreadsheet';
 
 const UpgradePlannerPanelComponent = ({blueprint}: {blueprint: BlueprintString}) => {
-	const wrapper = new BlueprintWrapper(blueprint);
-	const {content} = wrapper.getInfo();
+	const planner: UpgradePlanner | undefined = blueprint.upgrade_planner;
+	if (!planner) return null;
 
-	if (!('upgrade_planner' in blueprint)) return null;
-
-	const {settings} = content as UpgradePlanner;
-	if (!settings.mappers.length) return null;
+	const {settings} = planner;
+	if (settings.mappers.length === 0) return null;
 
 	return (
 		<Panel title="Upgrade Mappings">
@@ -26,24 +23,15 @@ const UpgradePlannerPanelComponent = ({blueprint}: {blueprint: BlueprintString})
 						<Row key={mapping.index}>
 							<Cell grow>
 								<div style={{margin: 'auto'}}>
-									<FactorioIcon
-										icon={mapping.from}
-										size={'large'}
-									/>
+									<FactorioIcon icon={mapping.from} size={'large'} />
 								</div>
 							</Cell>
-							<Cell
-								width="40px"
-								align="center"
-							>
+							<Cell width="40px" align="center">
 								→
 							</Cell>
 							<Cell grow>
 								<div style={{margin: 'auto'}}>
-									<FactorioIcon
-										icon={mapping.to}
-										size={'large'}
-									/>
+									<FactorioIcon icon={mapping.to} size={'large'} />
 								</div>
 							</Cell>
 						</Row>

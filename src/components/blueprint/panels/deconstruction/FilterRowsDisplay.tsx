@@ -13,14 +13,11 @@ interface FilterRowsProps {
 }
 
 const FilterRowsDisplay = ({filters, type, label}: FilterRowsProps) => {
-	if (!filters || filters.length === 0) return null;
+	if (filters.length === 0) return null;
 
 	return (
 		<Row>
-			<Cell
-				width="120px"
-				grow={false}
-			>
+			<Cell width="120px" grow={false}>
 				{label}
 			</Cell>
 			<Cell grow>
@@ -29,10 +26,7 @@ const FilterRowsDisplay = ({filters, type, label}: FilterRowsProps) => {
 						.sort((a, b) => a.index - b.index)
 						.map((filter) => (
 							<Row key={`${filter.name}-${filter.index}`}>
-								<Cell
-									width="48px"
-									grow={false}
-								>
+								<Cell width="48px" grow={false}>
 									<FactorioIcon
 										icon={{
 											type,
@@ -42,10 +36,7 @@ const FilterRowsDisplay = ({filters, type, label}: FilterRowsProps) => {
 										size={'large'}
 									/>
 								</Cell>
-								<Cell
-									width="200px"
-									grow={false}
-								>
+								<Cell width="200px" grow={false}>
 									{filter.name}
 								</Cell>
 								<Cell grow>

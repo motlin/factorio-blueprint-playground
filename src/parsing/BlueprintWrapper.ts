@@ -11,7 +11,7 @@ export interface BlueprintInfo {
 }
 
 export class BlueprintWrapper {
-	private data: BlueprintString;
+	private readonly data: BlueprintString;
 
 	constructor(blueprint: BlueprintString) {
 		this.data = blueprint;
@@ -73,19 +73,17 @@ export class BlueprintWrapper {
 			return this.data.blueprint_book.icons ?? [];
 		}
 		if (this.data.upgrade_planner) {
-			return this.data.upgrade_planner.settings?.icons ?? [];
+			return this.data.upgrade_planner.settings.icons ?? [];
 		}
 		if (this.data.deconstruction_planner) {
-			return this.data.deconstruction_planner.settings?.icons ?? [];
+			return this.data.deconstruction_planner.settings.icons ?? [];
 		}
 		throw new Error('Invalid blueprint: no content found');
 	}
 
+	// Used via `wrapper.getVersion()` in routes/history.lazy.tsx; fallow's class-member analysis misses the `.map()` indirection.
+	// fallow-ignore-next-line unused-class-member
 	getVersion(): number {
 		return this.getContent().version;
-	}
-
-	getRawData(): BlueprintString {
-		return this.data;
 	}
 }

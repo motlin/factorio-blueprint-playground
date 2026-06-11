@@ -1,4 +1,4 @@
-import {describe, expect, it} from 'vitest';
+import {describe, expect, it} from 'vite-plus/test';
 
 import {
 	BlueprintError,
@@ -80,6 +80,7 @@ describe('blueprintParser', () => {
 				version: 281479275675648,
 				blueprints: [
 					{
+						index: 0,
 						blueprint: {
 							item: 'blueprint',
 							version: 281479275675648,
@@ -87,11 +88,13 @@ describe('blueprintParser', () => {
 						},
 					},
 					{
+						index: 1,
 						blueprint_book: {
 							item: 'blueprint-book',
 							version: 281479275675648,
 							blueprints: [
 								{
+									index: 0,
 									blueprint: {
 										item: 'blueprint',
 										version: 281479275675648,

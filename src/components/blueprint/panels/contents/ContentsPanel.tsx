@@ -21,7 +21,9 @@ const ContentsPanelComponent = ({blueprint}: PanelProps) => {
 
 	if (!blueprintContent) return null;
 
-	if (!(blueprintContent.entities?.length || blueprintContent.tiles?.length)) return null;
+	const entityCount = blueprintContent.entities?.length ?? 0;
+	const tileCount = blueprintContent.tiles?.length ?? 0;
+	if (entityCount === 0 && tileCount === 0) return null;
 
 	const entityCounts = countItems(getEntityKey, blueprintContent.entities);
 	const tileCounts = countItems(getTileKey, blueprintContent.tiles);
@@ -33,31 +35,11 @@ const ContentsPanelComponent = ({blueprint}: PanelProps) => {
 
 	return (
 		<>
-			<ItemPanel
-				title="Entities"
-				items={entityCounts}
-				type={'entity'}
-			/>
-			<ItemPanel
-				title="Recipes"
-				items={recipeCounts}
-				type={'recipe'}
-			/>
-			<ItemPanel
-				title="Tiles"
-				items={tileCounts}
-				type={'tile'}
-			/>
-			<ItemPanel
-				title="Items"
-				items={itemCounts}
-				type={'item'}
-			/>
-			<ItemPanel
-				title="Inventory"
-				items={inventoryCounts}
-				type={'item'}
-			/>
+			<ItemPanel title="Entities" items={entityCounts} type={'entity'} />
+			<ItemPanel title="Recipes" items={recipeCounts} type={'recipe'} />
+			<ItemPanel title="Tiles" items={tileCounts} type={'tile'} />
+			<ItemPanel title="Items" items={itemCounts} type={'item'} />
+			<ItemPanel title="Inventory" items={inventoryCounts} type={'item'} />
 		</>
 	);
 };

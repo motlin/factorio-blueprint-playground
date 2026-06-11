@@ -76,6 +76,7 @@ async function copyToClipboard(text: string): Promise<boolean> {
 			textArea.select();
 		}
 
+		// oxlint-disable-next-line typescript/no-deprecated -- execCommand is the last-resort clipboard fallback for browsers lacking the async Clipboard API
 		const successful = document.execCommand('copy');
 		document.body.removeChild(textArea);
 
@@ -95,10 +96,10 @@ function getFilename(blueprint: BlueprintString, path?: string): string {
 	const label = wrapper.getLabel();
 
 	// Use label if available, fallback to "blueprint"
-	let base = label ? label.replace(/[^a-zA-Z0-9-_]/g, '-') : 'blueprint';
+	let base = label != null && label !== '' ? label.replace(/[^a-zA-Z0-9-_]/g, '-') : 'blueprint';
 
 	// Add path suffix if it exists
-	if (path) {
+	if (path != null && path !== '') {
 		base += `-${path}`;
 	}
 
@@ -131,10 +132,7 @@ const ButtonWithIcon = ({icon: Icon, text, onClick}: ButtonWithIconProps) => (
 		}}
 	>
 		{' '}
-		<Icon
-			size={18}
-			className="mr8"
-		/>
+		<Icon size={18} className="mr8" />
 		{text}
 	</ButtonGreen>
 );
@@ -163,21 +161,9 @@ const ExportActionsComponent = ({blueprint, path, title}: ExportActionsProps) =>
 			<InsetLight>
 				<h3>{title}</h3>
 				<div className="flex-space-between">
-					<ButtonWithIcon
-						icon={ClipboardCopy}
-						text="Copy String"
-						onClick={handleCopyString}
-					/>
-					<ButtonWithIcon
-						icon={FileJson}
-						text="Copy JSON"
-						onClick={handleCopyJSON}
-					/>
-					<ButtonWithIcon
-						icon={Download}
-						text="Download String"
-						onClick={handleDownloadString}
-					/>
+					<ButtonWithIcon icon={ClipboardCopy} text="Copy String" onClick={handleCopyString} />
+					<ButtonWithIcon icon={FileJson} text="Copy JSON" onClick={handleCopyJSON} />
+					<ButtonWithIcon icon={Download} text="Download String" onClick={handleDownloadString} />
 				</div>
 			</InsetLight>
 		</Panel>

@@ -11,7 +11,7 @@ export const logger = {
 		console.warn(message, extra);
 	},
 
-	error: (message: string, error?: Error | unknown, extra?: Record<string, unknown>) => {
+	error: (message: string, error?: unknown, extra?: Record<string, unknown>) => {
 		console.error(message, error, extra);
 	},
 };

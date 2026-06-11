@@ -6,16 +6,13 @@ import {FactorioIcon} from '../../../core/icons/FactorioIcon';
 function FilterCondition({filter}: {filter: Filter}) {
 	const parts: React.ReactNode[] = [];
 
-	if (filter.comparator) {
+	if (filter.comparator != null && filter.comparator !== '') {
 		parts.push(<span key="comparator">{filter.comparator} </span>);
 	}
 
 	if (filter.quality) {
 		parts.push(
-			<span
-				key="quality"
-				style={{display: 'inline-flex', alignItems: 'center', marginRight: '4px'}}
-			>
+			<span key="quality" style={{display: 'inline-flex', alignItems: 'center', marginRight: '4px'}}>
 				<FactorioIcon
 					icon={{
 						type: 'quality',

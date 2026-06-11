@@ -24,64 +24,35 @@ const InfoRow = ({label, children, hidden = false}: InfoRowProps) => {
 	);
 };
 
-export const BasicInfoPanelComponent = ({blueprint}: {blueprint?: BlueprintString}) => {
+const BasicInfoPanelComponent = ({blueprint}: {blueprint?: BlueprintString}) => {
 	if (!blueprint) return null;
 	const wrapper = new BlueprintWrapper(blueprint);
 	const {type, label, description, icons, version} = wrapper.getInfo();
 
 	function getIconElement(index: number, icon?: Icon) {
 		if (icon) {
-			return (
-				<FactorioIcon
-					key={index}
-					icon={icon.signal}
-					size="large"
-				/>
-			);
+			return <FactorioIcon key={index} icon={icon.signal} size="large" />;
 		}
 
-		return (
-			<Placeholder
-				key={index}
-				size={'large'}
-			/>
-		);
+		return <Placeholder key={index} size={'large'} />;
 	}
 
 	return (
 		<Panel title="Basic Information">
 			<dl className="panel-hole basic-info">
 				<InfoRow label="Type">
-					<FactorioIcon
-						icon={{type: 'item', name: type}}
-						size={'large'}
-					/>
+					<FactorioIcon icon={{type: 'item', name: type}} size={'large'} />
 				</InfoRow>
 
-				<InfoRow
-					label="Label"
-					hidden={!label}
-				>
-					<RichText
-						text={label}
-						iconSize={'large'}
-					/>
+				<InfoRow label="Label" hidden={label == null || label === ''}>
+					<RichText text={label} iconSize={'large'} />
 				</InfoRow>
 
-				<InfoRow
-					label="Description"
-					hidden={!description}
-				>
-					<RichText
-						text={description}
-						iconSize={'large'}
-					/>
+				<InfoRow label="Description" hidden={description == null || description === ''}>
+					<RichText text={description} iconSize={'large'} />
 				</InfoRow>
 
-				<InfoRow
-					label="Icons"
-					hidden={!icons?.length}
-				>
+				<InfoRow label="Icons" hidden={(icons?.length ?? 0) === 0}>
 					<div className="flex flex-items-center">
 						{[1, 2, 3, 4].map((index) => {
 							const icon = icons?.find((i) => i.index === index);

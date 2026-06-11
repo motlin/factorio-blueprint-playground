@@ -1,5 +1,5 @@
 import JSON5 from 'json5';
-import {describe, expect, it} from 'vitest';
+import {describe, expect, it} from 'vite-plus/test';
 import type {BlueprintString} from '../../src/parsing/types';
 
 describe('JSON5 blueprint parsing', () => {
@@ -12,7 +12,7 @@ describe('JSON5 blueprint parsing', () => {
 
 	it('parses standard JSON', () => {
 		const input = JSON.stringify(validBlueprint);
-		const result = JSON5.parse(input) as BlueprintString;
+		const result = JSON5.parse(input);
 		expect(result).toEqual(validBlueprint);
 	});
 
@@ -23,7 +23,7 @@ describe('JSON5 blueprint parsing', () => {
 				"version": 281479275675648,
 			},
 		}`;
-		const result = JSON5.parse(input) as BlueprintString;
+		const result = JSON5.parse(input);
 		expect(result).toEqual(validBlueprint);
 	});
 
@@ -36,7 +36,7 @@ describe('JSON5 blueprint parsing', () => {
 				"version": 281479275675648
 			}
 		}`;
-		const result = JSON5.parse(input) as BlueprintString;
+		const result = JSON5.parse(input);
 		expect(result).toEqual(validBlueprint);
 	});
 
@@ -47,7 +47,7 @@ describe('JSON5 blueprint parsing', () => {
 				version: 281479275675648
 			}
 		}`;
-		const result = JSON5.parse(input) as BlueprintString;
+		const result = JSON5.parse(input);
 		expect(result).toEqual(validBlueprint);
 	});
 
@@ -58,7 +58,7 @@ describe('JSON5 blueprint parsing', () => {
 				'version': 281479275675648
 			}
 		}`;
-		const result = JSON5.parse(input) as BlueprintString;
+		const result = JSON5.parse(input);
 		expect(result).toEqual(validBlueprint);
 	});
 });

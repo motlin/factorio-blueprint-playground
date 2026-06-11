@@ -1,16 +1,16 @@
-import {useNavigate} from '@tanstack/react-router';
+import {getRouteApi, useNavigate} from '@tanstack/react-router';
 import type React from 'react';
 import {useCallback, useEffect, useRef} from 'react';
 
-import {Route} from '../../../routes';
+const routeApi = getRouteApi('/');
 
 interface BlueprintSourceHandlerProps {
 	pasted?: string;
 	autoFocus?: boolean;
 }
 
-export const BlueprintSourceHandler = ({pasted, autoFocus = false}: BlueprintSourceHandlerProps) => {
-	const navigate = useNavigate({from: Route.fullPath});
+const BlueprintSourceHandler = ({pasted, autoFocus = false}: BlueprintSourceHandlerProps) => {
+	const navigate = useNavigate({from: routeApi.id});
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 
 	/**
@@ -24,15 +24,15 @@ export const BlueprintSourceHandler = ({pasted, autoFocus = false}: BlueprintSou
 			const pastedValue = pastedRaw.trim();
 
 			void (async () => {
-				if (!pastedValue) {
+				if (pastedValue === '') {
 					await navigate({
-						search: {pasted: undefined, selection: undefined},
+						search: (prev) => ({...prev, pasted: undefined, selection: undefined}),
 					});
 					return;
 				}
 
 				await navigate({
-					search: {pasted: pastedValue, selection: ''},
+					search: (prev) => ({...prev, pasted: pastedValue, selection: ''}),
 				});
 			})();
 		},

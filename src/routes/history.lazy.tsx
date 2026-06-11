@@ -13,37 +13,59 @@ import {Panel} from '../components/ui/Panel';
 import {logger} from '../lib/sentry';
 import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
 import {deserializeBlueprintNoThrow, serializeBlueprint} from '../parsing/blueprintParser';
-import type {BlueprintString, BlueprintStringWithIndex, Icon} from '../parsing/types';
+import type {BlueprintString, BlueprintStringWithIndex, Icon, SignalType} from '../parsing/types';
 import {type DatabaseBlueprint, db} from '../storage/db';
+
+const SIGNAL_TYPES = new Set<string>([
+	'item',
+	'fluid',
+	'virtual',
+	'entity',
+	'technology',
+	'recipe',
+	'item-group',
+	'tile',
+	'virtual-signal',
+	'achievement',
+	'equipment',
+	'planet',
+	'quality',
+	'utility',
+	'space-location',
+]);
+
+function toSignalType(type: string | undefined): SignalType | undefined {
+	if (type != null && SIGNAL_TYPES.has(type)) {
+		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- membership checked against SIGNAL_TYPES set above
+		return type as SignalType;
+	}
+	return undefined;
+}
 
 export const Route = createLazyFileRoute('/history')({
 	component: History,
 });
 
-export function History() {
+function History() {
 	const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set<string>());
 	const [error, setError] = useState<Error | null>(null);
 
-	const blueprints = useLiveQuery<DatabaseBlueprint[]>(
-		async () => {
-			try {
-				const result = await db.blueprints.orderBy('metadata.lastUpdatedOn').reverse().toArray();
-				return result;
-			} catch (loadError: unknown) {
-				logger.error(
-					'Failed to load blueprint history',
-					loadError instanceof Error ? loadError : new Error(String(loadError)),
-					{
-						context: 'History.useLiveQuery',
-					},
-				);
-				setError(loadError instanceof Error ? loadError : new Error('Unknown error loading blueprints'));
-				return [];
-			}
-		},
-		[],
-		[],
-	);
+	const blueprints = useLiveQuery<DatabaseBlueprint[]>(async () => {
+		try {
+			const result = await db.blueprints.orderBy('metadata.lastUpdatedOn').reverse().toArray();
+			return result;
+		} catch (loadError: unknown) {
+			logger.error(
+				'Failed to load blueprint history',
+				loadError instanceof Error ? loadError : new Error(String(loadError)),
+				{
+					context: 'History.useLiveQuery',
+				},
+			);
+			setError(loadError instanceof Error ? loadError : new Error('Unknown error loading blueprints'));
+			return [];
+		}
+	}, []);
 
 	const isLoading = blueprints === undefined;
 
@@ -60,9 +82,8 @@ export function History() {
 	};
 
 	const selectAll = (): void => {
-		if (!blueprints) return;
-		const blueprintArray = blueprints as DatabaseBlueprint[];
-		const shaArray = blueprintArray.map((bp: DatabaseBlueprint): string => bp.metadata.sha);
+		if (blueprints == null) return;
+		const shaArray = blueprints.map((bp: DatabaseBlueprint): string => bp.metadata.sha);
 		setSelectedItems(new Set<string>(shaArray));
 	};
 
@@ -72,18 +93,16 @@ export function History() {
 
 	const downloadAsBook = (): void => {
 		try {
-			if (!blueprints) return;
-			// Type safety for blueprint operations
-			const blueprintsArray = blueprints as DatabaseBlueprint[];
-			const selectedBlueprints = blueprintsArray.filter((bp: DatabaseBlueprint) =>
-				selectedItems.has(bp.metadata.sha),
-			);
+			if (blueprints == null) return;
+			const selectedBlueprints = blueprints.filter((bp: DatabaseBlueprint) => selectedItems.has(bp.metadata.sha));
 			if (selectedBlueprints.length === 0) return;
 
 			// If only one blueprint is selected, download it directly
 			if (selectedBlueprints.length === 1) {
 				const blueprint = selectedBlueprints[0];
-				downloadBlueprint(blueprint.metadata.data, sanitizeFilename(blueprint.gameData.label || 'blueprint'));
+				const label = blueprint.gameData.label;
+				const filename = label != null && label !== '' ? label : 'blueprint';
+				downloadBlueprint(blueprint.metadata.data, sanitizeFilename(filename));
 				return;
 			}
 
@@ -167,9 +186,10 @@ export function History() {
 			if (bp.gameData.icons.length > 0 && icons.length < 4) {
 				icons.push({
 					signal: {
-						type: bp.gameData.icons[0].type || 'item',
+						type: toSignalType(bp.gameData.icons[0].type) ?? 'item',
 						name: bp.gameData.icons[0].name,
 					},
+					index: icons.length + 1,
 				});
 			}
 
@@ -182,6 +202,7 @@ export function History() {
 					type: 'item',
 					name: 'blueprint-book',
 				},
+				index: 1,
 			});
 		}
 
@@ -209,18 +230,14 @@ export function History() {
 		);
 	}
 
-	if (!blueprints || blueprints.length === 0) {
+	if (blueprints.length === 0) {
 		return <EmptyHistoryState />;
 	}
 
 	return (
 		<Panel title="Blueprint History">
 			<div>
-				<Button
-					disabled={selectedItems.size === 0}
-					onClick={downloadAsBook}
-					data-testid="download-button"
-				>
+				<Button disabled={selectedItems.size === 0} onClick={downloadAsBook} data-testid="download-button">
 					Download Selected as Book
 				</Button>
 				<Button
@@ -231,16 +248,13 @@ export function History() {
 					Delete Selected
 				</Button>
 				<Button onClick={selectAll}>Select All</Button>
-				<Button
-					onClick={selectNone}
-					disabled={selectedItems.size === 0}
-				>
+				<Button onClick={selectNone} disabled={selectedItems.size === 0}>
 					Clear Selection
 				</Button>
 			</div>
 
 			<BlueprintHistoryTable
-				blueprints={blueprints as DatabaseBlueprint[]}
+				blueprints={blueprints}
 				selectedItems={selectedItems}
 				toggleSelection={toggleSelection}
 			/>

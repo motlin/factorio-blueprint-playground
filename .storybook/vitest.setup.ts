@@ -1,20 +1,7 @@
-import {beforeAll} from 'vitest';
-import {setProjectAnnotations} from '@storybook/react';
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
-import * as globalStorybookConfig from './preview';
+import * as a11yAddonAnnotations from '@storybook/addon-a11y/preview';
+import {setProjectAnnotations} from '@storybook/react-vite';
+import * as projectAnnotations from './preview';
 
-if (typeof window !== 'undefined') {
-	window.React = React;
-	window.ReactDOM = ReactDOM;
-	globalThis.React = React;
-	globalThis.ReactDOM = ReactDOM;
-}
-
-const annotations = setProjectAnnotations([globalStorybookConfig]);
-
-beforeAll(async () => {
-	if (annotations.beforeAll) {
-		await annotations.beforeAll();
-	}
-});
+// This is an important step to apply the right configuration when testing your stories.
+// More info at: https://storybook.js.org/docs/api/portable-stories/portable-stories-vitest#setprojectannotations
+setProjectAnnotations([a11yAddonAnnotations, projectAnnotations]);

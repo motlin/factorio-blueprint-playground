@@ -5,6 +5,36 @@ import {FactorioIcon} from '../icons/FactorioIcon';
 
 const LINE_BREAK_REGEX = /\r\n|\r|\n/;
 
+const SIGNAL_TYPES = new Set<string>([
+	'item',
+	'fluid',
+	'virtual',
+	'entity',
+	'technology',
+	'recipe',
+	'item-group',
+	'tile',
+	'virtual-signal',
+	'achievement',
+	'equipment',
+	'planet',
+	'quality',
+	'utility',
+	'space-location',
+]);
+
+const QUALITY_VALUES = new Set<string>(['normal', 'uncommon', 'rare', 'epic', 'legendary']);
+
+function parseSignalType(value: string): SignalType | undefined {
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- value is validated against the SignalType set before asserting
+	return SIGNAL_TYPES.has(value) ? (value as SignalType) : undefined;
+}
+
+function parseQuality(value?: string): Quality {
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- value is validated against the Quality set before asserting
+	return value != null && QUALITY_VALUES.has(value) ? (value as Quality) : undefined;
+}
+
 const COLOR_MAP: Record<string, string> = {
 	red: '#eb5c5f',
 	green: '#5eb663',
@@ -21,7 +51,7 @@ const COLOR_MAP: Record<string, string> = {
 
 function parseColor(color?: string): string | undefined {
 	// Handle empty/undefined
-	if (!color) return undefined;
+	if (color == null || color === '') return undefined;
 
 	// Handle named colors
 	const namedColor = COLOR_MAP[color.toLowerCase()];
@@ -61,7 +91,7 @@ const StyledText = ({text, color, bold}: StyledTextProps) => (
 		data-testid="formatted-text"
 		style={{
 			color: parseColor(color),
-			fontWeight: bold ? 'bold' : 'normal',
+			fontWeight: bold === true ? 'bold' : 'normal',
 		}}
 	>
 		{text}
@@ -73,8 +103,13 @@ interface RichTextProps {
 	iconSize: 'small' | 'large';
 }
 
+interface RichTextLineProps {
+	text: string;
+	iconSize: 'small' | 'large';
+}
+
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Rich text parser requires handling many tag types
-const processRichTextLine = ({text, iconSize}: RichTextProps): React.ReactNode[] => {
+const processRichTextLine = ({text, iconSize}: RichTextLineProps): React.ReactNode[] => {
 	const parts: React.ReactNode[] = [];
 	let currentIndex = 0;
 	let currentColor: string | undefined;
@@ -120,19 +155,14 @@ const processRichTextLine = ({text, iconSize}: RichTextProps): React.ReactNode[]
 					const [imgType, imgName] = value.includes('/') ? value.split('/') : value.split('.');
 
 					const icon: SignalID = {
-						type: imgType as SignalType,
+						type: parseSignalType(imgType),
 						// If no separator, use full value as name
+						// oxlint-disable-next-line typescript/prefer-nullish-coalescing -- fall back to full value when split yields an empty name
 						name: imgName || value,
-						quality: quality as Quality,
+						quality: parseQuality(quality),
 					};
 
-					parts.push(
-						<FactorioIcon
-							key={parts.length}
-							icon={icon}
-							size={iconSize}
-						/>,
-					);
+					parts.push(<FactorioIcon key={parts.length} icon={icon} size={iconSize} />);
 					break;
 				}
 				case 'item':
@@ -150,29 +180,16 @@ const processRichTextLine = ({text, iconSize}: RichTextProps): React.ReactNode[]
 					const icon: SignalID = {
 						type: type,
 						name: value,
-						quality: quality as Quality,
+						quality: parseQuality(quality),
 					};
 
-					parts.push(
-						<FactorioIcon
-							key={parts.length}
-							icon={icon}
-							size={iconSize}
-						/>,
-					);
+					parts.push(<FactorioIcon key={parts.length} icon={icon} size={iconSize} />);
 					break;
 				}
 				// We could add special handling for gps, special-item, armor, train, etc. here
 				default:
 					// For unhandled tags, just render them as text
-					parts.push(
-						<StyledText
-							key={parts.length}
-							text={match[0]}
-							color={currentColor}
-							bold={isBold}
-						/>,
-					);
+					parts.push(<StyledText key={parts.length} text={match[0]} color={currentColor} bold={isBold} />);
 			}
 		}
 
@@ -182,12 +199,7 @@ const processRichTextLine = ({text, iconSize}: RichTextProps): React.ReactNode[]
 	// Add remaining text
 	if (currentIndex < text.length) {
 		parts.push(
-			<StyledText
-				key={parts.length}
-				text={text.slice(currentIndex)}
-				color={currentColor}
-				bold={isBold}
-			/>,
+			<StyledText key={parts.length} text={text.slice(currentIndex)} color={currentColor} bold={isBold} />,
 		);
 	}
 
@@ -195,7 +207,7 @@ const processRichTextLine = ({text, iconSize}: RichTextProps): React.ReactNode[]
 };
 
 export const RichText = ({text, iconSize}: RichTextProps) => {
-	if (!text) return null;
+	if (text == null || text === '') return null;
 
 	const lines = text.split(LINE_BREAK_REGEX);
 
@@ -208,10 +220,7 @@ export const RichText = ({text, iconSize}: RichTextProps) => {
 	));
 
 	return (
-		<div
-			className="richtext"
-			data-testid={'richtext'}
-		>
+		<div className="richtext" data-testid={'richtext'}>
 			{processedLines}
 		</div>
 	);

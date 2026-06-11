@@ -1,5 +1,5 @@
 import {render, screen} from '@testing-library/react';
-import {describe, expect, test} from 'vitest';
+import {describe, expect, test} from 'vite-plus/test';
 
 import {BlueprintInfoPanels} from '../../src/components/blueprint/panels/BlueprintInfoPanels';
 import type {BlueprintString} from '../../src/parsing/types';
@@ -39,6 +39,7 @@ describe('BlueprintInfoPanels', () => {
 		const blueprint: BlueprintString = {
 			upgrade_planner: {
 				item: 'upgrade-planner',
+				version: 281479275675648,
 				settings: {
 					mappers: [
 						{
@@ -70,6 +71,7 @@ describe('BlueprintInfoPanels', () => {
 		const blueprint: BlueprintString = {
 			deconstruction_planner: {
 				item: 'deconstruction-planner',
+				version: 281479275675648,
 				settings: {
 					entity_filter_mode: 1,
 					entity_filters: [

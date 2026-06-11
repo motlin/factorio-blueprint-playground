@@ -10,7 +10,7 @@ interface TextCellProps {
 export const TextCell = ({children, width, align = 'left', grow = true}: TextCellProps) => {
 	return (
 		<div
-			className={`spreadsheet-cell ${!grow ? 'spreadsheet-cell-fixed' : ''}`}
+			className={`spreadsheet-cell ${grow ? '' : 'spreadsheet-cell-fixed'}`}
 			style={{
 				width,
 				textAlign: align,

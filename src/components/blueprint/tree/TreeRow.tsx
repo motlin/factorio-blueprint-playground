@@ -19,22 +19,11 @@ export const TreeRow = ({node, indentLevel, isSelected, isActive, onSelect}: Tre
 	const wrapper = new BlueprintWrapper(node.blueprint);
 
 	function getIconElement(index: number) {
-		const icon: Icon | undefined = wrapper.getIcons()?.find((i) => i.index === index);
+		const icon: Icon | undefined = wrapper.getIcons().find((i) => i.index === index);
 		if (icon) {
-			return (
-				<FactorioIcon
-					key={index}
-					icon={icon.signal}
-					size={'small'}
-				/>
-			);
+			return <FactorioIcon key={index} icon={icon.signal} size={'small'} />;
 		}
-		return (
-			<Placeholder
-				key={index}
-				size={'small'}
-			/>
-		);
+		return <Placeholder key={index} size={'small'} />;
 	}
 
 	const classes = ['tree-row flex clickable', isSelected ? 'selected' : '', isActive ? 'active' : '']
@@ -67,10 +56,7 @@ export const TreeRow = ({node, indentLevel, isSelected, isActive, onSelect}: Tre
 			role="treeitem"
 		>
 			<div className="flex flex-items-center">
-				<FactorioIcon
-					icon={{type: 'item', name: wrapper.getType()}}
-					size={'small'}
-				/>
+				<FactorioIcon icon={{type: 'item', name: wrapper.getType()}} size={'small'} />
 				<div className="separator" />
 			</div>
 
@@ -80,10 +66,7 @@ export const TreeRow = ({node, indentLevel, isSelected, isActive, onSelect}: Tre
 			</div>
 
 			<div className="label">
-				<RichText
-					text={wrapper.getLabel()}
-					iconSize={'small'}
-				/>
+				<RichText text={wrapper.getLabel()} iconSize={'small'} />
 			</div>
 		</div>
 	);

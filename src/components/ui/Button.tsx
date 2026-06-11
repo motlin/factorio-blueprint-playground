@@ -9,12 +9,7 @@ export const Button = ({
 	children: React.ReactNode;
 	disabled?: boolean;
 }) => (
-	<button
-		type="button"
-		onClick={onClick}
-		disabled={disabled}
-		className={`button ${disabled ? 'disabled' : ''}`}
-	>
+	<button type="button" onClick={onClick} disabled={disabled} className={`button ${disabled ? 'disabled' : ''}`}>
 		{children}
 	</button>
 );

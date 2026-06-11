@@ -2,7 +2,7 @@ import {readFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {render} from '@testing-library/react';
 import React from 'react';
-import {describe, expect, test} from 'vitest';
+import {describe, expect, test} from 'vite-plus/test';
 
 import {BasicInfoPanel} from '../../src/components/blueprint/panels/info/BasicInfoPanel';
 import '../../test/setup';

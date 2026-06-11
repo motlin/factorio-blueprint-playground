@@ -1,6 +1,6 @@
 import {render} from '@testing-library/react';
 import type React from 'react';
-import {describe, it, vi} from 'vitest';
+import {describe, it, vi} from 'vite-plus/test';
 
 import {ContentsPanel} from '../../src/components/blueprint/panels/contents/ContentsPanel';
 import {DeconstructionPlannerPanel} from '../../src/components/blueprint/panels/deconstruction/DeconstructionPlannerPanel';
@@ -8,6 +8,7 @@ import {BasicInfoPanel} from '../../src/components/blueprint/panels/info/BasicIn
 import {ParametersPanel} from '../../src/components/blueprint/panels/parameters/ParametersPanel';
 import {UpgradePlannerPanel} from '../../src/components/blueprint/panels/upgrade/UpgradePlannerPanel';
 import {BlueprintTree} from '../../src/components/blueprint/tree/BlueprintTree';
+import type {BlueprintString} from '../../src/parsing/types';
 
 import {compareScreenshots} from './setup';
 
@@ -42,7 +43,7 @@ describe('Visual regression tests', () => {
 			},
 		};
 
-		const html = renderToStaticHTML(<BasicInfoPanel blueprint={mockBlueprint} />);
+		const html = renderToStaticHTML(<BasicInfoPanel blueprint={mockBlueprint as unknown as BlueprintString} />);
 		await compareScreenshots('basic-info-panel', replaceIconUrls(html));
 	});
 
@@ -67,9 +68,9 @@ describe('Visual regression tests', () => {
 
 		const html = renderToStaticHTML(
 			<BlueprintTree
-				rootBlueprint={mockBlueprint}
+				rootBlueprint={mockBlueprint as unknown as BlueprintString}
 				selectedPath=""
-				onSelect={vi.fn()}
+				onSelect={vi.fn<(path: string) => void>()}
 			/>,
 		);
 
@@ -114,7 +115,7 @@ describe('Visual regression tests', () => {
 			},
 		};
 
-		const html = renderToStaticHTML(<ContentsPanel blueprint={mockBlueprint} />);
+		const html = renderToStaticHTML(<ContentsPanel blueprint={mockBlueprint as unknown as BlueprintString} />);
 		await compareScreenshots('contents-panel', replaceIconUrls(html));
 	});
 
@@ -157,7 +158,9 @@ describe('Visual regression tests', () => {
 			},
 		};
 
-		const html = renderToStaticHTML(<ParametersPanel blueprintString={mockBlueprint} />);
+		const html = renderToStaticHTML(
+			<ParametersPanel blueprintString={mockBlueprint as unknown as BlueprintString} />,
+		);
 		await compareScreenshots('parameters-panel', replaceIconUrls(html));
 	});
 
@@ -198,7 +201,9 @@ describe('Visual regression tests', () => {
 			},
 		};
 
-		const html = renderToStaticHTML(<UpgradePlannerPanel blueprint={mockBlueprint} />);
+		const html = renderToStaticHTML(
+			<UpgradePlannerPanel blueprint={mockBlueprint as unknown as BlueprintString} />,
+		);
 		await compareScreenshots('upgrade-planner-panel', replaceIconUrls(html));
 	});
 
@@ -229,7 +234,9 @@ describe('Visual regression tests', () => {
 			},
 		};
 
-		const html = renderToStaticHTML(<DeconstructionPlannerPanel blueprint={mockBlueprint} />);
+		const html = renderToStaticHTML(
+			<DeconstructionPlannerPanel blueprint={mockBlueprint as unknown as BlueprintString} />,
+		);
 		await compareScreenshots('deconstruction-planner-panel', replaceIconUrls(html));
 	});
 });

@@ -1,6 +1,6 @@
 import {render, screen, waitFor} from '@testing-library/react';
 import {useEffect, useState} from 'react';
-import {describe, expect, it} from 'vitest';
+import {describe, expect, it} from 'vite-plus/test';
 
 function SimplifiedHistory() {
 	const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -41,7 +41,9 @@ function SimplifiedHistory() {
 			]);
 		}, 10);
 
-		return () => clearTimeout(timer);
+		return () => {
+			clearTimeout(timer);
+		};
 	}, []);
 
 	const toggleSelection = (id: number): void => {
@@ -67,18 +69,10 @@ function SimplifiedHistory() {
 	return (
 		<div data-testid="panel">
 			<div data-testid="download-buttons">
-				<button
-					type="button"
-					data-testid="download-button"
-					disabled={selectedItems.size === 0}
-				>
+				<button type="button" data-testid="download-button" disabled={selectedItems.size === 0}>
 					Download Selected as Book
 				</button>
-				<button
-					type="button"
-					data-testid="delete-button"
-					disabled={selectedItems.size === 0}
-				>
+				<button type="button" data-testid="delete-button" disabled={selectedItems.size === 0}>
 					Delete Selected
 				</button>
 			</div>
@@ -90,7 +84,9 @@ function SimplifiedHistory() {
 						<button
 							key={createdOn}
 							data-testid="blueprint-item"
-							onClick={(): void => toggleSelection(createdOn)}
+							onClick={(): void => {
+								toggleSelection(createdOn);
+							}}
 							type="button"
 						>
 							<input
@@ -103,10 +99,7 @@ function SimplifiedHistory() {
 								data-testid="blueprint-checkbox"
 							/>
 							<span data-testid="rich-text">{bp.label}</span>
-							<button
-								type="button"
-								data-testid="blueprint-open"
-							>
+							<button type="button" data-testid="blueprint-open">
 								Open
 							</button>
 						</button>
@@ -133,10 +126,8 @@ describe('History Component Tests', () => {
 		const richTexts = screen.getAllByTestId('rich-text');
 		expect(blueprintItems.length).toBe(2);
 
-		if (richTexts[0] && richTexts[1]) {
-			expect(richTexts[0].textContent).toBe('Test Blueprint 1');
-			expect(richTexts[1].textContent).toBe('Test Blueprint Book');
-		}
+		expect(richTexts[0].textContent).toBe('Test Blueprint 1');
+		expect(richTexts[1].textContent).toBe('Test Blueprint Book');
 	});
 
 	it('shows disabled action buttons initially', async () => {
@@ -153,9 +144,7 @@ describe('History Component Tests', () => {
 		expect(downloadButtons.length).toBeGreaterThan(0);
 		expect(deleteButtons.length).toBeGreaterThan(0);
 
-		if (downloadButtons[0] && deleteButtons[0]) {
-			expect(downloadButtons[0]).toBeDisabled();
-			expect(deleteButtons[0]).toBeDisabled();
-		}
+		expect(downloadButtons[0]).toBeDisabled();
+		expect(deleteButtons[0]).toBeDisabled();
 	});
 });

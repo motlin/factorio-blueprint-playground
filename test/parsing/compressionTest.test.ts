@@ -1,5 +1,5 @@
-import type {DeflateOptions} from 'fflate/esm/browser';
-import {describe, expect, it} from 'vitest';
+import type {DeflateOptions} from 'fflate';
+import {describe, expect, it} from 'vite-plus/test';
 
 import {deserializeBlueprint, serializeBlueprint} from '../../src/parsing/blueprintParser';
 import {DEFAULT_COMPRESSION_SETTINGS} from '../../src/parsing/compressionSettings';
@@ -32,7 +32,7 @@ function findMatchingCompression(blueprintString: string): {
 	const matches: DeflateOptions[] = [];
 
 	for (const settings of generateCompressionSettings()) {
-		const key = `level=${settings.level} mem=${settings.memLevel}`;
+		const key = `level=${settings.level} mem=${settings.mem}`;
 		attempted.add(key);
 
 		try {
@@ -65,10 +65,10 @@ describe('compression settings search', () => {
 			const expectedJson = deserializeBlueprint(minimal);
 
 			const serialized = serializeBlueprint(expectedJson, settings);
-			expect(serialized.length).toBeLessThanOrEqual(
-				minimal.length * 1.1,
+			expect(
+				serialized.length,
 				`Serialized output exceeded 10% size increase with settings: ${JSON.stringify(settings)}`,
-			);
+			).toBeLessThanOrEqual(minimal.length * 1.1);
 		}
 	});
 
@@ -91,10 +91,10 @@ describe('compression settings search', () => {
 				const serialized = serializeBlueprint(expectedJson, DEFAULT_COMPRESSION_SETTINGS);
 
 				// For non-matching settings, we'll accept up to 10% size increase
-				expect(serialized.length).toBeLessThanOrEqual(
-					blueprintStr.length * 1.1,
+				expect(
+					serialized.length,
 					`Serialized output exceeded 10% size increase for ${fixture} with default settings`,
-				);
+				).toBeLessThanOrEqual(blueprintStr.length * 1.1);
 
 				continue;
 			}

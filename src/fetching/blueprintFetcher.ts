@@ -17,6 +17,8 @@ export function getSourceLabel(fetchMethod?: BlueprintFetchMethod): string {
 			return 'JSON Import';
 		case 'data':
 			return 'Direct Paste';
+		case undefined:
+			return 'Unknown';
 		default:
 			return 'Unknown';
 	}
@@ -51,6 +53,15 @@ interface SourceFetchResult {
 
 interface BlueprintFetchSource {
 	fetchBlueprint: (url: URL) => Promise<SourceFetchResult>;
+}
+
+interface QueryClientLike {
+	fetchQuery: <T>(options: {
+		queryKey: unknown[];
+		queryFn: () => Promise<T>;
+		staleTime?: number;
+		gcTime?: number;
+	}) => Promise<T>;
 }
 
 /**
@@ -90,7 +101,7 @@ const factorioSchoolSourceConfig: BlueprintFetchSource = {
 			const cdnUrl = constructCdnUrl(key);
 			const cdnResponse = await fetch(cdnUrl).catch(() => null);
 
-			if (cdnResponse?.ok) {
+			if (cdnResponse?.ok === true) {
 				const blueprintString = await cdnResponse.text();
 				return {
 					success: true,
@@ -118,7 +129,7 @@ const factorioSchoolSourceConfig: BlueprintFetchSource = {
 				blueprintString?: FactorioSchoolBlueprintString;
 			};
 
-			const jsonData = await fallbackResponse.json();
+			const jsonData: unknown = await fallbackResponse.json();
 
 			// Type guards
 			if (typeof jsonData !== 'object' || jsonData === null) {
@@ -129,7 +140,8 @@ const factorioSchoolSourceConfig: BlueprintFetchSource = {
 			}
 
 			const typedData = jsonData as FactorioSchoolResponse;
-			if (!typedData.blueprintString?.blueprintString) {
+			const fetchedString = typedData.blueprintString?.blueprintString;
+			if (fetchedString === undefined || fetchedString === '') {
 				return {
 					success: false,
 					error: new Error('Blueprint data missing in API response'),
@@ -138,7 +150,7 @@ const factorioSchoolSourceConfig: BlueprintFetchSource = {
 
 			return {
 				success: true,
-				blueprintString: typedData.blueprintString.blueprintString,
+				blueprintString: fetchedString,
 				id: key,
 			};
 		} catch (error) {
@@ -161,10 +173,10 @@ const factorioPrintsSourceConfig: BlueprintFetchSource = {
 		}
 
 		const key = match[1];
+		const cdnUrl = constructCdnUrl(key);
 
 		// Try CDN first
 		try {
-			const cdnUrl = constructCdnUrl(key);
 			const cdnResponse = await fetch(cdnUrl);
 
 			if (cdnResponse.ok) {
@@ -195,7 +207,7 @@ const factorioPrintsSourceConfig: BlueprintFetchSource = {
 				};
 			}
 
-			const data = await response.json();
+			const data: unknown = await response.json();
 			if (typeof data !== 'string') {
 				return {
 					success: false,
@@ -265,7 +277,7 @@ const factorioBinDirectSourceConfig: BlueprintFetchSource = {
 	},
 };
 
-const SOURCE_CONFIGS: Record<string, BlueprintFetchSource> = {
+const SOURCE_CONFIGS: Record<string, BlueprintFetchSource | undefined> = {
 	'factorio.school': factorioSchoolSourceConfig,
 	'www.factorio.school': factorioSchoolSourceConfig,
 	'factorioprints.com': factorioPrintsSourceConfig,
@@ -281,7 +293,7 @@ async function fetchUrlImpl(pasted: string): Promise<BlueprintFetchSuccess | Blu
 		const domain = url.hostname;
 
 		const fetchConfig = SOURCE_CONFIGS[domain];
-		if (!fetchConfig) {
+		if (fetchConfig === undefined) {
 			return {
 				success: false,
 				error: new Error(`Unsupported blueprint source: ${domain}`),
@@ -292,7 +304,7 @@ async function fetchUrlImpl(pasted: string): Promise<BlueprintFetchSuccess | Blu
 
 		const result = await fetchConfig.fetchBlueprint(url);
 
-		if (!(result.success && result.blueprintString)) {
+		if (!result.success || result.blueprintString === undefined || result.blueprintString === '') {
 			return {
 				success: false,
 				error: result.error ?? new Error('Unknown fetch error'),
@@ -319,16 +331,14 @@ async function fetchUrlImpl(pasted: string): Promise<BlueprintFetchSuccess | Blu
 	}
 }
 
-export async function fetchUrl<
-	TQueryClient extends {
-		fetchQuery: <T>(options: {
-			queryKey: unknown[];
-			queryFn: () => Promise<T>;
-			staleTime?: number;
-			gcTime?: number;
-		}) => Promise<T>;
-	},
->(pasted: string, queryClient?: TQueryClient): Promise<BlueprintFetchSuccess | BlueprintFetchFailure> {
+async function fetchUrl(
+	pasted: string,
+	queryClient?: QueryClientLike,
+): Promise<BlueprintFetchSuccess | BlueprintFetchFailure> {
+	if (queryClient === undefined) {
+		return await fetchUrlImpl(pasted);
+	}
+
 	return await queryClient.fetchQuery({
 		queryKey: ['blueprint-url', pasted],
 		queryFn: async () => fetchUrlImpl(pasted),
@@ -366,29 +376,23 @@ function fetchData(pasted: string): BlueprintFetchSuccess | BlueprintFetchFailur
 	}
 }
 
-export async function fetchBlueprint<
-	TQueryClient extends {
-		fetchQuery: <T>(options: {
-			queryKey: unknown[];
-			queryFn: () => Promise<T>;
-			staleTime?: number;
-			gcTime?: number;
-		}) => Promise<T>;
-	},
->(deps: {pasted: string | undefined}, queryClient: TQueryClient): Promise<BlueprintFetchResult> {
+export async function fetchBlueprint(
+	deps: {pasted: string | undefined},
+	queryClient: QueryClientLike,
+): Promise<BlueprintFetchResult> {
 	const pasted = deps.pasted;
-	if (!pasted) {
+	if (pasted === undefined || pasted === '') {
 		return undefined;
 	}
 
 	// Simple URL detection
-	if (pasted.match(HTTP_URL_REGEX)) {
+	if (pasted.match(HTTP_URL_REGEX) !== null) {
 		return await fetchUrl(pasted, queryClient);
 	}
 
 	// Simple JSON/JSON5 detection - try parsing as JSON or JSON5
 	try {
-		const blueprintString = JSON5.parse(pasted) as BlueprintString;
+		const blueprintString: BlueprintString = JSON5.parse(pasted);
 		return fetchJson(pasted, blueprintString);
 	} catch {
 		// If not URL or JSON, assume it's blueprint data

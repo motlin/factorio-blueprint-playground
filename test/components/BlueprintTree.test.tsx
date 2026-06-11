@@ -1,6 +1,6 @@
 import {render} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import {describe, expect, it, vi} from 'vitest';
+import {describe, expect, it, vi} from 'vite-plus/test';
 
 import {BlueprintTree} from '../../src/components/blueprint/tree/BlueprintTree';
 import type {BlueprintString} from '../../src/parsing/types';
@@ -37,12 +37,9 @@ describe('BlueprintTree Component', () => {
 	};
 
 	it('highlights active blueprint on initial render', () => {
-		const onSelect = vi.fn();
+		const onSelect = vi.fn<(path: string) => void>();
 		const {container} = render(
-			<BlueprintTree
-				rootBlueprint={testBlueprintData}
-				onSelect={onSelect}
-			/>,
+			<BlueprintTree rootBlueprint={testBlueprintData} selectedPath="" onSelect={onSelect} />,
 		);
 
 		const treeRows = container.querySelectorAll('.tree-row');
@@ -55,13 +52,10 @@ describe('BlueprintTree Component', () => {
 
 	it('calls onSelect when clicking blueprints', async () => {
 		const user = userEvent.setup();
-		const onSelect = vi.fn();
+		const onSelect = vi.fn<(path: string) => void>();
 
 		const {container} = render(
-			<BlueprintTree
-				rootBlueprint={testBlueprintData}
-				onSelect={onSelect}
-			/>,
+			<BlueprintTree rootBlueprint={testBlueprintData} selectedPath="" onSelect={onSelect} />,
 		);
 
 		const firstBlueprint = container.querySelectorAll('.tree-row')[1];
@@ -71,25 +65,15 @@ describe('BlueprintTree Component', () => {
 	});
 
 	it('maintains selection state across rerenders', () => {
-		const onSelect = vi.fn();
+		const onSelect = vi.fn<(path: string) => void>();
 		const {container, rerender} = render(
-			<BlueprintTree
-				rootBlueprint={testBlueprintData}
-				selectedPath="1"
-				onSelect={onSelect}
-			/>,
+			<BlueprintTree rootBlueprint={testBlueprintData} selectedPath="1" onSelect={onSelect} />,
 		);
 
 		const initialRows = container.querySelectorAll('.tree-row');
 		expect(initialRows[1].className).toContain('selected');
 
-		rerender(
-			<BlueprintTree
-				rootBlueprint={testBlueprintData}
-				selectedPath="1"
-				onSelect={onSelect}
-			/>,
-		);
+		rerender(<BlueprintTree rootBlueprint={testBlueprintData} selectedPath="1" onSelect={onSelect} />);
 
 		const rerenderedRows = container.querySelectorAll('.tree-row');
 		expect(rerenderedRows[1].className).toContain('selected');

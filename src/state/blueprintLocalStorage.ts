@@ -10,7 +10,7 @@ export async function addBlueprint(
 	return blueprint;
 }
 
-export async function updateBlueprint(
+async function updateBlueprint(
 	sha: string,
 	changes: {
 		metadata?: Partial<Omit<BlueprintStorageMetadata, 'sha'>>;
@@ -18,9 +18,7 @@ export async function updateBlueprint(
 	},
 	updateTimestamp = true,
 ) {
-	const updated = await db.updateBlueprint(sha, changes, {updateTimestamp});
-	if (!updated) return null;
-	return updated;
+	return await db.updateBlueprint(sha, changes, {updateTimestamp});
 }
 
 /**
@@ -32,5 +30,5 @@ export async function updateBlueprintMetadata(
 	sha: string,
 	metadataChanges: Partial<Omit<BlueprintStorageMetadata, 'sha'>>,
 ) {
-	return updateBlueprint(sha, {metadata: metadataChanges}, false);
+	return await updateBlueprint(sha, {metadata: metadataChanges}, false);
 }

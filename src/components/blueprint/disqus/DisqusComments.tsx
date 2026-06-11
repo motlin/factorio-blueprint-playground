@@ -33,8 +33,9 @@ const DisqusComments = ({identifier, url, title}: DisqusCommentsProps) => {
 	const prevIdentifierRef = useRef<string | undefined>(undefined);
 
 	useEffect(() => {
-		if (!(identifier && url) || (prevIdentifierRef.current === identifier && window.DISQUS)) {
-			return;
+		const hasIdentifierAndUrl = identifier != null && identifier !== '' && url != null && url !== '';
+		if (!hasIdentifierAndUrl || (prevIdentifierRef.current === identifier && window.DISQUS != null)) {
+			return undefined;
 		}
 
 		prevIdentifierRef.current = identifier;
@@ -45,13 +46,13 @@ const DisqusComments = ({identifier, url, title}: DisqusCommentsProps) => {
 		}
 
 		// If Disqus is already loaded, reset it instead of reloading
-		if (window.DISQUS) {
+		if (window.DISQUS != null) {
 			window.DISQUS.reset({
 				reload: true,
 				config: function (this: DisqusConfig) {
 					this.page.identifier = identifier;
 					this.page.url = url;
-					if (title) this.page.title = title;
+					if (title != null && title !== '') this.page.title = title;
 				},
 			});
 			// Restore unique ID after Disqus processes
@@ -60,11 +61,11 @@ const DisqusComments = ({identifier, url, title}: DisqusCommentsProps) => {
 					containerRef.current.id = containerId;
 				}
 			}, 100);
-			return;
+			return undefined;
 		}
 
 		if (isDisqusLoading) {
-			return;
+			return undefined;
 		}
 
 		isDisqusLoading = true;
@@ -72,7 +73,7 @@ const DisqusComments = ({identifier, url, title}: DisqusCommentsProps) => {
 		window.disqus_config = function (this: DisqusConfig) {
 			this.page.url = url;
 			this.page.identifier = identifier;
-			if (title) this.page.title = title;
+			if (title != null && title !== '') this.page.title = title;
 		};
 
 		const script = document.createElement('script');
@@ -103,23 +104,17 @@ const DisqusComments = ({identifier, url, title}: DisqusCommentsProps) => {
 		};
 	}, [url, identifier, title, containerId]);
 
-	if (!(identifier && url)) {
+	if (identifier == null || identifier === '' || url == null || url === '') {
 		return null;
 	}
 
 	return (
 		<Panel title="Comments">
 			<div className="mt-8">
-				<div
-					ref={containerRef}
-					id={containerId}
-				/>
+				<div ref={containerRef} id={containerId} />
 				<noscript>
 					Please enable JavaScript to view the{' '}
-					<a
-						href="https://disqus.com/?ref_noscript"
-						rel="nofollow"
-					>
+					<a href="https://disqus.com/?ref_noscript" rel="nofollow">
 						comments powered by Disqus.
 					</a>
 				</noscript>

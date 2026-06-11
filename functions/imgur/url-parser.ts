@@ -147,7 +147,7 @@ export function parseImgurUrl(url: string): ImgurUrlParseResult {
 			}
 
 			const pageId = parsePageUrl(pathname);
-			if (!pageId) {
+			if (pageId == null) {
 				return {
 					success: false,
 					error: 'Invalid Imgur URL format',
@@ -192,9 +192,8 @@ export function parseImgurUrl(url: string): ImgurUrlParseResult {
 		const idWarnings = validateImgurId(data.id);
 		const allWarnings = [...data.warnings, ...idWarnings];
 
-		const normalizedUrl = data.type
-			? `https://i.imgur.com/${data.id}.${data.type}`
-			: `https://imgur.com/${data.id}`;
+		const normalizedUrl =
+			data.type == null ? `https://imgur.com/${data.id}` : `https://i.imgur.com/${data.id}.${data.type}`;
 
 		return {
 			success: true,
