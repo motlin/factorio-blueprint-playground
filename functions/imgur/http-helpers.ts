@@ -8,7 +8,8 @@ export function setupCORSHeaders(headers: Headers, originHeader: string | null, 
 	];
 
 	const origin =
-		originHeader &&
+		originHeader != null &&
+		originHeader.length > 0 &&
 		allowedOrigins.some((allowed) =>
 			originHeader.match(new RegExp(allowed.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\\\*/g, '.*'))),
 		)

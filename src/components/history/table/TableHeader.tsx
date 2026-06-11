@@ -16,11 +16,7 @@ export function TableHeader({label, className = 'history-header', sortDirection 
 
 	if (onSort) {
 		return (
-			<button
-				className={`${className} sortable`}
-				onClick={handleClick}
-				type="button"
-			>
+			<button className={`${className} sortable`} onClick={handleClick} type="button">
 				{label}
 				<SortIndicator direction={sortDirection} />
 			</button>

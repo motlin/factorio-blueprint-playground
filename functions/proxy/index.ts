@@ -4,6 +4,27 @@ const FILTERED_HEADERS_REGEX = /^(origin|eferer|^cf-|^x-forw|^x-cors-headers)/;
 
 type CustomHeaders = Record<string, string>;
 
+function parseCustomHeaders(raw: string): CustomHeaders | null {
+	let parsed: unknown;
+	try {
+		parsed = JSON.parse(raw);
+	} catch {
+		return null;
+	}
+
+	if (typeof parsed !== 'object' || parsed === null) {
+		return null;
+	}
+
+	const result: CustomHeaders = {};
+	for (const [key, value] of Object.entries(parsed)) {
+		if (typeof value === 'string') {
+			result[key] = value;
+		}
+	}
+	return result;
+}
+
 interface CloudflareRequestCF {
 	country?: string;
 	colo?: string;
@@ -35,7 +56,7 @@ const config: ProxyConfig = {
 };
 
 function isListedIn(uri: string | null, listing: string[]): boolean {
-	if (!uri) return true;
+	if (uri == null || uri.length === 0) return true;
 	return listing.some((pattern) => new RegExp(pattern).test(uri));
 }
 
@@ -45,11 +66,11 @@ function setupCORSHeaders(
 	isPreflightRequest: boolean,
 	requestHeaders?: string,
 ): Headers {
-	headers.set('Access-Control-Allow-Origin', originHeader || '*');
+	headers.set('Access-Control-Allow-Origin', originHeader != null && originHeader.length > 0 ? originHeader : '*');
 
 	if (isPreflightRequest) {
 		headers.set('Access-Control-Allow-Methods', '*');
-		if (requestHeaders) {
+		if (requestHeaders != null && requestHeaders.length > 0) {
 			headers.set('Access-Control-Allow-Headers', requestHeaders);
 		}
 		headers.delete('X-Content-Type-Options');
@@ -68,7 +89,7 @@ const wrappedOnRequest = async (context: EventContext<Env, string, Record<string
 	const request = context.request;
 	const isPreflightRequest = request.method === 'OPTIONS';
 	const originUrl = new URL(request.url);
-	const targetUrl = decodeURIComponent(decodeURIComponent(originUrl.search.substr(1)));
+	const targetUrl = decodeURIComponent(decodeURIComponent(originUrl.search.slice(1)));
 	const originHeader = request.headers.get('Origin');
 	const connectingIp = request.headers.get('CF-Connecting-IP');
 
@@ -89,12 +110,8 @@ const wrappedOnRequest = async (context: EventContext<Env, string, Record<string
 	let customHeaders: CustomHeaders | null = null;
 	const corsHeadersStr = request.headers.get('x-cors-headers');
 
-	if (corsHeadersStr) {
-		try {
-			customHeaders = JSON.parse(corsHeadersStr) as CustomHeaders;
-		} catch {
-			// Invalid JSON in custom headers
-		}
+	if (corsHeadersStr != null && corsHeadersStr.length > 0) {
+		customHeaders = parseCustomHeaders(corsHeadersStr);
 	}
 
 	if (originUrl.search.startsWith('?')) {
@@ -110,11 +127,16 @@ const wrappedOnRequest = async (context: EventContext<Env, string, Record<string
 		}
 
 		try {
+			// The Cloudflare workers-types `ReadableStream` and the lib.dom `ReadableStream` are
+			// nominally distinct even though they are identical at runtime; the worker fetch accepts
+			// the request body stream directly. Cast bridges that lib mismatch.
+			// oxlint-disable-next-line no-unsafe-type-assertion -- cross-lib ReadableStream identity mismatch (workers-types vs dom)
+			const requestBody = (isPreflightRequest ? null : request.body) as BodyInit | null;
 			const response = await fetch(targetUrl, {
 				method: request.method,
 				headers: filteredHeaders,
 				redirect: 'follow',
-				body: isPreflightRequest ? null : (request.body as BodyInit),
+				body: requestBody,
 			});
 
 			const responseHeaders = new Headers(response.headers);
@@ -127,11 +149,12 @@ const wrappedOnRequest = async (context: EventContext<Env, string, Record<string
 			}
 
 			exposedHeaders.push('cors-received-headers');
+			const requestHeaders = request.headers.get('access-control-request-headers');
 			setupCORSHeaders(
 				responseHeaders,
 				originHeader,
 				isPreflightRequest,
-				request.headers.get('access-control-request-headers') || undefined,
+				requestHeaders != null && requestHeaders.length > 0 ? requestHeaders : undefined,
 			);
 
 			responseHeaders.set('Access-Control-Expose-Headers', exposedHeaders.join(','));
@@ -150,24 +173,35 @@ const wrappedOnRequest = async (context: EventContext<Env, string, Record<string
 	}
 
 	const responseHeaders = setupCORSHeaders(new Headers(), originHeader, isPreflightRequest);
-	const cf = request.cf as CloudflareRequestCF | undefined;
+	const cf: CloudflareRequestCF | undefined = request.cf;
 
-	return new Response(
+	let infoBody =
 		'CLOUDFLARE-CORS-ANYWHERE\n\n' +
-			'Source: https://github.com/Zibri/cloudflare-cors-anywhere\n\n' +
-			`Usage: ${originUrl.origin}/?uri\n\n` +
-			'Limits: 100,000 requests/day\n' +
-			'        1,000 requests/10 minutes\n\n' +
-			`${originHeader ? `Origin: ${originHeader}\n` : ''}` +
-			`IP: ${connectingIp}\n` +
-			`${cf?.country ? `Country: ${cf.country}\n` : ''}` +
-			`${cf?.colo ? `Datacenter: ${cf.colo}\n` : ''}` +
-			`${customHeaders ? `\nx-cors-headers: ${JSON.stringify(customHeaders)}` : ''}`,
-		{
-			status: 200,
-			headers: responseHeaders,
-		},
-	);
+		'Source: https://github.com/Zibri/cloudflare-cors-anywhere\n\n' +
+		`Usage: ${originUrl.origin}/?uri\n\n` +
+		'Limits: 100,000 requests/day\n' +
+		'        1,000 requests/10 minutes\n\n';
+
+	if (originHeader != null && originHeader.length > 0) {
+		infoBody += `Origin: ${originHeader}\n`;
+	}
+	if (connectingIp != null && connectingIp.length > 0) {
+		infoBody += `IP: ${connectingIp}\n`;
+	}
+	if (cf?.country != null && cf.country.length > 0) {
+		infoBody += `Country: ${cf.country}\n`;
+	}
+	if (cf?.colo != null && cf.colo.length > 0) {
+		infoBody += `Datacenter: ${cf.colo}\n`;
+	}
+	if (customHeaders != null) {
+		infoBody += `\nx-cors-headers: ${JSON.stringify(customHeaders)}`;
+	}
+
+	return new Response(infoBody, {
+		status: 200,
+		headers: responseHeaders,
+	});
 };
 
 export const onRequest = wrappedOnRequest;

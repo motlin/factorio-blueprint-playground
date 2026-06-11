@@ -33,6 +33,22 @@ interface ImgurAlbumData {
 	images?: ImgurImageData[];
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === 'object' && value !== null;
+}
+
+function isImgurImageData(value: unknown): value is ImgurImageData {
+	return isRecord(value) && typeof value.id === 'string';
+}
+
+function isImgurAlbumData(value: unknown): value is ImgurAlbumData {
+	return isRecord(value);
+}
+
+function extractDataField(value: unknown): unknown {
+	return isRecord(value) ? value.data : undefined;
+}
+
 export async function resolveImgurImage(parsedUrl: ParsedImgurUrl, clientId: string): Promise<ImgurApiResponse> {
 	const headers = {
 		Authorization: `Client-ID ${clientId}`,
@@ -52,7 +68,7 @@ export async function resolveImgurImage(parsedUrl: ParsedImgurUrl, clientId: str
 			success: true,
 			data: {
 				id: imageData.id,
-				type: imageData.type || `image/${extension}`,
+				type: imageData.type != null && imageData.type.length > 0 ? imageData.type : `image/${extension}`,
 				extension,
 				width: imageData.width,
 				height: imageData.height,
@@ -83,11 +99,11 @@ export async function resolveImgurImage(parsedUrl: ParsedImgurUrl, clientId: str
 			success: true,
 			data: {
 				id: firstImage.id,
-				type: firstImage.type || `image/${extension}`,
+				type: firstImage.type != null && firstImage.type.length > 0 ? firstImage.type : `image/${extension}`,
 				extension,
 				width: firstImage.width,
 				height: firstImage.height,
-				title: firstImage.title || albumData.title,
+				title: firstImage.title ?? albumData.title,
 				isFromAlbum: true,
 				warnings,
 			},
@@ -120,8 +136,11 @@ export async function resolveImgurImage(parsedUrl: ParsedImgurUrl, clientId: str
 		const singleImageResponse = await fetch(`https://api.imgur.com/3/image/${parsedUrl.id}`, {headers});
 
 		if (singleImageResponse.ok) {
-			const data = (await singleImageResponse.json()) as {data: ImgurImageData};
-			return buildImageResponse(data.data);
+			const imageData = extractDataField(await singleImageResponse.json());
+			if (isImgurImageData(imageData)) {
+				return buildImageResponse(imageData);
+			}
+			return handleApiError(singleImageResponse.status);
 		}
 
 		// If single image fails and this looks like it could be an album, try album API
@@ -129,8 +148,11 @@ export async function resolveImgurImage(parsedUrl: ParsedImgurUrl, clientId: str
 			const albumResponse = await fetch(`https://api.imgur.com/3/album/${parsedUrl.id}`, {headers});
 
 			if (albumResponse.ok) {
-				const data = (await albumResponse.json()) as {data: ImgurAlbumData};
-				return buildAlbumResponse(data.data);
+				const albumData = extractDataField(await albumResponse.json());
+				if (isImgurAlbumData(albumData)) {
+					return buildAlbumResponse(albumData);
+				}
+				return handleApiError(albumResponse.status);
 			}
 
 			return handleApiError(albumResponse.status);

@@ -47,7 +47,7 @@ export async function generateSha(data: string): Promise<string> {
 		.join('');
 }
 
-export class BlueprintDatabase extends Dexie {
+class BlueprintDatabase extends Dexie {
 	blueprints!: Table<DatabaseBlueprint, string>;
 	recent!: Table<{id: string; sha: string}, string>;
 
@@ -93,11 +93,11 @@ export class BlueprintDatabase extends Dexie {
 	async getMostRecent(): Promise<DatabaseBlueprint | null> {
 		try {
 			const recentRecord = await this.recent.get('__most_recent');
-			if (!recentRecord?.sha) {
+			if (recentRecord === undefined || recentRecord.sha === '') {
 				return null;
 			}
 
-			return this.getBlueprint(recentRecord.sha);
+			return await this.getBlueprint(recentRecord.sha);
 		} catch (error) {
 			logger.error('Error getting most recent blueprint', error);
 			return null;
@@ -127,12 +127,12 @@ export class BlueprintDatabase extends Dexie {
 		const updated = {
 			metadata: {
 				...blueprint.metadata,
-				...(changes.metadata || {}),
+				...(changes.metadata ?? {}),
 				...(shouldUpdateTimestamp ? {lastUpdatedOn: Date.now()} : {}),
 			},
 			gameData: {
 				...blueprint.gameData,
-				...(changes.gameData || {}),
+				...(changes.gameData ?? {}),
 			},
 		};
 
@@ -147,7 +147,7 @@ export class BlueprintDatabase extends Dexie {
 
 	async getBlueprint(sha: string): Promise<DatabaseBlueprint | null> {
 		const blueprint = await this.blueprints.get(sha);
-		return blueprint || null;
+		return blueprint ?? null;
 	}
 
 	async removeBlueprint(sha: string): Promise<void> {
@@ -180,7 +180,7 @@ export const db = new BlueprintDatabase();
 // Utility functions to inspect IndexedDB from browser console
 interface BlueprintDbUtils {
 	listAll(): Promise<DatabaseBlueprint[]>;
-	getBySha(sha: string): Promise<DatabaseBlueprint | undefined>;
+	getBySha(sha: string): Promise<DatabaseBlueprint | null>;
 	getMostRecent(): Promise<DatabaseBlueprint | null>;
 	clearAll(): Promise<void>;
 	formatDate(timestamp: number): string;
@@ -199,25 +199,35 @@ if (typeof window !== 'undefined') {
 			const blueprints = await db.listBlueprints();
 
 			console.table(
-				blueprints.map((bp) => ({
-					sha: bp.metadata.sha,
-					label: bp.gameData.label || '(no label)',
-					description: bp.gameData.description
-						? bp.gameData.description.length > 30
-							? `${bp.gameData.description.substring(0, 30)}...`
-							: bp.gameData.description
-						: '(none)',
-					type: bp.gameData.type,
-					gameVersion: bp.gameData.gameVersion || '(none)',
-					version: parseVersion3(bp.gameData.gameVersion) || '(none)',
-					icons:
-						bp.gameData.icons.length > 0
-							? bp.gameData.icons.map((icon) => `${icon.type || 'item'}/${icon.name}`).join(', ')
-							: '(none)',
-					created: new Date(bp.metadata.createdOn).toLocaleString(),
-					updated: new Date(bp.metadata.lastUpdatedOn).toLocaleString(),
-					selection: bp.metadata.selection || '(none)',
-				})),
+				blueprints.map((bp) => {
+					const {label, description, gameVersion} = bp.gameData;
+					const {selection} = bp.metadata;
+					return {
+						sha: bp.metadata.sha,
+						label: label !== undefined && label !== '' ? label : '(no label)',
+						description:
+							description !== undefined && description !== ''
+								? description.length > 30
+									? `${description.substring(0, 30)}...`
+									: description
+								: '(none)',
+						type: bp.gameData.type,
+						gameVersion: gameVersion !== undefined && gameVersion !== '' ? gameVersion : '(none)',
+						version: gameVersion === undefined ? '(none)' : parseVersion3(Number(gameVersion)),
+						icons:
+							bp.gameData.icons.length > 0
+								? bp.gameData.icons
+										.map(
+											(icon) =>
+												`${icon.type !== undefined && icon.type !== '' ? icon.type : 'item'}/${icon.name}`,
+										)
+										.join(', ')
+								: '(none)',
+						created: new Date(bp.metadata.createdOn).toLocaleString(),
+						updated: new Date(bp.metadata.lastUpdatedOn).toLocaleString(),
+						selection: selection !== undefined && selection !== '' ? selection : '(none)',
+					};
+				}),
 			);
 
 			return blueprints;

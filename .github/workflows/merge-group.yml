@@ -9,128 +9,113 @@ concurrency:
     cancel-in-progress: true
 
 jobs:
-    lint:
-        name: Lint (Biome)
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v6
-            - uses: jdx/mise-action@v4
-
-            - run: npm ci
-
-            - run: npx @tanstack/router-cli generate --routesDirectory ./src/routes --generatedRouteTree ./src/routeTree.gen.ts
-
-            - run: npm run ci:lint
-
-    format:
-        name: Format (Biome)
-        runs-on: ubuntu-latest
-
-        steps:
-            - uses: actions/checkout@v6
-            - uses: jdx/mise-action@v4
-
-            - run: npm ci
-
-            - run: npm run ci:format
-
-    typecheck:
-        name: Type Check
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v6
-            - uses: jdx/mise-action@v4
-
-            - name: Install dependencies
-              run: npm ci
-
-            - name: Generate route files
-              run: npx @tanstack/router-cli generate --routesDirectory ./src/routes --generatedRouteTree ./src/routeTree.gen.ts
-
-            - name: Type Check
-              run: npm run ci:typecheck
-
-    test:
-        name: Test
-        runs-on: ubuntu-latest
-        timeout-minutes: 10
-
-        steps:
-            - uses: actions/checkout@v6
-            - uses: jdx/mise-action@v4
-
-            - run: npm ci
-
-            - run: npm run ci:test
-
-    coverage:
-        runs-on: ubuntu-latest
-        timeout-minutes: 10
-        steps:
-            - uses: actions/checkout@v6
-            - uses: jdx/mise-action@v4
-
-            - run: npm ci
-
-            - run: npm run test:coverage
-
-            - name: Upload coverage report
-              uses: actions/upload-artifact@v7
-              with:
-                  name: coverage-report
-                  path: coverage/
-                  retention-days: 14
-
-    build:
-        runs-on: ubuntu-latest
-        timeout-minutes: 10
-        steps:
-            - uses: actions/checkout@v6
-            - uses: jdx/mise-action@v4
-
-            - run: npm ci
-
-            - name: Generate route files
-              run: npx @tanstack/router-cli generate --routesDirectory ./src/routes --generatedRouteTree ./src/routeTree.gen.ts
-
-            - run: npm run build
-
-            - name: Upload build artifacts
-              if: success()
-              uses: actions/upload-artifact@v7
-              with:
-                  name: dist
-                  path: dist/
-                  retention-days: 1
-
-    build-types:
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v6
-            - uses: jdx/mise-action@v4
-
-            - run: npm ci
-
-            - name: Generate route files
-              run: npx @tanstack/router-cli generate --routesDirectory ./src/routes --generatedRouteTree ./src/routeTree.gen.ts
-
-            - run: npm run build:types
-
     pre-commit:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v6
-            - uses: actions/setup-python@v6
-              with:
-                  python-version: "3.x"
             - uses: jdx/mise-action@v4
-            - run: npm ci
-            - uses: pre-commit/action@v3.0.1
+              with:
+                  cache: true
+              env:
+                  GITHUB_TOKEN: ${{ github.token }}
+            - uses: actions/cache@v5
+              with:
+                  path: ~/.local/share/pnpm/store
+                  key: pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+            - run: just install
+            - run: pre-commit run --all-files
+
+    check:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+            - uses: jdx/mise-action@v4
+              with:
+                  cache: true
+              env:
+                  GITHUB_TOKEN: ${{ github.token }}
+            - uses: actions/cache@v5
+              with:
+                  path: ~/.local/share/pnpm/store
+                  key: pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+            - run: just check
+
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+            - uses: jdx/mise-action@v4
+              with:
+                  cache: true
+              env:
+                  GITHUB_TOKEN: ${{ github.token }}
+            - uses: actions/cache@v5
+              with:
+                  path: ~/.local/share/pnpm/store
+                  key: pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+            - run: just build
+
+    test:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+            - uses: jdx/mise-action@v4
+              with:
+                  cache: true
+              env:
+                  GITHUB_TOKEN: ${{ github.token }}
+            - uses: actions/cache@v5
+              with:
+                  path: ~/.local/share/pnpm/store
+                  key: pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+            - run: just test
+
+    markdownlint:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+            - uses: jdx/mise-action@v4
+              with:
+                  cache: true
+              env:
+                  GITHUB_TOKEN: ${{ github.token }}
+            - uses: actions/cache@v5
+              with:
+                  path: ~/.local/share/pnpm/store
+                  key: pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+            - run: just install
+            - run: vp exec markdownlint-cli2
+
+    yamllint:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+            - uses: jdx/mise-action@v4
+              with:
+                  cache: true
+              env:
+                  GITHUB_TOKEN: ${{ github.token }}
+            - run: yamllint .
+
+    fallow:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+            - uses: jdx/mise-action@v4
+              with:
+                  cache: true
+              env:
+                  GITHUB_TOKEN: ${{ github.token }}
+            - uses: actions/cache@v5
+              with:
+                  path: ~/.local/share/pnpm/store
+                  key: pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+            - run: just fallow
 
     all-checks:
         name: All checks
         if: ${{ !cancelled() }}
-        needs: [lint, format, typecheck, test, coverage, build, build-types, pre-commit]
+        needs: [pre-commit, check, build, test, markdownlint, yamllint, fallow]
         runs-on: ubuntu-latest
         steps:
             - uses: re-actors/alls-green@release/v1

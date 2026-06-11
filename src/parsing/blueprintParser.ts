@@ -8,7 +8,7 @@ export class BlueprintError extends Error {
 	constructor(message: string, options?: ErrorOptions) {
 		super(message);
 		this.name = 'BlueprintError';
-		if (options?.cause) {
+		if (options?.cause !== undefined) {
 			this.cause = options.cause;
 		}
 	}
@@ -33,6 +33,7 @@ export function deserializeBlueprint(blueprintData: string): BlueprintString {
 	const decompressedBytes = unzlibSync(bytes);
 	const decompressedStr = new TextDecoder().decode(decompressedBytes);
 
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- JSON.parse returns untyped data; the blueprint shape is validated downstream by consumers (BlueprintWrapper.getType throws on unrecognized shapes)
 	return JSON.parse(decompressedStr.trim()) as BlueprintString;
 }
 
@@ -42,8 +43,8 @@ export function deserializeBlueprintNoThrow(data: string): BlueprintString | nul
 	} catch (error) {
 		logger.error('Failed to parse blueprint', error instanceof Error ? error : new Error(String(error)), {
 			context: 'deserializeBlueprintNoThrow',
-			inputLength: data?.length,
-			inputStart: data?.substring(0, 100), // First 100 chars for debugging
+			inputLength: data.length,
+			inputStart: data.substring(0, 100), // First 100 chars for debugging
 		});
 		return null;
 	}
@@ -71,7 +72,7 @@ export function serializeBlueprint(
  */
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Blueprint extraction requires nested path traversal
 export function extractBlueprint(blueprint: BlueprintString, path?: string): BlueprintString {
-	if (!path) {
+	if (path === undefined || path === '') {
 		return blueprint;
 	}
 

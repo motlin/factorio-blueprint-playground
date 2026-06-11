@@ -10,7 +10,7 @@ export function getErrorMessage(error: unknown): string {
 	}
 
 	// If it's an object with a message property
-	if (error && typeof error === 'object' && 'message' in error) {
+	if (typeof error === 'object' && error !== null && 'message' in error) {
 		return String(error.message);
 	}
 

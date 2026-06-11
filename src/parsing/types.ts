@@ -1,65 +1,7 @@
-// The different types of objects we can parse
-export type ParserBlueprintType = 'blueprint' | 'blueprint_book' | 'upgrade_planner' | 'deconstruction_planner';
-
 interface Position {
 	x: number;
 	y: number;
 }
-
-type VirtualSignalName =
-	| 'signal-each'
-	| 'signal-anything'
-	| 'signal-everything'
-	| 'signal-info'
-	| 'signal-check'
-	| 'signal-deny'
-	| 'signal-red'
-	| 'signal-green'
-	| 'signal-blue'
-	| 'signal-0'
-	| 'signal-1'
-	| 'signal-2'
-	| 'signal-3'
-	| 'signal-4'
-	| 'signal-5'
-	| 'signal-6'
-	| 'signal-7'
-	| 'signal-8'
-	| 'signal-9'
-	| 'signal-A'
-	| 'signal-B'
-	| 'signal-C'
-	| 'signal-D'
-	| 'signal-E'
-	| 'signal-F'
-	| 'signal-G'
-	| 'signal-H'
-	| 'signal-I'
-	| 'signal-J'
-	| 'signal-K'
-	| 'signal-L'
-	| 'signal-M'
-	| 'signal-N'
-	| 'signal-O'
-	| 'signal-P'
-	| 'signal-Q'
-	| 'signal-R'
-	| 'signal-S'
-	| 'signal-T'
-	| 'signal-U'
-	| 'signal-V'
-	| 'signal-W'
-	| 'signal-X'
-	| 'signal-Y'
-	| 'signal-Z'
-	| 'signal-dot'
-	| 'signal-comma'
-	| 'signal-skull'
-	| 'signal-item-parameter'
-	| 'signal-fuel-parameter'
-	| 'signal-pink'
-	| 'signal-yellow'
-	| 'shape-horizontal';
 
 export type SignalType =
 	| 'item'
@@ -85,11 +27,6 @@ export interface SignalID {
 	type?: SignalType;
 	name: string;
 	quality?: Quality;
-}
-
-export interface VirtualSignalID extends SignalID {
-	type: 'virtual-signal';
-	name: VirtualSignalName;
 }
 
 export interface Icon {
@@ -267,11 +204,6 @@ export interface Entity {
 	quality?: Quality;
 }
 
-export interface Wire {
-	entity_number: number;
-	circuit_id: number;
-}
-
 interface ScheduleRecord {
 	station: string;
 	wait_conditions: {
@@ -386,32 +318,4 @@ export interface BlueprintString {
 	blueprint_book?: BlueprintBook;
 	upgrade_planner?: UpgradePlanner;
 	deconstruction_planner?: DeconstructionPlanner;
-}
-
-// Controlling trains
-export interface StopBehavior {
-	circuit_enabled?: boolean;
-	logistic_condition?: CircuitCondition;
-	read_from_train?: boolean;
-	train_stopped_signal?: SignalID;
-	send_to_train?: boolean;
-	manual_trains_limit?: number;
-	priority?: number;
-}
-
-// For stations
-export interface Station {
-	station?: string;
-	color?: {
-		r: number;
-		g: number;
-		b: number;
-		a: number;
-	};
-}
-
-export interface DisplayPanel extends Entity {
-	text?: string;
-	icon?: SignalID;
-	always_show?: boolean;
 }

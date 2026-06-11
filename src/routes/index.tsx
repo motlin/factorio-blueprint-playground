@@ -3,9 +3,10 @@ import {z} from 'zod';
 
 import {BlueprintPlayground} from '../components/BlueprintPlayground';
 import {fetchBlueprint} from '../fetching/blueprintFetcher';
-import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
+import {type BlueprintInfo, BlueprintWrapper} from '../parsing/BlueprintWrapper';
 import {extractBlueprint} from '../parsing/blueprintParser';
 import {addBlueprint} from '../state/blueprintLocalStorage';
+import type {BlueprintGameData, DatabaseBlueprintType} from '../storage/db';
 
 /**
  * - pasted: Whatever was pasted, a blueprint string, json, or url
@@ -19,85 +20,53 @@ export interface RootSearch {
 }
 
 export const searchSchema = z.object({
-	pasted: z.string().catch(undefined),
-	selection: z.string().catch(undefined),
-	focusTextarea: z.boolean().catch(undefined),
+	pasted: z.string().optional().catch(undefined),
+	selection: z.string().optional().catch(undefined),
+	focusTextarea: z.boolean().optional().catch(undefined),
 });
 
 export const Route = createFileRoute('/')({
 	component: BlueprintPlayground,
 	validateSearch: searchSchema,
-	loaderDeps: ({search: {pasted}}) => ({pasted}),
-	loader: async ({
-		deps: {pasted},
-		search,
-		context: {queryClient},
-	}: {
-		deps: {pasted: string};
-		search: Record<string, unknown>;
-		context: {
-			queryClient: {
-				fetchQuery: <T>(options: {
-					queryKey: unknown[];
-					queryFn: () => Promise<T>;
-					staleTime?: number;
-					gcTime?: number;
-				}) => Promise<T>;
-			};
-		};
-	}) => {
+	loaderDeps: ({search: {pasted, selection}}) => ({pasted, selection}),
+	loader: async ({deps: {pasted, selection}, context: {queryClient}}) => {
 		const result = await fetchBlueprint({pasted}, queryClient);
 
 		// If successful, save to history
-		if (result?.success && result.blueprintString) {
+		if (result?.success === true) {
 			try {
 				const wrapper = new BlueprintWrapper(result.blueprintString);
-				const type = wrapper.getType().replace('-', '_');
-				const content = wrapper.getContent() as Record<string, unknown>;
+				const info = wrapper.getInfo();
+				const typeMap: Record<BlueprintInfo['type'], DatabaseBlueprintType> = {
+					blueprint: 'blueprint',
+					'blueprint-book': 'blueprint_book',
+					'upgrade-planner': 'upgrade_planner',
+					'deconstruction-planner': 'deconstruction_planner',
+				};
+				const type = typeMap[info.type];
 
-				if (content) {
-					const metadata = {
-						type,
-						label: content.label as string | undefined,
-						description: content.description as string | undefined,
-						gameVersion: (content.version as number | undefined)?.toString(),
-						icons: (() => {
-							const contentIcons = content.icons;
-							const icons = Array.isArray(contentIcons) ? contentIcons : [];
+				const metadata: Omit<BlueprintGameData, 'createdOn' | 'lastUpdatedOn'> = {
+					type,
+					label: info.label,
+					description: info.description,
+					gameVersion: info.version.toString(),
+					icons: (info.icons ?? []).map((icon) => ({
+						type: icon.signal.type,
+						name: icon.signal.name,
+					})),
+				};
 
-							// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Icon parsing requires type validation
-							return icons.map((icon: unknown) => {
-								if (typeof icon !== 'object' || icon === null) {
-									return {name: 'unknown'};
-								}
-
-								const iconObj = icon as Record<string, unknown>;
-								const signalRaw = iconObj.signal;
-								const signal =
-									typeof signalRaw === 'object' && signalRaw !== null
-										? (signalRaw as Record<string, unknown>)
-										: {};
-
-								return {
-									type: typeof signal.type === 'string' ? signal.type : undefined,
-									name: typeof signal.name === 'string' ? signal.name : '',
-								};
-							});
-						})(),
-					};
-
-					let validSelection: string | undefined;
-					try {
-						if (typeof search?.selection === 'string' && search.selection) {
-							extractBlueprint(result.blueprintString, search.selection);
-							validSelection = search.selection;
-						}
-					} catch (error) {
-						console.warn('Invalid selection path, not saving to history:', error);
+				let validSelection: string | undefined;
+				try {
+					if (selection != null && selection !== '') {
+						extractBlueprint(result.blueprintString, selection);
+						validSelection = selection;
 					}
-
-					await addBlueprint(result.pasted, metadata, validSelection, result.fetchMethod);
+				} catch (error) {
+					console.warn('Invalid selection path, not saving to history:', error);
 				}
+
+				await addBlueprint(result.pasted, metadata, validSelection, result.fetchMethod);
 			} catch (error) {
 				console.error('Failed to save blueprint to history:', error);
 			}

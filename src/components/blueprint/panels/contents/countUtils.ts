@@ -21,6 +21,7 @@ export function countItems<T>(
 
 export function mapToSortedArray(counts: Map<string, number>): {name: string; quality: Quality; count: number}[] {
 	const parsedArray = Array.from(counts.entries()).map(([key, count]) => {
+		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- keys are produced by JSON.stringify of this exact shape in countItems
 		const parsed = JSON.parse(key) as {name: string; quality: Quality};
 		return {...parsed, count};
 	});
@@ -36,7 +37,7 @@ export const getTileKey = (tile: Tile) => ({
 });
 
 export const getRecipeKey = (entity: Entity) => {
-	if (!entity.recipe) {
+	if (entity.recipe == null || entity.recipe === '') {
 		return undefined;
 	}
 	return {
@@ -55,7 +56,9 @@ export const getItemKey = (item: ItemStack) => {
 export const getItemCount = (item: ItemStack): number => {
 	let total = 0;
 	for (const location of item.items.in_inventory) {
-		total += location.count || 1;
+		// A zero or missing count represents a single placed item, so fall back to 1.
+		const count = location.count;
+		total += count != null && count !== 0 ? count : 1;
 	}
 	return total;
 };

@@ -1,6 +1,6 @@
 import {fireEvent, render} from '@testing-library/react';
 import type React from 'react';
-import {describe, expect, it, vi} from 'vitest';
+import {describe, expect, it, vi} from 'vite-plus/test';
 
 import {ButtonGreen} from '../../src/components/ui/ButtonGreen';
 import '../../test/setup';
@@ -23,7 +23,7 @@ describe('ButtonGreen Component', () => {
 
 	// Test click handler functionality
 	it('calls onClick handler when clicked', () => {
-		const handleClick = vi.fn();
+		const handleClick = vi.fn<(e: React.MouseEvent<HTMLButtonElement>) => void>();
 		const {container} = render(<ButtonGreen onClick={handleClick}>Clickable Button</ButtonGreen>);
 
 		const button = container.firstChild as HTMLButtonElement;

@@ -8,9 +8,18 @@ interface Env {
 	ENVIRONMENT?: string;
 }
 
-async function parseRequestBody(request: Request): Promise<{url: string} | null> {
+function hasStringUrl(value: unknown): value is {url: string} {
+	return (
+		typeof value === 'object' &&
+		value !== null &&
+		'url' in value &&
+		typeof (value as {url: unknown}).url === 'string'
+	);
+}
+
+async function parseRequestBody(request: {json: () => Promise<unknown>}): Promise<unknown> {
 	try {
-		return (await request.json()) as {url: string};
+		return await request.json();
 	} catch {
 		return null;
 	}
@@ -37,7 +46,7 @@ async function handleRequest(context: EventContext<Env, string, Record<string, u
 	try {
 		const body = await parseRequestBody(request);
 
-		if (!body?.url) {
+		if (!hasStringUrl(body) || body.url.length === 0) {
 			return handlers.handleMissingUrl();
 		}
 

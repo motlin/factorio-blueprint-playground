@@ -10,8 +10,12 @@ import type {TreeNode} from './types';
  * @returns boolean indicating if the node is active
  */
 export function isNodeActive(node: TreeNode, parentNode?: TreeNode): boolean {
-	const activeIndex = parentNode?.blueprint.blueprint_book?.active_index;
-	if (!activeIndex) {
+	if (parentNode == null) {
+		return false;
+	}
+
+	const activeIndex = parentNode.blueprint.blueprint_book?.active_index;
+	if (activeIndex == null || activeIndex === 0) {
 		return false;
 	}
 
@@ -30,7 +34,7 @@ export function isNodeActive(node: TreeNode, parentNode?: TreeNode): boolean {
  */
 export function buildNode(blueprint: BlueprintString, path: string): TreeNode {
 	const children =
-		blueprint.blueprint_book?.blueprints?.map((child, index) => {
+		blueprint.blueprint_book?.blueprints.map((child, index) => {
 			const childPath = path ? `${path}.${index + 1}` : `${index + 1}`;
 			return buildNode(child, childPath);
 		}) ?? [];

@@ -1,5 +1,5 @@
 import {render, screen} from '@testing-library/react';
-import {describe, expect, it} from 'vitest';
+import {describe, expect, it} from 'vite-plus/test';
 
 import {TableHeader} from '../../src/components/history/table/TableHeader';
 
@@ -13,12 +13,7 @@ describe('TableHeader Component', () => {
 	});
 
 	it('renders with custom className', () => {
-		render(
-			<TableHeader
-				label="Custom Header"
-				className="custom-header"
-			/>,
-		);
+		render(<TableHeader label="Custom Header" className="custom-header" />);
 
 		const headerElement = screen.getByText('Custom Header');
 		expect(headerElement).toBeInTheDocument();

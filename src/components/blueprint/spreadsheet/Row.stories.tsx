@@ -12,10 +12,7 @@ const meta: Meta<typeof Row> = {
 	tags: ['autodocs'],
 	decorators: [
 		(StoryComponent) => (
-			<div
-				className="spreadsheet-container"
-				style={{minWidth: '600px'}}
-			>
+			<div className="spreadsheet-container" style={{minWidth: '600px'}}>
 				<StoryComponent />
 			</div>
 		),

@@ -8,7 +8,7 @@ updates:
           timezone: 'America/New_York'
       open-pull-requests-limit: 25
       labels:
-          - "dependencies"
+          - 'dependencies'
       groups:
           typescript-ecosystem:
               patterns:
@@ -44,7 +44,7 @@ updates:
           timezone: 'America/New_York'
       open-pull-requests-limit: 25
       labels:
-          - "dependencies"
+          - 'dependencies'
       commit-message:
           prefix: 'dependabot'
           include: 'scope'

@@ -1,7 +1,34 @@
 import {Link} from '@tanstack/react-router';
 
 import {getSourceLabel} from '../fetching/blueprintFetcher';
+import type {SignalType} from '../parsing/types';
 import type {DatabaseBlueprint} from '../storage/db';
+
+const SIGNAL_TYPES = new Set<string>([
+	'item',
+	'fluid',
+	'virtual',
+	'entity',
+	'technology',
+	'recipe',
+	'item-group',
+	'tile',
+	'virtual-signal',
+	'achievement',
+	'equipment',
+	'planet',
+	'quality',
+	'utility',
+	'space-location',
+]);
+
+function toSignalType(type: string | undefined): SignalType | undefined {
+	if (type != null && SIGNAL_TYPES.has(type)) {
+		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- membership checked against SIGNAL_TYPES set above
+		return type as SignalType;
+	}
+	return undefined;
+}
 
 import {FactorioIcon} from './core/icons/FactorioIcon';
 import {RichText} from './core/text/RichText';
@@ -29,7 +56,9 @@ export function HistoryBlueprintRow({blueprint, isSelected, onToggleSelection}: 
 			type="button"
 			key={blueprint.metadata.sha}
 			className={`history-blueprint-item ${isSelected ? 'selected' : ''}`}
-			onClick={() => onToggleSelection(blueprint.metadata.sha)}
+			onClick={() => {
+				onToggleSelection(blueprint.metadata.sha);
+			}}
 			onKeyDown={handleKeyDown}
 			aria-pressed={isSelected}
 			data-testid="blueprint-item"
@@ -37,24 +66,19 @@ export function HistoryBlueprintRow({blueprint, isSelected, onToggleSelection}: 
 			{/* Checkbox column */}
 			<BlueprintTableCheckbox
 				isSelected={isSelected}
-				onToggle={() => onToggleSelection(blueprint.metadata.sha)}
+				onToggle={() => {
+					onToggleSelection(blueprint.metadata.sha);
+				}}
 			/>
 
 			{/* Type column */}
 			<div className="history-type-container">
-				{blueprint.gameData?.type ? (
-					<FactorioIcon
-						icon={{type: 'item', name: blueprint.gameData.type.replace(/_/g, '-')}}
-						size="small"
-					/>
-				) : (
-					<span>Unknown</span>
-				)}
+				<FactorioIcon icon={{type: 'item', name: blueprint.gameData.type.replace(/_/g, '-')}} size="small" />
 			</div>
 
 			{/* Version column */}
 			<div className="history-version-container">
-				{blueprint.gameData?.gameVersion ? (
+				{blueprint.gameData.gameVersion != null && blueprint.gameData.gameVersion !== '' ? (
 					<Version number={Number(blueprint.gameData.gameVersion)} />
 				) : (
 					<span>Unknown</span>
@@ -63,25 +87,20 @@ export function HistoryBlueprintRow({blueprint, isSelected, onToggleSelection}: 
 
 			{/* Icons column */}
 			<div className="history-icons-container">
-				{blueprint.gameData?.icons?.map((icon) => (
+				{blueprint.gameData.icons.map((icon) => (
 					<FactorioIcon
-						key={`${icon.type || 'item'}-${icon.name}`}
-						icon={{type: icon.type || 'item', name: icon.name}}
+						key={`${icon.type ?? 'item'}-${icon.name}`}
+						icon={{type: toSignalType(icon.type), name: icon.name}}
 						size="small"
 					/>
 				))}
-				{(!blueprint.gameData?.icons || blueprint.gameData.icons.length === 0) && (
-					<span style={{opacity: 0.5}}>No icon</span>
-				)}
+				{blueprint.gameData.icons.length === 0 && <span style={{opacity: 0.5}}>No icon</span>}
 			</div>
 
 			{/* Label column */}
 			<div className="history-label-container">
-				{blueprint.gameData?.label ? (
-					<RichText
-						text={blueprint.gameData.label}
-						iconSize="small"
-					/>
+				{blueprint.gameData.label != null && blueprint.gameData.label !== '' ? (
+					<RichText text={blueprint.gameData.label} iconSize="small" />
 				) : (
 					<span style={{opacity: 0.5}}>No label</span>
 				)}
@@ -108,13 +127,14 @@ Updated: ${new Date(blueprint.metadata.lastUpdatedOn).toLocaleString()}`}
 			<div>
 				<Link
 					to="/"
+					data-testid="blueprint-open"
 					search={{
 						pasted: blueprint.metadata.data,
 						selection: blueprint.metadata.selection,
 						focusTextarea: true,
 					}}
 				>
-					<ButtonGreen data-testid="blueprint-open">Open</ButtonGreen>
+					<ButtonGreen onClick={() => undefined}>Open</ButtonGreen>
 				</Link>
 			</div>
 		</button>

@@ -3,7 +3,7 @@ import {XCircle} from 'lucide-react';
 type ErrorType = Error | string | undefined;
 
 const formatError = (error: ErrorType): {message: string; stack?: string} => {
-	if (!error) return {message: 'Unknown Error'};
+	if (error == null || error === '') return {message: 'Unknown Error'};
 
 	if (error instanceof Error) {
 		return {
@@ -16,7 +16,7 @@ const formatError = (error: ErrorType): {message: string; stack?: string} => {
 };
 
 export const ErrorAlert = ({error}: {error: ErrorType}) => {
-	if (!error) return null;
+	if (error == null || error === '') return null;
 
 	const {message, stack} = formatError(error);
 
@@ -26,11 +26,9 @@ export const ErrorAlert = ({error}: {error: ErrorType}) => {
 				<XCircle className="h-4 w-4" />
 				<span>{message}</span>
 			</div>
-			{stack ? (
+			{stack != null && stack !== '' ? (
 				<pre className="mt-2 max-h-48 overflow-auto bg-red-950 p-4 text-sm text-red-100">{stack}</pre>
 			) : null}
 		</div>
 	);
 };
-
-export default ErrorAlert;

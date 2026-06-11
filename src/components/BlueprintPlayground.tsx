@@ -1,4 +1,4 @@
-import {useNavigate} from '@tanstack/react-router';
+import {getRouteApi, useNavigate} from '@tanstack/react-router';
 import {useLiveQuery} from 'dexie-react-hooks';
 import React, {useEffect} from 'react';
 import {ErrorBoundary} from 'react-error-boundary';
@@ -7,7 +7,7 @@ import type {BlueprintFetchResult} from '../fetching/blueprintFetcher';
 import {logger} from '../lib/sentry';
 import {extractBlueprint} from '../parsing/blueprintParser';
 import type {BlueprintString} from '../parsing/types';
-import {type RootSearch, Route} from '../routes';
+import type {RootSearch} from '../routes';
 import {updateBlueprintMetadata} from '../state/blueprintLocalStorage';
 import {db, generateSha} from '../storage/db';
 
@@ -22,32 +22,35 @@ import {BlueprintTree} from './blueprint/tree/BlueprintTree';
 import {ErrorAlert} from './ui/ErrorAlert';
 import {Panel} from './ui/Panel';
 
+const routeApi = getRouteApi('/');
+
 function getFactorioprintsUrl(id?: string): string | undefined {
-	if (!id) {
+	if (id == null || id === '') {
 		return undefined;
 	}
 	return `https://factorioprints.com/view/${id}`;
 }
 
 export function BlueprintPlayground() {
-	const {pasted, selection: selectedPath, focusTextarea}: RootSearch = Route.useSearch();
-	const loaderData: BlueprintFetchResult = Route.useLoaderData();
+	const {pasted, selection: selectedPath, focusTextarea}: RootSearch = routeApi.useSearch();
+	const loaderData: BlueprintFetchResult = routeApi.useLoaderData();
 
-	const navigate = useNavigate({from: Route.fullPath});
-	const rootBlueprint: BlueprintString | undefined = loaderData?.success ? loaderData.blueprintString : undefined;
-	const error = loaderData?.success ? undefined : loaderData?.error;
-	const disqusId: string | undefined = loaderData?.success ? loaderData.id : undefined;
+	const navigate = useNavigate({from: routeApi.id});
+	const isSuccess = loaderData?.success === true;
+	const rootBlueprint: BlueprintString | undefined = isSuccess ? loaderData.blueprintString : undefined;
+	const error: Error | undefined = loaderData != null && !loaderData.success ? loaderData.error : undefined;
+	const disqusId: string | undefined = isSuccess ? loaderData.id : undefined;
 
 	React.useEffect(() => {
-		if (error) {
+		if (error != null) {
 			console.error('Blueprint error:', error);
 		}
 	}, [error]);
 
-	const selectedBlueprint = rootBlueprint && extractBlueprint(rootBlueprint, selectedPath);
+	const selectedBlueprint = rootBlueprint == null ? undefined : extractBlueprint(rootBlueprint, selectedPath);
 
 	const existingBlueprint = useLiveQuery(async () => {
-		if (!pasted) return null;
+		if (pasted == null || pasted === '') return null;
 
 		try {
 			const sha = await generateSha(pasted);
@@ -55,7 +58,7 @@ export function BlueprintPlayground() {
 		} catch (dbError) {
 			logger.error('Error finding blueprint in database', dbError, {
 				context: 'BlueprintPlayground.useLiveQuery',
-				pasted: pasted?.substring(0, 100),
+				pasted: pasted.substring(0, 100),
 			});
 			return null;
 		}
@@ -63,13 +66,13 @@ export function BlueprintPlayground() {
 
 	const onSelect = (path: string) => {
 		void navigate({
-			search: (prev: RootSearch): RootSearch => ({
+			search: (prev) => ({
 				...prev,
 				selection: path,
 			}),
 		});
 
-		if (pasted && rootBlueprint && loaderData.success && existingBlueprint) {
+		if (pasted != null && pasted !== '' && rootBlueprint != null && isSuccess && existingBlueprint != null) {
 			void updateBlueprintMetadata(existingBlueprint.metadata.sha, {
 				selection: path,
 			});
@@ -77,50 +80,54 @@ export function BlueprintPlayground() {
 	};
 
 	useEffect(() => {
-		if (selectedPath && pasted && rootBlueprint && loaderData.success && existingBlueprint) {
+		if (
+			selectedPath != null &&
+			selectedPath !== '' &&
+			pasted != null &&
+			pasted !== '' &&
+			rootBlueprint != null &&
+			isSuccess &&
+			existingBlueprint != null
+		) {
 			void updateBlueprintMetadata(existingBlueprint.metadata.sha, {
 				selection: selectedPath,
 			});
 		}
-	}, [selectedPath, pasted, rootBlueprint, loaderData?.success, existingBlueprint]);
+	}, [selectedPath, pasted, rootBlueprint, isSuccess, existingBlueprint]);
 
 	return (
 		<div className="container">
 			<h1>Factorio Blueprint Playground</h1>
 
 			<Panel title="Blueprint Input">
-				<BlueprintSourceHandler
-					pasted={pasted}
-					autoFocus={focusTextarea ?? false}
-				/>
+				<BlueprintSourceHandler pasted={pasted} autoFocus={focusTextarea ?? false} />
 			</Panel>
 
-			{error ? <ErrorAlert error={error} /> : null}
+			{error == null ? null : <ErrorAlert error={error} />}
 
-			<ErrorBoundary FallbackComponent={BlueprintErrorFallback}>
+			<ErrorBoundary
+				fallbackRender={({error: boundaryError, resetErrorBoundary}) => (
+					<BlueprintErrorFallback
+						error={boundaryError instanceof Error ? boundaryError : new Error(String(boundaryError))}
+						resetErrorBoundary={resetErrorBoundary}
+					/>
+				)}
+			>
 				<div className="panels2">
 					{/* Left side */}
 					<div>
-						<ExportActions
-							blueprint={rootBlueprint}
-							path={undefined}
-							title="Root Blueprint"
-						/>
+						<ExportActions blueprint={rootBlueprint} path={undefined} title="Root Blueprint" />
 
 						<BlueprintTree
 							rootBlueprint={rootBlueprint}
 							onSelect={onSelect}
-							selectedPath={selectedPath || ''}
+							selectedPath={selectedPath ?? ''}
 						/>
 					</div>
 
 					{/* Right side */}
 					<div>
-						<ExportActions
-							blueprint={selectedBlueprint}
-							path={selectedPath}
-							title="Selected Blueprint"
-						/>
+						<ExportActions blueprint={selectedBlueprint} path={selectedPath} title="Selected Blueprint" />
 						<BasicInfoPanel blueprint={selectedBlueprint} />
 						<BlueprintInfoPanels blueprint={selectedBlueprint} />
 					</div>
@@ -137,5 +144,3 @@ export function BlueprintPlayground() {
 		</div>
 	);
 }
-
-export default BlueprintPlayground;

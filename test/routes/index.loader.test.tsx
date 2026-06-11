@@ -1,16 +1,21 @@
 import {QueryClient} from '@tanstack/react-query';
-import {beforeEach, describe, expect, test, vi} from 'vitest';
+import {beforeEach, describe, expect, test, vi} from 'vite-plus/test';
 
 vi.mock('../../src/fetching/blueprintFetcher');
 vi.mock('../../src/state/blueprintLocalStorage', () => ({
-	addBlueprint: vi.fn().mockResolvedValue({} as unknown),
+	addBlueprint: vi.fn<() => Promise<unknown>>().mockResolvedValue({} as unknown),
 }));
 
 import {fetchBlueprint} from '../../src/fetching/blueprintFetcher';
+import type {BlueprintFetchResult} from '../../src/fetching/blueprintFetcher';
 import * as IndexRoute from '../../src/routes/index';
 import {addBlueprint} from '../../src/state/blueprintLocalStorage';
 
-const originalLoader = IndexRoute.Route.options.loader;
+const rawLoader = IndexRoute.Route.options.loader;
+if (!rawLoader) {
+	throw new Error('Index route loader is not defined');
+}
+const originalLoader = rawLoader as (params: unknown) => Promise<unknown>;
 const queryClient = new QueryClient({
 	defaultOptions: {
 		queries: {
@@ -35,7 +40,7 @@ const loader = async (params: LoaderParams): Promise<unknown> => {
 		queryClient,
 	};
 
-	const result = await originalLoader(params as Parameters<typeof originalLoader>[0]);
+	const result = await originalLoader(params);
 	return result;
 };
 
@@ -50,7 +55,7 @@ describe('Index route loader', () => {
 			success: false,
 			error: new Error('Test error'),
 			pasted: 'test',
-		});
+		} as BlueprintFetchResult);
 
 		const result = await loader({
 			context: {},
@@ -90,7 +95,7 @@ describe('Index route loader', () => {
 			blueprintString: mockBlueprint,
 			pasted: 'test',
 			fetchMethod: 'data',
-		});
+		} as BlueprintFetchResult);
 
 		await loader({
 			context: {},
@@ -128,7 +133,7 @@ describe('Index route loader', () => {
 			blueprintString: fakeBlueprint,
 			pasted: 'test',
 			fetchMethod: 'data',
-		});
+		} as BlueprintFetchResult);
 
 		await loader({
 			context: {},
@@ -136,7 +141,7 @@ describe('Index route loader', () => {
 			search: {pasted: 'test', selection: '1'},
 			location: {} as Record<string, unknown>,
 			abortController: new AbortController(),
-			deps: {pasted: 'test'} as Record<string, unknown>,
+			deps: {pasted: 'test', selection: '1'} as Record<string, unknown>,
 		});
 
 		expect(vi.mocked(addBlueprint)).toHaveBeenCalledWith('test', expect.any(Object), '1', 'data');
@@ -156,7 +161,7 @@ describe('Index route loader', () => {
 			blueprintString: fakeBlueprint,
 			pasted: 'test',
 			fetchMethod: 'data',
-		});
+		} as BlueprintFetchResult);
 
 		await loader({
 			context: {},
@@ -164,7 +169,7 @@ describe('Index route loader', () => {
 			search: {pasted: 'test', selection: '6.1'},
 			location: {} as Record<string, unknown>,
 			abortController: new AbortController(),
-			deps: {pasted: 'test'} as Record<string, unknown>,
+			deps: {pasted: 'test', selection: '6.1'} as Record<string, unknown>,
 		});
 
 		expect(vi.mocked(addBlueprint)).toHaveBeenCalledWith('test', expect.any(Object), undefined, 'data');

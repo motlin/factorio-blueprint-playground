@@ -23,12 +23,7 @@ const TextareaWithState = (args: {placeholder?: string; rows?: number}) => {
 	const [value, setValue] = useState('');
 	return (
 		<div style={{width: '400px'}}>
-			<Textarea
-				value={value}
-				onChange={setValue}
-				placeholder={args.placeholder}
-				rows={args.rows}
-			/>
+			<Textarea value={value} onChange={setValue} placeholder={args.placeholder} rows={args.rows} />
 		</div>
 	);
 };
@@ -38,19 +33,9 @@ export const Default: Story = {
 };
 
 export const WithRows: Story = {
-	render: () => (
-		<TextareaWithState
-			placeholder="Larger textarea"
-			rows={8}
-		/>
-	),
+	render: () => <TextareaWithState placeholder="Larger textarea" rows={8} />,
 };
 
 export const SmallRows: Story = {
-	render: () => (
-		<TextareaWithState
-			placeholder="Compact textarea"
-			rows={2}
-		/>
-	),
+	render: () => <TextareaWithState placeholder="Compact textarea" rows={2} />,
 };

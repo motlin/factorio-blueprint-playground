@@ -1,4 +1,5 @@
-import {createRootRoute, Link, Outlet, useRouter} from '@tanstack/react-router';
+import type {QueryClient} from '@tanstack/react-query';
+import {createRootRouteWithContext, Link, Outlet, useRouter} from '@tanstack/react-router';
 import type {ComponentType} from 'react';
 import {lazy, Suspense, useEffect, useState} from 'react';
 
@@ -7,10 +8,14 @@ import {db} from '../storage/db';
 
 import type {RootSearch} from './index';
 
+interface RouterContext {
+	queryClient: QueryClient;
+}
+
 // Render nothing in production
 const TanStackRouterDevtools = import.meta.env.PROD
 	? () => null
-	: lazy(() =>
+	: lazy(async () =>
 			import('@tanstack/react-router-devtools').then((res) => ({
 				default: res.TanStackRouterDevtools,
 			})),
@@ -25,7 +30,7 @@ const DevTools = () => {
 	return <DevToolsComponent />;
 };
 
-export const Route = createRootRoute({
+export const Route = createRootRouteWithContext<RouterContext>()({
 	errorComponent: ErrorComponent,
 	component: () => <DynamicNavigation />,
 });
@@ -40,7 +45,7 @@ const DynamicNavigation = () => {
 			// Check if we're navigating to the root route from history and the search params contain a pasted parameter
 			const location = router.state.location;
 			const searchParams = location.search as RootSearch;
-			if (location.pathname === '/' && searchParams.pasted) {
+			if (location.pathname === '/' && searchParams.pasted != null && searchParams.pasted !== '') {
 				setMostRecentData({
 					pasted: searchParams.pasted,
 					selection: searchParams.selection,
@@ -74,7 +79,11 @@ const DynamicNavigation = () => {
 					<nav>
 						<Link
 							to="/"
-							search={{...mostRecentData, focusTextarea: true}}
+							search={{
+								pasted: mostRecentData.pasted,
+								selection: mostRecentData.selection,
+								focusTextarea: true,
+							}}
 							className="blue nowrap"
 							activeProps={{
 								className: 'yellow bold',

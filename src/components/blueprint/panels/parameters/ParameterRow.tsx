@@ -20,7 +20,7 @@ interface ParameterRowProps {
 export const ParameterRow = ({param, parameters}: ParameterRowProps) => {
 	// Helper to find parameter by reference
 	const findIngredientParam = (ref?: string) => {
-		if (!ref) return null;
+		if (ref == null || ref === '') return null;
 		const paramIndex = parseInt(ref.replace('parameter-', ''), 10) - 1;
 		return parameters[paramIndex];
 	};
@@ -30,34 +30,26 @@ export const ParameterRow = ({param, parameters}: ParameterRowProps) => {
 	const ingredientOfParam = findIngredientParam(ingredientOf);
 
 	// For icon parameters, detect correct type
-	const iconInfo: SignalID | null = param.type === 'id' && param.id ? detectSignalType(param.id) : null;
+	const iconInfo: SignalID | null =
+		param.type === 'id' && param.id != null && param.id !== '' ? detectSignalType(param.id) : null;
 
 	function getIngredientOfIcon() {
-		if (!(ingredientOfParam?.type === 'id' && ingredientOfParam.id)) {
+		if (!(ingredientOfParam?.type === 'id' && ingredientOfParam.id != null && ingredientOfParam.id !== '')) {
 			return <span>#{parameters.indexOf(ingredientOfParam ?? parameters[0]) + 1}</span>;
 		}
 
 		const icon: SignalID = detectSignalType(ingredientOfParam.id);
-		return (
-			<FactorioIcon
-				id={'ingredientOf'}
-				icon={icon}
-				size={'large'}
-			/>
-		);
+		return <FactorioIcon id={'ingredientOf'} icon={icon} size={'large'} />;
 	}
 
 	function getIngredientOfElement() {
-		if (!ingredientOf) {
+		if (ingredientOf == null || ingredientOf === '') {
 			return null;
 		}
 
 		return (
 			<div className="flex flex-items-center">
-				<label
-					className="mr2"
-					htmlFor={'ingredientOf'}
-				>
+				<label className="mr2" htmlFor={'ingredientOf'}>
 					Ingredient of:
 				</label>
 				<span className="flex flex-items-center">{getIngredientOfIcon()}</span>
@@ -69,73 +61,37 @@ export const ParameterRow = ({param, parameters}: ParameterRowProps) => {
 		if (param.type === 'id' && iconInfo) {
 			return (
 				<span className="flex flex-items-center">
-					<FactorioIcon
-						id={'value'}
-						icon={iconInfo}
-						size={'large'}
-					/>
+					<FactorioIcon id={'value'} icon={iconInfo} size={'large'} />
 				</span>
 			);
 		}
 
-		return (
-			<input
-				id={'value'}
-				type="text"
-				value={param.number}
-				style={{width: '60px'}}
-				readOnly
-			/>
-		);
+		return <input id={'value'} type="text" value={param.number} style={{width: '60px'}} readOnly />;
 	}
 
 	return (
-		<div
-			className="flex flex-items-center p4"
-			style={{minHeight: '48px'}}
-		>
+		<div className="flex flex-items-center p4" style={{minHeight: '48px'}}>
 			{/* Name field */}
-			<div
-				className="flex flex-items-center mr8"
-				style={{minWidth: '200px'}}
-			>
-				<label
-					className="mr2"
-					htmlFor={'name'}
-				>
+			<div className="flex flex-items-center mr8" style={{minWidth: '200px'}}>
+				<label className="mr2" htmlFor={'name'}>
 					Name:
 				</label>
-				<input
-					id={'name'}
-					type="text"
-					value={param.name}
-					style={{width: '120px'}}
-					readOnly
-				/>
+				<input id={'name'} type="text" value={param.name} style={{width: '120px'}} readOnly />
 			</div>
 
 			{/* Value field - either icon or number */}
-			<div
-				className="flex flex-items-center mr8"
-				style={{minWidth: '120px'}}
-			>
-				<label
-					className="mr2"
-					htmlFor={'value'}
-				>
+			<div className="flex flex-items-center mr8" style={{minWidth: '120px'}}>
+				<label className="mr2" htmlFor={'value'}>
 					Value:
 				</label>
 				{getValueElement()}
 			</div>
 
 			{/* Parameter checkbox */}
-			<div
-				className="flex flex-items-center mr8"
-				style={{minWidth: '120px'}}
-			>
+			<div className="flex flex-items-center mr8" style={{minWidth: '120px'}}>
 				<input
 					type="checkbox"
-					checked={!param['not-parametrised']}
+					checked={param['not-parametrised'] !== true}
 					readOnly
 					className="mr2"
 					id={'isParameter'}
@@ -146,14 +102,8 @@ export const ParameterRow = ({param, parameters}: ParameterRowProps) => {
 			{/* Conditional fields based on type */}
 			{param.type === 'number' ? (
 				<>
-					<div
-						className="flex flex-items-center mr8"
-						style={{minWidth: '200px'}}
-					>
-						<label
-							className="mr2"
-							htmlFor={'variable'}
-						>
+					<div className="flex flex-items-center mr8" style={{minWidth: '200px'}}>
+						<label className="mr2" htmlFor={'variable'}>
 							Variable:
 						</label>
 						<input
@@ -165,20 +115,14 @@ export const ParameterRow = ({param, parameters}: ParameterRowProps) => {
 						/>
 					</div>
 
-					<div
-						className="flex flex-items-center"
-						style={{minWidth: '240px'}}
-					>
+					<div className="flex flex-items-center" style={{minWidth: '240px'}}>
 						<input
 							type="checkbox"
-							checked={!!param.formula}
+							checked={param.formula != null && param.formula !== ''}
 							readOnly
 							className="mr2"
 						/>
-						<label
-							className="mr2"
-							htmlFor={'formula'}
-						>
+						<label className="mr2" htmlFor={'formula'}>
 							Formula:
 						</label>
 						<input

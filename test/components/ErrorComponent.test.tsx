@@ -1,5 +1,5 @@
 import {render} from '@testing-library/react';
-import {describe, expect, it} from 'vitest';
+import {describe, expect, it} from 'vite-plus/test';
 
 import {ErrorComponent} from '../../src/components/ErrorComponent';
 import '../../test/setup';
@@ -48,7 +48,7 @@ describe('ErrorComponent', () => {
 		const {container} = render(<ErrorComponent error={testError} />);
 
 		// Verify no status code is displayed
-		const statusElements = container.textContent?.match(/Status:/g);
+		const statusElements = container.textContent.match(/Status:/g);
 		expect(statusElements).toBeNull();
 	});
 

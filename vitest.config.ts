@@ -1,32 +1,21 @@
-import {TanStackRouterVite} from '@tanstack/router-plugin/vite';
-import react from '@vitejs/plugin-react';
-import {defineConfig} from 'vitest/config';
+import {defineConfig, defineProject, mergeConfig} from 'vite-plus';
+import viteConfig from './vite.config';
 
-export default defineConfig({
-	plugins: [
-		react(),
-		TanStackRouterVite({
-			generatedRouteTree: './src/routeTree.gen.ts',
-			routesDirectory: './src/routes',
-		}),
-	],
-	build: {
-		rollupOptions: {
-			output: {
-				manualChunks: {
-					react: ['react', 'react-dom'],
-					'react-router': ['@tanstack/react-router'],
-					fflate: ['fflate'],
-					dexie: ['dexie', 'dexie-react-hooks'],
-				},
-			},
+export default mergeConfig(
+	viteConfig,
+	defineConfig({
+		test: {
+			projects: [
+				defineProject({
+					test: {
+						name: 'unit',
+						globals: true,
+						environment: 'jsdom',
+						setupFiles: ['./test/setup.ts'],
+						exclude: ['.llm/**', 'node_modules/**'],
+					},
+				}),
+			],
 		},
-		sourcemap: true,
-	},
-	test: {
-		environment: 'jsdom',
-		globals: true,
-		setupFiles: ['./test/setup.ts'],
-		exclude: ['.llm/**', 'node_modules/**'],
-	},
-});
+	}),
+);
