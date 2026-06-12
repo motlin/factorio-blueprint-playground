@@ -51,7 +51,7 @@
 		"@storybook/addon-docs": "^10.4.4",
 		"@storybook/addon-onboarding": "^10.4.4",
 		"@storybook/addon-vitest": "^10.4.4",
-		"@storybook/react-vite": "^10.4.3",
+		"@storybook/react-vite": "^10.4.4",
 		"@tanstack/eslint-plugin-router": "^1.162.0",
 		"@tanstack/react-router-devtools": "^1.167.0",
 		"@tanstack/router-cli": "^1.167.17",
