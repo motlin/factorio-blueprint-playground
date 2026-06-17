@@ -33,7 +33,7 @@
 		"@tanstack/react-query-devtools": "^5.101.0",
 		"@tanstack/react-router": "^1.170.16",
 		"date-fns": "^4.4.0",
-		"dexie": "^4.4.3",
+		"dexie": "^4.4.4",
 		"dexie-react-hooks": "^4.4.0",
 		"fflate": "^0.8.3",
 		"json5": "^2.2.3",
