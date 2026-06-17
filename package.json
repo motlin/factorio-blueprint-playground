@@ -50,7 +50,7 @@
 		"@storybook/addon-a11y": "^10.4.6",
 		"@storybook/addon-docs": "^10.4.6",
 		"@storybook/addon-onboarding": "^10.4.6",
-		"@storybook/addon-vitest": "^10.4.5",
+		"@storybook/addon-vitest": "^10.4.6",
 		"@storybook/react-vite": "^10.4.6",
 		"@tanstack/react-router-devtools": "^1.167.0",
 		"@tanstack/router-cli": "^1.167.17",
