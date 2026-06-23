@@ -29,6 +29,14 @@ export default defineConfig({
 		bracketSpacing: false,
 		trailingComma: 'all',
 		arrowParens: 'always',
+		overrides: [
+			{
+				files: ['**/*.{yaml,yml}'],
+				options: {
+					tabWidth: 2,
+				},
+			},
+		],
 	},
 	staged: {
 		'*': 'vp check --fix',
