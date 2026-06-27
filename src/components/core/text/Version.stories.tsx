@@ -28,3 +28,9 @@ export const Factorio2_0: Story = {
 		number: 562949954076672,
 	},
 };
+
+export const Factorio2_1: Story = {
+	args: {
+		number: 562954248388608,
+	},
+};
