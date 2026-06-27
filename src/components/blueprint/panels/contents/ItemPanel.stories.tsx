@@ -21,10 +21,14 @@ const meta: Meta<typeof ItemPanel> = {
 export default meta;
 type Story = StoryObj<typeof ItemPanel>;
 
+// ItemPanel expects the Map keys produced by countItems: JSON.stringify({name, quality}).
+const countMap = (entries: [string, number][]): Map<string, number> =>
+	new Map(entries.map(([name, count]) => [JSON.stringify({name}), count]));
+
 export const ItemsList: Story = {
 	args: {
 		title: 'Items',
-		items: new Map([
+		items: countMap([
 			['iron-plate', 100],
 			['copper-plate', 200],
 			['steel-plate', 50],
@@ -36,7 +40,7 @@ export const ItemsList: Story = {
 export const FluidsList: Story = {
 	args: {
 		title: 'Fluids',
-		items: new Map([
+		items: countMap([
 			['water', 1000],
 			['crude-oil', 500],
 			['petroleum-gas', 250],
@@ -48,7 +52,7 @@ export const FluidsList: Story = {
 export const EntitiesList: Story = {
 	args: {
 		title: 'Entities',
-		items: new Map([
+		items: countMap([
 			['assembling-machine-3', 10],
 			['electric-furnace', 5],
 			['beacon', 8],
@@ -60,7 +64,7 @@ export const EntitiesList: Story = {
 export const SingleItem: Story = {
 	args: {
 		title: 'Single Item',
-		items: new Map([['iron-plate', 42]]),
+		items: countMap([['iron-plate', 42]]),
 		type: 'item',
 	},
 };
