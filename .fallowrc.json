@@ -2,7 +2,14 @@
 	"$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
 	"entry": ["src/main.{ts,tsx,js,jsx}", "functions/**/*.ts", "test/**/*.test.{ts,tsx}"],
 	"ignorePatterns": [".storybook/**"],
-	"ignoreDependencies": ["eslint-plugin-storybook"],
+	"ignoreDependencies": [
+		"eslint-plugin-storybook",
+		"@chromatic-com/storybook",
+		"@storybook/addon-a11y",
+		"@storybook/addon-docs",
+		"@storybook/addon-onboarding",
+		"@storybook/addon-vitest"
+	],
 	"duplicates": {
 		"minOccurrences": 3
 	},
