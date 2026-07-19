@@ -3,7 +3,7 @@ import {beforeEach, describe, expect, test, vi} from 'vite-plus/test';
 
 vi.mock('../../src/fetching/blueprintFetcher');
 vi.mock('../../src/state/blueprintLocalStorage', () => ({
-	addBlueprint: vi.fn<() => Promise<unknown>>().mockResolvedValue({} as unknown),
+	addBlueprint: vi.fn<() => Promise<unknown>>().mockResolvedValue({}),
 }));
 
 import {fetchBlueprint} from '../../src/fetching/blueprintFetcher';
@@ -61,9 +61,9 @@ describe('Index route loader', () => {
 			context: {},
 			params: {},
 			search: {pasted: 'test'},
-			location: {} as Record<string, unknown>,
+			location: {},
 			abortController: new AbortController(),
-			deps: {pasted: 'test'} as Record<string, unknown>,
+			deps: {pasted: 'test'},
 		});
 
 		expect(mockFetchBlueprint).toHaveBeenCalledWith({pasted: 'test'}, queryClient);
@@ -101,9 +101,9 @@ describe('Index route loader', () => {
 			context: {},
 			params: {},
 			search: {pasted: 'test'},
-			location: {} as Record<string, unknown>,
+			location: {},
 			abortController: new AbortController(),
-			deps: {pasted: 'test'} as Record<string, unknown>,
+			deps: {pasted: 'test'},
 		});
 
 		expect(mockAddBlueprint).toHaveBeenCalledWith(
@@ -139,9 +139,9 @@ describe('Index route loader', () => {
 			context: {},
 			params: {},
 			search: {pasted: 'test', selection: '1'},
-			location: {} as Record<string, unknown>,
+			location: {},
 			abortController: new AbortController(),
-			deps: {pasted: 'test', selection: '1'} as Record<string, unknown>,
+			deps: {pasted: 'test', selection: '1'},
 		});
 
 		expect(vi.mocked(addBlueprint)).toHaveBeenCalledWith('test', expect.any(Object), '1', 'data');
@@ -167,9 +167,9 @@ describe('Index route loader', () => {
 			context: {},
 			params: {},
 			search: {pasted: 'test', selection: '6.1'},
-			location: {} as Record<string, unknown>,
+			location: {},
 			abortController: new AbortController(),
-			deps: {pasted: 'test', selection: '6.1'} as Record<string, unknown>,
+			deps: {pasted: 'test', selection: '6.1'},
 		});
 
 		expect(vi.mocked(addBlueprint)).toHaveBeenCalledWith('test', expect.any(Object), undefined, 'data');

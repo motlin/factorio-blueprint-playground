@@ -44,7 +44,7 @@ const DynamicNavigation = () => {
 		const unsubscribe = router.history.subscribe(() => {
 			// Check if we're navigating to the root route from history and the search params contain a pasted parameter
 			const location = router.state.location;
-			const searchParams = location.search as RootSearch;
+			const searchParams = location.search;
 			if (location.pathname === '/' && searchParams.pasted != null && searchParams.pasted !== '') {
 				setMostRecentData({
 					pasted: searchParams.pasted,
