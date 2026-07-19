@@ -9,12 +9,7 @@ interface Env {
 }
 
 function hasStringUrl(value: unknown): value is {url: string} {
-	return (
-		typeof value === 'object' &&
-		value !== null &&
-		'url' in value &&
-		typeof (value as {url: unknown}).url === 'string'
-	);
+	return typeof value === 'object' && value !== null && 'url' in value && typeof value.url === 'string';
 }
 
 async function parseRequestBody(request: {json: () => Promise<unknown>}): Promise<unknown> {

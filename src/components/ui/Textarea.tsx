@@ -11,7 +11,7 @@ export const Textarea = ({value, onChange, placeholder, rows = 4}: TextareaProps
 	<textarea
 		value={value}
 		onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
-			const target = e.target as HTMLTextAreaElement;
+			const target = e.target;
 			onChange(target.value);
 		}}
 		placeholder={placeholder}
