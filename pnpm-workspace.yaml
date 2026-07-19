@@ -2,9 +2,14 @@ onlyBuiltDependencies:
   - esbuild
   - sharp
 catalog:
-  vite: npm:@voidzero-dev/vite-plus-core@latest
-  vitest: npm:@voidzero-dev/vite-plus-test@latest
-  vite-plus: latest
+  # Pinned as a set: vite-plus-test's engine loads its native rolldown binding from
+  # the installed vite-plus package (require("vite-plus/binding")). Floating any of
+  # these independently mixes binding dialects and crashes vitest startup with
+  # 'value "builtin:vite-wasm-fallback" does not match any variant of enum
+  # BindingBuiltinPluginName'. Bump all three together after verifying vp run test:run.
+  vite: npm:@voidzero-dev/vite-plus-core@0.2.1
+  vitest: npm:@voidzero-dev/vite-plus-test@0.1.24
+  vite-plus: 0.2.1
 overrides:
   vite: 'catalog:'
   vitest: 'catalog:'
