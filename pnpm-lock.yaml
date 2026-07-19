@@ -77,8 +77,8 @@ importers:
         specifier: ^10.4.6
         version: 10.5.0(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(@voidzero-dev/vite-plus-core@0.2.1(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(typescript@7.0.2))(esbuild@0.28.1)(storybook@10.4.6(@testing-library/dom@10.4.1)(@types/react@19.2.17)(prettier@3.9.4)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite-plus@0.2.1(@types/node@26.1.1)(@vitest/browser-playwright@4.1.10(@voidzero-dev/vite-plus-core@0.2.1(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(typescript@7.0.2))(@voidzero-dev/vite-plus-test@0.1.24)(playwright@1.61.1))(@vitest/coverage-v8@4.1.10(@vitest/browser@4.1.10)(@voidzero-dev/vite-plus-test@0.1.24))(@voidzero-dev/vite-plus-core@0.2.1(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(typescript@7.0.2))(esbuild@0.28.1)(jiti@2.7.0)(jsdom@29.1.1)(tsx@4.23.1)(typescript@7.0.2)))
       '@storybook/addon-onboarding':
-        specifier: ^10.4.6
-        version: 10.5.0(storybook@10.4.6(@testing-library/dom@10.4.1)(@types/react@19.2.17)(prettier@3.9.4)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite-plus@0.2.1(@types/node@26.1.1)(@vitest/browser-playwright@4.1.10(@voidzero-dev/vite-plus-core@0.2.1(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(typescript@7.0.2))(@voidzero-dev/vite-plus-test@0.1.24)(playwright@1.61.1))(@vitest/coverage-v8@4.1.10(@vitest/browser@4.1.10)(@voidzero-dev/vite-plus-test@0.1.24))(@voidzero-dev/vite-plus-core@0.2.1(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(typescript@7.0.2))(esbuild@0.28.1)(jiti@2.7.0)(jsdom@29.1.1)(tsx@4.23.1)(typescript@7.0.2)))
+        specifier: ^10.5.2
+        version: 10.5.2(storybook@10.4.6(@testing-library/dom@10.4.1)(@types/react@19.2.17)(prettier@3.9.4)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite-plus@0.2.1(@types/node@26.1.1)(@vitest/browser-playwright@4.1.10(@voidzero-dev/vite-plus-core@0.2.1(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(typescript@7.0.2))(@voidzero-dev/vite-plus-test@0.1.24)(playwright@1.61.1))(@vitest/coverage-v8@4.1.10(@vitest/browser@4.1.10)(@voidzero-dev/vite-plus-test@0.1.24))(@voidzero-dev/vite-plus-core@0.2.1(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(typescript@7.0.2))(esbuild@0.28.1)(jiti@2.7.0)(jsdom@29.1.1)(tsx@4.23.1)(typescript@7.0.2)))
       '@storybook/addon-vitest':
         specifier: ^10.4.6
         version: 10.5.0(@vitest/browser-playwright@4.1.10(@voidzero-dev/vite-plus-core@0.2.1(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(typescript@7.0.2))(@voidzero-dev/vite-plus-test@0.1.24)(playwright@1.61.1))(@vitest/browser@4.1.10)(@vitest/runner@4.1.9)(@voidzero-dev/vite-plus-test@0.1.24)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(storybook@10.4.6(@testing-library/dom@10.4.1)(@types/react@19.2.17)(prettier@3.9.4)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite-plus@0.2.1(@types/node@26.1.1)(@vitest/browser-playwright@4.1.10(@voidzero-dev/vite-plus-core@0.2.1(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(typescript@7.0.2))(@voidzero-dev/vite-plus-test@0.1.24)(playwright@1.61.1))(@vitest/coverage-v8@4.1.10(@vitest/browser@4.1.10)(@voidzero-dev/vite-plus-test@0.1.24))(@voidzero-dev/vite-plus-core@0.2.1(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(typescript@7.0.2))(esbuild@0.28.1)(jiti@2.7.0)(jsdom@29.1.1)(tsx@4.23.1)(typescript@7.0.2)))
@@ -1625,10 +1625,10 @@ packages:
       '@types/react':
         optional: true
 
-  '@storybook/addon-onboarding@10.5.0':
-    resolution: {integrity: sha512-6FjupZnlcmEG0/e4fc1daeFxHC6HeJ6I2jw1bz+y5OEskWN5ADdF9U3C42RwlOIkJXMb+dFemM8A6uidUb/guA==}
+  '@storybook/addon-onboarding@10.5.2':
+    resolution: {integrity: sha512-kpWrYicwRo0is4E43ekp6byFgbgcjoatNpGEvwWRER6jtaSTRYHqZm0GPxmcr9GChEy/PYYNGzqz929H5GV5MA==}
     peerDependencies:
-      storybook: ^10.5.0
+      storybook: ^10.5.2
 
   '@storybook/addon-vitest@10.5.0':
     resolution: {integrity: sha512-o/H+ii8o7bu4r1M4pgyFt+DjVaIIccSeaAikpspNHKkKdiJ2GXfkgNwtib8Jru28HaBRfcP5u+m0QE3KBYIQkw==}
@@ -4997,7 +4997,7 @@ snapshots:
       - vite
       - webpack
 
-  '@storybook/addon-onboarding@10.5.0(storybook@10.4.6(@testing-library/dom@10.4.1)(@types/react@19.2.17)(prettier@3.9.4)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite-plus@0.2.1(@types/node@26.1.1)(@vitest/browser-playwright@4.1.10(@voidzero-dev/vite-plus-core@0.2.1(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(typescript@7.0.2))(@voidzero-dev/vite-plus-test@0.1.24)(playwright@1.61.1))(@vitest/coverage-v8@4.1.10(@vitest/browser@4.1.10)(@voidzero-dev/vite-plus-test@0.1.24))(@voidzero-dev/vite-plus-core@0.2.1(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(typescript@7.0.2))(esbuild@0.28.1)(jiti@2.7.0)(jsdom@29.1.1)(tsx@4.23.1)(typescript@7.0.2)))':
+  '@storybook/addon-onboarding@10.5.2(storybook@10.4.6(@testing-library/dom@10.4.1)(@types/react@19.2.17)(prettier@3.9.4)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite-plus@0.2.1(@types/node@26.1.1)(@vitest/browser-playwright@4.1.10(@voidzero-dev/vite-plus-core@0.2.1(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(typescript@7.0.2))(@voidzero-dev/vite-plus-test@0.1.24)(playwright@1.61.1))(@vitest/coverage-v8@4.1.10(@vitest/browser@4.1.10)(@voidzero-dev/vite-plus-test@0.1.24))(@voidzero-dev/vite-plus-core@0.2.1(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(typescript@7.0.2))(esbuild@0.28.1)(jiti@2.7.0)(jsdom@29.1.1)(tsx@4.23.1)(typescript@7.0.2)))':
     dependencies:
       storybook: 10.4.6(@testing-library/dom@10.4.1)(@types/react@19.2.17)(prettier@3.9.4)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vite-plus@0.2.1(@types/node@26.1.1)(@vitest/browser-playwright@4.1.10(@voidzero-dev/vite-plus-core@0.2.1(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(typescript@7.0.2))(@voidzero-dev/vite-plus-test@0.1.24)(playwright@1.61.1))(@vitest/coverage-v8@4.1.10(@vitest/browser@4.1.10)(@voidzero-dev/vite-plus-test@0.1.24))(@voidzero-dev/vite-plus-core@0.2.1(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(typescript@7.0.2))(esbuild@0.28.1)(jiti@2.7.0)(jsdom@29.1.1)(tsx@4.23.1)(typescript@7.0.2))
 
