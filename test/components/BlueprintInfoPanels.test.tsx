@@ -1,12 +1,27 @@
+import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import {render, screen} from '@testing-library/react';
+import type {ReactElement, ReactNode} from 'react';
 import {describe, expect, test} from 'vite-plus/test';
 
 import {BlueprintInfoPanels} from '../../src/components/blueprint/panels/BlueprintInfoPanels';
+import databaseJson from '../../src/generated/mod-db.json';
+import type {ModDatabase} from '../../src/parsing/modDetection/types';
 import type {BlueprintString} from '../../src/parsing/types';
+import '../../test/setup';
+
+function renderPanels(element: ReactElement) {
+	const queryClient = new QueryClient({defaultOptions: {queries: {retry: false}}});
+	queryClient.setQueryData(['mod-db'], {default: databaseJson as ModDatabase});
+	return render(element, {
+		wrapper: ({children}: {children: ReactNode}) => (
+			<QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+		),
+	});
+}
 
 describe('BlueprintInfoPanels', () => {
 	test('renders nothing when no blueprint is provided', () => {
-		const {container} = render(<BlueprintInfoPanels />);
+		const {container} = renderPanels(<BlueprintInfoPanels />);
 		expect(container).toBeEmptyDOMElement();
 	});
 
@@ -26,7 +41,7 @@ describe('BlueprintInfoPanels', () => {
 			},
 		};
 
-		render(<BlueprintInfoPanels blueprint={blueprint} />);
+		renderPanels(<BlueprintInfoPanels blueprint={blueprint} />);
 
 		// Should render entities section from ContentsPanel
 		expect(screen.getByText('Entities')).toBeInTheDocument();
@@ -58,7 +73,7 @@ describe('BlueprintInfoPanels', () => {
 			},
 		};
 
-		render(<BlueprintInfoPanels blueprint={blueprint} />);
+		renderPanels(<BlueprintInfoPanels blueprint={blueprint} />);
 
 		// Should render upgrade planner content
 		expect(screen.getByText('Upgrade Mappings')).toBeInTheDocument();
@@ -84,7 +99,7 @@ describe('BlueprintInfoPanels', () => {
 			},
 		};
 
-		render(<BlueprintInfoPanels blueprint={blueprint} />);
+		renderPanels(<BlueprintInfoPanels blueprint={blueprint} />);
 
 		// Should render deconstruction planner content
 		expect(screen.getByText('Entity Filters')).toBeInTheDocument();
@@ -117,7 +132,7 @@ describe('BlueprintInfoPanels', () => {
 			},
 		};
 
-		const {rerender} = render(<TestComponent blueprint={blueprint} />);
+		const {rerender} = renderPanels(<TestComponent blueprint={blueprint} />);
 		expect(renderCount).toBe(1);
 
 		// Re-render with same props - parent re-renders but BlueprintInfoPanels should not
