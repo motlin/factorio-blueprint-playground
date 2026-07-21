@@ -55,7 +55,7 @@ describe('lint engine', () => {
 
 	test('does not report an otherwise valid blueprint with an entity', () => {
 		expect(
-			lintBlueprint(makeBlueprint([{entity_number: 100, name: 'inserter', position: {x: 0, y: 0}}])),
+			lintBlueprint(makeBlueprint([{entity_number: 100, name: 'alice-modded-entity', position: {x: 0, y: 0}}])),
 		).toStrictEqual([]);
 	});
 });

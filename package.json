@@ -12,6 +12,7 @@
 		"generate:routes": "tsr generate",
 		"build": "pnpm run generate:routes && tsgo && vp build && wrangler pages functions build",
 		"build:types": "pnpm run generate:routes && tsgo --noEmit --project tsconfig.routes.json",
+		"lint:fix": "vp check --fix",
 		"oxlint": "vp lint . --fix",
 		"oxlint:ci": "vp lint . --format github",
 		"fmt": "vp fmt",

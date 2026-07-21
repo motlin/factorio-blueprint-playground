@@ -7,13 +7,14 @@ import type {LintContext, LintFinding} from './types';
 export function buildLintContext(blueprint: Blueprint): LintContext {
 	const entities = blueprint.entities ?? [];
 	const major = versionMajor(blueprint.version);
+	const direction = (entity: (typeof entities)[number]) => normalizeDirection(entity.direction, major);
 
 	return {
 		blueprint,
 		entities,
 		entityByNumber: new Map(entities.map((entity) => [entity.entity_number, entity])),
-		index: new SpatialIndex(entities),
-		direction: (entity) => normalizeDirection(entity.direction, major),
+		index: new SpatialIndex(entities, direction),
+		direction,
 	};
 }
 

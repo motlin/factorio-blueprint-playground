@@ -70,7 +70,7 @@ describe('LintPanel', () => {
 			blueprint: {
 				item: 'blueprint',
 				version: VERSION_2_0,
-				entities: [{entity_number: 100, name: 'inserter', position: {x: 0, y: 0}}],
+				entities: [{entity_number: 100, name: 'alice-modded-entity', position: {x: 0, y: 0}}],
 			},
 		};
 		const planner: BlueprintString = {

@@ -53,7 +53,7 @@ export const NoFindings: Story = {
 			blueprint: {
 				item: 'blueprint',
 				version: 562949958139904,
-				entities: [{entity_number: 100, name: 'inserter', position: {x: 0, y: 0}}],
+				entities: [{entity_number: 100, name: 'alice-modded-entity', position: {x: 0, y: 0}}],
 			},
 		},
 	},
