@@ -254,6 +254,7 @@ export interface Blueprint extends CommonFields {
 	description?: string;
 	icons?: Icon[];
 	entities?: Entity[];
+	wires?: [number, number, number, number][];
 	tiles?: Tile[];
 	schedules?: Schedule[];
 	parameters?: Parameter[];

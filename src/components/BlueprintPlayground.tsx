@@ -18,6 +18,7 @@ import BlueprintSourceHandler from './blueprint/input/BlueprintSourceHandler';
 import {BlueprintInfoPanels} from './blueprint/panels/BlueprintInfoPanels';
 import {BasicInfoPanel} from './blueprint/panels/info/BasicInfoPanel';
 import {ParametersPanel} from './blueprint/panels/parameters/ParametersPanel';
+import {TransformPanel} from './blueprint/panels/transform/TransformPanel';
 import {BlueprintTree} from './blueprint/tree/BlueprintTree';
 import {ErrorAlert} from './ui/ErrorAlert';
 import {Panel} from './ui/Panel';
@@ -128,6 +129,7 @@ export function BlueprintPlayground() {
 					{/* Right side */}
 					<div>
 						<ExportActions blueprint={selectedBlueprint} path={selectedPath} title="Selected Blueprint" />
+						<TransformPanel key={selectedPath ?? ''} blueprint={selectedBlueprint} />
 						<BasicInfoPanel blueprint={selectedBlueprint} />
 						<BlueprintInfoPanels blueprint={selectedBlueprint} />
 					</div>
