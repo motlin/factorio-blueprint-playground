@@ -1,7 +1,8 @@
-import {isCardinal, unitVector} from '../direction';
+import {isCardinal} from '../direction';
 import {UNDERGROUND_BELT_SPAN} from '../data/undergrounds';
 import type {Entity} from '../../parsing/types';
 import type {LintContext, LintFinding, LintRule} from '../types';
+import {findPartner} from './findPartner';
 
 function isKnownUndergroundBelt(name: string): name is keyof typeof UNDERGROUND_BELT_SPAN {
 	return Object.hasOwn(UNDERGROUND_BELT_SPAN, name);
@@ -11,30 +12,14 @@ function undergroundSpan(name: string): number | undefined {
 	return isKnownUndergroundBelt(name) ? UNDERGROUND_BELT_SPAN[name] : undefined;
 }
 
-function isSameAxis(first: number, second: number): boolean {
-	return first % 8 === second % 8;
-}
-
 function findOutput(context: LintContext, input: Entity, span: number): Entity | undefined {
 	const direction = context.direction(input);
-	if (!isCardinal(direction)) return undefined;
-	const vector = unitVector(direction);
-
-	for (let distance = 1; distance <= span; distance++) {
-		const entities = context.index.entitiesAt(
-			input.position.x + vector.dx * distance,
-			input.position.y + vector.dy * distance,
-		);
-		for (const candidate of entities) {
-			if (candidate.name !== input.name) continue;
-			const candidateDirection = context.direction(candidate);
-			if (!isCardinal(candidateDirection) || !isSameAxis(direction, candidateDirection)) continue;
-			if (candidate.type === 'output' && candidateDirection === direction) return candidate;
-			return undefined;
-		}
-	}
-
-	return undefined;
+	return findPartner(
+		context,
+		input,
+		span,
+		(candidate) => candidate.type === 'output' && context.direction(candidate) === direction,
+	);
 }
 
 function finding(rule: LintRule, entity: Entity, expectedType: 'input' | 'output'): LintFinding {
