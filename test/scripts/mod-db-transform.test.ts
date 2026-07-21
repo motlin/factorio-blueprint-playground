@@ -2,6 +2,7 @@ import {describe, expect, it} from 'vite-plus/test';
 
 import baseDatasetJson from '../fixtures/factoriolab/2.0.json';
 import nextBaseDatasetJson from '../fixtures/factoriolab/2.1.json';
+import krastorioDatasetJson from '../fixtures/factoriolab/kr2.json';
 import spaceAgeDatasetJson from '../fixtures/factoriolab/spa.json';
 import {parseFactorioLabDataset, transformDatasets} from '../../scripts/mod-db/transform';
 
@@ -10,6 +11,13 @@ describe('transformDatasets', () => {
 		const database = transformDatasets({
 			baseDatasets: [parseFactorioLabDataset(baseDatasetJson), parseFactorioLabDataset(nextBaseDatasetJson)],
 			spaceAgeDataset: parseFactorioLabDataset(spaceAgeDatasetJson),
+			modDatasets: [
+				{
+					id: 'kr2',
+					label: 'Krastorio 2',
+					dataset: parseFactorioLabDataset(krastorioDatasetJson),
+				},
+			],
 			supplement: {
 				base: ['straight-rail', 'signal-A', 'stone-path'],
 				spaceAge: ['space-platform-foundation'],
@@ -31,6 +39,7 @@ describe('transformDatasets', () => {
 				{id: 'space-age', label: 'Space Age', dlc: true},
 				{id: 'quality', label: 'Quality', dlc: true},
 				{id: 'elevated-rails', label: 'Elevated Rails', dlc: true},
+				{id: 'kr2', label: 'Krastorio 2', mods: {Krastorio2: '2.0.0', flib: '1.0.0'}},
 			],
 			names: {
 				'assembling-machine-1': 1,
@@ -42,6 +51,8 @@ describe('transformDatasets', () => {
 				'quality-module-3': 4,
 				'quality-test-name': 4,
 				'rail-ramp': 8,
+				'kr-test-machine': 16,
+				'kr-test-recipe': 16,
 				'selector-combinator': 1,
 				'shared-name': 1,
 				'signal-A': 1,

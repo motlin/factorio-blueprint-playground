@@ -117,7 +117,7 @@ const ModDetectionPanelComponent = ({blueprint}: ModDetectionPanelProps) => {
 		);
 	}
 
-	const database = databaseQuery.data.default as ModDatabase;
+	const database: ModDatabase = databaseQuery.data.default;
 	const result = classify(extractNames(blueprint), database);
 
 	return (

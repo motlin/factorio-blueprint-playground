@@ -67,30 +67,20 @@ describe('generated mod database', () => {
 			krastorio: {
 				verdicts: [
 					{
-						source: 'Krastorio 2',
+						source: 'kr2',
 						label: 'Krastorio 2',
-						confidence: 'low',
-						matchCount: 4,
-						exampleNames: [
-							'kr-advanced-assembling-machine',
-							'kr-huge-storage-tank',
-							'kr-imersite-crystal',
-							'kr-imersite-gear-wheel',
-						],
+						confidence: 'medium',
+						matchCount: 3,
+						exampleNames: ['kr-advanced-assembling-machine', 'kr-huge-storage-tank', 'kr-imersite-crystal'],
 					},
 				],
-				unknownNames: [
-					{name: 'kr-advanced-assembling-machine', prefixHint: 'Krastorio 2'},
-					{name: 'kr-huge-storage-tank', prefixHint: 'Krastorio 2'},
-					{name: 'kr-imersite-crystal', prefixHint: 'Krastorio 2'},
-					{name: 'kr-imersite-gear-wheel', prefixHint: 'Krastorio 2'},
-				],
+				unknownNames: [{name: 'kr-imersite-gear-wheel', prefixHint: 'Krastorio 2'}],
 				warnings: [],
 			},
 			unknownMod: {
 				verdicts: [
 					{
-						source: 'Space Exploration',
+						source: 'sxp',
 						label: 'Space Exploration',
 						confidence: 'low',
 						matchCount: 1,
