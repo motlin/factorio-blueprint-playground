@@ -12,6 +12,17 @@ import vanillaFixture from '../../fixtures/blueprints/json/vanilla-2.0.json';
 
 const database = databaseJson as ModDatabase;
 
+const editorBlueprint: BlueprintString = {
+	blueprint: {
+		item: 'blueprint',
+		version: 562_949_958_139_904,
+		entities: [
+			{entity_number: 100, name: 'infinity-chest', position: {x: 0, y: 0}},
+			{entity_number: 200, name: 'turbo-loader', position: {x: 1, y: 0}},
+		],
+	},
+};
+
 function detect(fixture: unknown) {
 	return classify(extractNames(fixture as BlueprintString), database);
 }
@@ -23,6 +34,7 @@ describe('generated mod database', () => {
 			spaceAge: detect(spaceAgeFixture),
 			krastorio: detect(krastorioFixture),
 			unknownMod: detect(unknownModFixture),
+			editor: detect(editorBlueprint),
 		}).toStrictEqual({
 			vanilla: {
 				verdicts: [
@@ -95,6 +107,78 @@ describe('generated mod database', () => {
 				],
 				warnings: [],
 			},
+			editor: {
+				verdicts: [
+					{
+						source: 'base',
+						label: 'Factorio 2.0 / 2.1',
+						confidence: 'high',
+						matchCount: 1,
+						exampleNames: ['infinity-chest'],
+					},
+					{
+						source: 'space-age',
+						label: 'Space Age',
+						confidence: 'medium',
+						matchCount: 1,
+						exampleNames: ['turbo-loader'],
+					},
+				],
+				unknownNames: [],
+				warnings: [],
+			},
+		});
+	});
+
+	it('assigns hidden placeable prototypes to built-in sources', () => {
+		expect(
+			Object.fromEntries(
+				[
+					'bottomless-chest',
+					'burner-generator',
+					'electric-energy-interface',
+					'express-loader',
+					'fast-loader',
+					'heat-interface',
+					'infinity-cargo-wagon',
+					'infinity-chest',
+					'infinity-pipe',
+					'lane-splitter',
+					'linked-belt',
+					'linked-chest',
+					'loader',
+					'one-way-valve',
+					'overflow-valve',
+					'proxy-container',
+					'simple-entity-with-force',
+					'simple-entity-with-owner',
+					'top-up-valve',
+					'space-platform-hub',
+					'turbo-loader',
+				].map((name) => [name, database.names[name]]),
+			),
+		).toStrictEqual({
+			'bottomless-chest': 1,
+			'burner-generator': 1,
+			'electric-energy-interface': 1,
+			'express-loader': 1,
+			'fast-loader': 1,
+			'heat-interface': 1,
+			'infinity-cargo-wagon': 1,
+			'infinity-chest': 1,
+			'infinity-pipe': 1,
+			'lane-splitter': 1,
+			'linked-belt': 1,
+			'linked-chest': 1,
+			loader: 1,
+			'one-way-valve': 1,
+			'overflow-valve': 1,
+			'proxy-container': 1,
+			'simple-entity-with-force': 1,
+			'simple-entity-with-owner': 1,
+			'space-platform-hub': 2,
+			'top-up-valve': 1,
+			'turbo-loader': 2,
 		});
 	});
 });
