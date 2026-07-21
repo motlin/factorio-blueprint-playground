@@ -1,6 +1,9 @@
+import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import type {Meta, StoryObj} from '@storybook/react-vite';
 
 import {BlueprintInfoPanels} from './BlueprintInfoPanels';
+
+const queryClient = new QueryClient({defaultOptions: {queries: {retry: false}}});
 
 const meta: Meta<typeof BlueprintInfoPanels> = {
 	title: 'Blueprint/Panels/BlueprintInfoPanels',
@@ -11,9 +14,11 @@ const meta: Meta<typeof BlueprintInfoPanels> = {
 	tags: ['autodocs'],
 	decorators: [
 		(StoryComponent) => (
-			<div style={{minWidth: '600px'}}>
-				<StoryComponent />
-			</div>
+			<QueryClientProvider client={queryClient}>
+				<div style={{minWidth: '600px'}}>
+					<StoryComponent />
+				</div>
+			</QueryClientProvider>
 		),
 	],
 };
