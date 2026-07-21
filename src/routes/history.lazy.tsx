@@ -11,36 +11,10 @@ import {Button} from '../components/ui/Button';
 import {ErrorAlert} from '../components/ui/ErrorAlert';
 import {Panel} from '../components/ui/Panel';
 import {logger} from '../lib/sentry';
-import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
 import {deserializeBlueprintNoThrow, serializeBlueprint} from '../parsing/blueprintParser';
-import type {BlueprintString, BlueprintStringWithIndex, Icon, SignalType} from '../parsing/types';
+import type {BlueprintString} from '../parsing/types';
 import {type DatabaseBlueprint, db} from '../storage/db';
-
-const SIGNAL_TYPES = new Set<string>([
-	'item',
-	'fluid',
-	'virtual',
-	'entity',
-	'technology',
-	'recipe',
-	'item-group',
-	'tile',
-	'virtual-signal',
-	'achievement',
-	'equipment',
-	'planet',
-	'quality',
-	'utility',
-	'space-location',
-]);
-
-function toSignalType(type: string | undefined): SignalType | undefined {
-	if (type != null && SIGNAL_TYPES.has(type)) {
-		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- membership checked against SIGNAL_TYPES set above
-		return type as SignalType;
-	}
-	return undefined;
-}
+import {makeBook} from '../transform/bookOps';
 
 export const Route = createLazyFileRoute('/history')({
 	component: History,
@@ -110,30 +84,12 @@ function History() {
 				.map((bp: DatabaseBlueprint) => deserializeBlueprintNoThrow(bp.metadata.data))
 				.filter((bp): bp is BlueprintString => bp !== null);
 
-			const versions = parsedBlueprints
-				.map((parsedBp) => new BlueprintWrapper(parsedBp))
-				.map((wrapper) => wrapper.getVersion());
-
-			const maxVersion: number = Math.max(0, ...versions);
-
-			const processedBlueprints: BlueprintStringWithIndex[] = parsedBlueprints.map((parsedBp, idx) => ({
-				index: idx,
-				...parsedBp,
-			}));
-
 			const date = new Date();
 			const formattedDate = formatDateForExport(date);
-
-			const blueprintBookData: BlueprintString = {
-				blueprint_book: {
-					item: 'blueprint-book',
-					label: `https://factorio-blueprint-playground.pages.dev/history Export on ${formattedDate}`,
-					icons: createBookIcons(selectedBlueprints),
-					blueprints: processedBlueprints,
-					active_index: 0,
-					version: maxVersion,
-				},
-			};
+			const blueprintBookData = makeBook(
+				parsedBlueprints,
+				`https://factorio-blueprint-playground.pages.dev/history Export on ${formattedDate}`,
+			);
 
 			const serializedBook = serializeBlueprint(blueprintBookData);
 			downloadBlueprint(serializedBook, 'blueprint-history-export');
@@ -176,37 +132,6 @@ function History() {
 			);
 			setError(deleteError instanceof Error ? deleteError : new Error('Failed to delete blueprints'));
 		}
-	};
-
-	const createBookIcons = (selectedBlueprints: DatabaseBlueprint[]): Icon[] => {
-		const icons: Icon[] = [];
-
-		// Take the first icon from the first 4 blueprints that have icons
-		for (const bp of selectedBlueprints) {
-			if (bp.gameData.icons.length > 0 && icons.length < 4) {
-				icons.push({
-					signal: {
-						type: toSignalType(bp.gameData.icons[0].type) ?? 'item',
-						name: bp.gameData.icons[0].name,
-					},
-					index: icons.length + 1,
-				});
-			}
-
-			if (icons.length >= 4) break;
-		}
-
-		if (icons.length === 0) {
-			icons.push({
-				signal: {
-					type: 'item',
-					name: 'blueprint-book',
-				},
-				index: 1,
-			});
-		}
-
-		return icons;
 	};
 
 	if (isLoading) {

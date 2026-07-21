@@ -4,6 +4,7 @@ import {useEffect, useState} from 'react';
 import {BlueprintWrapper} from '../../../../parsing/BlueprintWrapper';
 import {serializeBlueprint} from '../../../../parsing/blueprintParser';
 import type {BlueprintString} from '../../../../parsing/types';
+import {flattenBook, sortBookByLabel} from '../../../../transform/bookOps';
 import {stripQuality, stripTiles, stripTrains, stripWires} from '../../../../transform/strip';
 import {shiftTier} from '../../../../transform/upgradeTier';
 import {ButtonGreen} from '../../../ui/ButtonGreen';
@@ -38,6 +39,9 @@ export function TransformPanel({blueprint}: TransformPanelProps) {
 
 	const applyShift = (delta: 1 | -1) => {
 		setResult(shiftTier(blueprint, delta, {includeSpaceAge}));
+	};
+	const applyBookTransform = (transform: (book: BlueprintString) => BlueprintString) => {
+		setResult(transform(blueprint));
 	};
 	const applyStrips = () => {
 		let transformedBlueprint = blueprint;
@@ -150,6 +154,26 @@ export function TransformPanel({blueprint}: TransformPanelProps) {
 						Apply Strips
 					</ButtonGreen>
 				</div>
+				{type === 'blueprint-book' ? (
+					<div className="flex-space-between mt12">
+						<ButtonGreen
+							onClick={(event) => {
+								event.preventDefault();
+								applyBookTransform(flattenBook);
+							}}
+						>
+							Flatten Book
+						</ButtonGreen>
+						<ButtonGreen
+							onClick={(event) => {
+								event.preventDefault();
+								applyBookTransform(sortBookByLabel);
+							}}
+						>
+							Sort Book by Label
+						</ButtonGreen>
+					</div>
+				) : null}
 			</Panel>
 
 			{result === undefined ? null : (
