@@ -16,11 +16,15 @@ const database: ModDatabase = {
 		{id: 'base', label: 'Factorio 2.0'},
 		{id: 'space-age', label: 'Space Age', dlc: true},
 		{id: 'quality', label: 'Quality', dlc: true},
+		{id: 'map-editor', label: 'Map editor', editor: true},
+		{id: 'space-age-map-editor', label: 'Space Age map editor', dlc: true, editor: true},
 	],
 	names: {
 		'transport-belt': 1,
 		foundry: 2,
 		'quality-module-3': 4,
+		'infinity-chest': 8,
+		'turbo-loader': 16,
 	},
 	prefixes: {
 		'se-': 'Space Exploration',
@@ -88,15 +92,45 @@ describe('ModDetectionPanel', () => {
 		expect(screen.getByText('Requires Space Age + Quality')).toBeInTheDocument();
 		expect(
 			screen.getAllByRole('group').map((group) => ({
-				summary: within(group).getByText(/confidence/).textContent,
+				summary: group.querySelector('summary')?.textContent,
 				names: within(group)
 					.getAllByRole('listitem')
 					.map((item) => item.textContent),
 			})),
 		).toStrictEqual([
-			{summary: 'Space Age — medium confidence, 1 matching name', names: ['foundry']},
-			{summary: 'Quality — high confidence, 1 matching name', names: ['quality-module-3']},
+			{summary: 'Space Agemedium confidence1 matching name', names: ['foundry']},
+			{summary: 'Qualityhigh confidence1 matching name', names: ['quality-module-3']},
 		]);
+	});
+
+	it('identifies base and Space Age map editor entities separately from vanilla', () => {
+		const blueprint: BlueprintString = {
+			blueprint: {
+				item: 'blueprint',
+				version: 562949954076673,
+				entities: [
+					{entity_number: 100, name: 'infinity-chest', position: {x: 0, y: 0}},
+					{entity_number: 200, name: 'turbo-loader', position: {x: 2, y: 0}},
+				],
+			},
+		};
+		renderWithClient(<ModDetectionPanel blueprint={blueprint} />, resolvedClient());
+
+		expect({
+			headline: screen.getByText('Contains base + Space Age map editor entities').textContent,
+			sources: screen.getAllByRole('group').map((group) => ({
+				summary: group.querySelector('summary')?.textContent,
+				names: within(group)
+					.getAllByRole('listitem')
+					.map((item) => item.textContent),
+			})),
+		}).toStrictEqual({
+			headline: 'Contains base + Space Age map editor entities',
+			sources: [
+				{summary: 'Map editorEditorhigh confidence1 matching name', names: ['infinity-chest']},
+				{summary: 'Space Age map editorEditorhigh confidence1 matching name', names: ['turbo-loader']},
+			],
+		});
 	});
 
 	it('lists unknown names and their prefix hints', () => {
@@ -112,13 +146,27 @@ describe('ModDetectionPanel', () => {
 		};
 		renderWithClient(<ModDetectionPanel blueprint={blueprint} />, resolvedClient());
 
-		expect(screen.getByText('Requires Space Exploration — low confidence, 1 matching name')).toBeInTheDocument();
-		const unknownNames = screen.getByText('Unknown names (2)').parentElement;
-		expect(unknownNames).not.toBeNull();
 		expect(
-			within(unknownNames!)
-				.getAllByRole('listitem')
-				.map((item) => item.textContent),
-		).toStrictEqual(['invented-assembler', 'se-imaginary-beacon — likely Space Exploration (name prefix)']);
+			screen.getByText(
+				'Requires Space Exploration — low confidence, 1 matching name · Likely modded — 2 unknown names',
+			).textContent,
+		).toBe('Requires Space Exploration — low confidence, 1 matching name · Likely modded — 2 unknown names');
+		expect(
+			screen.getAllByRole('group').map((group) => ({
+				summary: group.querySelector('summary')?.textContent,
+				names: within(group)
+					.getAllByRole('listitem')
+					.map((item) => item.textContent),
+			})),
+		).toStrictEqual([
+			{
+				summary: 'Space Explorationlow confidence1 matching name',
+				names: ['se-imaginary-beacon'],
+			},
+			{
+				summary: 'Unknown names2 names',
+				names: ['invented-assembler', 'se-imaginary-beaconLikely Space Exploration from the name prefix'],
+			},
+		]);
 	});
 });

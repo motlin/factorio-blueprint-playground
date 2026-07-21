@@ -29,3 +29,8 @@ export const MOD_SOURCES = [
 	{id: 'quality', label: 'Quality', dlc: true},
 	{id: 'elevated-rails', label: 'Elevated Rails', dlc: true},
 ] satisfies ModSource[];
+
+export const EDITOR_SOURCES = [
+	{id: 'map-editor', label: 'Map editor', editor: true},
+	{id: 'space-age-map-editor', label: 'Space Age map editor', dlc: true, editor: true},
+] satisfies ModSource[];

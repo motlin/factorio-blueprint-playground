@@ -21,6 +21,7 @@ export interface ModSource {
 	id: string;
 	label: string;
 	dlc?: boolean;
+	editor?: boolean;
 	mods?: Partial<Record<string, string>>;
 }
 

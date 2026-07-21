@@ -1,7 +1,5 @@
 {
 	"base": [
-		"bottomless-chest",
-		"burner-generator",
 		"concrete",
 		"curved-rail",
 		"curved-rail-a",
@@ -9,26 +7,12 @@
 		"down-arrow",
 		"down-left-arrow",
 		"down-right-arrow",
-		"electric-energy-interface",
-		"express-loader",
-		"fast-loader",
 		"half-diagonal-rail",
 		"hazard-concrete-left",
 		"hazard-concrete-right",
-		"heat-interface",
-		"infinity-cargo-wagon",
-		"infinity-chest",
-		"infinity-pipe",
-		"lane-splitter",
 		"left-arrow",
 		"legacy-curved-rail",
 		"legacy-straight-rail",
-		"linked-belt",
-		"linked-chest",
-		"loader",
-		"one-way-valve",
-		"overflow-valve",
-		"proxy-container",
 		"refined-concrete",
 		"refined-hazard-concrete-left",
 		"refined-hazard-concrete-right",
@@ -178,11 +162,8 @@
 		"signal-white",
 		"signal-white-flag",
 		"signal-yellow",
-		"simple-entity-with-force",
-		"simple-entity-with-owner",
 		"stone-path",
 		"straight-rail",
-		"top-up-valve",
 		"up-arrow",
 		"up-left-arrow",
 		"up-right-arrow"
@@ -202,9 +183,7 @@
 		"ice-smooth",
 		"overgrowth-jellynut-soil",
 		"overgrowth-yumako-soil",
-		"space-platform-foundation",
-		"space-platform-hub",
-		"turbo-loader"
+		"space-platform-foundation"
 	],
 	"quality": [],
 	"elevatedRails": [
@@ -214,5 +193,27 @@
 		"elevated-straight-rail",
 		"rail-ramp",
 		"rail-support"
-	]
+	],
+	"mapEditor": [
+		"bottomless-chest",
+		"burner-generator",
+		"electric-energy-interface",
+		"express-loader",
+		"fast-loader",
+		"heat-interface",
+		"infinity-cargo-wagon",
+		"infinity-chest",
+		"infinity-pipe",
+		"lane-splitter",
+		"linked-belt",
+		"linked-chest",
+		"loader",
+		"one-way-valve",
+		"overflow-valve",
+		"proxy-container",
+		"simple-entity-with-force",
+		"simple-entity-with-owner",
+		"top-up-valve"
+	],
+	"spaceAgeMapEditor": ["space-platform-hub", "turbo-loader"]
 }

@@ -184,6 +184,7 @@ export function classify(extractedNames: ExtractedNames, database: ModDatabase):
 			const sourceEvidence = evidenceFor(evidence, indexes[0]);
 			sourceEvidence.names.add(name);
 			sourceEvidence.exclusiveCount += 1;
+			sourceEvidence.definitive = database.sources[indexes[0]]?.editor === true;
 			continue;
 		}
 
