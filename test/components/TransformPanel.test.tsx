@@ -5,6 +5,7 @@ import {beforeEach, describe, expect, test, vi} from 'vite-plus/test';
 import {TransformPanel} from '../../src/components/blueprint/panels/transform/TransformPanel';
 import {serializeBlueprint} from '../../src/parsing/blueprintParser';
 import type {BlueprintString} from '../../src/parsing/types';
+import {stripTiles, stripTrains} from '../../src/transform/strip';
 import {shiftTier} from '../../src/transform/upgradeTier';
 
 const {navigate} = vi.hoisted(() => ({navigate: vi.fn<(options: unknown) => void>()}));
@@ -44,12 +45,17 @@ describe('TransformPanel', () => {
 		expect(screen.getAllByRole('button').map((button) => button.textContent)).toStrictEqual([
 			'Upgrade',
 			'Downgrade',
+			'Apply Strips',
 		]);
+		expect(
+			screen.getAllByRole('checkbox').map((checkbox) => checkbox.parentElement?.textContent.trim()),
+		).toStrictEqual(['Include Space Age tiers', 'Strip quality', 'Strip wires', 'Strip trains', 'Strip tiles']);
 
 		rerender(<TransformPanel blueprint={{blueprint_book: {item: 'blueprint-book', version: 0, blueprints: []}}} />);
 		expect(screen.getAllByRole('button').map((button) => button.textContent)).toStrictEqual([
 			'Upgrade',
 			'Downgrade',
+			'Apply Strips',
 		]);
 	});
 
@@ -62,6 +68,7 @@ describe('TransformPanel', () => {
 		expect(screen.getAllByRole('button').map((button) => button.textContent.trim())).toStrictEqual([
 			'Upgrade',
 			'Downgrade',
+			'Apply Strips',
 			'Copy String',
 			'Copy JSON',
 			'Download String',
@@ -83,6 +90,35 @@ describe('TransformPanel', () => {
 			to: '/',
 			search: {
 				pasted: serializeBlueprint(shiftTier(blueprint, 1)),
+				selection: '',
+			},
+		});
+	});
+
+	test('applies selected strip transforms in one result', async () => {
+		const user = userEvent.setup();
+		const stripBlueprint: BlueprintString = {
+			blueprint: {
+				item: 'blueprint',
+				version: 0,
+				entities: [
+					{entity_number: 1, name: 'locomotive', position: {x: 0, y: 0}},
+					{entity_number: 10, name: 'train-stop', position: {x: 1, y: 0}},
+				],
+				tiles: [{name: 'landfill', position: {x: 0, y: 0}}],
+			},
+		};
+		render(<TransformPanel blueprint={stripBlueprint} />);
+
+		await user.click(screen.getByRole('checkbox', {name: 'Strip trains'}));
+		await user.click(screen.getByRole('checkbox', {name: 'Strip tiles'}));
+		await user.click(screen.getByRole('button', {name: 'Apply Strips'}));
+		await user.click(screen.getByRole('button', {name: 'Open in Playground'}));
+
+		expect(navigate).toHaveBeenCalledExactlyOnceWith({
+			to: '/',
+			search: {
+				pasted: serializeBlueprint(stripTiles(stripTrains(stripBlueprint))),
 				selection: '',
 			},
 		});

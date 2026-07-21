@@ -4,6 +4,7 @@ import {useEffect, useState} from 'react';
 import {BlueprintWrapper} from '../../../../parsing/BlueprintWrapper';
 import {serializeBlueprint} from '../../../../parsing/blueprintParser';
 import type {BlueprintString} from '../../../../parsing/types';
+import {stripQuality, stripTiles, stripTrains, stripWires} from '../../../../transform/strip';
 import {shiftTier} from '../../../../transform/upgradeTier';
 import {ButtonGreen} from '../../../ui/ButtonGreen';
 import {Panel} from '../../../ui/Panel';
@@ -16,6 +17,10 @@ interface TransformPanelProps {
 export function TransformPanel({blueprint}: TransformPanelProps) {
 	const navigate = useNavigate();
 	const [includeSpaceAge, setIncludeSpaceAge] = useState(false);
+	const [stripQualitySelected, setStripQualitySelected] = useState(false);
+	const [stripWiresSelected, setStripWiresSelected] = useState(false);
+	const [stripTrainsSelected, setStripTrainsSelected] = useState(false);
+	const [stripTilesSelected, setStripTilesSelected] = useState(false);
 	const [result, setResult] = useState<BlueprintString>();
 
 	useEffect(() => {
@@ -34,6 +39,15 @@ export function TransformPanel({blueprint}: TransformPanelProps) {
 	const applyShift = (delta: 1 | -1) => {
 		setResult(shiftTier(blueprint, delta, {includeSpaceAge}));
 	};
+	const applyStrips = () => {
+		let transformedBlueprint = blueprint;
+		if (stripQualitySelected) transformedBlueprint = stripQuality(transformedBlueprint);
+		if (stripWiresSelected) transformedBlueprint = stripWires(transformedBlueprint);
+		if (stripTrainsSelected) transformedBlueprint = stripTrains(transformedBlueprint);
+		if (stripTilesSelected) transformedBlueprint = stripTiles(transformedBlueprint);
+		setResult(transformedBlueprint);
+	};
+	const hasSelectedStrip = stripQualitySelected || stripWiresSelected || stripTrainsSelected || stripTilesSelected;
 
 	const openInPlayground = () => {
 		if (result === undefined) {
@@ -78,6 +92,62 @@ export function TransformPanel({blueprint}: TransformPanelProps) {
 						}}
 					>
 						Downgrade
+					</ButtonGreen>
+				</div>
+				<div className="mt12">
+					<label>
+						<input
+							type="checkbox"
+							checked={stripQualitySelected}
+							onChange={(event) => {
+								setStripQualitySelected(event.currentTarget.checked);
+							}}
+						/>{' '}
+						Strip quality
+					</label>
+					<br />
+					<label>
+						<input
+							type="checkbox"
+							checked={stripWiresSelected}
+							onChange={(event) => {
+								setStripWiresSelected(event.currentTarget.checked);
+							}}
+						/>{' '}
+						Strip wires
+					</label>
+					<br />
+					<label>
+						<input
+							type="checkbox"
+							checked={stripTrainsSelected}
+							onChange={(event) => {
+								setStripTrainsSelected(event.currentTarget.checked);
+							}}
+						/>{' '}
+						Strip trains
+					</label>
+					<br />
+					<label>
+						<input
+							type="checkbox"
+							checked={stripTilesSelected}
+							onChange={(event) => {
+								setStripTilesSelected(event.currentTarget.checked);
+							}}
+						/>{' '}
+						Strip tiles
+					</label>
+				</div>
+				<div className="mt12">
+					<ButtonGreen
+						disabled={!hasSelectedStrip}
+						onClick={(event) => {
+							event.preventDefault();
+							applyStrips();
+						}}
+					>
+						Apply Strips
 					</ButtonGreen>
 				</div>
 			</Panel>
