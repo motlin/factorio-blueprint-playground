@@ -40,9 +40,14 @@ typecheck: install
 build: install
     vp run build
 
-# Run fallow codebase intelligence (dead code, duplication, drift)
+# Apply safe Fallow fixes locally, then reject remaining dead code
 fallow: install
-    vp run {{ if ci != "" { "fallow:ci" } else { "fallow" } }}
+    {{ if ci == "" { "vp run fallow" } else { "true" } }}
+    vp run fallow:ci
+
+# vp run fallow:ci
+fallow-check: install
+    vp run fallow:ci
 
 # Run Storybook
 storybook *args: install
@@ -54,6 +59,10 @@ pre-commit: install
 
 # Run all pre-commit checks
 [arg("quick", long, value="true", help="Skip tests")]
-precommit quick="": check build fallow pre-commit
+verify quick="": check build fallow pre-commit
     {{ if quick != "true" { "just test" } else { "true" } }}
     @echo "All pre-commit checks passed!"
+
+# Deprecated alias for `verify`
+[arg("quick", long, value="true", help="Skip tests")]
+precommit quick="": (verify quick)
