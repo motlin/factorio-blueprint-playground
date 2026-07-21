@@ -1,0 +1,20 @@
+{
+	"blueprint": {
+		"item": "blueprint",
+		"version": 562949953421312,
+		"icons": [{"signal": {"type": "item", "name": "made-up-crystal"}, "index": 1}],
+		"entities": [
+			{
+				"entity_number": 1,
+				"name": "invented-assembler",
+				"position": {"x": 0, "y": 0},
+				"recipe": "se-imaginary-recipe"
+			},
+			{
+				"entity_number": 2,
+				"name": "fictional-loader",
+				"position": {"x": 2, "y": 0}
+			}
+		]
+	}
+}
