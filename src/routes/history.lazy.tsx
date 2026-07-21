@@ -11,14 +11,46 @@ import {Button} from '../components/ui/Button';
 import {ErrorAlert} from '../components/ui/ErrorAlert';
 import {Panel} from '../components/ui/Panel';
 import {logger} from '../lib/sentry';
-import {deserializeBlueprintNoThrow, serializeBlueprint} from '../parsing/blueprintParser';
+import {type BlueprintInfo, BlueprintWrapper} from '../parsing/BlueprintWrapper';
+import {deserializeBlueprint, deserializeBlueprintNoThrow, serializeBlueprint} from '../parsing/blueprintParser';
 import type {BlueprintString} from '../parsing/types';
-import {type DatabaseBlueprint, db} from '../storage/db';
-import {makeBook} from '../transform/bookOps';
+import {type BlueprintGameData, type DatabaseBlueprint, type DatabaseBlueprintType, db} from '../storage/db';
+import {makeBook, splitBook} from '../transform/bookOps';
 
 export const Route = createLazyFileRoute('/history')({
 	component: History,
 });
+
+const DATABASE_TYPE_BY_BLUEPRINT_TYPE: Record<BlueprintInfo['type'], DatabaseBlueprintType> = {
+	blueprint: 'blueprint',
+	'blueprint-book': 'blueprint_book',
+	'upgrade-planner': 'upgrade_planner',
+	'deconstruction-planner': 'deconstruction_planner',
+};
+
+function getGameData(blueprint: BlueprintString): BlueprintGameData {
+	const info = new BlueprintWrapper(blueprint).getInfo();
+	return {
+		type: DATABASE_TYPE_BY_BLUEPRINT_TYPE[info.type],
+		label: info.label,
+		description: info.description,
+		gameVersion: info.version.toString(),
+		icons: (info.icons ?? []).map((icon) => ({type: icon.signal.type, name: icon.signal.name})),
+	};
+}
+
+export async function addSplitBookToHistory(book: BlueprintString): Promise<DatabaseBlueprint[]> {
+	if (book.blueprint_book === undefined) {
+		throw new Error('Cannot split a blueprint that is not a book');
+	}
+
+	const addedBlueprints: DatabaseBlueprint[] = [];
+	for (const child of splitBook(book)) {
+		addedBlueprints.push(await db.addBlueprint(serializeBlueprint(child), getGameData(child), undefined, 'data'));
+	}
+
+	return addedBlueprints;
+}
 
 function History() {
 	const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set<string>());
@@ -106,6 +138,32 @@ function History() {
 		}
 	};
 
+	const splitSelectedBooks = async (): Promise<void> => {
+		if (blueprints == null) return;
+
+		const selectedBooks = blueprints.filter(
+			(blueprint) => selectedItems.has(blueprint.metadata.sha) && blueprint.gameData.type === 'blueprint_book',
+		);
+		if (selectedBooks.length === 0) return;
+
+		try {
+			for (const book of selectedBooks) {
+				await addSplitBookToHistory(deserializeBlueprint(book.metadata.data));
+			}
+			setSelectedItems(new Set<string>());
+		} catch (splitError: unknown) {
+			logger.error(
+				'Failed to split blueprint books',
+				splitError instanceof Error ? splitError : new Error(String(splitError)),
+				{
+					context: 'History.splitSelectedBooks',
+					selectedCount: selectedBooks.length,
+				},
+			);
+			setError(splitError instanceof Error ? splitError : new Error('Failed to split blueprint books'));
+		}
+	};
+
 	const deleteSelected = async (): Promise<void> => {
 		const size: number = selectedItems.size;
 		if (size === 0) return;
@@ -159,6 +217,10 @@ function History() {
 		return <EmptyHistoryState />;
 	}
 
+	const selectedBookCount = blueprints.filter(
+		(blueprint) => selectedItems.has(blueprint.metadata.sha) && blueprint.gameData.type === 'blueprint_book',
+	).length;
+
 	return (
 		<Panel title="Blueprint History">
 			<div>
@@ -171,6 +233,9 @@ function History() {
 					data-testid="delete-button"
 				>
 					Delete Selected
+				</Button>
+				<Button disabled={selectedBookCount === 0} onClick={() => void splitSelectedBooks()}>
+					Split Selected Books
 				</Button>
 				<Button onClick={selectAll}>Select All</Button>
 				<Button onClick={selectNone} disabled={selectedItems.size === 0}>

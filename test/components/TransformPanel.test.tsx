@@ -134,6 +134,69 @@ describe('TransformPanel', () => {
 		});
 	});
 
+	test('applies a transformation within the selected book path', async () => {
+		const user = userEvent.setup();
+		const rootBlueprint: BlueprintString = {
+			blueprint_book: {
+				item: 'blueprint-book',
+				label: "Alice's test book",
+				version: 20,
+				blueprints: [
+					{
+						index: 10,
+						blueprint: {
+							item: 'blueprint',
+							label: 'Bob',
+							version: 10,
+							entities: [{entity_number: 1, name: 'transport-belt', position: {x: 0, y: 0}}],
+						},
+					},
+					{index: 20, blueprint: {item: 'blueprint', label: 'Charlie', version: 20}},
+				],
+			},
+		};
+		const selectedBlueprint = rootBlueprint.blueprint_book?.blueprints[0];
+		render(<TransformPanel blueprint={selectedBlueprint} rootBlueprint={rootBlueprint} selectedPath="1" />);
+
+		await user.click(screen.getByRole('button', {name: 'Upgrade'}));
+		await user.click(screen.getByRole('button', {name: 'Open in Playground'}));
+
+		expect(screen.getByText('Transform this selection within its blueprint book.').textContent).toBe(
+			'Transform this selection within its blueprint book.',
+		);
+		expect(navigate).toHaveBeenCalledExactlyOnceWith({
+			to: '/',
+			search: {
+				pasted: serializeBlueprint({
+					blueprint_book: {
+						item: 'blueprint-book',
+						label: "Alice's test book",
+						version: 20,
+						blueprints: [
+							{
+								index: 10,
+								blueprint: {
+									item: 'blueprint',
+									label: 'Bob',
+									version: 10,
+									entities: [
+										{
+											entity_number: 1,
+											name: 'fast-transport-belt',
+											position: {x: 0, y: 0},
+										},
+									],
+								},
+							},
+							{index: 20, blueprint: {item: 'blueprint', label: 'Charlie', version: 20}},
+						],
+					},
+				}),
+				selection: '1',
+			},
+		});
+	});
+
 	test('applies selected strip transforms in one result', async () => {
 		const user = userEvent.setup();
 		const stripBlueprint: BlueprintString = {
