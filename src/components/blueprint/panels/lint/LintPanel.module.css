@@ -1,0 +1,57 @@
+.summary {
+	display: flex;
+	gap: 8px;
+	margin-bottom: 8px;
+}
+
+.count {
+	padding: 2px 6px;
+	border-radius: 3px;
+	background: #242324;
+}
+
+.findings {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: 0;
+	margin: 0;
+	list-style: none;
+}
+
+.finding {
+	display: grid;
+	grid-template-columns: 12px 24px minmax(0, 1fr) auto;
+	align-items: center;
+	gap: 8px;
+	padding: 6px;
+	background: #414040;
+}
+
+.severity {
+	font-size: 18px;
+	line-height: 1;
+}
+
+.icon {
+	display: block;
+	width: 24px;
+	height: 24px;
+}
+
+.error {
+	color: #ff6b6b;
+}
+
+.warning {
+	color: #ffcf40;
+}
+
+.info {
+	color: #7dcaed;
+}
+
+.position {
+	color: #aaa;
+	white-space: nowrap;
+}
