@@ -56,7 +56,46 @@ describe('TransformPanel', () => {
 			'Upgrade',
 			'Downgrade',
 			'Apply Strips',
+			'Flatten Book',
+			'Sort Book by Label',
 		]);
+	});
+
+	test('offers and applies book operations only for books', async () => {
+		const user = userEvent.setup();
+		const book: BlueprintString = {
+			blueprint_book: {
+				item: 'blueprint-book',
+				version: 20,
+				active_index: 10,
+				blueprints: [
+					{index: 10, blueprint: {item: 'blueprint', label: 'Bob', version: 10}},
+					{index: 20, blueprint: {item: 'blueprint', label: 'Alice', version: 20}},
+				],
+			},
+		};
+		render(<TransformPanel blueprint={book} />);
+
+		await user.click(screen.getByRole('button', {name: 'Sort Book by Label'}));
+		await user.click(screen.getByRole('button', {name: 'Open in Playground'}));
+
+		expect(navigate).toHaveBeenCalledExactlyOnceWith({
+			to: '/',
+			search: {
+				pasted: serializeBlueprint({
+					blueprint_book: {
+						item: 'blueprint-book',
+						version: 20,
+						active_index: 0,
+						blueprints: [
+							{index: 0, blueprint: {item: 'blueprint', label: 'Alice', version: 20}},
+							{index: 1, blueprint: {item: 'blueprint', label: 'Bob', version: 10}},
+						],
+					},
+				}),
+				selection: '',
+			},
+		});
 	});
 
 	test('renders reusable export actions after applying a transformation', async () => {
