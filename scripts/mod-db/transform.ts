@@ -9,8 +9,14 @@ const factorioLabDatasetSchema = z.object({
 	version: z.record(z.string(), z.string()),
 	items: z.array(prototypeSchema),
 	recipes: z.array(prototypeSchema),
-	locations: z.array(prototypeSchema),
-	qualities: z.array(prototypeSchema).optional(),
+	locations: z
+		.array(prototypeSchema)
+		.nullish()
+		.transform((locations) => locations ?? []),
+	qualities: z
+		.array(prototypeSchema)
+		.nullish()
+		.transform((qualities) => qualities ?? []),
 });
 
 const baseSupplementSchema = z.object({
@@ -34,6 +40,11 @@ export interface BaseSupplement {
 interface TransformInput {
 	baseDatasets: FactorioLabDataset[];
 	spaceAgeDataset: FactorioLabDataset;
+	modDatasets: {
+		id: string;
+		label: string;
+		dataset: FactorioLabDataset;
+	}[];
 	supplement: BaseSupplement;
 	prefixes: Record<string, string>;
 	generatedAt: string;
@@ -54,14 +65,14 @@ export function parsePrefixes(value: unknown): Record<string, string> {
 
 function collectNames(dataset: FactorioLabDataset): Set<string> {
 	return new Set(
-		[...dataset.items, ...dataset.recipes, ...dataset.locations, ...(dataset.qualities ?? [])].map(
+		[...dataset.items, ...dataset.recipes, ...dataset.locations, ...dataset.qualities].map(
 			(prototype) => prototype.id,
 		),
 	);
 }
 
-function sourceMask(sourceId: string): number {
-	const sourceIndex = MOD_SOURCES.findIndex((source) => source.id === sourceId);
+function sourceMask(sources: ModDatabase['sources'], sourceId: string): number {
+	const sourceIndex = sources.findIndex((source) => source.id === sourceId);
 	if (sourceIndex < 0) {
 		throw new Error(`Unknown mod source: ${sourceId}`);
 	}
@@ -83,6 +94,14 @@ function isElevatedRailsName(name: string): boolean {
 }
 
 export function transformDatasets(input: TransformInput): ModDatabase {
+	const sources = [
+		...MOD_SOURCES,
+		...input.modDatasets.map(({id, label, dataset}) => ({
+			id,
+			label,
+			mods: sortedRecord(Object.entries(dataset.version).filter(([modName]) => modName !== 'base')),
+		})),
+	];
 	const baseNames = new Set(input.supplement.base);
 	for (const dataset of input.baseDatasets) {
 		for (const name of collectNames(dataset)) {
@@ -91,32 +110,44 @@ export function transformDatasets(input: TransformInput): ModDatabase {
 	}
 
 	const spaceAgeNames = collectNames(input.spaceAgeDataset);
-	const qualityNames = new Set(input.spaceAgeDataset.qualities?.map((quality) => quality.id) ?? []);
+	const qualityNames = new Set(input.spaceAgeDataset.qualities.map((quality) => quality.id));
 	const names = new Map<string, number>();
-	addNames(names, baseNames, sourceMask('base'));
+	addNames(names, baseNames, sourceMask(sources, 'base'));
 
 	for (const name of spaceAgeNames) {
 		if (baseNames.has(name)) {
 			continue;
 		}
 		if (qualityNames.has(name) || name.startsWith('quality-module')) {
-			addNames(names, [name], sourceMask('quality'));
+			addNames(names, [name], sourceMask(sources, 'quality'));
 		} else if (isElevatedRailsName(name)) {
-			addNames(names, [name], sourceMask('elevated-rails'));
+			addNames(names, [name], sourceMask(sources, 'elevated-rails'));
 		} else {
-			addNames(names, [name], sourceMask('space-age'));
+			addNames(names, [name], sourceMask(sources, 'space-age'));
 		}
 	}
 
-	addNames(names, input.supplement.spaceAge, sourceMask('space-age'));
-	addNames(names, input.supplement.quality, sourceMask('quality'));
-	addNames(names, input.supplement.elevatedRails, sourceMask('elevated-rails'));
+	addNames(names, input.supplement.spaceAge, sourceMask(sources, 'space-age'));
+	addNames(names, input.supplement.quality, sourceMask(sources, 'quality'));
+	addNames(names, input.supplement.elevatedRails, sourceMask(sources, 'elevated-rails'));
+
+	const vanillaNames = new Set([
+		...baseNames,
+		...spaceAgeNames,
+		...input.supplement.spaceAge,
+		...input.supplement.quality,
+		...input.supplement.elevatedRails,
+	]);
+	for (const {id, dataset} of input.modDatasets) {
+		const exclusiveNames = [...collectNames(dataset)].filter((name) => !vanillaNames.has(name));
+		addNames(names, exclusiveNames, sourceMask(sources, id));
+	}
 
 	return {
 		generatedAt: input.generatedAt,
 		factoriolabCommit: input.factoriolabCommit,
 		license: FACTORIOLAB_LICENSE,
-		sources: MOD_SOURCES,
+		sources,
 		names: sortedRecord(names),
 		prefixes: sortedRecord(Object.entries(input.prefixes)),
 	};

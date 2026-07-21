@@ -21,7 +21,7 @@ export interface ModSource {
 	id: string;
 	label: string;
 	dlc?: boolean;
-	mods?: Record<string, string>;
+	mods?: Partial<Record<string, string>>;
 }
 
 export interface ModDatabase {

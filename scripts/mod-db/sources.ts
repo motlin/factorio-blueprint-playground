@@ -6,6 +6,18 @@ export const FACTORIOLAB_DATASETS = [
 	{id: '2.0', role: 'base'},
 	{id: '2.1', role: 'base'},
 	{id: 'spa', role: 'space-age'},
+	{id: 'kr2', role: 'mod', label: 'Krastorio 2'},
+	{id: 'kr2sxp', role: 'mod', label: 'Krastorio 2 + Space Exploration'},
+	{id: 'sxp', role: 'mod', label: 'Space Exploration'},
+	{id: 'bob', role: 'mod', label: "Bob's Mods"},
+	{id: 'bobang', role: 'mod', label: "Bob's & Angel's"},
+	{id: 'pys', role: 'mod', label: 'Pyanodons'},
+	{id: 'pysalf', role: 'mod', label: 'Pyanodons + Alien Life'},
+	{id: 'ir3', role: 'mod', label: 'Industrial Revolution 3'},
+	{id: 'aai', role: 'mod', label: 'AAI Industry'},
+	{id: 'nls', role: 'mod', label: 'Nullius'},
+	{id: 'sea', role: 'mod', label: 'Sea Block'},
+	{id: '2x1', role: 'mod', label: 'Space Age 2.0'},
 ] as const;
 
 export const FACTORIOLAB_LICENSE =

@@ -40,12 +40,23 @@ const spaceAgeDataset = datasets.get('spa');
 if (spaceAgeDataset === undefined) {
 	throw new Error('Missing fetched FactorioLab dataset: spa');
 }
+const modDatasets = FACTORIOLAB_DATASETS.flatMap((source) => {
+	if (source.role !== 'mod') {
+		return [];
+	}
+	const dataset = datasets.get(source.id);
+	if (dataset === undefined) {
+		throw new Error(`Missing fetched FactorioLab dataset: ${source.id}`);
+	}
+	return [{id: source.id, label: source.label, dataset}];
+});
 
 const supplement = parseBaseSupplement(await readJson(new URL('base-supplement.json', import.meta.url)));
 const prefixes = parsePrefixes(await readJson(new URL('prefix-heuristics.json', import.meta.url)));
 const database = transformDatasets({
 	baseDatasets,
 	spaceAgeDataset,
+	modDatasets,
 	supplement,
 	prefixes,
 	generatedAt: new Date().toISOString().slice(0, 10),
