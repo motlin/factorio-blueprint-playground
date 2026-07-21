@@ -1,0 +1,19 @@
+import type {ModSource} from '../../src/parsing/modDetection/types';
+
+export const FACTORIOLAB_COMMIT = '0490123d82626d9453a0b50c531a391088d73361';
+
+export const FACTORIOLAB_DATASETS = [
+	{id: '2.0', role: 'base'},
+	{id: '2.1', role: 'base'},
+	{id: 'spa', role: 'space-age'},
+] as const;
+
+export const FACTORIOLAB_LICENSE =
+	'Data derived from FactorioLab, Copyright (c) 2020-2026 Doug Broad, under the MIT License. https://github.com/factoriolab/factoriolab';
+
+export const MOD_SOURCES = [
+	{id: 'base', label: 'Factorio 2.0 / 2.1'},
+	{id: 'space-age', label: 'Space Age', dlc: true},
+	{id: 'quality', label: 'Quality', dlc: true},
+	{id: 'elevated-rails', label: 'Elevated Rails', dlc: true},
+] satisfies ModSource[];

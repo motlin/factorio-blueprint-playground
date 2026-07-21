@@ -1,0 +1,12 @@
+{
+	"version": {
+		"base": "2.1.0",
+		"elevated-rails": "2.1.0",
+		"quality": "2.1.0",
+		"space-age": "2.1.0"
+	},
+	"items": [{"id": "transport-belt"}, {"id": "foundry"}, {"id": "quality-module-3"}, {"id": "rail-ramp"}],
+	"recipes": [{"id": "superconductor"}],
+	"locations": [{"id": "nauvis"}, {"id": "vulcanus"}],
+	"qualities": [{"id": "normal"}, {"id": "legendary"}]
+}
