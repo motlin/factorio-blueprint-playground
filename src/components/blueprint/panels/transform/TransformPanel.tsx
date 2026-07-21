@@ -4,6 +4,7 @@ import {useEffect, useState} from 'react';
 import {BlueprintWrapper} from '../../../../parsing/BlueprintWrapper';
 import {serializeBlueprint} from '../../../../parsing/blueprintParser';
 import type {BlueprintString} from '../../../../parsing/types';
+import {updateNestedBlueprint} from '../../../../transform/applyAtPath';
 import {flattenBook, sortBookByLabel} from '../../../../transform/bookOps';
 import {stripQuality, stripTiles, stripTrains, stripWires} from '../../../../transform/strip';
 import {shiftTier} from '../../../../transform/upgradeTier';
@@ -13,9 +14,11 @@ import {ExportActions} from '../../export/ExportActions';
 
 interface TransformPanelProps {
 	blueprint?: BlueprintString;
+	rootBlueprint?: BlueprintString;
+	selectedPath?: string;
 }
 
-export function TransformPanel({blueprint}: TransformPanelProps) {
+export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPath = ''}: TransformPanelProps) {
 	const navigate = useNavigate();
 	const [includeSpaceAge, setIncludeSpaceAge] = useState(false);
 	const [stripQualitySelected, setStripQualitySelected] = useState(false);
@@ -37,19 +40,29 @@ export function TransformPanel({blueprint}: TransformPanelProps) {
 		return null;
 	}
 
-	const applyShift = (delta: 1 | -1) => {
-		setResult(shiftTier(blueprint, delta, {includeSpaceAge}));
+	const applyTransformation = (transform: (selected: BlueprintString) => BlueprintString) => {
+		if (rootBlueprint === undefined) {
+			throw new Error('Cannot apply a transformation without a root blueprint');
+		}
+
+		const transformed = updateNestedBlueprint(rootBlueprint, selectedPath, transform);
+		if (transformed === null) {
+			throw new Error(`Cannot apply a transformation at path ${selectedPath}`);
+		}
+		setResult(transformed);
 	};
-	const applyBookTransform = (transform: (book: BlueprintString) => BlueprintString) => {
-		setResult(transform(blueprint));
+	const applyShift = (delta: 1 | -1) => {
+		applyTransformation((selected) => shiftTier(selected, delta, {includeSpaceAge}));
 	};
 	const applyStrips = () => {
-		let transformedBlueprint = blueprint;
-		if (stripQualitySelected) transformedBlueprint = stripQuality(transformedBlueprint);
-		if (stripWiresSelected) transformedBlueprint = stripWires(transformedBlueprint);
-		if (stripTrainsSelected) transformedBlueprint = stripTrains(transformedBlueprint);
-		if (stripTilesSelected) transformedBlueprint = stripTiles(transformedBlueprint);
-		setResult(transformedBlueprint);
+		applyTransformation((selected) => {
+			let transformedBlueprint = selected;
+			if (stripQualitySelected) transformedBlueprint = stripQuality(transformedBlueprint);
+			if (stripWiresSelected) transformedBlueprint = stripWires(transformedBlueprint);
+			if (stripTrainsSelected) transformedBlueprint = stripTrains(transformedBlueprint);
+			if (stripTilesSelected) transformedBlueprint = stripTiles(transformedBlueprint);
+			return transformedBlueprint;
+		});
 	};
 	const hasSelectedStrip = stripQualitySelected || stripWiresSelected || stripTrainsSelected || stripTilesSelected;
 
@@ -62,7 +75,7 @@ export function TransformPanel({blueprint}: TransformPanelProps) {
 			to: '/',
 			search: {
 				pasted: serializeBlueprint(result),
-				selection: '',
+				selection: selectedPath,
 			},
 		});
 	};
@@ -70,6 +83,7 @@ export function TransformPanel({blueprint}: TransformPanelProps) {
 	return (
 		<>
 			<Panel title="Transform">
+				{selectedPath === '' ? null : <p>Transform this selection within its blueprint book.</p>}
 				<label>
 					<input
 						type="checkbox"
@@ -159,7 +173,7 @@ export function TransformPanel({blueprint}: TransformPanelProps) {
 						<ButtonGreen
 							onClick={(event) => {
 								event.preventDefault();
-								applyBookTransform(flattenBook);
+								applyTransformation(flattenBook);
 							}}
 						>
 							Flatten Book
@@ -167,7 +181,7 @@ export function TransformPanel({blueprint}: TransformPanelProps) {
 						<ButtonGreen
 							onClick={(event) => {
 								event.preventDefault();
-								applyBookTransform(sortBookByLabel);
+								applyTransformation(sortBookByLabel);
 							}}
 						>
 							Sort Book by Label

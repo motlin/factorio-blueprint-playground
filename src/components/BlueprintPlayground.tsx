@@ -129,7 +129,12 @@ export function BlueprintPlayground() {
 					{/* Right side */}
 					<div>
 						<ExportActions blueprint={selectedBlueprint} path={selectedPath} title="Selected Blueprint" />
-						<TransformPanel key={selectedPath ?? ''} blueprint={selectedBlueprint} />
+						<TransformPanel
+							key={selectedPath ?? ''}
+							blueprint={selectedBlueprint}
+							rootBlueprint={rootBlueprint}
+							selectedPath={selectedPath}
+						/>
 						<BasicInfoPanel blueprint={selectedBlueprint} />
 						<BlueprintInfoPanels blueprint={selectedBlueprint} />
 					</div>
