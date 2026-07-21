@@ -168,7 +168,7 @@ export interface Entity {
 	entity_number: number;
 	name: string;
 	position: Position;
-	// 0, 2, 4, 6 = North, East, South, West
+	// Factorio 1.1 uses 0, 2, 4, 6 for cardinals; Factorio 2.0 uses 0, 4, 8, 12.
 	direction?: number;
 	control_behavior?: ControlBehavior;
 	recipe?: string;
