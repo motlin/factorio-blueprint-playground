@@ -1,0 +1,6 @@
+{
+	"version": {"base": "2.0.0"},
+	"items": [{"id": "transport-belt"}, {"id": "shared-name"}],
+	"recipes": [{"id": "assembling-machine-1"}],
+	"locations": [{"id": "nauvis"}]
+}
