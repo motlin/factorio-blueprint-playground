@@ -110,16 +110,16 @@ describe('generated mod database', () => {
 			editor: {
 				verdicts: [
 					{
-						source: 'base',
-						label: 'Factorio 2.0 / 2.1',
+						source: 'map-editor',
+						label: 'Map editor',
 						confidence: 'high',
 						matchCount: 1,
 						exampleNames: ['infinity-chest'],
 					},
 					{
-						source: 'space-age',
-						label: 'Space Age',
-						confidence: 'medium',
+						source: 'space-age-map-editor',
+						label: 'Space Age map editor',
+						confidence: 'high',
 						matchCount: 1,
 						exampleNames: ['turbo-loader'],
 					},
@@ -130,7 +130,7 @@ describe('generated mod database', () => {
 		});
 	});
 
-	it('assigns hidden placeable prototypes to built-in sources', () => {
+	it('assigns hidden placeable prototypes to map editor sources', () => {
 		expect(
 			Object.fromEntries(
 				[
@@ -158,27 +158,27 @@ describe('generated mod database', () => {
 				].map((name) => [name, database.names[name]]),
 			),
 		).toStrictEqual({
-			'bottomless-chest': 1,
-			'burner-generator': 1,
-			'electric-energy-interface': 1,
-			'express-loader': 1,
-			'fast-loader': 1,
-			'heat-interface': 1,
-			'infinity-cargo-wagon': 1,
-			'infinity-chest': 1,
-			'infinity-pipe': 1,
-			'lane-splitter': 1,
-			'linked-belt': 1,
-			'linked-chest': 1,
-			loader: 1,
-			'one-way-valve': 1,
-			'overflow-valve': 1,
-			'proxy-container': 1,
-			'simple-entity-with-force': 1,
-			'simple-entity-with-owner': 1,
-			'space-platform-hub': 2,
-			'top-up-valve': 1,
-			'turbo-loader': 2,
+			'bottomless-chest': 65_536,
+			'burner-generator': 65_536,
+			'electric-energy-interface': 65_536,
+			'express-loader': 65_536,
+			'fast-loader': 65_536,
+			'heat-interface': 65_536,
+			'infinity-cargo-wagon': 65_536,
+			'infinity-chest': 65_536,
+			'infinity-pipe': 65_536,
+			'lane-splitter': 65_536,
+			'linked-belt': 65_536,
+			'linked-chest': 65_536,
+			loader: 65_536,
+			'one-way-valve': 65_536,
+			'overflow-valve': 65_536,
+			'proxy-container': 65_536,
+			'simple-entity-with-force': 65_536,
+			'simple-entity-with-owner': 65_536,
+			'space-platform-hub': 131_072,
+			'top-up-valve': 65_536,
+			'turbo-loader': 131_072,
 		});
 	});
 });

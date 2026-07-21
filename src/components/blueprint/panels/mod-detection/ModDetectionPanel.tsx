@@ -8,6 +8,7 @@ import type {BlueprintString} from '../../../../parsing/types';
 import {Panel} from '../../../ui/Panel';
 
 const DLC_SOURCE_IDS = new Set(['space-age', 'quality', 'elevated-rails']);
+const EDITOR_SOURCE_IDS = new Set(['map-editor', 'space-age-map-editor']);
 
 interface ModDetectionPanelProps {
 	blueprint?: BlueprintString;
@@ -29,33 +30,65 @@ function overallConfidence(verdicts: Verdict[]): Confidence {
 
 function verdictSummary(result: DetectionResult): string {
 	const requiredVerdicts = result.verdicts.filter(
-		(verdict) => verdict.source !== 'base' && verdict.source !== 'base-1.1',
+		(verdict) =>
+			verdict.source !== 'base' && verdict.source !== 'base-1.1' && !EDITOR_SOURCE_IDS.has(verdict.source),
 	);
-	if (requiredVerdicts.length === 0) {
-		if (result.unknownNames.length > 0) {
-			return `Likely modded — ${pluralized(result.unknownNames.length, 'unknown name')}`;
+	const editorVerdicts = result.verdicts.filter((verdict) => EDITOR_SOURCE_IDS.has(verdict.source));
+	const parts: string[] = [];
+
+	if (requiredVerdicts.length > 0) {
+		const labels = requiredVerdicts.map((verdict) => verdict.label).join(' + ');
+		if (requiredVerdicts.every((verdict) => DLC_SOURCE_IDS.has(verdict.source))) {
+			parts.push(`Requires ${labels}`);
+		} else {
+			const matchCount = requiredVerdicts.reduce((total, verdict) => total + verdict.matchCount, 0);
+			parts.push(
+				`Requires ${labels} — ${overallConfidence(requiredVerdicts)} confidence, ${pluralized(matchCount, 'matching name')}`,
+			);
 		}
-		return result.verdicts.some((verdict) => verdict.source === 'base-1.1') ? 'Vanilla 1.1' : 'Vanilla 2.0';
 	}
 
-	const labels = requiredVerdicts.map((verdict) => verdict.label).join(' + ');
-	if (requiredVerdicts.every((verdict) => DLC_SOURCE_IDS.has(verdict.source))) {
-		return `Requires ${labels}`;
+	if (editorVerdicts.length > 0) {
+		const hasBaseEditor = editorVerdicts.some((verdict) => verdict.source === 'map-editor');
+		const hasSpaceAgeEditor = editorVerdicts.some((verdict) => verdict.source === 'space-age-map-editor');
+		if (hasBaseEditor && hasSpaceAgeEditor) {
+			parts.push('Contains base + Space Age map editor entities');
+		} else if (hasSpaceAgeEditor) {
+			parts.push('Contains Space Age map editor entities');
+		} else {
+			parts.push('Contains map editor entities');
+		}
 	}
 
-	const matchCount = requiredVerdicts.reduce((total, verdict) => total + verdict.matchCount, 0);
-	return `Requires ${labels} — ${overallConfidence(requiredVerdicts)} confidence, ${pluralized(matchCount, 'matching name')}`;
+	if (result.unknownNames.length > 0) {
+		parts.push(`Likely modded — ${pluralized(result.unknownNames.length, 'unknown name')}`);
+	}
+
+	if (parts.length > 0) {
+		return parts.join(' · ');
+	}
+
+	return result.verdicts.some((verdict) => verdict.source === 'base-1.1') ? 'Vanilla 1.1' : 'Vanilla 2.0';
 }
 
 function VerdictBreakdown({verdict}: {verdict: Verdict}) {
+	const isEditor = EDITOR_SOURCE_IDS.has(verdict.source);
 	return (
-		<details>
-			<summary>
-				{verdict.label} — {verdict.confidence} confidence, {pluralized(verdict.matchCount, 'matching name')}
+		<details className="mod-detection__source">
+			<summary className="mod-detection__source-summary">
+				<span className="mod-detection__chevron" aria-hidden="true" />
+				<span className="mod-detection__source-label">{verdict.label}</span>
+				<span className="mod-detection__source-facts">
+					{isEditor ? <span className="mod-detection__tag mod-detection__tag--editor">Editor</span> : null}
+					<span className="mod-detection__tag">{verdict.confidence} confidence</span>
+					<span className="mod-detection__count">{pluralized(verdict.matchCount, 'matching name')}</span>
+				</span>
 			</summary>
-			<ul>
+			<ul className="mod-detection__names">
 				{verdict.exampleNames.map((name) => (
-					<li key={name}>{name}</li>
+					<li key={name}>
+						<code>{name}</code>
+					</li>
 				))}
 			</ul>
 		</details>
@@ -63,32 +96,55 @@ function VerdictBreakdown({verdict}: {verdict: Verdict}) {
 }
 
 function DetectionDetails({result}: {result: DetectionResult}) {
+	const hasRequirements = result.verdicts.some(
+		(verdict) => verdict.source !== 'base' && verdict.source !== 'base-1.1',
+	);
+	const statusTone = result.unknownNames.length > 0 ? 'warning' : hasRequirements ? 'detected' : 'vanilla';
 	return (
-		<div className="panel-hole">
-			<p className="panel-hole-inner">
-				<strong>{verdictSummary(result)}</strong>
-			</p>
+		<div className="panel-hole mod-detection">
+			<div className="panel-hole-inner mod-detection__headline">
+				<span
+					className={`mod-detection__status-light mod-detection__status-light--${statusTone}`}
+					aria-hidden="true"
+				/>
+				<div>
+					<span className="mod-detection__eyebrow">Blueprint requirements</span>
+					<strong>{verdictSummary(result)}</strong>
+				</div>
+			</div>
 
-			{result.verdicts.map((verdict) => (
-				<VerdictBreakdown key={verdict.source} verdict={verdict} />
-			))}
+			<div className="mod-detection__sources">
+				{result.verdicts.map((verdict) => (
+					<VerdictBreakdown key={verdict.source} verdict={verdict} />
+				))}
 
-			{result.unknownNames.length > 0 ? (
-				<details>
-					<summary>Unknown names ({result.unknownNames.length})</summary>
-					<ul>
-						{result.unknownNames.map(({name, prefixHint}) => (
-							<li key={name}>
-								{name}
-								{prefixHint === undefined ? null : ` — likely ${prefixHint} (name prefix)`}
-							</li>
-						))}
-					</ul>
-				</details>
-			) : null}
+				{result.unknownNames.length > 0 ? (
+					<details className="mod-detection__source mod-detection__source--warning">
+						<summary className="mod-detection__source-summary">
+							<span className="mod-detection__chevron" aria-hidden="true" />
+							<span className="mod-detection__source-label">Unknown names</span>
+							<span className="mod-detection__count">
+								{pluralized(result.unknownNames.length, 'name')}
+							</span>
+						</summary>
+						<ul className="mod-detection__names">
+							{result.unknownNames.map(({name, prefixHint}) => (
+								<li key={name}>
+									<code>{name}</code>
+									{prefixHint === undefined ? null : (
+										<span className="mod-detection__hint">
+											Likely {prefixHint} from the name prefix
+										</span>
+									)}
+								</li>
+							))}
+						</ul>
+					</details>
+				) : null}
+			</div>
 
 			{result.warnings.map((warning) => (
-				<p key={warning} className="panel alert-warning" role="alert">
+				<p key={warning} className="panel alert-warning mod-detection__warning" role="alert">
 					⚠ {warning}
 				</p>
 			))}
@@ -110,8 +166,8 @@ const ModDetectionPanelComponent = ({blueprint}: ModDetectionPanelProps) => {
 	if (databaseQuery.isPending) {
 		return (
 			<Panel title="Mod Detection">
-				<div className="panel-hole">
-					<div className="panel-hole-inner">Checking mod requirements…</div>
+				<div className="panel-hole mod-detection">
+					<div className="panel-hole-inner mod-detection__loading">Checking mod requirements…</div>
 				</div>
 			</Panel>
 		);

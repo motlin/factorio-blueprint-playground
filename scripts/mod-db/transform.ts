@@ -1,7 +1,7 @@
 import {z} from 'zod';
 
 import type {ModDatabase} from '../../src/parsing/modDetection/types';
-import {FACTORIOLAB_LICENSE, MOD_SOURCES} from './sources';
+import {EDITOR_SOURCES, FACTORIOLAB_LICENSE, MOD_SOURCES} from './sources';
 
 const prototypeSchema = z.object({id: z.string().min(1)});
 
@@ -24,6 +24,8 @@ const baseSupplementSchema = z.object({
 	spaceAge: z.array(z.string().min(1)),
 	quality: z.array(z.string().min(1)),
 	elevatedRails: z.array(z.string().min(1)),
+	mapEditor: z.array(z.string().min(1)),
+	spaceAgeMapEditor: z.array(z.string().min(1)),
 });
 
 const prefixesSchema = z.record(z.string().min(1), z.string().min(1));
@@ -35,6 +37,8 @@ export interface BaseSupplement {
 	spaceAge: string[];
 	quality: string[];
 	elevatedRails: string[];
+	mapEditor: string[];
+	spaceAgeMapEditor: string[];
 }
 
 interface TransformInput {
@@ -101,15 +105,24 @@ export function transformDatasets(input: TransformInput): ModDatabase {
 			label,
 			mods: sortedRecord(Object.entries(dataset.version).filter(([modName]) => modName !== 'base')),
 		})),
+		...EDITOR_SOURCES,
 	];
+	const mapEditorNames = new Set(input.supplement.mapEditor);
+	const spaceAgeMapEditorNames = new Set(input.supplement.spaceAgeMapEditor);
+	const allMapEditorNames = new Set([...mapEditorNames, ...spaceAgeMapEditorNames]);
 	const baseNames = new Set(input.supplement.base);
 	for (const dataset of input.baseDatasets) {
 		for (const name of collectNames(dataset)) {
-			baseNames.add(name);
+			if (!allMapEditorNames.has(name)) {
+				baseNames.add(name);
+			}
 		}
 	}
 
 	const spaceAgeNames = collectNames(input.spaceAgeDataset);
+	for (const name of allMapEditorNames) {
+		spaceAgeNames.delete(name);
+	}
 	const qualityNames = new Set(input.spaceAgeDataset.qualities.map((quality) => quality.id));
 	const names = new Map<string, number>();
 	addNames(names, baseNames, sourceMask(sources, 'base'));
@@ -130,6 +143,8 @@ export function transformDatasets(input: TransformInput): ModDatabase {
 	addNames(names, input.supplement.spaceAge, sourceMask(sources, 'space-age'));
 	addNames(names, input.supplement.quality, sourceMask(sources, 'quality'));
 	addNames(names, input.supplement.elevatedRails, sourceMask(sources, 'elevated-rails'));
+	addNames(names, mapEditorNames, sourceMask(sources, 'map-editor'));
+	addNames(names, spaceAgeMapEditorNames, sourceMask(sources, 'space-age-map-editor'));
 
 	const vanillaNames = new Set([
 		...baseNames,
@@ -137,6 +152,8 @@ export function transformDatasets(input: TransformInput): ModDatabase {
 		...input.supplement.spaceAge,
 		...input.supplement.quality,
 		...input.supplement.elevatedRails,
+		...mapEditorNames,
+		...spaceAgeMapEditorNames,
 	]);
 	for (const {id, dataset} of input.modDatasets) {
 		const exclusiveNames = [...collectNames(dataset)].filter((name) => !vanillaNames.has(name));
