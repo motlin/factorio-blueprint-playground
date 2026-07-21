@@ -1,0 +1,23 @@
+{
+	"blueprint": {
+		"item": "blueprint",
+		"version": 562949953421312,
+		"icons": [
+			{"signal": {"type": "planet", "name": "vulcanus"}, "index": 1},
+			{"signal": {"type": "item", "name": "quality-module-3", "quality": "legendary"}, "index": 2}
+		],
+		"entities": [
+			{
+				"entity_number": 1,
+				"name": "foundry",
+				"quality": "legendary",
+				"position": {"x": 0, "y": 0}
+			},
+			{
+				"entity_number": 2,
+				"name": "rail-ramp",
+				"position": {"x": 4, "y": 0}
+			}
+		]
+	}
+}

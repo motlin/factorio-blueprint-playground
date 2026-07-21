@@ -1,0 +1,20 @@
+{
+	"blueprint": {
+		"item": "blueprint",
+		"version": 562949953421312,
+		"icons": [{"signal": {"type": "item", "name": "kr-imersite-crystal"}, "index": 1}],
+		"entities": [
+			{
+				"entity_number": 1,
+				"name": "kr-advanced-assembling-machine",
+				"position": {"x": 0, "y": 0},
+				"recipe": "kr-imersite-gear-wheel"
+			},
+			{
+				"entity_number": 2,
+				"name": "kr-huge-storage-tank",
+				"position": {"x": 4, "y": 0}
+			}
+		]
+	}
+}
