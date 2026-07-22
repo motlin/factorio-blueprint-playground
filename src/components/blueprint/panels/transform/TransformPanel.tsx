@@ -1,5 +1,5 @@
 import {useNavigate} from '@tanstack/react-router';
-import {useEffect, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 
 import {BlueprintWrapper} from '../../../../parsing/BlueprintWrapper';
 import {serializeBlueprint} from '../../../../parsing/blueprintParser';
@@ -7,9 +7,20 @@ import type {BlueprintString} from '../../../../parsing/types';
 import {updateNestedBlueprint} from '../../../../transform/applyAtPath';
 import {flattenBook, sortBookByLabel} from '../../../../transform/bookOps';
 import {stripQuality, stripTiles, stripTrains, stripWires} from '../../../../transform/strip';
-import {shiftTier} from '../../../../transform/upgradeTier';
+import {
+	analyzeUpgradeRules,
+	applyUpgradeRules,
+	builtInUpgradeRules,
+	findUpgradePlanners,
+	parseUpgradePlanner,
+	rulesFromUpgradePlanner,
+	upgradeRuleKey,
+	type UpgradePlannerSource,
+	type UpgradeRule,
+} from '../../../../transform/upgradePlanner';
 import {ButtonGreen} from '../../../ui/ButtonGreen';
 import {Panel} from '../../../ui/Panel';
+import {Textarea} from '../../../ui/Textarea';
 import {ExportActions} from '../../export/ExportActions';
 
 interface TransformPanelProps {
@@ -18,14 +29,62 @@ interface TransformPanelProps {
 	selectedPath?: string;
 }
 
+interface ResolvedRules {
+	error: string | undefined;
+	rules: UpgradeRule[];
+}
+
+function resolveRules(source: string, plannerInput: string, planners: UpgradePlannerSource[]): ResolvedRules {
+	try {
+		if (source === 'suggested-upgrade') {
+			return {error: undefined, rules: builtInUpgradeRules('upgrade')};
+		}
+		if (source === 'suggested-upgrade-space-age') {
+			return {error: undefined, rules: builtInUpgradeRules('upgrade', true)};
+		}
+		if (source === 'suggested-downgrade') {
+			return {error: undefined, rules: builtInUpgradeRules('downgrade')};
+		}
+		if (source === 'pasted') {
+			return {error: undefined, rules: rulesFromUpgradePlanner(parseUpgradePlanner(plannerInput))};
+		}
+		const path = source.slice('book:'.length);
+		const planner = planners.find((candidate) => candidate.path === path);
+		if (planner === undefined) {
+			throw new Error('The selected upgrade planner is no longer in this book.');
+		}
+		return {error: undefined, rules: rulesFromUpgradePlanner(planner.planner)};
+	} catch (error) {
+		return {error: error instanceof Error ? error.message : String(error), rules: []};
+	}
+}
+
+function signalLabel(rule: UpgradeRule, side: 'from' | 'to'): string {
+	const signal = rule[side];
+	return signal.quality === undefined || signal.quality === 'normal'
+		? signal.name
+		: `${signal.name} (${signal.quality})`;
+}
+
 export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPath = ''}: TransformPanelProps) {
 	const navigate = useNavigate();
-	const [includeSpaceAge, setIncludeSpaceAge] = useState(false);
 	const [stripQualitySelected, setStripQualitySelected] = useState(false);
 	const [stripWiresSelected, setStripWiresSelected] = useState(false);
 	const [stripTrainsSelected, setStripTrainsSelected] = useState(false);
 	const [stripTilesSelected, setStripTilesSelected] = useState(false);
 	const [result, setResult] = useState<BlueprintString>();
+	const planners = useMemo(
+		() => (rootBlueprint === undefined ? [] : findUpgradePlanners(rootBlueprint)),
+		[rootBlueprint],
+	);
+	const [upgradeSource, setUpgradeSource] = useState(() =>
+		blueprint?.upgrade_planner === undefined ? 'suggested-upgrade' : `book:${selectedPath}`,
+	);
+	const [plannerInput, setPlannerInput] = useState('');
+	const [upgradeScope, setUpgradeScope] = useState<'selection' | 'root'>(() =>
+		blueprint?.upgrade_planner === undefined ? 'selection' : 'root',
+	);
+	const [excludedRules, setExcludedRules] = useState<Set<string>>(() => new Set());
 
 	useEffect(() => {
 		setResult(undefined);
@@ -36,11 +95,21 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 	}
 
 	const type = new BlueprintWrapper(blueprint).getType();
-	if (type === 'upgrade-planner' || type === 'deconstruction-planner') {
+	if (type === 'deconstruction-planner') {
 		return null;
 	}
+	const upgradeTarget = upgradeScope === 'root' ? rootBlueprint : blueprint;
+	const resolvedRules = resolveRules(upgradeSource, plannerInput, planners);
+	const candidates = upgradeTarget === undefined ? [] : analyzeUpgradeRules(upgradeTarget, resolvedRules.rules);
+	const selectedCandidates = candidates.filter((candidate) => !excludedRules.has(upgradeRuleKey(candidate)));
+	const replacementCount = selectedCandidates.reduce((total, candidate) => total + candidate.count, 0);
+	const canChooseRootScope = rootBlueprint?.blueprint_book !== undefined && selectedPath !== '';
+	const emptyMessage =
+		type === 'upgrade-planner' && rootBlueprint?.blueprint_book === undefined
+			? 'This planner has no target. Open a blueprint or book and choose Pasted upgrade planner.'
+			: 'No matching entities or modules in this scope.';
 
-	const applyTransformation = (transform: (selected: BlueprintString) => BlueprintString) => {
+	const applyToSelection = (transform: (selected: BlueprintString) => BlueprintString) => {
 		if (rootBlueprint === undefined) {
 			throw new Error('Cannot apply a transformation without a root blueprint');
 		}
@@ -51,11 +120,19 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 		}
 		setResult(transformed);
 	};
-	const applyShift = (delta: 1 | -1) => {
-		applyTransformation((selected) => shiftTier(selected, delta, {includeSpaceAge}));
+	const applyUpgrades = () => {
+		const rules = selectedCandidates.map(({from, to}) => ({from, to}));
+		if (upgradeScope === 'root') {
+			if (rootBlueprint === undefined) {
+				throw new Error('Cannot apply an upgrade planner without a root blueprint');
+			}
+			setResult(applyUpgradeRules(rootBlueprint, rules));
+			return;
+		}
+		applyToSelection((selected) => applyUpgradeRules(selected, rules));
 	};
 	const applyStrips = () => {
-		applyTransformation((selected) => {
+		applyToSelection((selected) => {
 			let transformedBlueprint = selected;
 			if (stripQualitySelected) transformedBlueprint = stripQuality(transformedBlueprint);
 			if (stripWiresSelected) transformedBlueprint = stripWires(transformedBlueprint);
@@ -83,97 +160,180 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 	return (
 		<>
 			<Panel title="Transform">
-				{selectedPath === '' ? null : <p>Transform this selection within its blueprint book.</p>}
-				<label>
-					<input
-						type="checkbox"
-						checked={includeSpaceAge}
-						onChange={(event) => {
-							setIncludeSpaceAge(event.currentTarget.checked);
-						}}
-					/>{' '}
-					Include Space Age tiers
-				</label>
-				<div className="flex-space-between mt12">
-					<ButtonGreen
-						onClick={(event) => {
-							event.preventDefault();
-							applyShift(1);
-						}}
-					>
-						Upgrade
-					</ButtonGreen>
-					<ButtonGreen
-						onClick={(event) => {
-							event.preventDefault();
-							applyShift(-1);
-						}}
-					>
-						Downgrade
-					</ButtonGreen>
+				<div className="panel-hole upgrade-workflow">
+					<div className="panel-hole-inner upgrade-workflow__controls">
+						<label htmlFor="upgrade-source">Replacement source</label>
+						<select
+							id="upgrade-source"
+							value={upgradeSource}
+							onChange={(event) => {
+								setUpgradeSource(event.currentTarget.value);
+								setExcludedRules(new Set());
+							}}
+						>
+							<option value="suggested-upgrade">Suggested upgrades — base game</option>
+							<option value="suggested-upgrade-space-age">Suggested upgrades — include Space Age</option>
+							<option value="suggested-downgrade">Suggested downgrades</option>
+							{planners.map((planner) => (
+								<option key={planner.path} value={`book:${planner.path}`}>
+									{planner.label}
+								</option>
+							))}
+							<option value="pasted">Pasted upgrade planner</option>
+						</select>
+
+						{canChooseRootScope ? (
+							<>
+								<label htmlFor="upgrade-scope">Apply to</label>
+								<select
+									id="upgrade-scope"
+									value={upgradeScope}
+									onChange={(event) => {
+										setUpgradeScope(event.currentTarget.value === 'root' ? 'root' : 'selection');
+										setExcludedRules(new Set());
+									}}
+								>
+									<option value="selection" disabled={type === 'upgrade-planner'}>
+										This selection
+									</option>
+									<option value="root">Entire root book</option>
+								</select>
+							</>
+						) : null}
+					</div>
+
+					{upgradeSource === 'pasted' ? (
+						<div className="upgrade-workflow__planner-input">
+							<Textarea
+								value={plannerInput}
+								onChange={(value) => {
+									setPlannerInput(value);
+									setExcludedRules(new Set());
+								}}
+								placeholder="Paste an upgrade planner string or JSON"
+								rows={3}
+							/>
+						</div>
+					) : null}
+
+					{resolvedRules.error === undefined ? null : (
+						<p className="panel alert alert-error upgrade-workflow__error" role="alert">
+							{resolvedRules.error}
+						</p>
+					)}
+
+					<div className="upgrade-workflow__mappings">
+						{candidates.length === 0 && resolvedRules.error === undefined ? (
+							<p className="upgrade-workflow__empty">{emptyMessage}</p>
+						) : (
+							candidates.map((candidate) => {
+								const key = upgradeRuleKey(candidate);
+								const label = `Replace ${signalLabel(candidate, 'from')} with ${signalLabel(candidate, 'to')}`;
+								return (
+									<label key={key} className="upgrade-workflow__mapping">
+										<input
+											type="checkbox"
+											aria-label={label}
+											checked={!excludedRules.has(key)}
+											onChange={(event) => {
+												const checked = event.currentTarget.checked;
+												setExcludedRules((current) => {
+													const next = new Set(current);
+													if (checked) next.delete(key);
+													else next.add(key);
+													return next;
+												});
+											}}
+										/>
+										<code>{signalLabel(candidate, 'from')}</code>
+										<span aria-hidden="true">→</span>
+										<code>{signalLabel(candidate, 'to')}</code>
+										<strong>{candidate.count}</strong>
+									</label>
+								);
+							})
+						)}
+					</div>
+
+					<div className="upgrade-workflow__apply">
+						<ButtonGreen
+							disabled={replacementCount === 0 || resolvedRules.error !== undefined}
+							onClick={(event) => {
+								event.preventDefault();
+								applyUpgrades();
+							}}
+						>
+							Apply {replacementCount} {replacementCount === 1 ? 'replacement' : 'replacements'}
+						</ButtonGreen>
+					</div>
 				</div>
-				<div className="mt12">
-					<label>
-						<input
-							type="checkbox"
-							checked={stripQualitySelected}
-							onChange={(event) => {
-								setStripQualitySelected(event.currentTarget.checked);
-							}}
-						/>{' '}
-						Strip quality
-					</label>
-					<br />
-					<label>
-						<input
-							type="checkbox"
-							checked={stripWiresSelected}
-							onChange={(event) => {
-								setStripWiresSelected(event.currentTarget.checked);
-							}}
-						/>{' '}
-						Strip wires
-					</label>
-					<br />
-					<label>
-						<input
-							type="checkbox"
-							checked={stripTrainsSelected}
-							onChange={(event) => {
-								setStripTrainsSelected(event.currentTarget.checked);
-							}}
-						/>{' '}
-						Strip trains
-					</label>
-					<br />
-					<label>
-						<input
-							type="checkbox"
-							checked={stripTilesSelected}
-							onChange={(event) => {
-								setStripTilesSelected(event.currentTarget.checked);
-							}}
-						/>{' '}
-						Strip tiles
-					</label>
-				</div>
-				<div className="mt12">
-					<ButtonGreen
-						disabled={!hasSelectedStrip}
-						onClick={(event) => {
-							event.preventDefault();
-							applyStrips();
-						}}
-					>
-						Apply Strips
-					</ButtonGreen>
-				</div>
+
+				{type === 'upgrade-planner' ? null : (
+					<div>
+						<div className="mt12">
+							<label>
+								<input
+									type="checkbox"
+									checked={stripQualitySelected}
+									onChange={(event) => {
+										setStripQualitySelected(event.currentTarget.checked);
+									}}
+								/>{' '}
+								Strip quality
+							</label>
+							<br />
+							<label>
+								<input
+									type="checkbox"
+									checked={stripWiresSelected}
+									onChange={(event) => {
+										setStripWiresSelected(event.currentTarget.checked);
+									}}
+								/>{' '}
+								Strip wires
+							</label>
+							<br />
+							<label>
+								<input
+									type="checkbox"
+									checked={stripTrainsSelected}
+									onChange={(event) => {
+										setStripTrainsSelected(event.currentTarget.checked);
+									}}
+								/>{' '}
+								Strip trains
+							</label>
+							<br />
+							<label>
+								<input
+									type="checkbox"
+									checked={stripTilesSelected}
+									onChange={(event) => {
+										setStripTilesSelected(event.currentTarget.checked);
+									}}
+								/>{' '}
+								Strip tiles
+							</label>
+						</div>
+						<div className="mt12">
+							<ButtonGreen
+								disabled={!hasSelectedStrip}
+								onClick={(event) => {
+									event.preventDefault();
+									applyStrips();
+								}}
+							>
+								Apply Strips
+							</ButtonGreen>
+						</div>
+					</div>
+				)}
 				{type === 'blueprint-book' ? (
 					<div className="flex-space-between mt12">
 						<ButtonGreen
 							onClick={(event) => {
 								event.preventDefault();
-								applyTransformation(flattenBook);
+								applyToSelection(flattenBook);
 							}}
 						>
 							Flatten Book
@@ -181,7 +341,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 						<ButtonGreen
 							onClick={(event) => {
 								event.preventDefault();
-								applyTransformation(sortBookByLabel);
+								applyToSelection(sortBookByLabel);
 							}}
 						>
 							Sort Book by Label
