@@ -95,7 +95,7 @@ function requiredSignalKey(signal: SignalID): string {
 	return [requiredSignalType(signal), signal.name, normalizedQuality(signal.quality)].join(':');
 }
 
-export function upgradeRuleKey(rule: UpgradeRule): string {
+function upgradeRuleKey(rule: UpgradeRule): string {
 	return `${requiredSignalKey(rule.from)}:${requiredSignalKey(rule.to)}`;
 }
 
