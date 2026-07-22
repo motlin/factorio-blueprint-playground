@@ -204,6 +204,21 @@ describe('upgrade planner transforms', () => {
 		});
 	});
 
+	test('reverses every configured mapping when downgrading', () => {
+		expect(rulesFromUpgradePlanner(configuredPlanner, 'downgrade')).toStrictEqual([
+			{
+				from: {type: 'item', name: 'speed-module-2'},
+				preserveQuality: false,
+				to: {type: 'item', name: 'speed-module'},
+			},
+			{
+				from: {type: 'entity', name: 'assembling-machine-2', quality: 'epic'},
+				preserveQuality: false,
+				to: {type: 'entity', name: 'assembling-machine-1', quality: 'rare'},
+			},
+		]);
+	});
+
 	test('substitutes labels, descriptions, and icon names throughout a book while preserving case', () => {
 		const input: BlueprintString = {
 			blueprint_book: {
