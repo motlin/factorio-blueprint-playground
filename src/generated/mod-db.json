@@ -1,6 +1,7 @@
 {
-	"generatedAt": "2026-07-21",
-	"factoriolabCommit": "0490123d82626d9453a0b50c531a391088d73361",
+	"generatedAt": "2026-07-13",
+	"factoriolabCommit": "59788f80eb21b682ba4d0362c878375af0e1b2b9",
+	"factorioDataVersion": "2.0.77",
 	"license": "Data derived from FactorioLab, Copyright (c) 2020-2026 Doug Broad, under the MIT License. https://github.com/factoriolab/factoriolab",
 	"sources": [
 		{

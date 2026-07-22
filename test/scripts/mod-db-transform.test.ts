@@ -4,7 +4,7 @@ import baseDatasetJson from '../fixtures/factoriolab/2.0.json';
 import nextBaseDatasetJson from '../fixtures/factoriolab/2.1.json';
 import krastorioDatasetJson from '../fixtures/factoriolab/kr2.json';
 import spaceAgeDatasetJson from '../fixtures/factoriolab/spa.json';
-import {parseFactorioLabDataset, transformDatasets} from '../../scripts/mod-db/transform';
+import {extractHiddenPlaceResults, parseFactorioLabDataset, transformDatasets} from '../../scripts/mod-db/transform';
 
 describe('transformDatasets', () => {
 	it('unions base datasets, subtracts base names, and assigns DLC names to bitmasks', () => {
@@ -23,17 +23,19 @@ describe('transformDatasets', () => {
 				spaceAge: ['space-platform-foundation'],
 				quality: ['quality-test-name'],
 				elevatedRails: ['elevated-straight-rail'],
-				mapEditor: ['infinity-test-container'],
-				spaceAgeMapEditor: ['turbo-test-loader'],
 			},
+			mapEditorNames: ['infinity-test-container'],
+			spaceAgeMapEditorNames: ['turbo-test-loader'],
 			prefixes: {'kr-': 'Krastorio 2'},
 			generatedAt: '2000-01-01',
 			factoriolabCommit: '0000000000000000000000000000000000000000',
+			factorioDataVersion: '0.0.0',
 		});
 
 		expect(database).toStrictEqual({
 			generatedAt: '2000-01-01',
 			factoriolabCommit: '0000000000000000000000000000000000000000',
+			factorioDataVersion: '0.0.0',
 			license:
 				'Data derived from FactorioLab, Copyright (c) 2020-2026 Doug Broad, under the MIT License. https://github.com/factoriolab/factoriolab',
 			sources: [
@@ -71,5 +73,25 @@ describe('transformDatasets', () => {
 			},
 			prefixes: {'kr-': 'Krastorio 2'},
 		});
+	});
+
+	it('extracts hidden place results from Lua prototype tables', () => {
+		const source = `
+			data:extend({
+				{ type = "item", hidden = true, place_result = "editor-one" },
+				{
+					type = 'item',
+					icons = {{ icon = "icon.png", tint = {1, 0.5, 0.25} }},
+					hidden = true,
+					place_result = 'editor-two'
+				},
+				{ type = "item", hidden = false, place_result = "ordinary-item" },
+				{ type = "item", hidden = true },
+				-- { type = "item", hidden = true, place_result = "commented-out" }
+				{ type = "item", name = [[{ hidden = true, place_result = "string-content" }]] }
+			})
+		`;
+
+		expect(extractHiddenPlaceResults(source)).toStrictEqual(['editor-one', 'editor-two']);
 	});
 });

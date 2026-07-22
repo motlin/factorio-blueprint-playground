@@ -6,6 +6,7 @@ import type {ExtractedNames, ModDatabase} from '../../../src/parsing/modDetectio
 const database: ModDatabase = {
 	generatedAt: '2000-01-01',
 	factoriolabCommit: '0000000000000000000000000000000000000000',
+	factorioDataVersion: '0.0.0',
 	license: 'Test data',
 	sources: [
 		{id: 'base', label: 'Factorio 2.0'},

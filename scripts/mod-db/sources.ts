@@ -1,6 +1,25 @@
+import {z} from 'zod';
+
 import type {ModSource} from '../../src/parsing/modDetection/types';
 
-export const FACTORIOLAB_COMMIT = '0490123d82626d9453a0b50c531a391088d73361';
+const commitSchema = z.string().regex(/^[0-9a-f]{40}$/);
+
+const sourceLockSchema = z.object({
+	factorioLab: z.object({
+		commit: commitSchema,
+		committedAt: z.iso.datetime(),
+	}),
+	factorioData: z.object({
+		version: z.string().regex(/^\d+\.\d+\.\d+$/),
+		commit: commitSchema,
+	}),
+});
+
+export type SourceLock = z.infer<typeof sourceLockSchema>;
+
+export function parseSourceLock(value: unknown): SourceLock {
+	return sourceLockSchema.parse(value);
+}
 
 export const FACTORIOLAB_DATASETS = [
 	{id: '2.0', role: 'base'},

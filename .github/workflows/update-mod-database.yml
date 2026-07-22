@@ -1,0 +1,92 @@
+name: Update mod detection database
+
+on:
+  schedule:
+    - cron: '17 7 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: update-mod-detection-database
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      actions: write
+      contents: write
+      pull-requests: write
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      UPDATE_BRANCH: automation/update-mod-database
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea # v4.2.1
+        with:
+          cache: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.local/share/pnpm/store
+          key: pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - run: just install
+
+      - name: Refresh pinned sources and generated database
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          vp run update:mod-db-sources
+          vp run generate:mod-db
+
+      - name: Verify generated update
+        run: just verify
+
+      - name: Detect changes
+        id: changes
+        run: |
+          if git diff --quiet --exit-code; then
+            echo 'changed=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'changed=true' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit and push update
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git fetch origin "$UPDATE_BRANCH:refs/remotes/origin/$UPDATE_BRANCH" || true
+          git switch --create "$UPDATE_BRANCH"
+          git add scripts/mod-db/source-lock.json src/generated/mod-db.json
+          git commit --message 'Update the generated mod detection database from pinned sources.'
+          git push --force-with-lease "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$UPDATE_BRANCH"
+
+      - name: Open or refresh draft pull request
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          pull_request_url=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$UPDATE_BRANCH" --state open --json url --jq '.[0].url // ""')
+          if [[ -z "$pull_request_url" ]]; then
+            gh pr create \
+              --repo "$GITHUB_REPOSITORY" \
+              --base "$DEFAULT_BRANCH" \
+              --head "$UPDATE_BRANCH" \
+              --draft \
+              --label dependencies \
+              --title 'Update the mod detection database' \
+              --body 'Automated refresh of pinned FactorioLab and Wube Factorio data sources.'
+          fi
+          gh workflow run merge-group.yml --repo "$GITHUB_REPOSITORY" --ref "$UPDATE_BRANCH"

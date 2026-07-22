@@ -11,6 +11,7 @@
 		"preview": "wrangler pages dev dist --port 5174",
 		"generate:routes": "tsr generate",
 		"generate:mod-db": "tsx scripts/mod-db/build-mod-db.ts",
+		"update:mod-db-sources": "tsx scripts/mod-db/update-source-lock.ts",
 		"build": "pnpm run generate:routes && tsgo && vp build && wrangler pages functions build",
 		"build:types": "pnpm run generate:routes && tsgo --noEmit --project tsconfig.routes.json",
 		"oxlint": "vp lint . --fix",
