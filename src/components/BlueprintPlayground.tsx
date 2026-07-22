@@ -72,13 +72,9 @@ export function BlueprintPlayground() {
 				selection: path,
 			}),
 		});
-
-		if (pasted != null && pasted !== '' && rootBlueprint != null && isSuccess && existingBlueprint != null) {
-			void updateBlueprintMetadata(existingBlueprint.metadata.sha, {
-				selection: path,
-			});
-		}
 	};
+	const existingBlueprintSha = existingBlueprint?.metadata.sha;
+	const savedSelection = existingBlueprint?.metadata.selection;
 
 	useEffect(() => {
 		if (
@@ -86,15 +82,15 @@ export function BlueprintPlayground() {
 			selectedPath !== '' &&
 			pasted != null &&
 			pasted !== '' &&
-			rootBlueprint != null &&
 			isSuccess &&
-			existingBlueprint != null
+			existingBlueprintSha !== undefined &&
+			savedSelection !== selectedPath
 		) {
-			void updateBlueprintMetadata(existingBlueprint.metadata.sha, {
+			void updateBlueprintMetadata(existingBlueprintSha, {
 				selection: selectedPath,
 			});
 		}
-	}, [selectedPath, pasted, rootBlueprint, isSuccess, existingBlueprint]);
+	}, [selectedPath, pasted, isSuccess, existingBlueprintSha, savedSelection]);
 
 	return (
 		<div className="container">

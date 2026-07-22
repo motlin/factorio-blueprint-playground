@@ -518,31 +518,54 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 		setResult(undefined);
 	}, [blueprint]);
 
-	if (blueprint === undefined) {
-		return null;
-	}
-
-	const type = new BlueprintWrapper(blueprint).getType();
-	if (type === 'deconstruction-planner') {
-		return null;
-	}
+	const type = blueprint === undefined ? undefined : new BlueprintWrapper(blueprint).getType();
 	const transformTarget = upgradeScope === 'root' ? rootBlueprint : blueprint;
-	const resolvedRules = resolveRules(upgradeSource, plannerInput, planners);
-	const effectiveRules = resolvedRules.rules.map((rule) => ({
-		...rule,
-		to: targetOverrides.get(signalIdentity(rule.from)) ?? rule.to,
-	}));
-	const candidates = transformTarget === undefined ? [] : analyzeUpgradeRules(transformTarget, effectiveRules);
-	const selectedCandidates = candidates.filter((candidate) => !excludedSources.has(signalIdentity(candidate.from)));
+	const resolvedRules = useMemo(
+		() => resolveRules(upgradeSource, plannerInput, planners),
+		[upgradeSource, plannerInput, planners],
+	);
+	const effectiveRules = useMemo(
+		() =>
+			resolvedRules.rules.map((rule) => ({
+				...rule,
+				to: targetOverrides.get(signalIdentity(rule.from)) ?? rule.to,
+			})),
+		[resolvedRules.rules, targetOverrides],
+	);
+	const candidates = useMemo(
+		() => (transformTarget === undefined ? [] : analyzeUpgradeRules(transformTarget, effectiveRules)),
+		[transformTarget, effectiveRules],
+	);
+	const selectedCandidates = useMemo(
+		() => candidates.filter((candidate) => !excludedSources.has(signalIdentity(candidate.from))),
+		[candidates, excludedSources],
+	);
 	const upgradeReplacementCount = selectedCandidates.reduce((total, candidate) => total + candidate.count, 0);
-	const metadataSubstitution = {find: metadataFind, replace: metadataReplace, matchCase: metadataMatchCase};
-	const metadataReplacementCount =
-		transformTarget === undefined || metadataFind === ''
-			? 0
-			: analyzeMetadataSubstitution(transformTarget, metadataSubstitution);
-	const metadataIconCandidates = transformTarget === undefined ? [] : analyzeMetadataIcons(transformTarget);
-	const iconReplacementCount =
-		transformTarget === undefined ? 0 : analyzeIconReplacements(transformTarget, iconReplacements);
+	const metadataSubstitution = useMemo(
+		() => ({find: metadataFind, replace: metadataReplace, matchCase: metadataMatchCase}),
+		[metadataFind, metadataReplace, metadataMatchCase],
+	);
+	const metadataReplacementCount = useMemo(
+		() =>
+			transformTarget === undefined || metadataFind === ''
+				? 0
+				: analyzeMetadataSubstitution(transformTarget, metadataSubstitution),
+		[transformTarget, metadataFind, metadataSubstitution],
+	);
+	const metadataIconCandidates = useMemo(
+		() => (transformTarget === undefined ? [] : analyzeMetadataIcons(transformTarget)),
+		[transformTarget],
+	);
+	const iconReplacementCount = useMemo(
+		() =>
+			transformTarget === undefined || iconReplacements.length === 0
+				? 0
+				: analyzeIconReplacements(transformTarget, iconReplacements),
+		[transformTarget, iconReplacements],
+	);
+	if (blueprint === undefined || type === 'deconstruction-planner') {
+		return null;
+	}
 	const activeUpgradeCount = upgradeEnabled ? upgradeReplacementCount : 0;
 	const activeIconCount = iconReplacementEnabled ? iconReplacementCount : 0;
 	const activeTextCount = textReplacementEnabled ? metadataReplacementCount : 0;
