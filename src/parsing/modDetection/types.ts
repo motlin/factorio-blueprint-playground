@@ -28,6 +28,7 @@ export interface ModSource {
 export interface ModDatabase {
 	generatedAt: string;
 	factoriolabCommit: string;
+	factorioDataVersion: string;
 	license: string;
 	sources: ModSource[];
 	names: Partial<Record<string, number>>;

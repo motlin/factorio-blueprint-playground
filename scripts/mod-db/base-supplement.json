@@ -193,27 +193,5 @@
 		"elevated-straight-rail",
 		"rail-ramp",
 		"rail-support"
-	],
-	"mapEditor": [
-		"bottomless-chest",
-		"burner-generator",
-		"electric-energy-interface",
-		"express-loader",
-		"fast-loader",
-		"heat-interface",
-		"infinity-cargo-wagon",
-		"infinity-chest",
-		"infinity-pipe",
-		"lane-splitter",
-		"linked-belt",
-		"linked-chest",
-		"loader",
-		"one-way-valve",
-		"overflow-valve",
-		"proxy-container",
-		"simple-entity-with-force",
-		"simple-entity-with-owner",
-		"top-up-valve"
-	],
-	"spaceAgeMapEditor": ["space-platform-hub", "turbo-loader"]
+	]
 }

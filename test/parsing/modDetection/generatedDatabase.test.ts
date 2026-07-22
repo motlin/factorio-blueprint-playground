@@ -1,5 +1,7 @@
 import {describe, expect, it} from 'vite-plus/test';
 
+import sourceLockJson from '../../../scripts/mod-db/source-lock.json';
+import {parseSourceLock} from '../../../scripts/mod-db/sources';
 import databaseJson from '../../../src/generated/mod-db.json';
 import {classify} from '../../../src/parsing/modDetection/classify';
 import {extractNames} from '../../../src/parsing/modDetection/nameExtractor';
@@ -11,6 +13,7 @@ import unknownModFixture from '../../fixtures/blueprints/json/unknown-mod.json';
 import vanillaFixture from '../../fixtures/blueprints/json/vanilla-2.0.json';
 
 const database = databaseJson as ModDatabase;
+const sourceLock = parseSourceLock(sourceLockJson);
 
 const editorBlueprint: BlueprintString = {
 	blueprint: {
@@ -28,6 +31,18 @@ function detect(fixture: unknown) {
 }
 
 describe('generated mod database', () => {
+	it('records the pinned source revisions deterministically', () => {
+		expect({
+			generatedAt: database.generatedAt,
+			factoriolabCommit: database.factoriolabCommit,
+			factorioDataVersion: database.factorioDataVersion,
+		}).toStrictEqual({
+			generatedAt: sourceLock.factorioLab.committedAt.slice(0, 10),
+			factoriolabCommit: sourceLock.factorioLab.commit,
+			factorioDataVersion: sourceLock.factorioData.version,
+		});
+	});
+
 	it('classifies representative blueprint fixtures', () => {
 		expect({
 			vanilla: detect(vanillaFixture),
