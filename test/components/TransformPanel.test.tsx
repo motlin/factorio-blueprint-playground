@@ -267,7 +267,6 @@ describe('TransformPanel', () => {
 		await user.click(screen.getByRole('button', {name: 'Choose target icon'}));
 		await user.type(screen.getByRole('searchbox', {name: 'Search'}), 'blue');
 		await user.click(screen.getByRole('button', {name: 'Choose Signal blue'}));
-		await user.click(screen.getByRole('button', {name: 'Add replacement'}));
 		await user.click(screen.getByRole('button', {name: 'Done'}));
 		await user.type(screen.getByRole('textbox', {name: 'Find'}), 'red');
 		await user.type(screen.getByRole('textbox', {name: 'Replace with'}), 'blue');

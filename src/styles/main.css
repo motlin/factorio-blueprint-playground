@@ -820,7 +820,6 @@ body {
 .icon-replacement-editor__add {
 	display: flex;
 	align-items: center;
-	justify-content: space-between;
 	gap: 16px;
 	margin-top: 3px;
 	padding: 10px 12px;
@@ -830,10 +829,6 @@ body {
 	display: flex;
 	align-items: center;
 	gap: 10px;
-}
-
-.icon-replacement-editor__add > button {
-	padding: 7px 10px;
 }
 
 .transform-picker__grid {
