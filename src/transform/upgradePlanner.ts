@@ -139,13 +139,21 @@ export function builtInUpgradeRules(direction: UpgradeDirection): UpgradeRule[] 
 	return validateRules(rules);
 }
 
-export function rulesFromUpgradePlanner(plannerInput: UpgradePlanner): UpgradeRule[] {
+export function rulesFromUpgradePlanner(
+	plannerInput: UpgradePlanner,
+	direction: UpgradeDirection = 'upgrade',
+): UpgradeRule[] {
 	const planner = upgradePlannerSchema.parse(plannerInput);
 	if (planner.settings.mappers.length === 0) {
-		return builtInUpgradeRules('upgrade');
+		return builtInUpgradeRules(direction);
 	}
+	const directionalRule = (rule: UpgradeRule): UpgradeRule =>
+		direction === 'upgrade' ? rule : {...rule, from: rule.to, to: rule.from};
 	return validateRules(
-		[...planner.settings.mappers].sort((first, second) => first.index - second.index).map(mappingToRule),
+		[...planner.settings.mappers]
+			.sort((first, second) => first.index - second.index)
+			.map(mappingToRule)
+			.map(directionalRule),
 	);
 }
 

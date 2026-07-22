@@ -1,10 +1,10 @@
 import {useNavigate} from '@tanstack/react-router';
-import {useEffect, useMemo, useState} from 'react';
+import {useMemo, useState} from 'react';
 
 import gameData from '../../../../generated/game-data.json';
 import {BlueprintWrapper} from '../../../../parsing/BlueprintWrapper';
 import {serializeBlueprint} from '../../../../parsing/blueprintParser';
-import type {BlueprintString, SignalID} from '../../../../parsing/types';
+import type {BlueprintString, Quality, SignalID} from '../../../../parsing/types';
 import {updateNestedBlueprint} from '../../../../transform/applyAtPath';
 import {flattenBook, sortBookByLabel} from '../../../../transform/bookOps';
 import {
@@ -25,14 +25,14 @@ import {
 	parseUpgradePlanner,
 	rulesFromUpgradePlanner,
 	type UpgradeCandidate,
+	type UpgradeDirection,
 	type UpgradePlannerSource,
 	type UpgradeRule,
 } from '../../../../transform/upgradePlanner';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
 import {ButtonGreen} from '../../../ui/ButtonGreen';
-import {Panel} from '../../../ui/Panel';
 import {Textarea} from '../../../ui/Textarea';
-import {ExportActions} from '../../export/ExportActions';
+import {BlueprintExportButtons} from '../../export/ExportActions';
 
 interface TransformPanelProps {
 	blueprint?: BlueprintString;
@@ -46,9 +46,11 @@ interface ResolvedRules {
 }
 
 interface SignalPickerDialogProps {
-	onChoose: (signal: SignalID) => void;
+	initialQuality?: QualitySelection;
+	onChoose: (signal: SignalID, preserveQuality?: boolean) => void;
 	onClose: () => void;
 	options: SignalID[];
+	showQuality?: boolean;
 	title: string;
 }
 
@@ -58,18 +60,21 @@ interface SignalSlotProps {
 	signal?: SignalID;
 }
 
-interface UpgradePlannerDialogProps {
+interface UpgradeMappingsEditorProps {
 	candidates: UpgradeCandidate[];
+	direction: UpgradeDirection;
 	error: string | undefined;
 	excludedSources: ReadonlySet<string>;
-	onClose: () => void;
+	onDirectionChange: (direction: UpgradeDirection) => void;
 	onPlannerInputChange: (value: string) => void;
 	onSourceChange: (value: string) => void;
-	onTargetChange: (source: SignalID, target: SignalID) => void;
+	onStripQualityChange: (selected: boolean) => void;
+	onTargetChange: (source: SignalID, target: SignalID, preserveQuality: boolean) => void;
 	onToggleCandidate: (source: SignalID, checked: boolean) => void;
 	plannerInput: string;
 	planners: UpgradePlannerSource[];
 	source: string;
+	stripQualitySelected: boolean;
 }
 
 interface IconReplacementDialogProps {
@@ -80,6 +85,13 @@ interface IconReplacementDialogProps {
 }
 
 const virtualSignals: SignalID[] = gameData.virtualSignals.map((name) => ({type: 'virtual', name}));
+const qualities = ['normal', 'uncommon', 'rare', 'epic', 'legendary'] as const;
+type QualitySelection = 'preserve' | Exclude<Quality, undefined>;
+
+interface UpgradeTargetOverride {
+	preserveQuality: boolean;
+	to: SignalID;
+}
 
 function normalizedSignalType(signal: SignalID): string {
 	if (signal.type === 'virtual-signal') {
@@ -101,23 +113,28 @@ function signalTitle(signal: SignalID): string {
 	return `${signalName(signal)}\n${normalizedSignalType(signal)}:${signal.name}`;
 }
 
-function resolveRules(source: string, plannerInput: string, planners: UpgradePlannerSource[]): ResolvedRules {
+function resolveRules(
+	source: string,
+	direction: UpgradeDirection,
+	plannerInput: string,
+	planners: UpgradePlannerSource[],
+): ResolvedRules {
 	try {
-		if (source === 'suggested-upgrade') {
-			return {error: undefined, rules: builtInUpgradeRules('upgrade')};
-		}
-		if (source === 'suggested-downgrade') {
-			return {error: undefined, rules: builtInUpgradeRules('downgrade')};
+		if (source === 'suggested') {
+			return {error: undefined, rules: builtInUpgradeRules(direction)};
 		}
 		if (source === 'pasted') {
-			return {error: undefined, rules: rulesFromUpgradePlanner(parseUpgradePlanner(plannerInput))};
+			return {
+				error: undefined,
+				rules: rulesFromUpgradePlanner(parseUpgradePlanner(plannerInput), direction),
+			};
 		}
 		const path = source.slice('book:'.length);
 		const planner = planners.find((candidate) => candidate.path === path);
 		if (planner === undefined) {
 			throw new Error('The selected upgrade planner is no longer in this book.');
 		}
-		return {error: undefined, rules: rulesFromUpgradePlanner(planner.planner)};
+		return {error: undefined, rules: rulesFromUpgradePlanner(planner.planner, direction)};
 	} catch (error) {
 		return {error: error instanceof Error ? error.message : String(error), rules: []};
 	}
@@ -147,10 +164,8 @@ function upgradeTargetOptions(source: SignalID, currentTarget: SignalID): Signal
 			}
 		}
 	}
-	if (visited.size === 1) {
-		return [currentTarget];
-	}
-	return [...visited].filter((name) => name !== source.name).map((name) => ({...currentTarget, name}));
+	visited.add(currentTarget.name);
+	return [...visited].map((name) => ({...currentTarget, name}));
 }
 
 function SignalSlot({label, onClick, signal}: SignalSlotProps) {
@@ -168,8 +183,16 @@ function SignalSlot({label, onClick, signal}: SignalSlotProps) {
 	);
 }
 
-function SignalPickerDialog({onChoose, onClose, options, title}: SignalPickerDialogProps) {
+function SignalPickerDialog({
+	initialQuality,
+	onChoose,
+	onClose,
+	options,
+	showQuality = false,
+	title,
+}: SignalPickerDialogProps) {
 	const [search, setSearch] = useState('');
+	const [qualitySelection, setQualitySelection] = useState<QualitySelection>(initialQuality ?? 'preserve');
 	const normalizedSearch = search.trim().toLowerCase();
 	const filteredOptions = options.filter((signal) =>
 		normalizedSearch === '' ? true : signalName(signal).toLowerCase().includes(normalizedSearch),
@@ -215,90 +238,148 @@ function SignalPickerDialog({onChoose, onClose, options, title}: SignalPickerDia
 								aria-label={`Choose ${signalName(signal)}`}
 								title={signalTitle(signal)}
 								onClick={() => {
-									onChoose(signal);
+									const selectedSignal = {...signal};
+									if (qualitySelection === 'preserve' || qualitySelection === 'normal') {
+										delete selectedSignal.quality;
+									} else {
+										selectedSignal.quality = qualitySelection;
+									}
+									onChoose(selectedSignal, qualitySelection === 'preserve');
 								}}
 							>
 								<FactorioIcon icon={signal} size="large" />
 							</button>
 						))}
 					</div>
+					{showQuality ? (
+						<div className="transform-picker__qualities" role="group" aria-label="Target quality">
+							<button
+								type="button"
+								aria-pressed={qualitySelection === 'preserve'}
+								onClick={() => {
+									setQualitySelection('preserve');
+								}}
+							>
+								Same as source
+							</button>
+							{qualities.map((quality) => (
+								<button
+									type="button"
+									key={quality}
+									aria-label={`${signalName({name: quality})} quality`}
+									aria-pressed={qualitySelection === quality}
+									title={`${signalName({name: quality})} quality`}
+									onClick={() => {
+										setQualitySelection(quality);
+									}}
+								>
+									<FactorioIcon icon={{type: 'quality', name: quality}} size="small" />
+								</button>
+							))}
+						</div>
+					) : null}
 				</div>
 			</section>
 		</div>
 	);
 }
 
-function UpgradePlannerDialog({
+function UpgradeMappingsEditor({
 	candidates,
+	direction,
 	error,
 	excludedSources,
-	onClose,
+	onDirectionChange,
 	onPlannerInputChange,
 	onSourceChange,
+	onStripQualityChange,
 	onTargetChange,
 	onToggleCandidate,
 	plannerInput,
 	planners,
 	source,
-}: UpgradePlannerDialogProps) {
+	stripQualitySelected,
+}: UpgradeMappingsEditorProps) {
 	const [targetPickerCandidate, setTargetPickerCandidate] = useState<UpgradeCandidate>();
 
 	return (
-		<div className="transform-dialog-backdrop">
-			<section className="transform-dialog" role="dialog" aria-modal="true" aria-label="Upgrade Planner">
-				<header className="transform-dialog__header">
-					<h3>Upgrade Planner</h3>
+		<>
+			<div className="panel-hole upgrade-planner-editor">
+				<div className="upgrade-planner-editor__modes" role="group" aria-label="Planner operation">
 					<button
 						type="button"
-						className="transform-dialog__close"
-						aria-label="Close Upgrade Planner"
-						onClick={onClose}
+						aria-pressed={direction === 'upgrade'}
+						onClick={() => {
+							onDirectionChange('upgrade');
+						}}
 					>
-						×
+						<span aria-hidden="true">↑</span> Upgrade
 					</button>
-				</header>
-				<div className="panel-hole upgrade-planner-editor">
-					<div className="panel-hole-inner upgrade-planner-editor__source">
-						<label htmlFor="upgrade-source">Planner</label>
-						<select
-							id="upgrade-source"
-							value={source}
-							onChange={(event) => {
-								onSourceChange(event.currentTarget.value);
-							}}
-						>
-							<option value="suggested-upgrade">Suggested upgrades</option>
-							<option value="suggested-downgrade">Suggested downgrades</option>
-							{planners.map((planner) => (
-								<option key={planner.path} value={`book:${planner.path}`}>
-									{planner.label}
-								</option>
-							))}
-							<option value="pasted">Pasted upgrade planner</option>
-						</select>
+					<button
+						type="button"
+						aria-pressed={direction === 'downgrade'}
+						onClick={() => {
+							onDirectionChange('downgrade');
+						}}
+					>
+						<span aria-hidden="true">↓</span> Downgrade
+					</button>
+					<button
+						type="button"
+						aria-pressed={stripQualitySelected}
+						onClick={() => {
+							onStripQualityChange(!stripQualitySelected);
+						}}
+					>
+						<span aria-hidden="true">◇</span> Strip quality
+					</button>
+				</div>
+				<div className="panel-hole-inner upgrade-planner-editor__source">
+					<label htmlFor="upgrade-source">Planner</label>
+					<select
+						id="upgrade-source"
+						value={source}
+						onChange={(event) => {
+							onSourceChange(event.currentTarget.value);
+						}}
+					>
+						<option value="suggested">Built-in suggestions</option>
+						{planners.map((planner) => (
+							<option key={planner.path} value={`book:${planner.path}`}>
+								{planner.label}
+							</option>
+						))}
+						<option value="pasted">Pasted upgrade planner</option>
+					</select>
+				</div>
+				{source === 'pasted' ? (
+					<div className="upgrade-planner-editor__paste">
+						<Textarea
+							value={plannerInput}
+							onChange={onPlannerInputChange}
+							placeholder="Paste an upgrade planner string or JSON"
+							rows={3}
+						/>
 					</div>
-					{source === 'pasted' ? (
-						<div className="upgrade-planner-editor__paste">
-							<Textarea
-								value={plannerInput}
-								onChange={onPlannerInputChange}
-								placeholder="Paste an upgrade planner string or JSON"
-								rows={3}
-							/>
-						</div>
-					) : null}
-					{error === undefined ? null : (
-						<p className="panel alert alert-error upgrade-planner-editor__error" role="alert">
-							{error}
-						</p>
-					)}
-					<div className="upgrade-planner-editor__mappings">
-						{candidates.length === 0 && error === undefined ? (
-							<p className="upgrade-planner-editor__empty">
-								No matching entities or modules in this scope.
-							</p>
-						) : (
-							candidates.map((candidate) => {
+				) : null}
+				{error === undefined ? null : (
+					<p className="panel alert alert-error upgrade-planner-editor__error" role="alert">
+						{error}
+					</p>
+				)}
+				<div className="upgrade-planner-editor__mappings">
+					{candidates.length === 0 && error === undefined ? (
+						<p className="upgrade-planner-editor__empty">No matching entities or modules in this scope.</p>
+					) : (
+						<>
+							<div className="upgrade-planner-editor__mapping-headings" aria-hidden="true">
+								<span />
+								<span>From</span>
+								<span />
+								<span>To</span>
+								<span>Matches</span>
+							</div>
+							{candidates.map((candidate) => {
 								const sourceKey = signalIdentity(candidate.from);
 								const checked = !excludedSources.has(sourceKey);
 								return (
@@ -328,28 +409,31 @@ function UpgradePlannerDialog({
 										<strong>{candidate.count}</strong>
 									</div>
 								);
-							})
-						)}
-					</div>
+							})}
+						</>
+					)}
 				</div>
-				<div className="transform-dialog__actions">
-					<ButtonGreen onClick={onClose}>Done</ButtonGreen>
-				</div>
-			</section>
+			</div>
 			{targetPickerCandidate === undefined ? null : (
 				<SignalPickerDialog
+					initialQuality={
+						targetPickerCandidate.preserveQuality
+							? 'preserve'
+							: (targetPickerCandidate.to.quality ?? 'normal')
+					}
 					title={`Choose target for ${signalName(targetPickerCandidate.from)}`}
 					options={upgradeTargetOptions(targetPickerCandidate.from, targetPickerCandidate.to)}
+					showQuality
 					onClose={() => {
 						setTargetPickerCandidate(undefined);
 					}}
-					onChoose={(target) => {
-						onTargetChange(targetPickerCandidate.from, target);
+					onChoose={(target, preserveQuality = false) => {
+						onTargetChange(targetPickerCandidate.from, target, preserveQuality);
 						setTargetPickerCandidate(undefined);
 					}}
 				/>
 			)}
-		</div>
+		</>
 	);
 }
 
@@ -506,49 +590,54 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 	const [stripTilesSelected, setStripTilesSelected] = useState(false);
 	const [flattenBookSelected, setFlattenBookSelected] = useState(false);
 	const [sortBookSelected, setSortBookSelected] = useState(false);
-	const [result, setResult] = useState<BlueprintString>();
+	const [blueprintEditorOpen, setBlueprintEditorOpen] = useState(false);
+	const [upgradeEnabled, setUpgradeEnabled] = useState(false);
 	const [upgradePlannerOpen, setUpgradePlannerOpen] = useState(false);
 	const [iconReplacementOpen, setIconReplacementOpen] = useState(false);
 	const planners = useMemo(
 		() => (rootBlueprint === undefined ? [] : findUpgradePlanners(rootBlueprint)),
 		[rootBlueprint],
 	);
+	const [upgradeDirection, setUpgradeDirection] = useState<UpgradeDirection>('upgrade');
 	const [upgradeSource, setUpgradeSource] = useState(() =>
-		blueprint?.upgrade_planner === undefined ? 'suggested-upgrade' : `book:${selectedPath}`,
+		blueprint?.upgrade_planner === undefined ? 'suggested' : `book:${selectedPath}`,
 	);
 	const [plannerInput, setPlannerInput] = useState('');
 	const [upgradeScope, setUpgradeScope] = useState<'selection' | 'root'>(() =>
 		blueprint?.upgrade_planner === undefined ? 'selection' : 'root',
 	);
 	const [excludedSources, setExcludedSources] = useState<Set<string>>(() => new Set());
-	const [targetOverrides, setTargetOverrides] = useState<Map<string, SignalID>>(() => new Map());
+	const [targetOverrides, setTargetOverrides] = useState<Map<string, UpgradeTargetOverride>>(() => new Map());
 	const [iconReplacements, setIconReplacements] = useState<IconReplacement[]>([]);
 	const [textReplacementEnabled, setTextReplacementEnabled] = useState(true);
 	const [metadataFind, setMetadataFind] = useState('');
 	const [metadataReplace, setMetadataReplace] = useState('');
 
-	useEffect(() => {
-		setResult(undefined);
-	}, [blueprint]);
-
 	const type = blueprint === undefined ? undefined : new BlueprintWrapper(blueprint).getType();
 	const transformTarget = upgradeScope === 'root' ? rootBlueprint : blueprint;
 	const resolvedRules = useMemo(
-		() => resolveRules(upgradeSource, plannerInput, planners),
-		[upgradeSource, plannerInput, planners],
+		() => resolveRules(upgradeSource, upgradeDirection, plannerInput, planners),
+		[upgradeSource, upgradeDirection, plannerInput, planners],
 	);
 	const effectiveRules = useMemo(
 		() =>
-			resolvedRules.rules.map((rule) => ({
-				...rule,
-				to: targetOverrides.get(signalIdentity(rule.from)) ?? rule.to,
-			})),
+			resolvedRules.rules.map((rule) => {
+				const override = targetOverrides.get(signalIdentity(rule.from));
+				return override === undefined ? rule : {...rule, ...override};
+			}),
 		[resolvedRules.rules, targetOverrides],
 	);
-	const candidates = useMemo(
-		() => (transformTarget === undefined ? [] : analyzeUpgradeRules(transformTarget, effectiveRules)),
-		[transformTarget, effectiveRules],
-	);
+	const candidates = useMemo(() => {
+		if (transformTarget === undefined) {
+			return [];
+		}
+		const matches = analyzeUpgradeRules(transformTarget, effectiveRules);
+		if (upgradeSource === 'suggested') {
+			return matches;
+		}
+		const counts = new Map(matches.map((candidate) => [signalIdentity(candidate.from), candidate.count]));
+		return effectiveRules.map((rule) => ({...rule, count: counts.get(signalIdentity(rule.from)) ?? 0}));
+	}, [transformTarget, effectiveRules, upgradeSource]);
 	const selectedCandidates = useMemo(
 		() => candidates.filter((candidate) => !excludedSources.has(signalIdentity(candidate.from))),
 		[candidates, excludedSources],
@@ -576,38 +665,17 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 				: analyzeIconReplacements(transformTarget, iconReplacements),
 		[transformTarget, iconReplacements],
 	);
-	if (blueprint === undefined || type === 'deconstruction-planner') {
-		return null;
-	}
-	const activeUpgradeCount = upgradeReplacementCount;
-	const activeIconCount = iconReplacementCount;
-	const activeTextCount = textReplacementEnabled ? metadataReplacementCount : 0;
-	const replacementCount = activeUpgradeCount + activeIconCount + activeTextCount;
-	const canChooseRootScope = rootBlueprint?.blueprint_book !== undefined && selectedPath !== '';
-	const hasSelectedStrip = stripQualitySelected || stripWiresSelected || stripTrainsSelected || stripTilesSelected;
-	const hasSelectedBookOperation = flattenBookSelected || sortBookSelected;
-	const hasPendingChanges = replacementCount > 0 || hasSelectedStrip || hasSelectedBookOperation;
-	const firstIconReplacement = iconReplacements.at(0);
-
-	const applyToSelection = (transform: (selected: BlueprintString) => BlueprintString) => {
-		if (rootBlueprint === undefined) {
-			throw new Error('Cannot apply a transformation without a root blueprint');
+	const transformedBlueprint = useMemo(() => {
+		if (rootBlueprint === undefined || resolvedRules.error !== undefined) {
+			return undefined;
 		}
-
-		const transformed = updateNestedBlueprint(rootBlueprint, selectedPath, transform);
-		if (transformed === null) {
-			throw new Error(`Cannot apply a transformation at path ${selectedPath}`);
-		}
-		setResult(transformed);
-	};
-	const applyChanges = () => {
-		const rules = selectedCandidates.map(({from, preserveQuality, to}) => ({from, preserveQuality, to}));
+		const rules = upgradeEnabled
+			? selectedCandidates.map(({from, preserveQuality, to}) => ({from, preserveQuality, to}))
+			: [];
 		const transform = (target: BlueprintString) => {
 			let transformed = target;
 			if (rules.length > 0) transformed = applyUpgradeRules(transformed, rules);
-			if (iconReplacements.length > 0) {
-				transformed = applyIconReplacements(transformed, iconReplacements);
-			}
+			if (iconReplacements.length > 0) transformed = applyIconReplacements(transformed, iconReplacements);
 			if (textReplacementEnabled && metadataFind !== '') {
 				transformed = applyMetadataSubstitution(transformed, metadataSubstitution);
 			}
@@ -620,24 +688,46 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 			return transformed;
 		};
 		if (upgradeScope === 'root') {
-			if (rootBlueprint === undefined) {
-				throw new Error('Cannot apply transformations without a root blueprint');
-			}
-			setResult(transform(rootBlueprint));
-			return;
+			return transform(rootBlueprint);
 		}
-		applyToSelection(transform);
-	};
-
+		return updateNestedBlueprint(rootBlueprint, selectedPath, transform) ?? undefined;
+	}, [
+		flattenBookSelected,
+		iconReplacements,
+		metadataFind,
+		metadataSubstitution,
+		resolvedRules.error,
+		rootBlueprint,
+		selectedCandidates,
+		selectedPath,
+		sortBookSelected,
+		stripQualitySelected,
+		stripTilesSelected,
+		stripTrainsSelected,
+		stripWiresSelected,
+		textReplacementEnabled,
+		upgradeEnabled,
+		upgradeScope,
+	]);
+	if (blueprint === undefined || type === 'deconstruction-planner') {
+		return null;
+	}
+	const activeUpgradeCount = upgradeEnabled ? upgradeReplacementCount : 0;
+	const activeIconCount = iconReplacementCount;
+	const activeTextCount = textReplacementEnabled ? metadataReplacementCount : 0;
+	const blueprintReplacementCount = activeIconCount + activeTextCount;
+	const canChooseRootScope = rootBlueprint?.blueprint_book !== undefined && selectedPath !== '';
+	const hasSelectedCleanup = stripWiresSelected || stripTrainsSelected || stripTilesSelected;
+	const hasSelectedBookOperation = flattenBookSelected || sortBookSelected;
 	const openInPlayground = () => {
-		if (result === undefined) {
-			throw new Error('Cannot open a transformation before applying it');
+		if (transformedBlueprint === undefined) {
+			throw new Error('Cannot open a transformation while its configuration is invalid');
 		}
 
 		void navigate({
 			to: '/',
 			search: {
-				pasted: serializeBlueprint(result),
+				pasted: serializeBlueprint(transformedBlueprint),
 				selection: selectedPath,
 			},
 		});
@@ -645,256 +735,388 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 
 	return (
 		<>
-			<Panel title="Transform">
-				<div className="panel-hole transform-workflow">
-					<div className="panel-hole-inner transform-workflow__scope">
-						<strong>Change</strong>
-						<select
-							aria-label="Apply to"
-							value={upgradeScope}
-							onChange={(event) => {
-								setUpgradeScope(event.currentTarget.value === 'root' ? 'root' : 'selection');
-								setExcludedSources(new Set());
-							}}
-						>
-							<option value="selection" disabled={type === 'upgrade-planner'}>
-								{canChooseRootScope ? 'This selection' : 'This blueprint or book'}
-							</option>
-							{canChooseRootScope || type === 'upgrade-planner' ? (
-								<option value="root">Entire root book</option>
-							) : null}
-						</select>
-					</div>
-
-					<div className="transform-workflow__operations">
-						<button
-							type="button"
-							className="transform-operation"
-							onClick={() => {
-								setUpgradePlannerOpen(true);
-							}}
-						>
-							<span className="transform-operation__icon">
-								<FactorioIcon icon={{type: 'item', name: 'upgrade-planner'}} size="large" />
-							</span>
-							<span className="transform-operation__text">
-								<strong>Upgrade Planner</strong>
-								<small>
-									{selectedCandidates.length}{' '}
-									{selectedCandidates.length === 1 ? 'mapping' : 'mappings'} ·{' '}
-									{upgradeReplacementCount}{' '}
-									{upgradeReplacementCount === 1 ? 'replacement' : 'replacements'}
-								</small>
-							</span>
-							<span>Edit…</span>
-						</button>
-
-						<button
-							type="button"
-							className="transform-operation"
-							onClick={() => {
-								setIconReplacementOpen(true);
-							}}
-						>
-							<span className="transform-operation__icon">
-								{firstIconReplacement === undefined ? (
-									<span aria-hidden="true">+</span>
-								) : (
-									<FactorioIcon icon={firstIconReplacement.from} size="large" />
-								)}
-							</span>
-							<span className="transform-operation__text">
-								<strong>Icon Replacements</strong>
-								<small>
-									{iconReplacements.length} {iconReplacements.length === 1 ? 'mapping' : 'mappings'} ·{' '}
-									{iconReplacementCount} {iconReplacementCount === 1 ? 'replacement' : 'replacements'}
-								</small>
-							</span>
-							<span>Edit…</span>
-						</button>
-					</div>
-
-					<fieldset className="transform-workflow__filters">
-						<legend>Change in</legend>
-						<label>
-							<input type="checkbox" checked disabled readOnly /> Entities{' '}
-							<strong>{upgradeReplacementCount}</strong>
-						</label>
-						<label>
-							<input type="checkbox" checked disabled readOnly /> Tiles <strong>0</strong>
-						</label>
-						<label>
-							<input type="checkbox" checked disabled readOnly /> Icons{' '}
-							<strong>{iconReplacementCount}</strong>
-						</label>
-						<label>
-							<input
-								type="checkbox"
-								checked={textReplacementEnabled}
-								onChange={(event) => {
-									setTextReplacementEnabled(event.currentTarget.checked);
-								}}
-							/>{' '}
-							Text <strong>{metadataReplacementCount}</strong>
-						</label>
-					</fieldset>
-
-					<div className="transform-workflow__text">
-						<strong>Text replacement</strong>
-						<div>
-							<label htmlFor="metadata-find">Find</label>
-							<input
-								id="metadata-find"
-								type="text"
-								value={metadataFind}
-								onChange={(event) => {
-									setMetadataFind(event.currentTarget.value);
-								}}
-							/>
-							<span aria-hidden="true">→</span>
-							<label htmlFor="metadata-replace">Replace with</label>
-							<input
-								id="metadata-replace"
-								type="text"
-								value={metadataReplace}
-								onChange={(event) => {
-									setMetadataReplace(event.currentTarget.value);
-								}}
-							/>
-						</div>
-					</div>
-
-					{type === 'upgrade-planner' ? null : (
-						<details className="transform-workflow__details">
-							<summary>Cleanup{hasSelectedStrip ? ' · selected' : ''}</summary>
-							<div className="transform-workflow__checks">
-								<label>
-									<input
-										type="checkbox"
-										checked={stripQualitySelected}
-										onChange={(event) => {
-											setStripQualitySelected(event.currentTarget.checked);
-										}}
-									/>{' '}
-									Strip quality
-								</label>
-								<label>
-									<input
-										type="checkbox"
-										checked={stripWiresSelected}
-										onChange={(event) => {
-											setStripWiresSelected(event.currentTarget.checked);
-										}}
-									/>{' '}
-									Strip wires
-								</label>
-								<label>
-									<input
-										type="checkbox"
-										checked={stripTrainsSelected}
-										onChange={(event) => {
-											setStripTrainsSelected(event.currentTarget.checked);
-										}}
-									/>{' '}
-									Strip trains
-								</label>
-								<label>
-									<input
-										type="checkbox"
-										checked={stripTilesSelected}
-										onChange={(event) => {
-											setStripTilesSelected(event.currentTarget.checked);
-										}}
-									/>{' '}
-									Strip tiles
-								</label>
-							</div>
-						</details>
-					)}
-
-					{type === 'blueprint-book' ? (
-						<details className="transform-workflow__details">
-							<summary>Book operations{hasSelectedBookOperation ? ' · selected' : ''}</summary>
-							<div className="transform-workflow__checks">
-								<label>
-									<input
-										type="checkbox"
-										checked={flattenBookSelected}
-										onChange={(event) => {
-											setFlattenBookSelected(event.currentTarget.checked);
-										}}
-									/>{' '}
-									Flatten nested books
-								</label>
-								<label>
-									<input
-										type="checkbox"
-										checked={sortBookSelected}
-										onChange={(event) => {
-											setSortBookSelected(event.currentTarget.checked);
-										}}
-									/>{' '}
-									Sort entries by label
-								</label>
-							</div>
-						</details>
-					) : null}
-
-					<div className="transform-workflow__summary">
-						<div>
-							<strong>Planned changes</strong>
-							<span>
-								{replacementCount} replacements
-								{hasSelectedStrip ? ' · cleanup selected' : ''}
-								{hasSelectedBookOperation ? ' · book operation selected' : ''}
-							</span>
-						</div>
-						<ButtonGreen
-							disabled={!hasPendingChanges || resolvedRules.error !== undefined}
-							onClick={(event) => {
-								event.preventDefault();
-								applyChanges();
-							}}
-						>
-							Apply changes
-						</ButtonGreen>
-					</div>
-				</div>
-			</Panel>
+			<div className="transform-toolbelt" aria-label="Blueprint tools">
+				<button
+					type="button"
+					className="transform-toolbelt__button"
+					aria-label="Open Upgrade Planner"
+					aria-expanded={upgradePlannerOpen}
+					onClick={() => {
+						setBlueprintEditorOpen(false);
+						setUpgradeEnabled(true);
+						setUpgradePlannerOpen(true);
+					}}
+				>
+					<span className="transform-toolbelt__icon">
+						<FactorioIcon icon={{type: 'item', name: 'upgrade-planner'}} size="large" />
+					</span>
+					<span>Upgrade planner</span>
+				</button>
+				{type === 'upgrade-planner' ? null : (
+					<button
+						type="button"
+						className="transform-toolbelt__button"
+						aria-label="Open Blueprint Editor"
+						aria-expanded={blueprintEditorOpen}
+						onClick={() => {
+							setUpgradePlannerOpen(false);
+							setBlueprintEditorOpen(true);
+						}}
+					>
+						<span className="transform-toolbelt__icon">
+							<FactorioIcon icon={{type: 'item', name: 'blueprint'}} size="large" />
+						</span>
+						<span>Blueprint editor</span>
+					</button>
+				)}
+			</div>
 
 			{upgradePlannerOpen ? (
-				<UpgradePlannerDialog
-					candidates={candidates}
-					error={resolvedRules.error}
-					excludedSources={excludedSources}
-					onClose={() => {
-						setUpgradePlannerOpen(false);
-					}}
-					onPlannerInputChange={(value) => {
-						setPlannerInput(value);
-						setExcludedSources(new Set());
-						setTargetOverrides(new Map());
-					}}
-					onSourceChange={(value) => {
-						setUpgradeSource(value);
-						setExcludedSources(new Set());
-						setTargetOverrides(new Map());
-					}}
-					onTargetChange={(source, target) => {
-						setTargetOverrides((current) => new Map(current).set(signalIdentity(source), target));
-					}}
-					onToggleCandidate={(source, checked) => {
-						setExcludedSources((current) => {
-							const next = new Set(current);
-							if (checked) next.delete(signalIdentity(source));
-							else next.add(signalIdentity(source));
-							return next;
-						});
-					}}
-					plannerInput={plannerInput}
-					planners={planners}
-					source={upgradeSource}
-				/>
+				<div className="transform-dialog-backdrop transform-workbench-backdrop">
+					<section
+						className="transform-dialog transform-workbench"
+						role="dialog"
+						aria-modal="true"
+						aria-label="Upgrade Planner"
+					>
+						<header className="transform-dialog__header transform-workbench__header">
+							<div className="transform-workbench__title">
+								<FactorioIcon icon={{type: 'item', name: 'upgrade-planner'}} size="large" />
+								<div>
+									<h3>Upgrade Planner</h3>
+									<span>Changes update the result immediately</span>
+								</div>
+							</div>
+							<div
+								className="transform-workbench__status"
+								aria-label={`${activeUpgradeCount.toString()} ${
+									activeUpgradeCount === 1 ? 'replacement ready' : 'replacements ready'
+								}${stripQualitySelected ? ', strip quality selected' : ''}`}
+							>
+								<strong>{activeUpgradeCount}</strong>
+								<span>
+									{activeUpgradeCount === 1 ? 'replacement ready' : 'replacements ready'}
+									{stripQualitySelected ? ' · strip quality' : ''}
+								</span>
+							</div>
+							<button
+								type="button"
+								className="transform-dialog__close"
+								aria-label="Close Upgrade Planner"
+								onClick={() => {
+									setUpgradePlannerOpen(false);
+								}}
+							>
+								×
+							</button>
+						</header>
+
+						<div className="transform-workbench__body">
+							<div className="panel-hole transform-workflow">
+								<div className="panel-hole-inner transform-workflow__scope">
+									<strong>Change</strong>
+									<select
+										aria-label="Apply to"
+										value={upgradeScope}
+										onChange={(event) => {
+											setUpgradeScope(
+												event.currentTarget.value === 'root' ? 'root' : 'selection',
+											);
+											setExcludedSources(new Set());
+										}}
+									>
+										<option value="selection" disabled={type === 'upgrade-planner'}>
+											{canChooseRootScope ? 'This selection' : 'This blueprint or book'}
+										</option>
+										{canChooseRootScope || type === 'upgrade-planner' ? (
+											<option value="root">Entire root book</option>
+										) : null}
+									</select>
+								</div>
+
+								<UpgradeMappingsEditor
+									candidates={candidates}
+									direction={upgradeDirection}
+									error={resolvedRules.error}
+									excludedSources={excludedSources}
+									onDirectionChange={(direction) => {
+										setUpgradeDirection(direction);
+										setExcludedSources(new Set());
+										setTargetOverrides(new Map());
+									}}
+									onPlannerInputChange={(value) => {
+										setPlannerInput(value);
+										setExcludedSources(new Set());
+										setTargetOverrides(new Map());
+									}}
+									onSourceChange={(value) => {
+										setUpgradeSource(value);
+										setExcludedSources(new Set());
+										setTargetOverrides(new Map());
+									}}
+									onStripQualityChange={setStripQualitySelected}
+									onTargetChange={(source, target, preserveQuality) => {
+										setTargetOverrides((current) =>
+											new Map(current).set(signalIdentity(source), {preserveQuality, to: target}),
+										);
+									}}
+									onToggleCandidate={(source, checked) => {
+										setExcludedSources((current) => {
+											const next = new Set(current);
+											if (checked) next.delete(signalIdentity(source));
+											else next.add(signalIdentity(source));
+											return next;
+										});
+									}}
+									plannerInput={plannerInput}
+									planners={planners}
+									source={upgradeSource}
+									stripQualitySelected={stripQualitySelected}
+								/>
+							</div>
+						</div>
+
+						<footer className="transform-workbench__footer">
+							{transformedBlueprint === undefined ? (
+								<span className="transform-workbench__invalid">Fix the planner error to export.</span>
+							) : (
+								<BlueprintExportButtons blueprint={transformedBlueprint} path={selectedPath} />
+							)}
+							<ButtonGreen
+								disabled={transformedBlueprint === undefined}
+								onClick={(event) => {
+									event.preventDefault();
+									openInPlayground();
+								}}
+							>
+								Open in Playground
+							</ButtonGreen>
+						</footer>
+					</section>
+				</div>
+			) : null}
+			{blueprintEditorOpen ? (
+				<div className="transform-dialog-backdrop transform-workbench-backdrop">
+					<section
+						className="transform-dialog transform-workbench"
+						role="dialog"
+						aria-modal="true"
+						aria-label="Blueprint Editor"
+					>
+						<header className="transform-dialog__header transform-workbench__header">
+							<div className="transform-workbench__title">
+								<FactorioIcon icon={{type: 'item', name: 'blueprint'}} size="large" />
+								<div>
+									<h3>Blueprint Editor</h3>
+									<span>Changes update the result immediately</span>
+								</div>
+							</div>
+							<div
+								className="transform-workbench__status"
+								aria-label={`${blueprintReplacementCount.toString()} ${
+									blueprintReplacementCount === 1 ? 'replacement ready' : 'replacements ready'
+								}${hasSelectedCleanup ? ', cleanup selected' : ''}${
+									hasSelectedBookOperation ? ', book operation selected' : ''
+								}`}
+							>
+								<strong>{blueprintReplacementCount}</strong>
+								<span>
+									{blueprintReplacementCount === 1 ? 'replacement ready' : 'replacements ready'}
+									{hasSelectedCleanup ? ' · cleanup selected' : ''}
+									{hasSelectedBookOperation ? ' · book operation selected' : ''}
+								</span>
+							</div>
+							<button
+								type="button"
+								className="transform-dialog__close"
+								aria-label="Close Blueprint Editor"
+								onClick={() => {
+									setBlueprintEditorOpen(false);
+								}}
+							>
+								×
+							</button>
+						</header>
+
+						<div className="transform-workbench__body">
+							<div className="panel-hole transform-workflow">
+								<div className="panel-hole-inner transform-workflow__scope">
+									<strong>Change</strong>
+									<select
+										aria-label="Apply to"
+										value={upgradeScope}
+										onChange={(event) => {
+											setUpgradeScope(
+												event.currentTarget.value === 'root' ? 'root' : 'selection',
+											);
+											setExcludedSources(new Set());
+										}}
+									>
+										<option value="selection">
+											{canChooseRootScope ? 'This selection' : 'This blueprint or book'}
+										</option>
+										{canChooseRootScope ? <option value="root">Entire root book</option> : null}
+									</select>
+								</div>
+
+								<section
+									className="transform-workflow__section transform-workflow__website-replacements"
+									aria-labelledby="transform-website-replacements-heading"
+								>
+									<h4 id="transform-website-replacements-heading">Website replacements</h4>
+									<div className="transform-workflow__operations">
+										<button
+											type="button"
+											className="transform-operation"
+											onClick={() => {
+												setIconReplacementOpen(true);
+											}}
+										>
+											<span className="transform-operation__icon">
+												<span aria-hidden="true">+</span>
+											</span>
+											<span className="transform-operation__text">
+												<strong>Icon replacements</strong>
+												<small>
+													{iconReplacements.length}{' '}
+													{iconReplacements.length === 1 ? 'mapping' : 'mappings'} ·{' '}
+													{iconReplacementCount}{' '}
+													{iconReplacementCount === 1 ? 'replacement' : 'replacements'}
+												</small>
+											</span>
+											<span>Edit…</span>
+										</button>
+									</div>
+
+									<div className="transform-workflow__text">
+										<label className="transform-workflow__text-toggle">
+											<input
+												type="checkbox"
+												checked={textReplacementEnabled}
+												onChange={(event) => {
+													setTextReplacementEnabled(event.currentTarget.checked);
+												}}
+											/>{' '}
+											Text replacement <strong>{metadataReplacementCount}</strong>
+										</label>
+										<div>
+											<label htmlFor="metadata-find">Find</label>
+											<input
+												id="metadata-find"
+												type="text"
+												value={metadataFind}
+												onChange={(event) => {
+													setMetadataFind(event.currentTarget.value);
+												}}
+											/>
+											<span aria-hidden="true">→</span>
+											<label htmlFor="metadata-replace">Replace with</label>
+											<input
+												id="metadata-replace"
+												type="text"
+												value={metadataReplace}
+												onChange={(event) => {
+													setMetadataReplace(event.currentTarget.value);
+												}}
+											/>
+										</div>
+									</div>
+								</section>
+
+								<section
+									className="transform-workflow__section"
+									aria-labelledby="transform-cleanup-heading"
+								>
+									<h4 id="transform-cleanup-heading">
+										Cleanup{hasSelectedCleanup ? ' · selected' : ''}
+									</h4>
+									<div className="transform-workflow__checks">
+										<label>
+											<input
+												type="checkbox"
+												checked={stripWiresSelected}
+												onChange={(event) => {
+													setStripWiresSelected(event.currentTarget.checked);
+												}}
+											/>{' '}
+											Strip wires
+										</label>
+										<label>
+											<input
+												type="checkbox"
+												checked={stripTrainsSelected}
+												onChange={(event) => {
+													setStripTrainsSelected(event.currentTarget.checked);
+												}}
+											/>{' '}
+											Strip trains
+										</label>
+										<label>
+											<input
+												type="checkbox"
+												checked={stripTilesSelected}
+												onChange={(event) => {
+													setStripTilesSelected(event.currentTarget.checked);
+												}}
+											/>{' '}
+											Strip tiles
+										</label>
+									</div>
+								</section>
+
+								{type === 'blueprint-book' ? (
+									<section
+										className="transform-workflow__section"
+										aria-labelledby="transform-book-operations-heading"
+									>
+										<h4 id="transform-book-operations-heading">
+											Book operations{hasSelectedBookOperation ? ' · selected' : ''}
+										</h4>
+										<div className="transform-workflow__checks">
+											<label>
+												<input
+													type="checkbox"
+													checked={flattenBookSelected}
+													onChange={(event) => {
+														setFlattenBookSelected(event.currentTarget.checked);
+													}}
+												/>{' '}
+												Flatten nested books
+											</label>
+											<label>
+												<input
+													type="checkbox"
+													checked={sortBookSelected}
+													onChange={(event) => {
+														setSortBookSelected(event.currentTarget.checked);
+													}}
+												/>{' '}
+												Sort entries by label
+											</label>
+										</div>
+									</section>
+								) : null}
+							</div>
+						</div>
+
+						<footer className="transform-workbench__footer">
+							{transformedBlueprint === undefined ? (
+								<span className="transform-workbench__invalid">Fix the editor error to export.</span>
+							) : (
+								<BlueprintExportButtons blueprint={transformedBlueprint} path={selectedPath} />
+							)}
+							<ButtonGreen
+								disabled={transformedBlueprint === undefined}
+								onClick={(event) => {
+									event.preventDefault();
+									openInPlayground();
+								}}
+							>
+								Open in Playground
+							</ButtonGreen>
+						</footer>
+					</section>
+				</div>
 			) : null}
 			{iconReplacementOpen ? (
 				<IconReplacementDialog
@@ -906,22 +1128,6 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 					replacements={iconReplacements}
 				/>
 			) : null}
-
-			{result === undefined ? null : (
-				<>
-					<ExportActions blueprint={result} title="Transformed Blueprint" />
-					<Panel>
-						<ButtonGreen
-							onClick={(event) => {
-								event.preventDefault();
-								openInPlayground();
-							}}
-						>
-							Open in Playground
-						</ButtonGreen>
-					</Panel>
-				</>
-			)}
 		</>
 	);
 }
