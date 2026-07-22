@@ -48,17 +48,29 @@ describe('TransformPanel', () => {
 
 		expect({
 			applyButtons: screen.getAllByRole('button', {name: 'Apply changes'}).map((button) => button.textContent),
+			changeIn: ['Entities 1', 'Tiles 0', 'Icons 0', 'Text 0'].map((name) => {
+				const checkbox = screen.getByRole<HTMLInputElement>('checkbox', {name});
+				return {checked: checkbox.checked, disabled: checkbox.disabled, name};
+			}),
 			iconSummary: screen
 				.getByRole('button', {name: /Icon Replacements/})
 				.textContent.replaceAll(/\s+/g, ' ')
 				.trim(),
+			preserveCapitalization: screen.queryByRole('checkbox', {name: 'Preserve capitalization'}),
 			upgradeSummary: screen
 				.getByRole('button', {name: /Upgrade Planner/})
 				.textContent.replaceAll(/\s+/g, ' ')
 				.trim(),
 		}).toStrictEqual({
 			applyButtons: ['Apply changes'],
+			changeIn: [
+				{checked: true, disabled: true, name: 'Entities 1'},
+				{checked: true, disabled: true, name: 'Tiles 0'},
+				{checked: true, disabled: true, name: 'Icons 0'},
+				{checked: true, disabled: false, name: 'Text 0'},
+			],
 			iconSummary: '+Icon Replacements0 mappings · 0 replacementsEdit…',
+			preserveCapitalization: null,
 			upgradeSummary: 'Upgrade Planner1 mapping · 1 replacementEdit…',
 		});
 
@@ -82,6 +94,46 @@ describe('TransformPanel', () => {
 			sourceIcon: 'https://factorio-icon-cdn.pages.dev/entity/transport-belt.webp',
 			targetIcon: 'https://factorio-icon-cdn.pages.dev/entity/fast-transport-belt.webp',
 		});
+	});
+
+	test('requires an explicit icon source and clears an incomplete mapping', async () => {
+		const user = userEvent.setup();
+		const iconBlueprint: BlueprintString = {
+			blueprint: {
+				item: 'blueprint',
+				version: 0,
+				icons: [{index: 1, signal: {type: 'virtual', name: 'signal-red'}}],
+			},
+		};
+		render(<TransformPanel blueprint={iconBlueprint} />);
+
+		await user.click(screen.getByRole('button', {name: /Icon Replacements/}));
+		const sourceSlot = screen.getByRole('button', {name: 'Choose source icon'});
+		const targetSlot = screen.getByRole('button', {name: 'Choose target icon'});
+		expect({
+			clearButton: screen.queryByRole('button', {name: /Clear source/}),
+			sourceImage: sourceSlot.querySelector('img'),
+			targetDisabled: targetSlot.getAttribute('aria-disabled'),
+		}).toStrictEqual({clearButton: null, sourceImage: null, targetDisabled: 'true'});
+
+		await user.click(sourceSlot);
+		await user.click(screen.getByRole('button', {name: 'Choose Signal red'}));
+		expect({
+			clearButtonLabel: screen.getByRole('button', {name: 'Clear source Signal red'}).getAttribute('aria-label'),
+			sourceImage: sourceSlot.querySelector('img')?.getAttribute('src'),
+			targetDisabled: targetSlot.getAttribute('aria-disabled'),
+		}).toStrictEqual({
+			clearButtonLabel: 'Clear source Signal red',
+			sourceImage: 'https://factorio-icon-cdn.pages.dev/virtual-signal/signal-red.webp',
+			targetDisabled: 'false',
+		});
+
+		await user.click(screen.getByRole('button', {name: 'Clear source Signal red'}));
+		expect({
+			clearButton: screen.queryByRole('button', {name: /Clear source/}),
+			sourceImage: sourceSlot.querySelector('img'),
+			targetDisabled: targetSlot.getAttribute('aria-disabled'),
+		}).toStrictEqual({clearButton: null, sourceImage: null, targetDisabled: 'true'});
 	});
 
 	test('stages and applies book operations through the shared action', async () => {
@@ -264,6 +316,8 @@ describe('TransformPanel', () => {
 
 		await user.selectOptions(screen.getByRole('combobox', {name: 'Apply to'}), 'root');
 		await user.click(screen.getByRole('button', {name: /Icon Replacements/}));
+		await user.click(screen.getByRole('button', {name: 'Choose source icon'}));
+		await user.click(screen.getByRole('button', {name: 'Choose Signal red'}));
 		await user.click(screen.getByRole('button', {name: 'Choose target icon'}));
 		await user.type(screen.getByRole('searchbox', {name: 'Search'}), 'blue');
 		await user.click(screen.getByRole('button', {name: 'Choose Signal blue'}));
