@@ -4,7 +4,12 @@ import baseDatasetJson from '../fixtures/factoriolab/2.0.json';
 import nextBaseDatasetJson from '../fixtures/factoriolab/2.1.json';
 import krastorioDatasetJson from '../fixtures/factoriolab/kr2.json';
 import spaceAgeDatasetJson from '../fixtures/factoriolab/spa.json';
-import {extractHiddenPlaceResults, parseFactorioLabDataset, transformDatasets} from '../../scripts/mod-db/transform';
+import {
+	extractHiddenPlaceResults,
+	extractPrototypeUpgrades,
+	parseFactorioLabDataset,
+	transformDatasets,
+} from '../../scripts/mod-db/transform';
 
 describe('transformDatasets', () => {
 	it('unions base datasets, subtracts base names, and assigns DLC names to bitmasks', () => {
@@ -93,5 +98,26 @@ describe('transformDatasets', () => {
 		`;
 
 		expect(extractHiddenPlaceResults(source)).toStrictEqual(['editor-one', 'editor-two']);
+	});
+
+	it('extracts table and data.raw next-upgrade assignments from Lua prototypes', () => {
+		const sources = [
+			`data:extend({
+				{
+					type = "transport-belt",
+					name = "transport-belt",
+					animation = { filename = "belt.png" },
+					next_upgrade = "fast-transport-belt"
+				},
+				-- { name = "commented-belt", next_upgrade = "ignored-belt" }
+			})`,
+			`data.raw["transport-belt"]["fast-transport-belt"].next_upgrade = "express-transport-belt"
+			-- data.raw["transport-belt"]["commented-belt"].next_upgrade = "ignored-belt"`,
+		];
+
+		expect(extractPrototypeUpgrades(sources)).toStrictEqual([
+			{from: 'transport-belt', to: 'fast-transport-belt'},
+			{from: 'fast-transport-belt', to: 'express-transport-belt'},
+		]);
 	});
 });

@@ -2,6 +2,7 @@ import {describe, expect, it} from 'vite-plus/test';
 
 import sourceLockJson from '../../../scripts/mod-db/source-lock.json';
 import {parseSourceLock} from '../../../scripts/mod-db/sources';
+import gameDataJson from '../../../src/generated/game-data.json';
 import databaseJson from '../../../src/generated/mod-db.json';
 import {classify} from '../../../src/parsing/modDetection/classify';
 import {extractNames} from '../../../src/parsing/modDetection/nameExtractor';
@@ -36,10 +37,14 @@ describe('generated mod database', () => {
 			generatedAt: database.generatedAt,
 			factoriolabCommit: database.factoriolabCommit,
 			factorioDataVersion: database.factorioDataVersion,
+			gameDataFactorioVersion: gameDataJson.factorioDataVersion,
+			nextUpgradeCount: gameDataJson.nextUpgrades.length,
 		}).toStrictEqual({
 			generatedAt: sourceLock.factorioLab.committedAt.slice(0, 10),
 			factoriolabCommit: sourceLock.factorioLab.commit,
 			factorioDataVersion: sourceLock.factorioData.version,
+			gameDataFactorioVersion: sourceLock.factorioData.version,
+			nextUpgradeCount: 14,
 		});
 	});
 
