@@ -6,6 +6,7 @@ import krastorioDatasetJson from '../fixtures/factoriolab/kr2.json';
 import spaceAgeDatasetJson from '../fixtures/factoriolab/spa.json';
 import {
 	extractHiddenPlaceResults,
+	extractPrototypeNames,
 	extractPrototypeUpgrades,
 	parseFactorioLabDataset,
 	transformDatasets,
@@ -119,5 +120,17 @@ describe('transformDatasets', () => {
 			{from: 'transport-belt', to: 'fast-transport-belt'},
 			{from: 'fast-transport-belt', to: 'express-transport-belt'},
 		]);
+	});
+
+	it('extracts prototype names in their game-defined order', () => {
+		const sources = [
+			`data:extend({
+				{type = "virtual-signal", name = "signal-blue", order = "b"},
+				{type = "item", name = "ignored", order = "a"},
+				{type = "virtual-signal", name = "signal-red", order = "a"}
+			})`,
+		];
+
+		expect(extractPrototypeNames(sources, 'virtual-signal')).toStrictEqual(['signal-red', 'signal-blue']);
 	});
 });

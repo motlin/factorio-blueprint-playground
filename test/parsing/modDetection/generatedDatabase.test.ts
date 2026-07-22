@@ -39,12 +39,14 @@ describe('generated mod database', () => {
 			factorioDataVersion: database.factorioDataVersion,
 			gameDataFactorioVersion: gameDataJson.factorioDataVersion,
 			nextUpgradeCount: gameDataJson.nextUpgrades.length,
+			virtualSignalCount: gameDataJson.virtualSignals.length,
 		}).toStrictEqual({
 			generatedAt: sourceLock.factorioLab.committedAt.slice(0, 10),
 			factoriolabCommit: sourceLock.factorioLab.commit,
 			factorioDataVersion: sourceLock.factorioData.version,
 			gameDataFactorioVersion: sourceLock.factorioData.version,
 			nextUpgradeCount: 14,
+			virtualSignalCount: 155,
 		});
 	});
 

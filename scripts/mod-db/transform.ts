@@ -78,9 +78,63 @@ interface LuaUpgradeFrame {
 	nextUpgrade: string | undefined;
 }
 
+interface LuaPrototypeFrame {
+	name: string | undefined;
+	order: string | undefined;
+	type: string | undefined;
+}
+
 export interface PrototypeUpgrade {
 	from: string;
 	to: string;
+}
+
+export function extractPrototypeNames(sources: readonly string[], prototypeType: string): string[] {
+	const prototypes = new Map<string, string>();
+	for (const source of sources) {
+		const frames: LuaPrototypeFrame[] = [];
+		const tokens = tokenizeLua(source);
+		for (let index = 0; index < tokens.length; index += 1) {
+			const token = tokens[index];
+			if (token.kind === LuaTokenKind.OpeningBrace) {
+				frames.push({name: undefined, order: undefined, type: undefined});
+				continue;
+			}
+			if (token.kind === LuaTokenKind.ClosingBrace) {
+				const frame = frames.pop();
+				if (frame === undefined) {
+					throw new Error('Unexpected closing brace in Lua source.');
+				}
+				if (frame.type === prototypeType && frame.name !== undefined) {
+					prototypes.set(frame.name, frame.order ?? frame.name);
+				}
+				continue;
+			}
+			if (token.kind !== LuaTokenKind.Identifier || tokens[index + 1]?.kind !== LuaTokenKind.Equals) {
+				continue;
+			}
+			const frame = frames.at(-1);
+			const value = tokens.at(index + 2);
+			if (frame === undefined || value?.kind !== LuaTokenKind.String) {
+				continue;
+			}
+			if (token.value === 'type') {
+				frame.type = value.value;
+			} else if (token.value === 'name') {
+				frame.name = value.value;
+			} else if (token.value === 'order') {
+				frame.order = value.value;
+			}
+		}
+		if (frames.length > 0) {
+			throw new Error('Unclosed table in Lua source.');
+		}
+	}
+	return [...prototypes]
+		.sort(([leftName, leftOrder], [rightName, rightOrder]) =>
+			leftOrder === rightOrder ? leftName.localeCompare(rightName) : leftOrder.localeCompare(rightOrder),
+		)
+		.map(([name]) => name);
 }
 
 function longBracketClosing(source: string, start: number): {closing: string; contentStart: number} | undefined {

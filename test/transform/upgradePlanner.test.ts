@@ -2,7 +2,13 @@ import {describe, expect, test} from 'vite-plus/test';
 
 import {serializeBlueprint} from '../../src/parsing/blueprintParser';
 import type {BlueprintString, UpgradePlanner} from '../../src/parsing/types';
-import {analyzeMetadataSubstitution, applyMetadataSubstitution} from '../../src/transform/metadataSubstitution';
+import {
+	analyzeIconReplacements,
+	analyzeMetadataIcons,
+	analyzeMetadataSubstitution,
+	applyIconReplacements,
+	applyMetadataSubstitution,
+} from '../../src/transform/metadataSubstitution';
 import {
 	analyzeUpgradeRules,
 	applyUpgradeRules,
@@ -250,14 +256,14 @@ describe('upgrade planner transforms', () => {
 			count: analyzeMetadataSubstitution(input, substitution),
 			result: applyMetadataSubstitution(input, substitution),
 		}).toStrictEqual({
-			count: 12,
+			count: 9,
 			result: {
 				blueprint_book: {
 					item: 'blueprint-book',
 					label: "Alice's Blue book",
 					description: 'blue BLUE Blue',
 					version: 0,
-					icons: [{index: 1, signal: {type: 'virtual', name: 'signal-blue'}}],
+					icons: [{index: 1, signal: {type: 'virtual', name: 'signal-red'}}],
 					blueprints: [
 						{
 							index: 100,
@@ -277,7 +283,7 @@ describe('upgrade planner transforms', () => {
 								version: 0,
 								settings: {
 									description: 'Replace blue',
-									icons: [{index: 1, signal: {type: 'virtual', name: 'signal-blue'}}],
+									icons: [{index: 1, signal: {type: 'virtual', name: 'signal-red'}}],
 									mappers: [],
 								},
 							},
@@ -289,8 +295,66 @@ describe('upgrade planner transforms', () => {
 								version: 0,
 								settings: {
 									description: 'BLUE only',
-									icons: [{index: 1, signal: {type: 'virtual', name: 'signal-blue'}}],
+									icons: [{index: 1, signal: {type: 'virtual', name: 'signal-red'}}],
 								},
+							},
+						},
+					],
+				},
+			},
+		});
+	});
+
+	test('discovers and replaces metadata icons by typed signal identity', () => {
+		const input: BlueprintString = {
+			blueprint_book: {
+				item: 'blueprint-book',
+				version: 0,
+				icons: [{index: 1, signal: {type: 'virtual', name: 'signal-red'}}],
+				blueprints: [
+					{
+						index: 100,
+						blueprint: {
+							item: 'blueprint',
+							version: 0,
+							icons: [
+								{index: 1, signal: {type: 'virtual', name: 'signal-red'}},
+								{index: 2, signal: {type: 'virtual', name: 'signal-green'}},
+							],
+						},
+					},
+				],
+			},
+		};
+		const replacements = [
+			{from: {type: 'virtual' as const, name: 'signal-red'}, to: {type: 'virtual' as const, name: 'signal-blue'}},
+		];
+
+		expect({
+			candidates: analyzeMetadataIcons(input),
+			count: analyzeIconReplacements(input, replacements),
+			result: applyIconReplacements(input, replacements),
+		}).toStrictEqual({
+			candidates: [
+				{count: 2, signal: {type: 'virtual', name: 'signal-red'}},
+				{count: 1, signal: {type: 'virtual', name: 'signal-green'}},
+			],
+			count: 2,
+			result: {
+				blueprint_book: {
+					item: 'blueprint-book',
+					version: 0,
+					icons: [{index: 1, signal: {type: 'virtual', name: 'signal-blue'}}],
+					blueprints: [
+						{
+							index: 100,
+							blueprint: {
+								item: 'blueprint',
+								version: 0,
+								icons: [
+									{index: 1, signal: {type: 'virtual', name: 'signal-blue'}},
+									{index: 2, signal: {type: 'virtual', name: 'signal-green'}},
+								],
 							},
 						},
 					],

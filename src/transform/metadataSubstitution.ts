@@ -4,12 +4,23 @@ import type {
 	DeconstructionPlanner,
 	Icon,
 	UpgradePlanner,
+	SignalID,
 } from '../parsing/types';
 
 export interface MetadataSubstitution {
 	find: string;
 	replace: string;
 	matchCase: boolean;
+}
+
+export interface IconReplacement {
+	from: SignalID;
+	to: SignalID;
+}
+
+export interface MetadataIconCandidate {
+	count: number;
+	signal: SignalID;
 }
 
 interface SubstitutionResult<T> {
@@ -77,13 +88,6 @@ function substituteDirectMetadata<T extends DirectMetadata>(
 		value.description = description.value;
 		count += description.count;
 	}
-	if (metadata.icons !== undefined) {
-		value.icons = metadata.icons.map((icon) => {
-			const name = substituteString(icon.signal.name, substitution);
-			count += name.count;
-			return {...icon, signal: {...icon.signal, name: name.value}};
-		});
-	}
 	return {count, value};
 }
 
@@ -137,4 +141,113 @@ export function analyzeMetadataSubstitution(root: BlueprintString, substitution:
 
 export function applyMetadataSubstitution(root: BlueprintString, substitution: MetadataSubstitution): BlueprintString {
 	return substituteMetadata(root, substitution).value;
+}
+
+function normalizedSignalType(signal: SignalID): string {
+	if (signal.type === 'virtual-signal') {
+		return 'virtual';
+	}
+	return signal.type ?? 'item';
+}
+
+function signalKey(signal: SignalID): string {
+	return [normalizedSignalType(signal), signal.name, signal.quality ?? 'normal'].join(':');
+}
+
+function mapDirectIcons<T extends DirectMetadata>(metadata: T, mapper: (signal: SignalID) => SignalID): T {
+	if (metadata.icons === undefined) {
+		return metadata;
+	}
+	return {
+		...metadata,
+		icons: metadata.icons.map((icon) => ({...icon, signal: mapper(icon.signal)})),
+	};
+}
+
+function mapMetadataIcons(root: BlueprintString, mapper: (signal: SignalID) => SignalID): BlueprintString {
+	if (root.blueprint !== undefined) {
+		return {...root, blueprint: mapDirectIcons(root.blueprint, mapper)};
+	}
+	if (root.blueprint_book !== undefined) {
+		const book = mapDirectIcons(root.blueprint_book, mapper);
+		return {
+			...root,
+			blueprint_book: {
+				...book,
+				blueprints: book.blueprints.map(
+					(child): BlueprintStringWithIndex => ({
+						...mapMetadataIcons(child, mapper),
+						index: child.index,
+					}),
+				),
+			},
+		};
+	}
+	if (root.upgrade_planner !== undefined) {
+		return {
+			...root,
+			upgrade_planner: {
+				...mapDirectIcons(root.upgrade_planner, mapper),
+				settings: mapDirectIcons(root.upgrade_planner.settings, mapper),
+			},
+		};
+	}
+	if (root.deconstruction_planner !== undefined) {
+		return {
+			...root,
+			deconstruction_planner: {
+				...mapDirectIcons(root.deconstruction_planner, mapper),
+				settings: mapDirectIcons(root.deconstruction_planner.settings, mapper),
+			},
+		};
+	}
+	throw new Error('Cannot replace icons in an invalid blueprint string.');
+}
+
+function replacementLookup(replacements: readonly IconReplacement[]): ReadonlyMap<string, SignalID> {
+	const lookup = new Map<string, SignalID>();
+	for (const replacement of replacements) {
+		const key = signalKey(replacement.from);
+		if (lookup.has(key)) {
+			throw new Error(`More than one icon replacement is defined for ${replacement.from.name}.`);
+		}
+		if (normalizedSignalType(replacement.from) !== normalizedSignalType(replacement.to)) {
+			throw new Error(`Icon replacement ${replacement.from.name} cannot change signal types.`);
+		}
+		lookup.set(key, replacement.to);
+	}
+	return lookup;
+}
+
+export function analyzeMetadataIcons(root: BlueprintString): MetadataIconCandidate[] {
+	const signals = new Map<string, MetadataIconCandidate>();
+	mapMetadataIcons(root, (signal) => {
+		const key = signalKey(signal);
+		const candidate = signals.get(key);
+		if (candidate === undefined) {
+			signals.set(key, {count: 1, signal});
+		} else {
+			candidate.count += 1;
+		}
+		return signal;
+	});
+	return [...signals.values()].sort(
+		(left, right) => right.count - left.count || left.signal.name.localeCompare(right.signal.name),
+	);
+}
+
+export function analyzeIconReplacements(root: BlueprintString, replacements: readonly IconReplacement[]): number {
+	const lookup = replacementLookup(replacements);
+	return analyzeMetadataIcons(root).reduce(
+		(total, candidate) => total + (lookup.has(signalKey(candidate.signal)) ? candidate.count : 0),
+		0,
+	);
+}
+
+export function applyIconReplacements(
+	root: BlueprintString,
+	replacements: readonly IconReplacement[],
+): BlueprintString {
+	const lookup = replacementLookup(replacements);
+	return mapMetadataIcons(root, (signal) => lookup.get(signalKey(signal)) ?? signal);
 }
