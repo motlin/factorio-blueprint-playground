@@ -2,6 +2,7 @@ import {describe, expect, test} from 'vite-plus/test';
 
 import {serializeBlueprint} from '../../src/parsing/blueprintParser';
 import type {BlueprintString, UpgradePlanner} from '../../src/parsing/types';
+import {analyzeMetadataSubstitution, applyMetadataSubstitution} from '../../src/transform/metadataSubstitution';
 import {
 	analyzeUpgradeRules,
 	applyUpgradeRules,
@@ -9,7 +10,16 @@ import {
 	findUpgradePlanners,
 	parseUpgradePlanner,
 	rulesFromUpgradePlanner,
+	type UpgradeRule,
 } from '../../src/transform/upgradePlanner';
+
+function preservingUpgrade(from: string, to: string): UpgradeRule {
+	return {
+		from: {type: 'entity', name: from},
+		preserveQuality: true,
+		to: {type: 'entity', name: to},
+	};
+}
 
 const configuredPlanner: UpgradePlanner = {
 	item: 'upgrade-planner',
@@ -34,91 +44,42 @@ const configuredPlanner: UpgradePlanner = {
 describe('upgrade planner transforms', () => {
 	test('defines Factorio next-upgrade suggestions and their reverse mappings', () => {
 		expect({
-			upgrade: builtInUpgradeRules('upgrade', true),
+			upgrade: builtInUpgradeRules('upgrade'),
 			downgrade: builtInUpgradeRules('downgrade'),
 		}).toStrictEqual({
 			upgrade: [
-				{from: {type: 'entity', name: 'transport-belt'}, to: {type: 'entity', name: 'fast-transport-belt'}},
-				{
-					from: {type: 'entity', name: 'fast-transport-belt'},
-					to: {type: 'entity', name: 'express-transport-belt'},
-				},
-				{
-					from: {type: 'entity', name: 'express-transport-belt'},
-					to: {type: 'entity', name: 'turbo-transport-belt'},
-				},
-				{from: {type: 'entity', name: 'underground-belt'}, to: {type: 'entity', name: 'fast-underground-belt'}},
-				{
-					from: {type: 'entity', name: 'fast-underground-belt'},
-					to: {type: 'entity', name: 'express-underground-belt'},
-				},
-				{
-					from: {type: 'entity', name: 'express-underground-belt'},
-					to: {type: 'entity', name: 'turbo-underground-belt'},
-				},
-				{from: {type: 'entity', name: 'splitter'}, to: {type: 'entity', name: 'fast-splitter'}},
-				{from: {type: 'entity', name: 'fast-splitter'}, to: {type: 'entity', name: 'express-splitter'}},
-				{from: {type: 'entity', name: 'express-splitter'}, to: {type: 'entity', name: 'turbo-splitter'}},
-				{from: {type: 'entity', name: 'inserter'}, to: {type: 'entity', name: 'fast-inserter'}},
-				{from: {type: 'entity', name: 'fast-inserter'}, to: {type: 'entity', name: 'bulk-inserter'}},
-				{from: {type: 'entity', name: 'stone-furnace'}, to: {type: 'entity', name: 'steel-furnace'}},
-				{
-					from: {type: 'entity', name: 'assembling-machine-1'},
-					to: {type: 'entity', name: 'assembling-machine-2'},
-				},
-				{
-					from: {type: 'entity', name: 'assembling-machine-2'},
-					to: {type: 'entity', name: 'assembling-machine-3'},
-				},
+				preservingUpgrade('assembling-machine-1', 'assembling-machine-2'),
+				preservingUpgrade('assembling-machine-2', 'assembling-machine-3'),
+				preservingUpgrade('inserter', 'fast-inserter'),
+				preservingUpgrade('fast-inserter', 'bulk-inserter'),
+				preservingUpgrade('splitter', 'fast-splitter'),
+				preservingUpgrade('fast-splitter', 'express-splitter'),
+				preservingUpgrade('express-splitter', 'turbo-splitter'),
+				preservingUpgrade('stone-furnace', 'steel-furnace'),
+				preservingUpgrade('transport-belt', 'fast-transport-belt'),
+				preservingUpgrade('fast-transport-belt', 'express-transport-belt'),
+				preservingUpgrade('express-transport-belt', 'turbo-transport-belt'),
+				preservingUpgrade('underground-belt', 'fast-underground-belt'),
+				preservingUpgrade('fast-underground-belt', 'express-underground-belt'),
+				preservingUpgrade('express-underground-belt', 'turbo-underground-belt'),
 			],
 			downgrade: [
-				{from: {type: 'entity', name: 'fast-transport-belt'}, to: {type: 'entity', name: 'transport-belt'}},
-				{
-					from: {type: 'entity', name: 'express-transport-belt'},
-					to: {type: 'entity', name: 'fast-transport-belt'},
-				},
-				{
-					from: {type: 'entity', name: 'turbo-transport-belt'},
-					to: {type: 'entity', name: 'express-transport-belt'},
-				},
-				{from: {type: 'entity', name: 'fast-underground-belt'}, to: {type: 'entity', name: 'underground-belt'}},
-				{
-					from: {type: 'entity', name: 'express-underground-belt'},
-					to: {type: 'entity', name: 'fast-underground-belt'},
-				},
-				{
-					from: {type: 'entity', name: 'turbo-underground-belt'},
-					to: {type: 'entity', name: 'express-underground-belt'},
-				},
-				{from: {type: 'entity', name: 'fast-splitter'}, to: {type: 'entity', name: 'splitter'}},
-				{from: {type: 'entity', name: 'express-splitter'}, to: {type: 'entity', name: 'fast-splitter'}},
-				{from: {type: 'entity', name: 'turbo-splitter'}, to: {type: 'entity', name: 'express-splitter'}},
-				{from: {type: 'entity', name: 'fast-inserter'}, to: {type: 'entity', name: 'inserter'}},
-				{from: {type: 'entity', name: 'bulk-inserter'}, to: {type: 'entity', name: 'fast-inserter'}},
-				{from: {type: 'entity', name: 'steel-furnace'}, to: {type: 'entity', name: 'stone-furnace'}},
-				{
-					from: {type: 'entity', name: 'assembling-machine-2'},
-					to: {type: 'entity', name: 'assembling-machine-1'},
-				},
-				{
-					from: {type: 'entity', name: 'assembling-machine-3'},
-					to: {type: 'entity', name: 'assembling-machine-2'},
-				},
+				preservingUpgrade('assembling-machine-2', 'assembling-machine-1'),
+				preservingUpgrade('assembling-machine-3', 'assembling-machine-2'),
+				preservingUpgrade('fast-inserter', 'inserter'),
+				preservingUpgrade('bulk-inserter', 'fast-inserter'),
+				preservingUpgrade('fast-splitter', 'splitter'),
+				preservingUpgrade('express-splitter', 'fast-splitter'),
+				preservingUpgrade('turbo-splitter', 'express-splitter'),
+				preservingUpgrade('steel-furnace', 'stone-furnace'),
+				preservingUpgrade('fast-transport-belt', 'transport-belt'),
+				preservingUpgrade('express-transport-belt', 'fast-transport-belt'),
+				preservingUpgrade('turbo-transport-belt', 'express-transport-belt'),
+				preservingUpgrade('fast-underground-belt', 'underground-belt'),
+				preservingUpgrade('express-underground-belt', 'fast-underground-belt'),
+				preservingUpgrade('turbo-underground-belt', 'express-underground-belt'),
 			],
 		});
-		expect(builtInUpgradeRules('upgrade').map((rule) => rule.to.name)).toStrictEqual([
-			'fast-transport-belt',
-			'express-transport-belt',
-			'fast-underground-belt',
-			'express-underground-belt',
-			'fast-splitter',
-			'express-splitter',
-			'fast-inserter',
-			'bulk-inserter',
-			'steel-furnace',
-			'assembling-machine-2',
-			'assembling-machine-3',
-		]);
 	});
 
 	test('analyzes and applies suggested entity replacements without inventing a bulk inserter upgrade', () => {
@@ -129,6 +90,7 @@ describe('upgrade planner transforms', () => {
 				icons: [
 					{index: 1, signal: {type: 'entity', name: 'transport-belt'}},
 					{index: 2, signal: {type: 'virtual', name: 'signal-each'}},
+					{index: 3, signal: {type: 'item', name: 'fast-transport-belt'}},
 				],
 				entities: [
 					{entity_number: 100, name: 'transport-belt', position: {x: 0, y: 0}},
@@ -143,14 +105,16 @@ describe('upgrade planner transforms', () => {
 		expect({candidates: analyzeUpgradeRules(input, rules), result: applyUpgradeRules(input, rules)}).toStrictEqual({
 			candidates: [
 				{
-					from: {type: 'entity', name: 'transport-belt'},
-					to: {type: 'entity', name: 'fast-transport-belt'},
+					from: {type: 'entity', name: 'stone-furnace'},
+					preserveQuality: true,
+					to: {type: 'entity', name: 'steel-furnace'},
 					count: 1,
 				},
 				{
-					from: {type: 'entity', name: 'stone-furnace'},
-					to: {type: 'entity', name: 'steel-furnace'},
-					count: 1,
+					from: {type: 'entity', name: 'transport-belt'},
+					preserveQuality: true,
+					to: {type: 'entity', name: 'fast-transport-belt'},
+					count: 2,
 				},
 			],
 			result: {
@@ -160,12 +124,13 @@ describe('upgrade planner transforms', () => {
 					icons: [
 						{index: 1, signal: {type: 'entity', name: 'fast-transport-belt'}},
 						{index: 2, signal: {type: 'virtual', name: 'signal-each'}},
+						{index: 3, signal: {type: 'item', name: 'express-transport-belt'}},
 					],
 					entities: [
 						{entity_number: 100, name: 'fast-transport-belt', position: {x: 0, y: 0}},
 						{entity_number: 200, name: 'steel-furnace', position: {x: 10, y: 0}},
 						{entity_number: 300, name: 'bulk-inserter', position: {x: 20, y: 0}},
-						{entity_number: 400, name: 'transport-belt', quality: 'rare', position: {x: 30, y: 0}},
+						{entity_number: 400, name: 'fast-transport-belt', quality: 'rare', position: {x: 30, y: 0}},
 					],
 				},
 			},
@@ -199,11 +164,13 @@ describe('upgrade planner transforms', () => {
 			candidates: [
 				{
 					from: {type: 'item', name: 'speed-module'},
+					preserveQuality: false,
 					to: {type: 'item', name: 'speed-module-2'},
 					count: 2,
 				},
 				{
 					from: {type: 'entity', name: 'assembling-machine-1', quality: 'rare'},
+					preserveQuality: false,
 					to: {type: 'entity', name: 'assembling-machine-2', quality: 'epic'},
 					count: 1,
 				},
@@ -224,6 +191,107 @@ describe('upgrade planner transforms', () => {
 									items: {in_inventory: [{inventory: 1, stack: 0, count: 2}]},
 								},
 							],
+						},
+					],
+				},
+			},
+		});
+	});
+
+	test('substitutes labels, descriptions, and icon names throughout a book while preserving case', () => {
+		const input: BlueprintString = {
+			blueprint_book: {
+				item: 'blueprint-book',
+				label: "Alice's Red book",
+				description: 'red RED Red',
+				version: 0,
+				icons: [{index: 1, signal: {type: 'virtual', name: 'signal-red'}}],
+				blueprints: [
+					{
+						index: 100,
+						blueprint: {
+							item: 'blueprint',
+							label: '[virtual-signal=signal-red] Red balancer',
+							description: 'No match',
+							version: 0,
+							icons: [{index: 1, signal: {type: 'virtual', name: 'signal-green'}}],
+						},
+					},
+					{
+						index: 200,
+						upgrade_planner: {
+							item: 'upgrade-planner',
+							label: 'Red planner',
+							version: 0,
+							settings: {
+								description: 'Replace red',
+								icons: [{index: 1, signal: {type: 'virtual', name: 'signal-red'}}],
+								mappers: [],
+							},
+						},
+					},
+					{
+						index: 300,
+						deconstruction_planner: {
+							item: 'deconstruction-planner',
+							version: 0,
+							settings: {
+								description: 'RED only',
+								icons: [{index: 1, signal: {type: 'virtual', name: 'signal-red'}}],
+							},
+						},
+					},
+				],
+			},
+		};
+		const substitution = {find: 'red', replace: 'blue', matchCase: false};
+
+		expect({
+			count: analyzeMetadataSubstitution(input, substitution),
+			result: applyMetadataSubstitution(input, substitution),
+		}).toStrictEqual({
+			count: 12,
+			result: {
+				blueprint_book: {
+					item: 'blueprint-book',
+					label: "Alice's Blue book",
+					description: 'blue BLUE Blue',
+					version: 0,
+					icons: [{index: 1, signal: {type: 'virtual', name: 'signal-blue'}}],
+					blueprints: [
+						{
+							index: 100,
+							blueprint: {
+								item: 'blueprint',
+								label: '[virtual-signal=signal-blue] Blue balancer',
+								description: 'No match',
+								version: 0,
+								icons: [{index: 1, signal: {type: 'virtual', name: 'signal-green'}}],
+							},
+						},
+						{
+							index: 200,
+							upgrade_planner: {
+								item: 'upgrade-planner',
+								label: 'Blue planner',
+								version: 0,
+								settings: {
+									description: 'Replace blue',
+									icons: [{index: 1, signal: {type: 'virtual', name: 'signal-blue'}}],
+									mappers: [],
+								},
+							},
+						},
+						{
+							index: 300,
+							deconstruction_planner: {
+								item: 'deconstruction-planner',
+								version: 0,
+								settings: {
+									description: 'BLUE only',
+									icons: [{index: 1, signal: {type: 'virtual', name: 'signal-blue'}}],
+								},
+							},
 						},
 					],
 				},

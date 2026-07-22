@@ -2,6 +2,7 @@ import JSON5 from 'json5';
 import {z} from 'zod';
 
 import {deserializeBlueprint} from '../parsing/blueprintParser';
+import gameData from '../generated/game-data.json';
 import type {
 	Blueprint,
 	BlueprintString,
@@ -17,6 +18,7 @@ export type UpgradeDirection = 'upgrade' | 'downgrade';
 
 export interface UpgradeRule {
 	from: SignalID;
+	preserveQuality: boolean;
 	to: SignalID;
 }
 
@@ -28,6 +30,11 @@ export interface UpgradePlannerSource {
 	label: string;
 	path: string;
 	planner: UpgradePlanner;
+}
+
+interface UpgradeRuleLookup {
+	exact: ReadonlyMap<string, UpgradeRule>;
+	preserving: ReadonlyMap<string, UpgradeRule>;
 }
 
 const qualitySchema = z.enum(['normal', 'uncommon', 'rare', 'epic', 'legendary']);
@@ -53,23 +60,11 @@ const upgradePlannerSchema = z.object({
 });
 const upgradePlannerStringSchema = z.object({upgrade_planner: upgradePlannerSchema});
 
-const NEXT_UPGRADE_RULES: readonly UpgradeRule[] = [
-	{from: {type: 'entity', name: 'transport-belt'}, to: {type: 'entity', name: 'fast-transport-belt'}},
-	{from: {type: 'entity', name: 'fast-transport-belt'}, to: {type: 'entity', name: 'express-transport-belt'}},
-	{from: {type: 'entity', name: 'express-transport-belt'}, to: {type: 'entity', name: 'turbo-transport-belt'}},
-	{from: {type: 'entity', name: 'underground-belt'}, to: {type: 'entity', name: 'fast-underground-belt'}},
-	{from: {type: 'entity', name: 'fast-underground-belt'}, to: {type: 'entity', name: 'express-underground-belt'}},
-	{from: {type: 'entity', name: 'express-underground-belt'}, to: {type: 'entity', name: 'turbo-underground-belt'}},
-	{from: {type: 'entity', name: 'splitter'}, to: {type: 'entity', name: 'fast-splitter'}},
-	{from: {type: 'entity', name: 'fast-splitter'}, to: {type: 'entity', name: 'express-splitter'}},
-	{from: {type: 'entity', name: 'express-splitter'}, to: {type: 'entity', name: 'turbo-splitter'}},
-	{from: {type: 'entity', name: 'inserter'}, to: {type: 'entity', name: 'fast-inserter'}},
-	{from: {type: 'entity', name: 'fast-inserter'}, to: {type: 'entity', name: 'bulk-inserter'}},
-	{from: {type: 'entity', name: 'stone-furnace'}, to: {type: 'entity', name: 'steel-furnace'}},
-	{from: {type: 'entity', name: 'assembling-machine-1'}, to: {type: 'entity', name: 'assembling-machine-2'}},
-	{from: {type: 'entity', name: 'assembling-machine-2'}, to: {type: 'entity', name: 'assembling-machine-3'}},
-];
-const SPACE_AGE_TARGETS = new Set(['turbo-transport-belt', 'turbo-underground-belt', 'turbo-splitter']);
+const NEXT_UPGRADE_RULES: readonly UpgradeRule[] = gameData.nextUpgrades.map(({from, to}) => ({
+	from: {type: 'entity', name: from},
+	preserveQuality: true,
+	to: {type: 'entity', name: to},
+}));
 
 function supportedSignalType(signal: SignalID): 'item' | 'entity' | undefined {
 	const type = signal.type ?? 'item';
@@ -104,8 +99,15 @@ export function upgradeRuleKey(rule: UpgradeRule): string {
 	return `${requiredSignalKey(rule.from)}:${requiredSignalKey(rule.to)}`;
 }
 
-function targetQuality(signal: SignalID): Quality {
-	return normalizedQuality(signal.quality) === 'normal' ? undefined : signal.quality;
+function qualityAgnosticSignalKey(signal: SignalID): string {
+	return [requiredSignalType(signal), signal.name].join(':');
+}
+
+function targetQuality(signal: SignalID, rule: UpgradeRule): Quality {
+	if (rule.preserveQuality) {
+		return signal.quality;
+	}
+	return normalizedQuality(rule.to.quality) === 'normal' ? undefined : rule.to.quality;
 }
 
 function mappingToRule(mapping: UpgradeMapping): UpgradeRule {
@@ -115,7 +117,7 @@ function mappingToRule(mapping: UpgradeMapping): UpgradeRule {
 	if (requiredSignalType(mapping.from) !== requiredSignalType(mapping.to)) {
 		throw new Error(`Upgrade planner mapping ${mapping.index.toString()} cannot change signal types.`);
 	}
-	return {from: mapping.from, to: mapping.to};
+	return {from: mapping.from, preserveQuality: false, to: mapping.to};
 }
 
 function validateRules(rules: readonly UpgradeRule[]): UpgradeRule[] {
@@ -130,12 +132,10 @@ function validateRules(rules: readonly UpgradeRule[]): UpgradeRule[] {
 	});
 }
 
-export function builtInUpgradeRules(direction: UpgradeDirection, includeSpaceAge = false): UpgradeRule[] {
-	const availableRules =
-		direction === 'upgrade' && !includeSpaceAge
-			? NEXT_UPGRADE_RULES.filter((rule) => !SPACE_AGE_TARGETS.has(rule.to.name))
-			: NEXT_UPGRADE_RULES;
-	const rules = availableRules.map((rule) => (direction === 'upgrade' ? rule : {from: rule.to, to: rule.from}));
+export function builtInUpgradeRules(direction: UpgradeDirection): UpgradeRule[] {
+	const rules = NEXT_UPGRADE_RULES.map((rule) =>
+		direction === 'upgrade' ? rule : {from: rule.to, preserveQuality: rule.preserveQuality, to: rule.from},
+	);
 	return validateRules(rules);
 }
 
@@ -160,16 +160,16 @@ export function parseUpgradePlanner(input: string): UpgradePlanner {
 	return upgradePlannerStringSchema.parse(parsed).upgrade_planner;
 }
 
-function applySignalRule(signal: SignalID, rules: ReadonlyMap<string, UpgradeRule>): SignalID {
+function findSignalRule(signal: SignalID, rules: UpgradeRuleLookup): UpgradeRule | undefined {
 	const key = signalLookupKey(signal);
 	if (key === undefined) {
-		return signal;
+		return undefined;
 	}
-	const rule = rules.get(key);
-	if (rule === undefined) {
-		return signal;
-	}
-	const mappedSignal: SignalID = {...signal, type: rule.to.type, name: rule.to.name, quality: targetQuality(rule.to)};
+	return rules.exact.get(key) ?? rules.preserving.get(qualityAgnosticSignalKey(signal));
+}
+
+function mappedSignal(signal: SignalID, rule: UpgradeRule, type: SignalID['type'] = rule.to.type): SignalID {
+	const mappedSignal: SignalID = {...signal, type, name: rule.to.name, quality: targetQuality(signal, rule)};
 	if (mappedSignal.type === undefined) {
 		delete mappedSignal.type;
 	}
@@ -179,10 +179,27 @@ function applySignalRule(signal: SignalID, rules: ReadonlyMap<string, UpgradeRul
 	return mappedSignal;
 }
 
-function applyItemRules(
-	items: ItemStack[] | undefined,
-	rules: ReadonlyMap<string, UpgradeRule>,
-): ItemStack[] | undefined {
+function applySignalRule(signal: SignalID, rules: UpgradeRuleLookup): SignalID {
+	const rule = findSignalRule(signal, rules);
+	if (rule === undefined) {
+		return signal;
+	}
+	return mappedSignal(signal, rule);
+}
+
+function applyIconRule(signal: SignalID, rules: UpgradeRuleLookup): SignalID {
+	const directRule = findSignalRule(signal, rules);
+	if (directRule !== undefined) {
+		return mappedSignal(signal, directRule);
+	}
+	if ((signal.type ?? 'item') !== 'item') {
+		return signal;
+	}
+	const entityRule = findSignalRule({...signal, type: 'entity'}, rules);
+	return entityRule === undefined ? signal : mappedSignal(signal, entityRule, signal.type);
+}
+
+function applyItemRules(items: ItemStack[] | undefined, rules: UpgradeRuleLookup): ItemStack[] | undefined {
 	return items?.map((item) => {
 		const mappedItem = applySignalRule({type: 'item', ...item.id}, rules);
 		const id = {name: mappedItem.name, quality: mappedItem.quality};
@@ -193,7 +210,7 @@ function applyItemRules(
 	});
 }
 
-function applyRulesToBlueprint(blueprint: Blueprint, rules: ReadonlyMap<string, UpgradeRule>): Blueprint {
+function applyRulesToBlueprint(blueprint: Blueprint, rules: UpgradeRuleLookup): Blueprint {
 	const entities = blueprint.entities?.map((entity) => {
 		const mappedEntity = applySignalRule({type: 'entity', name: entity.name, quality: entity.quality}, rules);
 		const result = {
@@ -210,7 +227,7 @@ function applyRulesToBlueprint(blueprint: Blueprint, rules: ReadonlyMap<string, 
 		}
 		return result;
 	});
-	const icons = blueprint.icons?.map((icon) => ({...icon, signal: applySignalRule(icon.signal, rules)}));
+	const icons = blueprint.icons?.map((icon) => ({...icon, signal: applyIconRule(icon.signal, rules)}));
 	const result = {...blueprint, entities, icons};
 	if (result.entities === undefined) {
 		delete result.entities;
@@ -221,9 +238,20 @@ function applyRulesToBlueprint(blueprint: Blueprint, rules: ReadonlyMap<string, 
 	return result;
 }
 
+function createRuleLookup(rules: readonly UpgradeRule[]): UpgradeRuleLookup {
+	return {
+		exact: new Map(
+			rules.filter((rule) => !rule.preserveQuality).map((rule) => [requiredSignalKey(rule.from), rule]),
+		),
+		preserving: new Map(
+			rules.filter((rule) => rule.preserveQuality).map((rule) => [qualityAgnosticSignalKey(rule.from), rule]),
+		),
+	};
+}
+
 export function applyUpgradeRules(root: BlueprintString, rules: readonly UpgradeRule[]): BlueprintString {
 	const validatedRules = validateRules(rules);
-	const ruleLookup = new Map(validatedRules.map((rule) => [requiredSignalKey(rule.from), rule]));
+	const ruleLookup = createRuleLookup(validatedRules);
 	return mapBlueprints(root, (blueprint) => applyRulesToBlueprint(blueprint, ruleLookup));
 }
 
@@ -233,24 +261,27 @@ function itemCount(item: ItemStack): number {
 
 export function analyzeUpgradeRules(root: BlueprintString, rules: readonly UpgradeRule[]): UpgradeCandidate[] {
 	const validatedRules = validateRules(rules);
-	const counts = new Map(validatedRules.map((rule) => [requiredSignalKey(rule.from), 0]));
+	const ruleLookup = createRuleLookup(validatedRules);
+	const counts = new Map(validatedRules.map((rule) => [upgradeRuleKey(rule), 0]));
+	const addCount = (signal: SignalID, count: number) => {
+		const rule = findSignalRule(signal, ruleLookup);
+		if (rule === undefined) {
+			return;
+		}
+		const key = upgradeRuleKey(rule);
+		counts.set(key, (counts.get(key) ?? 0) + count);
+	};
 	mapBlueprints(root, (blueprint) => {
 		for (const entity of blueprint.entities ?? []) {
-			const entityKey = requiredSignalKey({type: 'entity', name: entity.name, quality: entity.quality});
-			if (counts.has(entityKey)) {
-				counts.set(entityKey, (counts.get(entityKey) ?? 0) + 1);
-			}
+			addCount({type: 'entity', name: entity.name, quality: entity.quality}, 1);
 			for (const item of entity.items ?? []) {
-				const itemKey = requiredSignalKey({type: 'item', ...item.id});
-				if (counts.has(itemKey)) {
-					counts.set(itemKey, (counts.get(itemKey) ?? 0) + itemCount(item));
-				}
+				addCount({type: 'item', ...item.id}, itemCount(item));
 			}
 		}
 		return blueprint;
 	});
 	return validatedRules.flatMap((rule) => {
-		const count = counts.get(requiredSignalKey(rule.from)) ?? 0;
+		const count = counts.get(upgradeRuleKey(rule)) ?? 0;
 		return count === 0 ? [] : [{...rule, count}];
 	});
 }

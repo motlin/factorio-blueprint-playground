@@ -1,0 +1,61 @@
+{
+	"factorioDataVersion": "2.0.77",
+	"nextUpgrades": [
+		{
+			"from": "assembling-machine-1",
+			"to": "assembling-machine-2"
+		},
+		{
+			"from": "assembling-machine-2",
+			"to": "assembling-machine-3"
+		},
+		{
+			"from": "inserter",
+			"to": "fast-inserter"
+		},
+		{
+			"from": "fast-inserter",
+			"to": "bulk-inserter"
+		},
+		{
+			"from": "splitter",
+			"to": "fast-splitter"
+		},
+		{
+			"from": "fast-splitter",
+			"to": "express-splitter"
+		},
+		{
+			"from": "express-splitter",
+			"to": "turbo-splitter"
+		},
+		{
+			"from": "stone-furnace",
+			"to": "steel-furnace"
+		},
+		{
+			"from": "transport-belt",
+			"to": "fast-transport-belt"
+		},
+		{
+			"from": "fast-transport-belt",
+			"to": "express-transport-belt"
+		},
+		{
+			"from": "express-transport-belt",
+			"to": "turbo-transport-belt"
+		},
+		{
+			"from": "underground-belt",
+			"to": "fast-underground-belt"
+		},
+		{
+			"from": "fast-underground-belt",
+			"to": "express-underground-belt"
+		},
+		{
+			"from": "express-underground-belt",
+			"to": "turbo-underground-belt"
+		}
+	]
+}

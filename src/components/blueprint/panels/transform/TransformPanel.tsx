@@ -6,6 +6,7 @@ import {serializeBlueprint} from '../../../../parsing/blueprintParser';
 import type {BlueprintString} from '../../../../parsing/types';
 import {updateNestedBlueprint} from '../../../../transform/applyAtPath';
 import {flattenBook, sortBookByLabel} from '../../../../transform/bookOps';
+import {analyzeMetadataSubstitution, applyMetadataSubstitution} from '../../../../transform/metadataSubstitution';
 import {stripQuality, stripTiles, stripTrains, stripWires} from '../../../../transform/strip';
 import {
 	analyzeUpgradeRules,
@@ -38,9 +39,6 @@ function resolveRules(source: string, plannerInput: string, planners: UpgradePla
 	try {
 		if (source === 'suggested-upgrade') {
 			return {error: undefined, rules: builtInUpgradeRules('upgrade')};
-		}
-		if (source === 'suggested-upgrade-space-age') {
-			return {error: undefined, rules: builtInUpgradeRules('upgrade', true)};
 		}
 		if (source === 'suggested-downgrade') {
 			return {error: undefined, rules: builtInUpgradeRules('downgrade')};
@@ -85,6 +83,9 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 		blueprint?.upgrade_planner === undefined ? 'selection' : 'root',
 	);
 	const [excludedRules, setExcludedRules] = useState<Set<string>>(() => new Set());
+	const [metadataFind, setMetadataFind] = useState('');
+	const [metadataReplace, setMetadataReplace] = useState('');
+	const [metadataMatchCase, setMetadataMatchCase] = useState(false);
 
 	useEffect(() => {
 		setResult(undefined);
@@ -102,7 +103,13 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 	const resolvedRules = resolveRules(upgradeSource, plannerInput, planners);
 	const candidates = upgradeTarget === undefined ? [] : analyzeUpgradeRules(upgradeTarget, resolvedRules.rules);
 	const selectedCandidates = candidates.filter((candidate) => !excludedRules.has(upgradeRuleKey(candidate)));
-	const replacementCount = selectedCandidates.reduce((total, candidate) => total + candidate.count, 0);
+	const upgradeReplacementCount = selectedCandidates.reduce((total, candidate) => total + candidate.count, 0);
+	const metadataSubstitution = {find: metadataFind, replace: metadataReplace, matchCase: metadataMatchCase};
+	const metadataReplacementCount =
+		upgradeTarget === undefined || metadataFind === ''
+			? 0
+			: analyzeMetadataSubstitution(upgradeTarget, metadataSubstitution);
+	const replacementCount = upgradeReplacementCount + metadataReplacementCount;
 	const canChooseRootScope = rootBlueprint?.blueprint_book !== undefined && selectedPath !== '';
 	const emptyMessage =
 		type === 'upgrade-planner' && rootBlueprint?.blueprint_book === undefined
@@ -121,15 +128,19 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 		setResult(transformed);
 	};
 	const applyUpgrades = () => {
-		const rules = selectedCandidates.map(({from, to}) => ({from, to}));
+		const rules = selectedCandidates.map(({from, preserveQuality, to}) => ({from, preserveQuality, to}));
+		const transform = (target: BlueprintString) => {
+			const substituted = metadataFind === '' ? target : applyMetadataSubstitution(target, metadataSubstitution);
+			return applyUpgradeRules(substituted, rules);
+		};
 		if (upgradeScope === 'root') {
 			if (rootBlueprint === undefined) {
 				throw new Error('Cannot apply an upgrade planner without a root blueprint');
 			}
-			setResult(applyUpgradeRules(rootBlueprint, rules));
+			setResult(transform(rootBlueprint));
 			return;
 		}
-		applyToSelection((selected) => applyUpgradeRules(selected, rules));
+		applyToSelection(transform);
 	};
 	const applyStrips = () => {
 		applyToSelection((selected) => {
@@ -171,8 +182,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 								setExcludedRules(new Set());
 							}}
 						>
-							<option value="suggested-upgrade">Suggested upgrades — base game</option>
-							<option value="suggested-upgrade-space-age">Suggested upgrades — include Space Age</option>
+							<option value="suggested-upgrade">Suggested upgrades</option>
 							<option value="suggested-downgrade">Suggested downgrades</option>
 							{planners.map((planner) => (
 								<option key={planner.path} value={`book:${planner.path}`}>
@@ -252,6 +262,46 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 									</label>
 								);
 							})
+						)}
+					</div>
+
+					<div className="upgrade-workflow__metadata">
+						<strong>Titles, descriptions, and icons</strong>
+						<div className="upgrade-workflow__metadata-fields">
+							<label htmlFor="metadata-find">Find</label>
+							<input
+								id="metadata-find"
+								type="text"
+								value={metadataFind}
+								onChange={(event) => {
+									setMetadataFind(event.currentTarget.value);
+								}}
+							/>
+							<label htmlFor="metadata-replace">Replace with</label>
+							<input
+								id="metadata-replace"
+								type="text"
+								value={metadataReplace}
+								onChange={(event) => {
+									setMetadataReplace(event.currentTarget.value);
+								}}
+							/>
+						</div>
+						<label className="upgrade-workflow__metadata-case">
+							<input
+								type="checkbox"
+								checked={metadataMatchCase}
+								onChange={(event) => {
+									setMetadataMatchCase(event.currentTarget.checked);
+								}}
+							/>{' '}
+							Match case
+						</label>
+						{metadataFind === '' ? null : (
+							<span className="upgrade-workflow__metadata-count">
+								{metadataReplacementCount} metadata{' '}
+								{metadataReplacementCount === 1 ? 'match' : 'matches'}
+							</span>
 						)}
 					</div>
 

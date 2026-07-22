@@ -53,8 +53,7 @@ describe('TransformPanel', () => {
 		}).toStrictEqual({
 			buttons: ['Apply 1 replacement', 'Apply Strips'],
 			mappingChecked: true,
-			sources:
-				'Suggested upgrades — base gameSuggested upgrades — include Space AgeSuggested downgradesPasted upgrade planner',
+			sources: 'Suggested upgradesSuggested downgradesPasted upgrade planner',
 		});
 
 		rerender(<TransformPanel blueprint={{blueprint_book: {item: 'blueprint-book', version: 0, blueprints: []}}} />);
@@ -191,6 +190,93 @@ describe('TransformPanel', () => {
 								},
 							},
 							{index: 20, blueprint: {item: 'blueprint', label: 'Charlie', version: 20}},
+						],
+					},
+				}),
+				selection: '1',
+			},
+		});
+	});
+
+	test('combines an upgrade with case-preserving metadata substitutions across the root book', async () => {
+		const user = userEvent.setup();
+		const rootBlueprint: BlueprintString = {
+			blueprint_book: {
+				item: 'blueprint-book',
+				label: "Alice's Red belt book",
+				version: 0,
+				blueprints: [
+					{
+						index: 100,
+						blueprint: {
+							item: 'blueprint',
+							label: 'Red balancer',
+							description: 'Uses red belts',
+							version: 0,
+							icons: [{index: 1, signal: {type: 'virtual', name: 'signal-red'}}],
+							entities: [{entity_number: 100, name: 'fast-transport-belt', position: {x: 0, y: 0}}],
+						},
+					},
+					{
+						index: 200,
+						blueprint: {
+							item: 'blueprint',
+							version: 0,
+							icons: [{index: 1, signal: {type: 'virtual', name: 'signal-red'}}],
+						},
+					},
+				],
+			},
+		};
+		const selectedBlueprint = rootBlueprint.blueprint_book?.blueprints[0];
+		render(<TransformPanel blueprint={selectedBlueprint} rootBlueprint={rootBlueprint} selectedPath="1" />);
+
+		await user.selectOptions(screen.getByRole('combobox', {name: 'Apply to'}), 'root');
+		await user.type(screen.getByRole('textbox', {name: 'Find'}), 'red');
+		await user.type(screen.getByRole('textbox', {name: 'Replace with'}), 'blue');
+
+		expect({
+			button: screen.getByRole('button', {name: 'Apply 6 replacements'}).textContent,
+			metadataCount: screen.getByText('5 metadata matches').textContent,
+		}).toStrictEqual({button: 'Apply 6 replacements', metadataCount: '5 metadata matches'});
+
+		await user.click(screen.getByRole('button', {name: 'Apply 6 replacements'}));
+		await user.click(screen.getByRole('button', {name: 'Open in Playground'}));
+
+		expect(navigate).toHaveBeenCalledExactlyOnceWith({
+			to: '/',
+			search: {
+				pasted: serializeBlueprint({
+					blueprint_book: {
+						item: 'blueprint-book',
+						label: "Alice's Blue belt book",
+						version: 0,
+						blueprints: [
+							{
+								index: 100,
+								blueprint: {
+									item: 'blueprint',
+									label: 'Blue balancer',
+									description: 'Uses blue belts',
+									version: 0,
+									icons: [{index: 1, signal: {type: 'virtual', name: 'signal-blue'}}],
+									entities: [
+										{
+											entity_number: 100,
+											name: 'express-transport-belt',
+											position: {x: 0, y: 0},
+										},
+									],
+								},
+							},
+							{
+								index: 200,
+								blueprint: {
+									item: 'blueprint',
+									version: 0,
+									icons: [{index: 1, signal: {type: 'virtual', name: 'signal-blue'}}],
+								},
+							},
 						],
 					},
 				}),
