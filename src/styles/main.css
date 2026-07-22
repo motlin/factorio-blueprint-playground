@@ -741,7 +741,8 @@ body {
 }
 
 .upgrade-planner-editor__mapping,
-.icon-replacement-editor__mapping {
+.icon-replacement-editor__mapping,
+.icon-replacement-editor__add {
 	display: grid;
 	grid-template-columns: auto 48px 28px 48px minmax(36px, auto);
 	align-items: center;
@@ -755,12 +756,14 @@ body {
 		inset 0 -1px 1px #171717;
 }
 
-.icon-replacement-editor__mapping {
+.icon-replacement-editor__mapping,
+.icon-replacement-editor__add {
 	grid-template-columns: 48px 28px 48px minmax(36px, auto) 28px;
 }
 
 .upgrade-planner-editor__mapping > strong,
-.icon-replacement-editor__mapping > strong {
+.icon-replacement-editor__mapping > strong,
+.icon-replacement-editor__add > strong {
 	padding: 3px 6px;
 	background: #292829;
 	box-shadow: inset 0 1px 1px #111;
@@ -818,17 +821,8 @@ body {
 }
 
 .icon-replacement-editor__add {
-	display: flex;
-	align-items: center;
-	gap: 16px;
 	margin-top: 3px;
 	padding: 10px 12px;
-}
-
-.icon-replacement-editor__add > div {
-	display: flex;
-	align-items: center;
-	gap: 10px;
 }
 
 .transform-picker__grid {
@@ -850,10 +844,13 @@ body {
 		grid-template-columns: 1fr;
 	}
 
-	.transform-workflow__summary,
-	.icon-replacement-editor__add {
+	.transform-workflow__summary {
 		align-items: stretch;
 		flex-direction: column;
+	}
+
+	.icon-replacement-editor__add {
+		align-items: stretch;
 	}
 
 	.transform-workflow__checks {

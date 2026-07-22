@@ -358,9 +358,12 @@ function IconReplacementDialog({candidates, onChange, onClose, replacements}: Ic
 		(candidate) =>
 			!replacements.some((replacement) => signalIdentity(replacement.from) === signalIdentity(candidate.signal)),
 	);
-	const [draftFrom, setDraftFrom] = useState<SignalID | undefined>(() => availableCandidates[0]?.signal);
+	const [draftFrom, setDraftFrom] = useState<SignalID>();
 	const [choosingSource, setChoosingSource] = useState(false);
 	const [choosingTarget, setChoosingTarget] = useState(false);
+	const draftCount = candidates.find(
+		(candidate) => draftFrom !== undefined && signalIdentity(candidate.signal) === signalIdentity(draftFrom),
+	)?.count;
 	const targetOptions =
 		draftFrom === undefined
 			? []
@@ -422,26 +425,39 @@ function IconReplacementDialog({candidates, onChange, onClose, replacements}: Ic
 						))}
 					</div>
 					<div className="panel-hole-inner icon-replacement-editor__add">
-						<div>
-							<SignalSlot
-								label="Choose source icon"
-								signal={draftFrom}
+						<SignalSlot
+							label="Choose source icon"
+							signal={draftFrom}
+							onClick={() => {
+								setChoosingSource(true);
+							}}
+						/>
+						<span aria-hidden="true">→</span>
+						<SignalSlot
+							label="Choose target icon"
+							onClick={
+								draftFrom === undefined
+									? undefined
+									: () => {
+											setChoosingTarget(true);
+										}
+							}
+						/>
+						<strong>{draftCount ?? 0}</strong>
+						{draftFrom === undefined ? (
+							<span aria-hidden="true" />
+						) : (
+							<button
+								type="button"
+								className="icon-replacement-editor__remove"
+								aria-label={`Clear source ${signalName(draftFrom)}`}
 								onClick={() => {
-									setChoosingSource(true);
+									setDraftFrom(undefined);
 								}}
-							/>
-							<span aria-hidden="true">→</span>
-							<SignalSlot
-								label="Choose target icon"
-								onClick={
-									draftFrom === undefined
-										? undefined
-										: () => {
-												setChoosingTarget(true);
-											}
-								}
-							/>
-						</div>
+							>
+								×
+							</button>
+						)}
 					</div>
 				</div>
 				<div className="transform-dialog__actions">
@@ -507,12 +523,9 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 	const [excludedSources, setExcludedSources] = useState<Set<string>>(() => new Set());
 	const [targetOverrides, setTargetOverrides] = useState<Map<string, SignalID>>(() => new Map());
 	const [iconReplacements, setIconReplacements] = useState<IconReplacement[]>([]);
-	const [upgradeEnabled, setUpgradeEnabled] = useState(true);
-	const [iconReplacementEnabled, setIconReplacementEnabled] = useState(true);
 	const [textReplacementEnabled, setTextReplacementEnabled] = useState(true);
 	const [metadataFind, setMetadataFind] = useState('');
 	const [metadataReplace, setMetadataReplace] = useState('');
-	const [metadataMatchCase, setMetadataMatchCase] = useState(false);
 
 	useEffect(() => {
 		setResult(undefined);
@@ -542,8 +555,8 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 	);
 	const upgradeReplacementCount = selectedCandidates.reduce((total, candidate) => total + candidate.count, 0);
 	const metadataSubstitution = useMemo(
-		() => ({find: metadataFind, replace: metadataReplace, matchCase: metadataMatchCase}),
-		[metadataFind, metadataReplace, metadataMatchCase],
+		() => ({find: metadataFind, replace: metadataReplace, matchCase: false}),
+		[metadataFind, metadataReplace],
 	);
 	const metadataReplacementCount = useMemo(
 		() =>
@@ -566,8 +579,8 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 	if (blueprint === undefined || type === 'deconstruction-planner') {
 		return null;
 	}
-	const activeUpgradeCount = upgradeEnabled ? upgradeReplacementCount : 0;
-	const activeIconCount = iconReplacementEnabled ? iconReplacementCount : 0;
+	const activeUpgradeCount = upgradeReplacementCount;
+	const activeIconCount = iconReplacementCount;
 	const activeTextCount = textReplacementEnabled ? metadataReplacementCount : 0;
 	const replacementCount = activeUpgradeCount + activeIconCount + activeTextCount;
 	const canChooseRootScope = rootBlueprint?.blueprint_book !== undefined && selectedPath !== '';
@@ -591,8 +604,8 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 		const rules = selectedCandidates.map(({from, preserveQuality, to}) => ({from, preserveQuality, to}));
 		const transform = (target: BlueprintString) => {
 			let transformed = target;
-			if (upgradeEnabled && rules.length > 0) transformed = applyUpgradeRules(transformed, rules);
-			if (iconReplacementEnabled && iconReplacements.length > 0) {
+			if (rules.length > 0) transformed = applyUpgradeRules(transformed, rules);
+			if (iconReplacements.length > 0) {
 				transformed = applyIconReplacements(transformed, iconReplacements);
 			}
 			if (textReplacementEnabled && metadataFind !== '') {
@@ -704,35 +717,20 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 					<fieldset className="transform-workflow__filters">
 						<legend>Change in</legend>
 						<label>
-							<input
-								type="checkbox"
-								checked={upgradeEnabled}
-								disabled={upgradeReplacementCount === 0}
-								onChange={(event) => {
-									setUpgradeEnabled(event.currentTarget.checked);
-								}}
-							/>{' '}
-							Entities <strong>{upgradeReplacementCount}</strong>
+							<input type="checkbox" checked disabled readOnly /> Entities{' '}
+							<strong>{upgradeReplacementCount}</strong>
 						</label>
 						<label>
-							<input type="checkbox" checked={false} disabled readOnly /> Tiles <strong>0</strong>
+							<input type="checkbox" checked disabled readOnly /> Tiles <strong>0</strong>
 						</label>
 						<label>
-							<input
-								type="checkbox"
-								checked={iconReplacementEnabled}
-								disabled={iconReplacementCount === 0}
-								onChange={(event) => {
-									setIconReplacementEnabled(event.currentTarget.checked);
-								}}
-							/>{' '}
-							Icons <strong>{iconReplacementCount}</strong>
+							<input type="checkbox" checked disabled readOnly /> Icons{' '}
+							<strong>{iconReplacementCount}</strong>
 						</label>
 						<label>
 							<input
 								type="checkbox"
 								checked={textReplacementEnabled}
-								disabled={metadataReplacementCount === 0}
 								onChange={(event) => {
 									setTextReplacementEnabled(event.currentTarget.checked);
 								}}
@@ -764,16 +762,6 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 								}}
 							/>
 						</div>
-						<label>
-							<input
-								type="checkbox"
-								checked={!metadataMatchCase}
-								onChange={(event) => {
-									setMetadataMatchCase(!event.currentTarget.checked);
-								}}
-							/>{' '}
-							Preserve capitalization
-						</label>
 					</div>
 
 					{type === 'upgrade-planner' ? null : (
@@ -862,7 +850,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 							</span>
 						</div>
 						<ButtonGreen
-							disabled={!hasPendingChanges || (upgradeEnabled && resolvedRules.error !== undefined)}
+							disabled={!hasPendingChanges || resolvedRules.error !== undefined}
 							onClick={(event) => {
 								event.preventDefault();
 								applyChanges();
