@@ -429,7 +429,111 @@ body {
 	color: #d8d4d0;
 }
 
+.upgrade-workflow {
+	padding: 3px;
+}
+
+.upgrade-workflow__controls {
+	display: grid;
+	grid-template-columns: minmax(110px, auto) minmax(180px, 1fr);
+	align-items: center;
+	gap: 8px 12px;
+	padding: 10px 12px;
+}
+
+.upgrade-workflow__controls label {
+	color: #ffe6c0;
+	font-weight: bold;
+}
+
+.upgrade-workflow__controls select,
+.upgrade-workflow__planner-input textarea {
+	border: 1px solid #171717;
+	background: #282728;
+	box-shadow:
+		inset 0 2px 3px #111,
+		0 1px 0 #686868;
+	color: #f1efed;
+}
+
+.upgrade-workflow__controls select {
+	min-width: 0;
+	padding: 7px 8px;
+}
+
+.upgrade-workflow__planner-input {
+	padding: 3px 0 0;
+}
+
+.upgrade-workflow__planner-input textarea {
+	box-sizing: border-box;
+	margin: 0;
+	padding: 9px 10px;
+	resize: vertical;
+}
+
+.upgrade-workflow__error {
+	max-width: none;
+	margin: 4px 0 0;
+}
+
+.upgrade-workflow__mappings {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	margin-top: 3px;
+}
+
+.upgrade-workflow__mapping {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr) auto;
+	align-items: center;
+	gap: 9px;
+	min-height: 40px;
+	padding: 7px 10px;
+	background: #3e3d3e;
+	box-shadow:
+		inset 0 1px 1px #777,
+		inset 0 -1px 1px #171717,
+		0 1px 2px #171717;
+}
+
+.upgrade-workflow__mapping code {
+	overflow: hidden;
+	color: #f1efed;
+	font-family: inherit;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.upgrade-workflow__mapping strong {
+	min-width: 28px;
+	padding: 3px 6px;
+	background: #292829;
+	box-shadow:
+		inset 0 1px 0 #555,
+		0 1px 1px #111;
+	color: #d8d4d0;
+	font-size: 82%;
+	text-align: center;
+}
+
+.upgrade-workflow__empty {
+	margin: 0;
+	padding: 12px;
+	background: #313031;
+	color: #b7b2ad;
+}
+
+.upgrade-workflow__apply {
+	padding: 12px 4px 7px;
+}
+
 @media (max-width: 620px) {
+	.upgrade-workflow__controls {
+		grid-template-columns: 1fr;
+	}
+
 	.mod-detection__source-summary {
 		align-items: flex-start;
 		flex-wrap: wrap;

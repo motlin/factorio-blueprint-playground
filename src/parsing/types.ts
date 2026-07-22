@@ -283,7 +283,7 @@ export interface DeconstructionPlanner extends CommonFields {
 	settings: DeconstructionSettings;
 }
 
-interface UpgradeMapping {
+export interface UpgradeMapping {
 	from?: SignalID;
 	to?: SignalID;
 	index: number;
