@@ -3,8 +3,10 @@ import {describe, expect, test} from 'vite-plus/test';
 import {deserializeBlueprint, serializeBlueprint} from '../../src/parsing/blueprintParser';
 import type {Blueprint, BlueprintString} from '../../src/parsing/types';
 import {
+	blueprintFilterCategories,
 	stripEntities,
 	stripModules,
+	stripNonTrainEntities,
 	stripQuality,
 	stripTiles,
 	stripTrains,
@@ -82,6 +84,35 @@ describe('strip transforms', () => {
 						},
 					],
 					wires: [[10, 1, 10, 2]],
+				},
+			},
+		});
+	});
+
+	test('valid: categorizes trains separately and removes only ordinary entities', () => {
+		const input: BlueprintString = {
+			blueprint: {
+				item: 'blueprint',
+				version: 0,
+				entities: [
+					{entity_number: 1, name: 'locomotive', position: {x: 0, y: 0}},
+					{entity_number: 10, name: 'train-stop', position: {x: 1, y: 0}},
+				],
+				tiles: [{name: 'landfill', position: {x: 0, y: 0}}],
+			},
+		};
+
+		expect({
+			categories: blueprintFilterCategories(input),
+			withoutEntities: stripNonTrainEntities(input),
+		}).toStrictEqual({
+			categories: {entities: true, modules: false, tiles: true, trains: true},
+			withoutEntities: {
+				blueprint: {
+					item: 'blueprint',
+					version: 0,
+					entities: [{entity_number: 1, name: 'locomotive', position: {x: 0, y: 0}}],
+					tiles: [{name: 'landfill', position: {x: 0, y: 0}}],
 				},
 			},
 		});

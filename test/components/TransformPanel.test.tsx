@@ -114,15 +114,36 @@ describe('TransformPanel', () => {
 	});
 
 	test('keeps blueprint editing in its own popup', () => {
-		render(<TransformPanel blueprint={blueprint} />);
+		const filterBlueprint: BlueprintString = {
+			blueprint: {
+				item: 'blueprint',
+				version: 0,
+				entities: [
+					{
+						entity_number: 1,
+						name: 'assembling-machine-1',
+						position: {x: 0, y: 0},
+						items: [
+							{
+								id: {name: 'speed-module'},
+								items: {in_inventory: [{inventory: 1, stack: 0, count: 1}]},
+							},
+						],
+					},
+					{entity_number: 2, name: 'locomotive', position: {x: 1, y: 0}},
+				],
+				tiles: [{name: 'landfill', position: {x: 0, y: 0}}],
+			},
+		};
+		render(<TransformPanel blueprint={filterBlueprint} />);
 
 		openBlueprintEditor();
 		expect({
 			bookWideReplacements: screen.queryByRole('heading', {name: 'Book-wide replacements'}),
-			cleanup: screen.getByRole('heading', {name: 'Cleanup'}).textContent,
+			cleanup: screen.queryByRole('heading', {name: 'Cleanup'}),
 			description: screen.getByRole('textbox', {name: 'Blueprint description'}).textContent,
 			dialog: screen.getByRole('dialog', {name: 'Blueprint Editor'}).getAttribute('aria-modal'),
-			filters: ['Modules', 'Entities', 'Tiles'].map(
+			filters: ['Modules', 'Entities', 'Trains', 'Tiles'].map(
 				(name) => screen.getByRole<HTMLInputElement>('checkbox', {name}).checked,
 			),
 			iconSlots: [1, 2, 3, 4].map((index) =>
@@ -132,10 +153,10 @@ describe('TransformPanel', () => {
 			plannerMappings: screen.queryByRole('group', {name: 'Planner operation'}),
 		}).toStrictEqual({
 			bookWideReplacements: null,
-			cleanup: 'Cleanup',
+			cleanup: null,
 			description: '',
 			dialog: 'true',
-			filters: [true, true, true],
+			filters: [true, true, true, true],
 			iconSlots: ['Choose icon 1', 'Choose icon 2', 'Choose icon 3', 'Choose icon 4'],
 			name: '',
 			plannerMappings: null,
@@ -469,6 +490,34 @@ describe('TransformPanel', () => {
 		});
 	});
 
+	test('dismisses icon pickers with Escape or Q without stealing Q from search', async () => {
+		const user = userEvent.setup();
+		render(<TransformPanel blueprint={blueprint} />);
+
+		openBlueprintEditor();
+		await user.click(screen.getByRole('button', {name: 'Choose icon 1'}));
+		const search = screen.getByRole<HTMLInputElement>('searchbox', {name: 'Search'});
+		await user.type(search, 'q');
+		expect({
+			blueprintEditor: screen.getByRole('dialog', {name: 'Blueprint Editor'}).getAttribute('aria-modal'),
+			picker: screen.getByRole('dialog', {name: 'Choose label icon 1'}).getAttribute('aria-modal'),
+			search: search.value,
+		}).toStrictEqual({blueprintEditor: 'true', picker: 'true', search: 'q'});
+
+		fireEvent.keyDown(search, {key: 'Escape', code: 'Escape'});
+		expect({
+			blueprintEditor: screen.getByRole('dialog', {name: 'Blueprint Editor'}).getAttribute('aria-modal'),
+			picker: screen.queryByRole('dialog', {name: 'Choose label icon 1'}),
+		}).toStrictEqual({blueprintEditor: 'true', picker: null});
+
+		await user.click(screen.getByRole('button', {name: 'Choose icon 1'}));
+		fireEvent.keyDown(window, {key: 'q', code: 'KeyQ'});
+		expect({
+			blueprintEditor: screen.getByRole('dialog', {name: 'Blueprint Editor'}).getAttribute('aria-modal'),
+			picker: screen.queryByRole('dialog', {name: 'Choose label icon 1'}),
+		}).toStrictEqual({blueprintEditor: 'true', picker: null});
+	});
+
 	test('applies a transformation within the selected book path', async () => {
 		const user = userEvent.setup();
 		const rootBlueprint: BlueprintString = {
@@ -779,7 +828,7 @@ describe('TransformPanel', () => {
 		});
 	});
 
-	test('applies selected cleanup transforms to the live result', async () => {
+	test('applies selected train and tile filters to the live result', async () => {
 		const user = userEvent.setup();
 		const stripBlueprint: BlueprintString = {
 			blueprint: {
@@ -795,7 +844,7 @@ describe('TransformPanel', () => {
 		render(<TransformPanel blueprint={stripBlueprint} />);
 
 		openBlueprintEditor();
-		await user.click(screen.getByRole('checkbox', {name: 'Strip trains'}));
+		await user.click(screen.getByRole('checkbox', {name: 'Trains'}));
 		await user.click(screen.getByRole('checkbox', {name: 'Tiles'}));
 		await user.click(screen.getByRole('button', {name: 'Open in Playground'}));
 
@@ -803,6 +852,39 @@ describe('TransformPanel', () => {
 			to: '/',
 			search: {
 				pasted: serializeBlueprint(stripTiles(stripTrains(stripBlueprint))),
+				selection: '',
+			},
+		});
+	});
+
+	test('keeps trains when ordinary entities are excluded', async () => {
+		const user = userEvent.setup();
+		const mixedBlueprint: BlueprintString = {
+			blueprint: {
+				item: 'blueprint',
+				version: 0,
+				entities: [
+					{entity_number: 1, name: 'locomotive', position: {x: 0, y: 0}},
+					{entity_number: 10, name: 'train-stop', position: {x: 1, y: 0}},
+				],
+			},
+		};
+		render(<TransformPanel blueprint={mixedBlueprint} />);
+
+		openBlueprintEditor();
+		await user.click(screen.getByRole('checkbox', {name: 'Entities'}));
+		await user.click(screen.getByRole('button', {name: 'Open in Playground'}));
+
+		expect(navigate).toHaveBeenCalledExactlyOnceWith({
+			to: '/',
+			search: {
+				pasted: serializeBlueprint({
+					blueprint: {
+						item: 'blueprint',
+						version: 0,
+						entities: [{entity_number: 1, name: 'locomotive', position: {x: 0, y: 0}}],
+					},
+				}),
 				selection: '',
 			},
 		});
