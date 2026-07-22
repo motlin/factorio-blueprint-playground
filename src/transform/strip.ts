@@ -49,6 +49,26 @@ export function stripQuality(root: BlueprintString): BlueprintString {
 	}));
 }
 
+export function stripEntities(root: BlueprintString): BlueprintString {
+	return mapBlueprints(root, (blueprint) => removeEntities(blueprint, () => true));
+}
+
+export function stripModules(root: BlueprintString): BlueprintString {
+	return mapBlueprints(root, (blueprint) => {
+		if (blueprint.entities === undefined) {
+			return blueprint;
+		}
+		return {
+			...blueprint,
+			entities: blueprint.entities.map((entity) => {
+				const result = {...entity};
+				delete result.items;
+				return result;
+			}),
+		};
+	});
+}
+
 export function stripWires(root: BlueprintString): BlueprintString {
 	return mapBlueprints(root, (blueprint) => {
 		const result = {...blueprint};

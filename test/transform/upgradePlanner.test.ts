@@ -170,7 +170,7 @@ describe('upgrade planner transforms', () => {
 			candidates: [
 				{
 					from: {type: 'item', name: 'speed-module'},
-					preserveQuality: false,
+					preserveQuality: true,
 					to: {type: 'item', name: 'speed-module-2'},
 					count: 2,
 				},
@@ -208,7 +208,7 @@ describe('upgrade planner transforms', () => {
 		expect(rulesFromUpgradePlanner(configuredPlanner, 'downgrade')).toStrictEqual([
 			{
 				from: {type: 'item', name: 'speed-module-2'},
-				preserveQuality: false,
+				preserveQuality: true,
 				to: {type: 'item', name: 'speed-module'},
 			},
 			{
@@ -217,6 +217,54 @@ describe('upgrade planner transforms', () => {
 				to: {type: 'entity', name: 'assembling-machine-1', quality: 'rare'},
 			},
 		]);
+	});
+
+	test('applies Factorio quality comparison conditions from planner sources', () => {
+		const input: BlueprintString = {
+			blueprint: {
+				item: 'blueprint',
+				version: 0,
+				entities: [
+					{entity_number: 1, name: 'transport-belt', quality: 'uncommon', position: {x: 0, y: 0}},
+					{entity_number: 2, name: 'transport-belt', quality: 'rare', position: {x: 1, y: 0}},
+					{entity_number: 3, name: 'transport-belt', quality: 'epic', position: {x: 2, y: 0}},
+					{entity_number: 4, name: 'transport-belt', quality: 'legendary', position: {x: 3, y: 0}},
+				],
+			},
+		};
+		const rules: UpgradeRule[] = [
+			{
+				from: {type: 'entity', name: 'transport-belt', quality: 'rare', comparator: '>'},
+				preserveQuality: false,
+				to: {type: 'entity', name: 'express-transport-belt', quality: 'legendary'},
+			},
+		];
+
+		expect({candidates: analyzeUpgradeRules(input, rules), result: applyUpgradeRules(input, rules)}).toStrictEqual({
+			candidates: [{...rules[0], count: 2}],
+			result: {
+				blueprint: {
+					item: 'blueprint',
+					version: 0,
+					entities: [
+						{entity_number: 1, name: 'transport-belt', quality: 'uncommon', position: {x: 0, y: 0}},
+						{entity_number: 2, name: 'transport-belt', quality: 'rare', position: {x: 1, y: 0}},
+						{
+							entity_number: 3,
+							name: 'express-transport-belt',
+							quality: 'legendary',
+							position: {x: 2, y: 0},
+						},
+						{
+							entity_number: 4,
+							name: 'express-transport-belt',
+							quality: 'legendary',
+							position: {x: 3, y: 0},
+						},
+					],
+				},
+			},
+		});
 	});
 
 	test('substitutes labels, descriptions, and icon names throughout a book while preserving case', () => {
@@ -397,6 +445,36 @@ describe('upgrade planner transforms', () => {
 			encoded: configuredPlanner,
 			json5: {item: 'upgrade-planner', version: 0, settings: {mappers: []}},
 			blankRules: builtInUpgradeRules('upgrade'),
+		});
+	});
+
+	test('preserves source quality comparators when parsing upgrade planners', () => {
+		const planner: BlueprintString = {
+			upgrade_planner: {
+				item: 'upgrade-planner',
+				version: 0,
+				settings: {
+					mappers: [
+						{
+							index: 1,
+							from: {type: 'entity', name: 'transport-belt', quality: 'rare', comparator: '>'},
+							to: {type: 'entity', name: 'fast-transport-belt'},
+						},
+					],
+				},
+			},
+		};
+		const parsed = parseUpgradePlanner(serializeBlueprint(planner));
+
+		expect({parsed, rules: rulesFromUpgradePlanner(parsed)}).toStrictEqual({
+			parsed: planner.upgrade_planner,
+			rules: [
+				{
+					from: {type: 'entity', name: 'transport-belt', quality: 'rare', comparator: '>'},
+					preserveQuality: true,
+					to: {type: 'entity', name: 'fast-transport-belt'},
+				},
+			],
 		});
 	});
 
