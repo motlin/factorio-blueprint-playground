@@ -25,12 +25,12 @@ import {
 	type MetadataIconCandidate,
 } from '../../../../transform/metadataSubstitution';
 import {
-	stripEntities,
+	blueprintFilterCategories,
 	stripModules,
+	stripNonTrainEntities,
 	stripQuality,
 	stripTiles,
 	stripTrains,
-	stripWires,
 } from '../../../../transform/strip';
 import {
 	analyzeUpgradeRules,
@@ -134,6 +134,15 @@ function signalName(signal: SignalID): string {
 function signalTitle(signal: PickerSignal): string {
 	const quality = signal.quality === undefined ? '' : `\nQuality: ${signal.comparator ?? '='} ${signal.quality}`;
 	return `${signalName(signal)}\n${normalizedSignalType(signal)}:${signal.name}${quality}`;
+}
+
+function isTextEditingTarget(target: EventTarget | null): boolean {
+	return (
+		target instanceof HTMLInputElement ||
+		target instanceof HTMLTextAreaElement ||
+		target instanceof HTMLSelectElement ||
+		(target instanceof HTMLElement && target.isContentEditable)
+	);
 }
 
 function resolveRules(
@@ -248,6 +257,28 @@ function SignalPickerDialog({initialQuality, onChoose, onClose, options, quality
 	const filteredOptions = options.filter((signal) =>
 		normalizedSearch === '' ? true : signalName(signal).toLowerCase().includes(normalizedSearch),
 	);
+	useEffect(() => {
+		const closePicker = (event: KeyboardEvent) => {
+			const escapePressed = event.key === 'Escape';
+			const clearCursorPressed =
+				event.code === 'KeyQ' &&
+				!event.altKey &&
+				!event.ctrlKey &&
+				!event.metaKey &&
+				!event.shiftKey &&
+				!isTextEditingTarget(event.target);
+			if (!escapePressed && !clearCursorPressed) {
+				return;
+			}
+			event.preventDefault();
+			event.stopPropagation();
+			onClose();
+		};
+		window.addEventListener('keydown', closePicker);
+		return () => {
+			window.removeEventListener('keydown', closePicker);
+		};
+	}, [onClose]);
 
 	return (
 		<div className="transform-dialog-backdrop">
@@ -733,7 +764,6 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 	const [stripQualitySelected, setStripQualitySelected] = useState(false);
 	const [stripEntitiesSelected, setStripEntitiesSelected] = useState(false);
 	const [stripModulesSelected, setStripModulesSelected] = useState(false);
-	const [stripWiresSelected, setStripWiresSelected] = useState(false);
 	const [stripTrainsSelected, setStripTrainsSelected] = useState(false);
 	const [stripTilesSelected, setStripTilesSelected] = useState(false);
 	const [flattenBookSelected, setFlattenBookSelected] = useState(false);
@@ -790,13 +820,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 			if (!event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
 				return;
 			}
-			const target = event.target;
-			if (
-				target instanceof HTMLInputElement ||
-				target instanceof HTMLTextAreaElement ||
-				target instanceof HTMLSelectElement ||
-				(target instanceof HTMLElement && target.isContentEditable)
-			) {
+			if (isTextEditingTarget(event.target)) {
 				return;
 			}
 			if (event.code === 'KeyB' && type !== 'upgrade-planner') {
@@ -843,6 +867,12 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 		}
 		return [...options.values()];
 	}, [editorIcons, sourceOptions]);
+	const editorFilters = useMemo(() => blueprintFilterCategories(blueprint ?? {}), [blueprint]);
+	const editorEntityFilterCount = [editorFilters.entities, editorFilters.tiles, editorFilters.trains].filter(
+		Boolean,
+	).length;
+	const showEditorEntityFilters = editorEntityFilterCount > 1;
+	const showEditorFilters = editorFilters.modules || showEditorEntityFilters;
 	const candidates = useMemo(() => {
 		if (transformTarget === undefined) {
 			return [];
@@ -915,9 +945,8 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 					label: editorLabel,
 				});
 			}
-			if (stripWiresSelected) transformed = stripWires(transformed);
 			if (stripTrainsSelected) transformed = stripTrains(transformed);
-			if (stripEntitiesSelected) transformed = stripEntities(transformed);
+			if (stripEntitiesSelected) transformed = stripNonTrainEntities(transformed);
 			if (stripModulesSelected) transformed = stripModules(transformed);
 			if (stripTilesSelected) transformed = stripTiles(transformed);
 			if (flattenBookSelected) transformed = flattenBook(transformed);
@@ -950,7 +979,6 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 		stripModulesSelected,
 		stripTilesSelected,
 		stripTrainsSelected,
-		stripWiresSelected,
 		textReplacementEnabled,
 		upgradeEnabled,
 		upgradeScope,
@@ -963,7 +991,6 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 	const activeTextCount = textReplacementEnabled ? metadataReplacementCount : 0;
 	const plannerReplacementCount = activeUpgradeCount + activeIconCount + activeTextCount;
 	const canChooseRootScope = rootBlueprint?.blueprint_book !== undefined && selectedPath !== '';
-	const hasSelectedCleanup = stripWiresSelected || stripTrainsSelected;
 	const hasSelectedBookOperation = flattenBookSelected || sortBookSelected;
 	const openInPlayground = () => {
 		if (transformedBlueprint === undefined) {
@@ -1324,76 +1351,64 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 									/>
 								</section>
 
-								<section
-									className="transform-workflow__section"
-									aria-labelledby="blueprint-editor-filters-heading"
-								>
-									<h4 id="blueprint-editor-filters-heading">Filters</h4>
-									<div className="transform-workflow__checks">
-										<label>
-											<input
-												type="checkbox"
-												checked={!stripModulesSelected}
-												onChange={(event) => {
-													setStripModulesSelected(!event.currentTarget.checked);
-												}}
-											/>{' '}
-											Modules
-										</label>
-										<label>
-											<input
-												type="checkbox"
-												checked={!stripEntitiesSelected}
-												onChange={(event) => {
-													setStripEntitiesSelected(!event.currentTarget.checked);
-												}}
-											/>{' '}
-											Entities
-										</label>
-										<label>
-											<input
-												type="checkbox"
-												checked={!stripTilesSelected}
-												onChange={(event) => {
-													setStripTilesSelected(!event.currentTarget.checked);
-												}}
-											/>{' '}
-											Tiles
-										</label>
-									</div>
-								</section>
-
-								<section
-									className="transform-workflow__section"
-									aria-labelledby="transform-cleanup-heading"
-								>
-									<h4 id="transform-cleanup-heading">
-										Cleanup{hasSelectedCleanup ? ' · selected' : ''}
-									</h4>
-									<div className="transform-workflow__checks">
-										<label>
-											<input
-												type="checkbox"
-												checked={stripWiresSelected}
-												onChange={(event) => {
-													setStripWiresSelected(event.currentTarget.checked);
-												}}
-											/>{' '}
-											Strip wires
-										</label>
-										<label>
-											<input
-												type="checkbox"
-												checked={stripTrainsSelected}
-												onChange={(event) => {
-													setStripTrainsSelected(event.currentTarget.checked);
-												}}
-											/>{' '}
-											Strip trains
-										</label>
-									</div>
-								</section>
-
+								{showEditorFilters ? (
+									<section
+										className="transform-workflow__section"
+										aria-labelledby="blueprint-editor-filters-heading"
+									>
+										<h4 id="blueprint-editor-filters-heading">Filters</h4>
+										<div className="transform-workflow__checks">
+											{editorFilters.modules ? (
+												<label>
+													<input
+														type="checkbox"
+														checked={!stripModulesSelected}
+														onChange={(event) => {
+															setStripModulesSelected(!event.currentTarget.checked);
+														}}
+													/>{' '}
+													Modules
+												</label>
+											) : null}
+											{showEditorEntityFilters && editorFilters.entities ? (
+												<label>
+													<input
+														type="checkbox"
+														checked={!stripEntitiesSelected}
+														onChange={(event) => {
+															setStripEntitiesSelected(!event.currentTarget.checked);
+														}}
+													/>{' '}
+													Entities
+												</label>
+											) : null}
+											{showEditorEntityFilters && editorFilters.trains ? (
+												<label>
+													<input
+														type="checkbox"
+														checked={!stripTrainsSelected}
+														onChange={(event) => {
+															setStripTrainsSelected(!event.currentTarget.checked);
+														}}
+													/>{' '}
+													Trains
+												</label>
+											) : null}
+											{showEditorEntityFilters && editorFilters.tiles ? (
+												<label>
+													<input
+														type="checkbox"
+														checked={!stripTilesSelected}
+														onChange={(event) => {
+															setStripTilesSelected(!event.currentTarget.checked);
+														}}
+													/>{' '}
+													Tiles
+												</label>
+											) : null}
+										</div>
+									</section>
+								) : null}
 								{type === 'blueprint-book' ? (
 									<section
 										className="transform-workflow__section"

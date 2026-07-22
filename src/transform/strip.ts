@@ -4,6 +4,13 @@ import {mapBlueprints, removeEntities} from './visit';
 const ROLLING_STOCK_NAMES = new Set(['locomotive', 'cargo-wagon', 'fluid-wagon', 'artillery-wagon']);
 const QUALITY_KEYS = new Set(['quality', 'recipe_quality']);
 
+export interface BlueprintFilterCategories {
+	entities: boolean;
+	modules: boolean;
+	tiles: boolean;
+	trains: boolean;
+}
+
 function deleteQualityKeys(value: unknown): void {
 	if (value === null || typeof value !== 'object') {
 		return;
@@ -51,6 +58,29 @@ export function stripQuality(root: BlueprintString): BlueprintString {
 
 export function stripEntities(root: BlueprintString): BlueprintString {
 	return mapBlueprints(root, (blueprint) => removeEntities(blueprint, () => true));
+}
+
+export function stripNonTrainEntities(root: BlueprintString): BlueprintString {
+	return mapBlueprints(root, (blueprint) => removeEntities(blueprint, (entity) => !isRollingStock(entity)));
+}
+
+export function blueprintFilterCategories(root: BlueprintString): BlueprintFilterCategories {
+	const categories: BlueprintFilterCategories = {entities: false, modules: false, tiles: false, trains: false};
+	const visit = (entry: BlueprintString): void => {
+		if (entry.blueprint !== undefined) {
+			categories.tiles ||= (entry.blueprint.tiles?.length ?? 0) > 0;
+			for (const entity of entry.blueprint.entities ?? []) {
+				categories.trains ||= isRollingStock(entity);
+				categories.entities ||= !isRollingStock(entity);
+				categories.modules ||= (entity.items?.length ?? 0) > 0;
+			}
+		}
+		for (const child of entry.blueprint_book?.blueprints ?? []) {
+			visit(child);
+		}
+	};
+	visit(root);
+	return categories;
 }
 
 export function stripModules(root: BlueprintString): BlueprintString {
