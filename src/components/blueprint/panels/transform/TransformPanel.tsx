@@ -359,20 +359,20 @@ function IconReplacementDialog({candidates, onChange, onClose, replacements}: Ic
 			!replacements.some((replacement) => signalIdentity(replacement.from) === signalIdentity(candidate.signal)),
 	);
 	const [draftFrom, setDraftFrom] = useState<SignalID | undefined>(() => availableCandidates[0]?.signal);
-	const [draftTo, setDraftTo] = useState<SignalID>();
 	const [choosingSource, setChoosingSource] = useState(false);
 	const [choosingTarget, setChoosingTarget] = useState(false);
 	const targetOptions =
 		draftFrom === undefined
 			? []
 			: normalizedSignalType(draftFrom) === 'virtual'
-				? virtualSignals
+				? virtualSignals.filter((signal) => signalIdentity(signal) !== signalIdentity(draftFrom))
 				: candidates
 						.map((candidate) => candidate.signal)
-						.filter((signal) => normalizedSignalType(signal) === normalizedSignalType(draftFrom));
-	const canAdd =
-		draftFrom !== undefined && draftTo !== undefined && signalIdentity(draftFrom) !== signalIdentity(draftTo);
-
+						.filter(
+							(signal) =>
+								normalizedSignalType(signal) === normalizedSignalType(draftFrom) &&
+								signalIdentity(signal) !== signalIdentity(draftFrom),
+						);
 	return (
 		<div className="transform-dialog-backdrop">
 			<section className="transform-dialog" role="dialog" aria-modal="true" aria-label="Icon Replacements">
@@ -433,7 +433,6 @@ function IconReplacementDialog({candidates, onChange, onClose, replacements}: Ic
 							<span aria-hidden="true">→</span>
 							<SignalSlot
 								label="Choose target icon"
-								signal={draftTo}
 								onClick={
 									draftFrom === undefined
 										? undefined
@@ -443,20 +442,6 @@ function IconReplacementDialog({candidates, onChange, onClose, replacements}: Ic
 								}
 							/>
 						</div>
-						<button
-							type="button"
-							disabled={!canAdd}
-							onClick={() => {
-								if (draftFrom === undefined || draftTo === undefined) {
-									throw new Error('An icon replacement requires both source and target signals.');
-								}
-								onChange([...replacements, {from: draftFrom, to: draftTo}]);
-								setDraftFrom(undefined);
-								setDraftTo(undefined);
-							}}
-						>
-							Add replacement
-						</button>
 					</div>
 				</div>
 				<div className="transform-dialog__actions">
@@ -472,7 +457,6 @@ function IconReplacementDialog({candidates, onChange, onClose, replacements}: Ic
 					}}
 					onChoose={(signal) => {
 						setDraftFrom(signal);
-						setDraftTo(undefined);
 						setChoosingSource(false);
 					}}
 				/>
@@ -485,7 +469,11 @@ function IconReplacementDialog({candidates, onChange, onClose, replacements}: Ic
 						setChoosingTarget(false);
 					}}
 					onChoose={(signal) => {
-						setDraftTo(signal);
+						if (draftFrom === undefined) {
+							throw new Error('An icon replacement requires a source signal.');
+						}
+						onChange([...replacements, {from: draftFrom, to: signal}]);
+						setDraftFrom(undefined);
 						setChoosingTarget(false);
 					}}
 				/>
