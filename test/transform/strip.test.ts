@@ -2,7 +2,14 @@ import {describe, expect, test} from 'vite-plus/test';
 
 import {deserializeBlueprint, serializeBlueprint} from '../../src/parsing/blueprintParser';
 import type {Blueprint, BlueprintString} from '../../src/parsing/types';
-import {stripQuality, stripTiles, stripTrains, stripWires} from '../../src/transform/strip';
+import {
+	stripEntities,
+	stripModules,
+	stripQuality,
+	stripTiles,
+	stripTrains,
+	stripWires,
+} from '../../src/transform/strip';
 import {removeEntities} from '../../src/transform/visit';
 import {readFixtureFile} from '../fixtures/utils';
 
@@ -23,11 +30,61 @@ describe('strip transforms', () => {
 		};
 
 		expect({
+			entities: stripEntities(empty),
+			modules: stripModules(planner),
 			quality: stripQuality(empty),
 			wires: stripWires(empty),
 			trains: stripTrains(planner),
 			tiles: stripTiles(planner),
-		}).toStrictEqual({quality: empty, wires: empty, trains: planner, tiles: planner});
+		}).toStrictEqual({
+			entities: empty,
+			modules: planner,
+			quality: empty,
+			wires: empty,
+			trains: planner,
+			tiles: planner,
+		});
+	});
+
+	test('valid: entity and module filters remove their matching blueprint content', () => {
+		const input: BlueprintString = {
+			blueprint: {
+				item: 'blueprint',
+				version: 0,
+				entities: [
+					{
+						entity_number: 10,
+						name: 'assembling-machine-3',
+						position: {x: 0, y: 0},
+						items: [
+							{
+								id: {name: 'speed-module-3'},
+								items: {in_inventory: [{inventory: 1, stack: 0, count: 2}]},
+							},
+						],
+					},
+				],
+				wires: [[10, 1, 10, 2]],
+			},
+		};
+
+		expect({entities: stripEntities(input), modules: stripModules(input)}).toStrictEqual({
+			entities: {blueprint: {item: 'blueprint', version: 0, entities: [], wires: []}},
+			modules: {
+				blueprint: {
+					item: 'blueprint',
+					version: 0,
+					entities: [
+						{
+							entity_number: 10,
+							name: 'assembling-machine-3',
+							position: {x: 0, y: 0},
+						},
+					],
+					wires: [[10, 1, 10, 2]],
+				},
+			},
+		});
 	});
 
 	test('valid: quality fixture round trips and removes keyed quality metadata', () => {

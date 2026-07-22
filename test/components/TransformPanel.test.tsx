@@ -63,8 +63,17 @@ describe('TransformPanel', () => {
 				.getByRole('button', {name: 'Open Blueprint Editor'})
 				.getAttribute('aria-expanded'),
 			dialog: screen.queryByRole('dialog', {name: 'Upgrade Planner'}),
+			toolOrder: [...screen.getByRole('toolbar', {name: 'Blueprint tools'}).querySelectorAll('button')].map(
+				(button) => button.getAttribute('aria-label'),
+			),
 			toolExpanded: screen.getByRole('button', {name: 'Open Upgrade Planner'}).getAttribute('aria-expanded'),
-		}).toStrictEqual({applyButton: null, blueprintEditorExpanded: 'false', dialog: null, toolExpanded: 'false'});
+		}).toStrictEqual({
+			applyButton: null,
+			blueprintEditorExpanded: 'false',
+			dialog: null,
+			toolOrder: ['Open Blueprint Editor', 'Open Upgrade Planner'],
+			toolExpanded: 'false',
+		});
 
 		openUpgradePlanner();
 		expect({
@@ -89,7 +98,7 @@ describe('TransformPanel', () => {
 				.getByRole('button', {name: 'Choose target for Transport belt'})
 				.querySelector('img')
 				?.getAttribute('src'),
-			websiteReplacements: screen.queryByRole('heading', {name: 'Website replacements'}),
+			bookWideReplacements: screen.getByRole('heading', {name: 'Book-wide replacements'}).textContent,
 		}).toStrictEqual({
 			changeIn: null,
 			dialog: 'true',
@@ -100,7 +109,7 @@ describe('TransformPanel', () => {
 			preserveCapitalization: null,
 			sourceIcon: 'https://factorio-icon-cdn.pages.dev/entity/transport-belt.webp',
 			targetIcon: 'https://factorio-icon-cdn.pages.dev/entity/fast-transport-belt.webp',
-			websiteReplacements: null,
+			bookWideReplacements: 'Book-wide replacements',
 		});
 	});
 
@@ -108,20 +117,52 @@ describe('TransformPanel', () => {
 		render(<TransformPanel blueprint={blueprint} />);
 
 		openBlueprintEditor();
-		const textReplacement = screen.getByRole<HTMLInputElement>('checkbox', {name: 'Text replacement 0'});
 		expect({
+			bookWideReplacements: screen.queryByRole('heading', {name: 'Book-wide replacements'}),
 			cleanup: screen.getByRole('heading', {name: 'Cleanup'}).textContent,
+			description: screen.getByRole('textbox', {name: 'Blueprint description'}).textContent,
 			dialog: screen.getByRole('dialog', {name: 'Blueprint Editor'}).getAttribute('aria-modal'),
+			filters: ['Modules', 'Entities', 'Tiles'].map(
+				(name) => screen.getByRole<HTMLInputElement>('checkbox', {name}).checked,
+			),
+			iconSlots: [1, 2, 3, 4].map((index) =>
+				screen.getByRole('button', {name: `Choose icon ${index.toString()}`}).getAttribute('aria-label'),
+			),
+			name: screen.getByRole<HTMLInputElement>('textbox', {name: 'Name'}).value,
 			plannerMappings: screen.queryByRole('group', {name: 'Planner operation'}),
-			textReplacement: {checked: textReplacement.checked, disabled: textReplacement.disabled},
-			websiteReplacements: screen.getByRole('heading', {name: 'Website replacements'}).textContent,
 		}).toStrictEqual({
+			bookWideReplacements: null,
 			cleanup: 'Cleanup',
+			description: '',
 			dialog: 'true',
+			filters: [true, true, true],
+			iconSlots: ['Choose icon 1', 'Choose icon 2', 'Choose icon 3', 'Choose icon 4'],
+			name: '',
 			plannerMappings: null,
-			textReplacement: {checked: true, disabled: false},
-			websiteReplacements: 'Website replacements',
 		});
+	});
+
+	test('opens the Factorio tools with Alt+B and Alt+U except while editing text', async () => {
+		const user = userEvent.setup();
+		render(<TransformPanel blueprint={blueprint} />);
+
+		fireEvent.keyDown(window, {altKey: true, code: 'KeyB'});
+		expect(screen.getByRole('dialog', {name: 'Blueprint Editor'}).getAttribute('aria-modal')).toBe('true');
+
+		fireEvent.keyDown(window, {altKey: true, code: 'KeyU'});
+		expect({
+			blueprintEditor: screen.queryByRole('dialog', {name: 'Blueprint Editor'}),
+			upgradePlanner: screen.getByRole('dialog', {name: 'Upgrade Planner'}).getAttribute('aria-modal'),
+		}).toStrictEqual({blueprintEditor: null, upgradePlanner: 'true'});
+
+		const findInput = screen.getByRole<HTMLInputElement>('textbox', {name: 'Find'});
+		await user.type(findInput, 'b');
+		fireEvent.keyDown(findInput, {altKey: true, code: 'KeyB'});
+		expect({
+			blueprintEditor: screen.queryByRole('dialog', {name: 'Blueprint Editor'}),
+			find: screen.getByRole<HTMLInputElement>('textbox', {name: 'Find'}).value,
+			upgradePlanner: screen.getByRole('dialog', {name: 'Upgrade Planner'}).getAttribute('aria-modal'),
+		}).toStrictEqual({blueprintEditor: null, find: 'b', upgradePlanner: 'true'});
 	});
 
 	test('does not apply upgrade suggestions when only the blueprint editor is opened', async () => {
@@ -146,7 +187,7 @@ describe('TransformPanel', () => {
 		};
 		render(<TransformPanel blueprint={iconBlueprint} />);
 
-		openBlueprintEditor();
+		openUpgradePlanner();
 		await user.click(screen.getByRole('button', {name: /Icon replacements/i}));
 		const sourceSlot = screen.getByRole('button', {name: 'Choose source icon'});
 		const targetSlot = screen.getByRole('button', {name: 'Choose target icon'});
@@ -333,6 +374,101 @@ describe('TransformPanel', () => {
 		});
 	});
 
+	test('adds a custom quality mapping with a source comparator and source-preserving target', async () => {
+		const user = userEvent.setup();
+		const qualityBlueprint: BlueprintString = {
+			blueprint: {
+				item: 'blueprint',
+				version: 0,
+				entities: [{entity_number: 1, name: 'transport-belt', quality: 'epic', position: {x: 0, y: 0}}],
+			},
+		};
+		render(<TransformPanel blueprint={qualityBlueprint} />);
+
+		openUpgradePlanner();
+		await user.selectOptions(screen.getByRole('combobox', {name: 'Planner'}), 'custom');
+		await user.click(screen.getByRole('button', {name: /Add mapping/}));
+		await user.click(screen.getByRole('button', {name: 'Rare quality'}));
+		await user.selectOptions(screen.getByRole('combobox', {name: 'Quality comparison'}), '>');
+		await user.click(screen.getByRole('button', {name: 'Choose Transport belt'}));
+
+		expect(screen.getByRole('button', {name: 'Set as source'}).getAttribute('aria-pressed')).toBe('true');
+		await user.click(screen.getByRole('button', {name: 'Choose Fast transport belt'}));
+
+		expect({
+			count: screen
+				.getByRole('checkbox', {name: 'Replace transport-belt with fast-transport-belt'})
+				.parentElement?.querySelector('strong')?.textContent,
+			remove: screen.getByRole('button', {name: 'Remove mapping from Transport belt'}).textContent,
+			source: screen.getByRole('button', {name: 'Source Transport belt'}).title,
+		}).toStrictEqual({
+			count: '1',
+			remove: '×',
+			source: 'Transport belt\nentity:transport-belt\nQuality: > rare',
+		});
+
+		await user.click(screen.getByRole('button', {name: 'Open in Playground'}));
+		expect(navigate).toHaveBeenCalledExactlyOnceWith({
+			to: '/',
+			search: {
+				pasted: serializeBlueprint({
+					blueprint: {
+						item: 'blueprint',
+						version: 0,
+						entities: [
+							{entity_number: 1, name: 'fast-transport-belt', quality: 'epic', position: {x: 0, y: 0}},
+						],
+					},
+				}),
+				selection: '',
+			},
+		});
+	});
+
+	test('edits blueprint metadata and label icons one by one', async () => {
+		const user = userEvent.setup();
+		const iconBlueprint: BlueprintString = {
+			blueprint: {
+				item: 'blueprint',
+				label: 'Red starter',
+				description: 'Old description',
+				version: 0,
+				icons: [
+					{index: 1, signal: {type: 'virtual', name: 'signal-red'}},
+					{index: 2, signal: {type: 'virtual', name: 'signal-green'}},
+				],
+			},
+		};
+		render(<TransformPanel blueprint={iconBlueprint} />);
+
+		openBlueprintEditor();
+		await user.clear(screen.getByRole('textbox', {name: 'Name'}));
+		await user.type(screen.getByRole('textbox', {name: 'Name'}), 'Blue starter');
+		await user.clear(screen.getByRole('textbox', {name: 'Blueprint description'}));
+		await user.type(screen.getByRole('textbox', {name: 'Blueprint description'}), 'New description');
+		await user.click(screen.getByRole('button', {name: 'Edit icon 1'}));
+		await user.type(screen.getByRole('searchbox', {name: 'Search'}), 'blue');
+		await user.click(screen.getByRole('button', {name: 'Choose Signal blue'}));
+		fireEvent.contextMenu(screen.getByRole('button', {name: 'Edit icon 2'}));
+		await user.click(screen.getByRole('button', {name: 'Open in Playground'}));
+
+		expect(navigate).toHaveBeenCalledExactlyOnceWith({
+			to: '/',
+			search: {
+				pasted: serializeBlueprint({
+					blueprint: {
+						item: 'blueprint',
+						version: 0,
+						description: 'New description',
+						icons: [{index: 1, signal: {type: 'virtual', name: 'signal-blue'}}],
+						label: 'Blue starter',
+					},
+				}),
+				selection: '',
+			},
+		});
+	});
+
 	test('applies a transformation within the selected book path', async () => {
 		const user = userEvent.setup();
 		const rootBlueprint: BlueprintString = {
@@ -358,12 +494,15 @@ describe('TransformPanel', () => {
 		render(<TransformPanel blueprint={selectedBlueprint} rootBlueprint={rootBlueprint} selectedPath="1" />);
 
 		openUpgradePlanner();
+		const scope = screen.getByRole<HTMLSelectElement>('combobox', {name: 'Apply to'}).value;
 		await user.click(screen.getByRole('button', {name: 'Open in Playground'}));
 
 		expect({
+			dialog: screen.queryByRole('dialog', {name: 'Upgrade Planner'}),
 			navigation: navigate.mock.calls,
-			scope: screen.getByRole<HTMLSelectElement>('combobox', {name: 'Apply to'}).value,
+			scope,
 		}).toStrictEqual({
+			dialog: null,
 			navigation: [
 				[
 					{
@@ -437,8 +576,6 @@ describe('TransformPanel', () => {
 		render(<TransformPanel blueprint={selectedBlueprint} rootBlueprint={rootBlueprint} selectedPath="1" />);
 
 		openUpgradePlanner();
-		await user.click(screen.getByRole('button', {name: 'Close Upgrade Planner'}));
-		openBlueprintEditor();
 		await user.selectOptions(screen.getByRole('combobox', {name: 'Apply to'}), 'root');
 		await user.click(screen.getByRole('button', {name: /Icon replacements/i}));
 		await user.click(screen.getByRole('button', {name: 'Choose source icon'}));
@@ -451,10 +588,10 @@ describe('TransformPanel', () => {
 		await user.type(screen.getByRole('textbox', {name: 'Replace with'}), 'blue');
 
 		expect({
-			status: screen.getByLabelText('5 replacements ready').getAttribute('aria-label'),
+			status: screen.getByLabelText('6 replacements ready').getAttribute('aria-label'),
 			textReplacement: screen.getByRole<HTMLInputElement>('checkbox', {name: 'Text replacement 3'}).checked,
 		}).toStrictEqual({
-			status: '5 replacements ready',
+			status: '6 replacements ready',
 			textReplacement: true,
 		});
 
@@ -659,7 +796,7 @@ describe('TransformPanel', () => {
 
 		openBlueprintEditor();
 		await user.click(screen.getByRole('checkbox', {name: 'Strip trains'}));
-		await user.click(screen.getByRole('checkbox', {name: 'Strip tiles'}));
+		await user.click(screen.getByRole('checkbox', {name: 'Tiles'}));
 		await user.click(screen.getByRole('button', {name: 'Open in Playground'}));
 
 		expect(navigate).toHaveBeenCalledExactlyOnceWith({

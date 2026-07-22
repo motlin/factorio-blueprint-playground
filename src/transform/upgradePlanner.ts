@@ -11,13 +11,14 @@ import type {
 	SignalID,
 	UpgradeMapping,
 	UpgradePlanner,
+	UpgradeSourceSignal,
 } from '../parsing/types';
 import {mapBlueprints} from './visit';
 
 export type UpgradeDirection = 'upgrade' | 'downgrade';
 
 export interface UpgradeRule {
-	from: SignalID;
+	from: UpgradeSourceSignal;
 	preserveQuality: boolean;
 	to: SignalID;
 }
@@ -33,6 +34,7 @@ export interface UpgradePlannerSource {
 }
 
 interface UpgradeRuleLookup {
+	conditional: readonly UpgradeRule[];
 	exact: ReadonlyMap<string, UpgradeRule>;
 	preserving: ReadonlyMap<string, UpgradeRule>;
 }
@@ -43,8 +45,11 @@ const signalSchema = z.object({
 	name: z.string().min(1),
 	quality: qualitySchema.optional(),
 });
+const upgradeSourceSignalSchema = signalSchema.extend({
+	comparator: z.enum(['=', '!=', '<', '<=', '>', '>=', '≠', '≤', '≥']).optional(),
+});
 const upgradeMappingSchema = z.object({
-	from: signalSchema.optional(),
+	from: upgradeSourceSignalSchema.optional(),
 	to: signalSchema.optional(),
 	index: z.number().int().nonnegative(),
 });
@@ -91,12 +96,16 @@ function requiredSignalType(signal: SignalID): 'item' | 'entity' {
 	return type;
 }
 
-function requiredSignalKey(signal: SignalID): string {
+function requiredSignalKey(signal: UpgradeSourceSignal): string {
 	return [requiredSignalType(signal), signal.name, normalizedQuality(signal.quality)].join(':');
 }
 
+function requiredSourceKey(signal: UpgradeSourceSignal): string {
+	return `${requiredSignalKey(signal)}:${signal.comparator ?? '='}`;
+}
+
 function upgradeRuleKey(rule: UpgradeRule): string {
-	return `${requiredSignalKey(rule.from)}:${requiredSignalKey(rule.to)}`;
+	return `${requiredSourceKey(rule.from)}:${requiredSignalKey(rule.to)}`;
 }
 
 function qualityAgnosticSignalKey(signal: SignalID): string {
@@ -117,13 +126,13 @@ function mappingToRule(mapping: UpgradeMapping): UpgradeRule {
 	if (requiredSignalType(mapping.from) !== requiredSignalType(mapping.to)) {
 		throw new Error(`Upgrade planner mapping ${mapping.index.toString()} cannot change signal types.`);
 	}
-	return {from: mapping.from, preserveQuality: false, to: mapping.to};
+	return {from: mapping.from, preserveQuality: mapping.to.quality === undefined, to: mapping.to};
 }
 
 function validateRules(rules: readonly UpgradeRule[]): UpgradeRule[] {
 	const sourceKeys = new Set<string>();
 	return rules.map((rule) => {
-		const key = requiredSignalKey(rule.from);
+		const key = requiredSourceKey(rule.from);
 		if (sourceKeys.has(key)) {
 			throw new Error(`Upgrade planner defines more than one target for ${rule.from.name}.`);
 		}
@@ -147,8 +156,13 @@ export function rulesFromUpgradePlanner(
 	if (planner.settings.mappers.length === 0) {
 		return builtInUpgradeRules(direction);
 	}
-	const directionalRule = (rule: UpgradeRule): UpgradeRule =>
-		direction === 'upgrade' ? rule : {...rule, from: rule.to, to: rule.from};
+	const directionalRule = (rule: UpgradeRule): UpgradeRule => {
+		if (direction === 'upgrade') {
+			return rule;
+		}
+		const {comparator: _comparator, ...destination} = rule.from;
+		return {...rule, from: rule.to, to: destination};
+	};
 	return validateRules(
 		[...planner.settings.mappers]
 			.sort((first, second) => first.index - second.index)
@@ -168,12 +182,53 @@ export function parseUpgradePlanner(input: string): UpgradePlanner {
 	return upgradePlannerStringSchema.parse(parsed).upgrade_planner;
 }
 
+function qualityMatches(signal: SignalID, source: UpgradeSourceSignal): boolean {
+	if (source.quality === undefined) {
+		return true;
+	}
+	const qualityOrder: Record<Exclude<Quality, undefined>, number> = {
+		normal: 0,
+		uncommon: 1,
+		rare: 2,
+		epic: 3,
+		legendary: 4,
+	};
+	const actual = qualityOrder[normalizedQuality(signal.quality)];
+	const expected = qualityOrder[source.quality];
+	switch (source.comparator ?? '=') {
+		case '=':
+			return actual === expected;
+		case '!=':
+		case '≠':
+			return actual !== expected;
+		case '<':
+			return actual < expected;
+		case '<=':
+		case '≤':
+			return actual <= expected;
+		case '>':
+			return actual > expected;
+		case '>=':
+		case '≥':
+			return actual >= expected;
+	}
+	throw new Error(`Unsupported quality comparator: ${source.comparator}`);
+}
+
 function findSignalRule(signal: SignalID, rules: UpgradeRuleLookup): UpgradeRule | undefined {
 	const key = signalLookupKey(signal);
 	if (key === undefined) {
 		return undefined;
 	}
-	return rules.exact.get(key) ?? rules.preserving.get(qualityAgnosticSignalKey(signal));
+	return (
+		rules.exact.get(key) ??
+		rules.conditional.find(
+			(rule) =>
+				qualityAgnosticSignalKey(rule.from) === qualityAgnosticSignalKey(signal) &&
+				qualityMatches(signal, rule.from),
+		) ??
+		rules.preserving.get(qualityAgnosticSignalKey(signal))
+	);
 }
 
 function mappedSignal(signal: SignalID, rule: UpgradeRule, type: SignalID['type'] = rule.to.type): SignalID {
@@ -248,8 +303,11 @@ function applyRulesToBlueprint(blueprint: Blueprint, rules: UpgradeRuleLookup): 
 
 function createRuleLookup(rules: readonly UpgradeRule[]): UpgradeRuleLookup {
 	return {
+		conditional: rules.filter((rule) => rule.from.comparator !== undefined),
 		exact: new Map(
-			rules.filter((rule) => !rule.preserveQuality).map((rule) => [requiredSignalKey(rule.from), rule]),
+			rules
+				.filter((rule) => !rule.preserveQuality && rule.from.comparator === undefined)
+				.map((rule) => [requiredSignalKey(rule.from), rule]),
 		),
 		preserving: new Map(
 			rules.filter((rule) => rule.preserveQuality).map((rule) => [qualityAgnosticSignalKey(rule.from), rule]),

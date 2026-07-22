@@ -21,12 +21,17 @@ export type SignalType =
 	| 'space-location';
 
 export type Quality = 'normal' | 'uncommon' | 'rare' | 'epic' | 'legendary' | undefined;
+export type QualityComparator = '=' | '!=' | '<' | '<=' | '>' | '>=' | '≠' | '≤' | '≥';
 
 export interface SignalID {
 	// Defaults to "item" if not specified
 	type?: SignalType;
 	name: string;
 	quality?: Quality;
+}
+
+export interface UpgradeSourceSignal extends SignalID {
+	comparator?: QualityComparator;
 }
 
 export interface Icon {
@@ -284,7 +289,7 @@ export interface DeconstructionPlanner extends CommonFields {
 }
 
 export interface UpgradeMapping {
-	from?: SignalID;
+	from?: UpgradeSourceSignal;
 	to?: SignalID;
 	index: number;
 }
