@@ -1,5 +1,5 @@
 import {useNavigate} from '@tanstack/react-router';
-import {useEffect, useMemo, useState} from 'react';
+import {useEffect, useId, useMemo, useState} from 'react';
 
 import gameData from '../../../../generated/game-data.json';
 import {BlueprintWrapper} from '../../../../parsing/BlueprintWrapper';
@@ -10,6 +10,7 @@ import type {
 	Quality,
 	QualityComparator,
 	SignalID,
+	UpgradePlanner,
 	UpgradeSourceSignal,
 } from '../../../../parsing/types';
 import {updateNestedBlueprint} from '../../../../transform/applyAtPath';
@@ -48,6 +49,7 @@ import {ButtonGreen} from '../../../ui/ButtonGreen';
 import {Textarea} from '../../../ui/Textarea';
 import {BlueprintEditorDialog} from './BlueprintEditorDialog';
 import {BlueprintToolbelt} from './BlueprintToolbelt';
+import {UpgradePlannerSelectorDialog, type UpgradePlannerChoice} from './UpgradePlannerSelectorDialog';
 
 interface TransformPanelProps {
 	blueprint?: BlueprintString;
@@ -85,11 +87,12 @@ interface UpgradeMappingsEditorProps {
 	onChangeManualRule: (previousSource: UpgradeSourceSignal, rule: UpgradeRule) => void;
 	onPlannerInputChange: (value: string) => void;
 	onRemoveRule: (source: UpgradeSourceSignal, manual: boolean) => void;
-	onPlannerSourceChange: (value: string) => void;
+	onPlannerSourceChange: (choice: UpgradePlannerChoice) => void;
 	onTargetChange: (source: SignalID, target: SignalID, preserveQuality: boolean) => void;
 	plannerInput: string;
-	planners: UpgradePlannerSource[];
+	rootBlueprint: BlueprintString;
 	source: string;
+	sourceLabel: string;
 	sourceOptions: SignalID[];
 }
 
@@ -151,6 +154,7 @@ function resolveRules(
 	direction: UpgradeDirection,
 	plannerInput: string,
 	planners: UpgradePlannerSource[],
+	selectedPlanner: UpgradePlanner | undefined,
 ): ResolvedRules {
 	try {
 		if (source === 'custom') {
@@ -164,6 +168,12 @@ function resolveRules(
 				error: undefined,
 				rules: rulesFromUpgradePlanner(parseUpgradePlanner(plannerInput), direction),
 			};
+		}
+		if (source.startsWith('history:')) {
+			if (selectedPlanner === undefined) {
+				throw new Error('The selected upgrade planner is no longer in history.');
+			}
+			return {error: undefined, rules: rulesFromUpgradePlanner(selectedPlanner, direction)};
 		}
 		const path = source.slice('book:'.length);
 		const planner = planners.find((candidate) => candidate.path === path);
@@ -422,10 +432,13 @@ function UpgradeMappingsEditor({
 	onPlannerSourceChange,
 	onTargetChange,
 	plannerInput,
-	planners,
+	rootBlueprint,
 	source,
+	sourceLabel,
 	sourceOptions,
 }: UpgradeMappingsEditorProps) {
+	const plannerSelectorId = useId();
+	const [plannerSelectorOpen, setPlannerSelectorOpen] = useState(false);
 	const [targetPickerCandidate, setTargetPickerCandidate] = useState<UpgradeCandidate>();
 	const [sourcePickerCandidate, setSourcePickerCandidate] = useState<UpgradeCandidate | null>();
 	const [mappingSourceDraft, setMappingSourceDraft] = useState<MappingSourceDraft>();
@@ -436,23 +449,21 @@ function UpgradeMappingsEditor({
 		<>
 			<div className="panel-hole upgrade-planner-editor">
 				<div className="panel-hole-inner upgrade-planner-editor__source">
-					<label htmlFor="upgrade-source">Load planner</label>
-					<select
-						id="upgrade-source"
-						value={source}
-						onChange={(event) => {
-							onPlannerSourceChange(event.currentTarget.value);
+					<strong>Load planner</strong>
+					<button
+						type="button"
+						className="upgrade-planner-editor__source-button"
+						aria-controls={plannerSelectorId}
+						aria-expanded={plannerSelectorOpen}
+						aria-haspopup="dialog"
+						aria-label={`Load planner, currently ${sourceLabel}`}
+						onClick={() => {
+							setPlannerSelectorOpen(true);
 						}}
 					>
-						<option value="suggested">Default upgrade planner</option>
-						<option value="custom">Empty planner</option>
-						{planners.map((planner) => (
-							<option key={planner.path} value={`book:${planner.path}`}>
-								{planner.label}
-							</option>
-						))}
-						<option value="pasted">Paste upgrade planner…</option>
-					</select>
+						<FactorioIcon icon={{type: 'item', name: 'upgrade-planner'}} size="small" />
+						<span>{sourceLabel}</span>
+					</button>
 				</div>
 				{source === 'pasted' ? (
 					<div className="upgrade-planner-editor__paste">
@@ -530,6 +541,21 @@ function UpgradeMappingsEditor({
 					+ Add mapping
 				</button>
 			</div>
+			{plannerSelectorOpen ? (
+				<UpgradePlannerSelectorDialog
+					dialogId={plannerSelectorId}
+					includeEditingChoices
+					rootBlueprint={rootBlueprint}
+					selectedSource={source}
+					onClose={() => {
+						setPlannerSelectorOpen(false);
+					}}
+					onChoose={(choice) => {
+						onPlannerSourceChange(choice);
+						setPlannerSelectorOpen(false);
+					}}
+				/>
+			) : null}
 			{targetPickerCandidate === undefined ? null : (
 				<SignalPickerDialog
 					initialQuality={
@@ -760,6 +786,12 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 	const [upgradeSource, setUpgradeSource] = useState(() =>
 		blueprint?.upgrade_planner === undefined ? 'suggested' : `book:${selectedPath}`,
 	);
+	const [upgradeSourceLabel, setUpgradeSourceLabel] = useState(() =>
+		blueprint?.upgrade_planner === undefined
+			? 'Default Upgrade'
+			: (blueprint.upgrade_planner.label ?? 'Current upgrade planner'),
+	);
+	const [selectedPlanner, setSelectedPlanner] = useState<UpgradePlanner>();
 	const [plannerInput, setPlannerInput] = useState('');
 	const [upgradeScope, setUpgradeScope] = useState<'selection' | 'root'>(() =>
 		blueprint?.upgrade_planner === undefined ? 'selection' : 'root',
@@ -796,8 +828,8 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 	}, [blueprint, selectedPath]);
 	const transformTarget = upgradeScope === 'root' ? rootBlueprint : blueprint;
 	const resolvedRules = useMemo(
-		() => resolveRules(upgradeSource, 'upgrade', plannerInput, planners),
-		[upgradeSource, plannerInput, planners],
+		() => resolveRules(upgradeSource, 'upgrade', plannerInput, planners, selectedPlanner),
+		[upgradeSource, plannerInput, planners, selectedPlanner],
 	);
 	const manualSourceKeys = useMemo(
 		() => new Set(manualRules.map((rule) => signalIdentity(rule.from))),
@@ -1026,6 +1058,12 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 	};
 	const resetUpgradePlannerDraft = () => {
 		setUpgradeSource(blueprint.upgrade_planner === undefined ? 'suggested' : `book:${selectedPath}`);
+		setUpgradeSourceLabel(
+			blueprint.upgrade_planner === undefined
+				? 'Default Upgrade'
+				: (blueprint.upgrade_planner.label ?? 'Current upgrade planner'),
+		);
+		setSelectedPlanner(undefined);
 		setPlannerInput('');
 		setUpgradeScope(blueprint.upgrade_planner === undefined ? 'selection' : 'root');
 		setExcludedSources(new Set());
@@ -1070,6 +1108,27 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 		}
 		resetUpgradePlannerDraft();
 		commitBlueprint(committed);
+	};
+	const applyPlannerFromBlueprintEditor = (choice: UpgradePlannerChoice, direction: UpgradeDirection) => {
+		if (editorDraftBlueprint === undefined) {
+			throw new Error('Cannot apply an upgrade planner to an invalid blueprint draft.');
+		}
+		let rules: UpgradeRule[];
+		if (choice.source === 'suggested') {
+			rules = builtInUpgradeRules(direction);
+		} else {
+			if (choice.planner === undefined) {
+				throw new Error('The selected upgrade planner is unavailable.');
+			}
+			rules = rulesFromUpgradePlanner(choice.planner, direction);
+		}
+		const transformedRoot = updateNestedBlueprint(editorDraftBlueprint, selectedPath, (target) =>
+			applyUpgradeRules(target, rules),
+		);
+		if (transformedRoot === null) {
+			throw new Error('The selected blueprint no longer exists in the root book.');
+		}
+		commitBlueprint(transformedRoot);
 	};
 
 	return (
@@ -1193,9 +1252,11 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 											setExcludedSources((current) => new Set(current).add(sourceKey));
 										}
 									}}
-									onPlannerSourceChange={(value) => {
+									onPlannerSourceChange={(choice) => {
 										setUpgradeDraftChanged(true);
-										setUpgradeSource(value);
+										setUpgradeSource(choice.source);
+										setUpgradeSourceLabel(choice.label);
+										setSelectedPlanner(choice.planner);
 										setExcludedSources(new Set());
 										setTargetOverrides(new Map());
 									}}
@@ -1206,8 +1267,9 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 										);
 									}}
 									plannerInput={plannerInput}
-									planners={planners}
+									rootBlueprint={rootBlueprint ?? blueprint}
 									source={upgradeSource}
+									sourceLabel={upgradeSourceLabel}
 									sourceOptions={sourceOptions}
 								/>
 
@@ -1353,6 +1415,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 					onModulesIncludedChange={(included) => {
 						setStripModulesSelected(!included);
 					}}
+					onPlannerChoose={applyPlannerFromBlueprintEditor}
 					onSave={() => {
 						if (editorDraftBlueprint !== undefined) {
 							commitBlueprint(editorDraftBlueprint);
@@ -1365,6 +1428,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 					onTrainsIncludedChange={(included) => {
 						setStripTrainsSelected(!included);
 					}}
+					rootBlueprint={rootBlueprint ?? blueprint}
 					saveDisabled={editorDraftBlueprint === undefined || !editorDirty}
 					saveLabel={selectedPath === '' ? 'Save blueprint' : 'Save to book'}
 					sortBookSelected={sortBookSelected}
