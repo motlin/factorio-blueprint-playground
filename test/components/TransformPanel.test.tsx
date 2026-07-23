@@ -170,14 +170,23 @@ describe('TransformPanel', () => {
 		});
 	});
 
-	test('opens the Factorio tools with Alt+B and Alt+U except while editing text', async () => {
+	test('opens the Factorio tools with B and U except while editing text or choosing an icon', async () => {
 		const user = userEvent.setup();
 		render(<TransformPanel blueprint={blueprint} />);
 
-		fireEvent.keyDown(window, {altKey: true, code: 'KeyB'});
+		fireEvent.keyDown(window, {code: 'KeyB'});
 		expect(screen.getByRole('dialog', {name: 'Blueprint Editor'}).getAttribute('aria-modal')).toBe('true');
 
-		fireEvent.keyDown(window, {altKey: true, code: 'KeyU'});
+		await user.click(screen.getByRole('button', {name: 'Choose icon 1'}));
+		fireEvent.keyDown(window, {code: 'KeyU'});
+		expect({
+			blueprintEditor: screen.getByRole('dialog', {name: 'Blueprint Editor'}).getAttribute('aria-modal'),
+			picker: screen.getByRole('dialog', {name: 'Choose label icon 1'}).getAttribute('aria-modal'),
+			upgradePlanner: screen.queryByRole('dialog', {name: 'Upgrade Planner'}),
+		}).toStrictEqual({blueprintEditor: 'true', picker: 'true', upgradePlanner: null});
+
+		fireEvent.keyDown(window, {code: 'Escape', key: 'Escape'});
+		fireEvent.keyDown(window, {code: 'KeyU'});
 		expect({
 			blueprintEditor: screen.queryByRole('dialog', {name: 'Blueprint Editor'}),
 			upgradePlanner: screen.getByRole('dialog', {name: 'Upgrade Planner'}).getAttribute('aria-modal'),
@@ -185,7 +194,7 @@ describe('TransformPanel', () => {
 
 		const findInput = screen.getByRole<HTMLInputElement>('textbox', {name: 'Find'});
 		await user.type(findInput, 'b');
-		fireEvent.keyDown(findInput, {altKey: true, code: 'KeyB'});
+		fireEvent.keyDown(findInput, {code: 'KeyB'});
 		expect({
 			blueprintEditor: screen.queryByRole('dialog', {name: 'Blueprint Editor'}),
 			find: screen.getByRole<HTMLInputElement>('textbox', {name: 'Find'}).value,

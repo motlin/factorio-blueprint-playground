@@ -439,7 +439,8 @@ body {
 	bottom: 18px;
 	left: 50%;
 	display: flex;
-	padding: 5px;
+	gap: 2px;
+	padding: 4px;
 	border: 1px solid #111;
 	background: #2d2c2d;
 	box-shadow:
@@ -449,33 +450,18 @@ body {
 }
 
 .transform-toolbelt__button {
-	display: flex;
-	min-width: 112px;
-	flex-direction: column;
-	align-items: center;
-	gap: 3px;
-	padding: 5px 8px 4px;
+	display: grid;
+	width: 48px;
+	height: 48px;
+	padding: 2px;
+	place-items: center;
 	border: 0;
 	background: #3d3c3d;
 	box-shadow:
 		inset 0 1px 1px #777,
 		inset 0 -2px 2px #171717;
 	color: #dedbd7;
-	font: inherit;
-	font-size: 70%;
 	cursor: pointer;
-}
-
-.transform-toolbelt kbd {
-	margin-left: 3px;
-	padding: 1px 4px;
-	border: 1px solid #171717;
-	border-radius: 2px;
-	background: #292829;
-	box-shadow: inset 0 1px 1px #111;
-	color: #b7b2ad;
-	font: inherit;
-	font-size: 88%;
 }
 
 .transform-toolbelt__button:hover,
@@ -484,13 +470,6 @@ body {
 	background: #4b4a4b;
 	outline: 2px solid #e39827;
 	outline-offset: -2px;
-}
-
-.transform-toolbelt__icon {
-	display: grid;
-	width: 44px;
-	height: 44px;
-	place-items: center;
 }
 
 .transform-workbench-backdrop {
