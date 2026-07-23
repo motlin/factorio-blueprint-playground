@@ -33,11 +33,13 @@ describe('BookWideReplacements', () => {
 			find: within(section).getByRole<HTMLInputElement>('textbox', {name: 'Find'}).value,
 			iconSummary: iconReplacementButton.querySelector('.transform-operation__text small')?.textContent,
 			liveResult: screen.queryByText('Live result'),
-			replaceWith: within(section).getByRole<HTMLInputElement>('textbox', {name: 'Replace with'}).value,
+			replace: within(section).getByRole<HTMLInputElement>('textbox', {name: 'Replace'}).value,
 			scope: section.querySelector('.book-wide-replacements__scope')?.textContent,
+			textAffected: within(section).getByText('3 affected').textContent,
 			textReplacement: within(section).getByRole<HTMLInputElement>('checkbox', {
-				name: 'Text replacement 3',
+				name: 'Enable text replacement',
 			}).checked,
+			textRow: within(section).getByRole('group', {name: 'Text replacement'}).className,
 			websiteLabel: within(section).getByText('Website extension').textContent,
 		}).toStrictEqual({
 			changeIn: null,
@@ -45,9 +47,11 @@ describe('BookWideReplacements', () => {
 			find: 'red',
 			iconSummary: '2 mappings · 5 replacements',
 			liveResult: null,
-			replaceWith: 'blue',
+			replace: 'blue',
 			scope: 'Always applies to titles, descriptions, and label icons throughout the entire root book, regardless of the selected blueprint.',
+			textAffected: '3 affected',
 			textReplacement: true,
+			textRow: 'text-replacement-editor',
 			websiteLabel: 'Website extension',
 		});
 	});
@@ -57,9 +61,9 @@ describe('BookWideReplacements', () => {
 		render(<BookWideReplacements {...props} />);
 
 		fireEvent.click(screen.getByRole('button', {name: /Icon replacements/}));
-		fireEvent.click(screen.getByRole('checkbox', {name: 'Text replacement 3'}));
+		fireEvent.click(screen.getByRole('checkbox', {name: 'Enable text replacement'}));
 		fireEvent.change(screen.getByRole('textbox', {name: 'Find'}), {target: {value: 'old'}});
-		fireEvent.change(screen.getByRole('textbox', {name: 'Replace with'}), {target: {value: 'new'}});
+		fireEvent.change(screen.getByRole('textbox', {name: 'Replace'}), {target: {value: 'new'}});
 
 		expect({
 			find: vi.mocked(props.onMetadataFindChange).mock.calls,
