@@ -15,7 +15,7 @@ interface BlueprintEditorDialogProps {
 	description: string;
 	filters: BlueprintFilterCategories;
 	flattenBookSelected: boolean;
-	icons: readonly ReactNode[];
+	icons: ReactNode;
 	label: string;
 	onApplyPlacedPlanner: (direction: UpgradeDirection) => void;
 	onClose: () => void;
