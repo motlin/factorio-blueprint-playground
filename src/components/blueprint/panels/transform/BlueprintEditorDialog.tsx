@@ -7,6 +7,7 @@ import type {BlueprintFilterCategories} from '../../../../transform/strip';
 import type {UpgradeDirection} from '../../../../transform/upgradePlanner';
 import {ButtonGreen} from '../../../ui/ButtonGreen';
 import {BlueprintComponentsGrid} from './BlueprintComponentsGrid';
+import {BlueprintContentFilters} from './BlueprintContentFilters';
 import {BlueprintDescriptionEditor} from './BlueprintDescriptionEditor';
 import {BlueprintEditorToolbar, type PlacedUpgradePlanner} from './BlueprintEditorToolbar';
 import {BlueprintSnapGridEditor} from './BlueprintSnapGridEditor';
@@ -94,9 +95,6 @@ export function BlueprintEditorDialog({
 }: BlueprintEditorDialogProps) {
 	const [upgradePlannerSelectorOpen, setUpgradePlannerSelectorOpen] = useState(false);
 	const upgradePlannerSelectorId = useId();
-	const entityFilterCount = [filters.entities, filters.tiles, filters.trains].filter(Boolean).length;
-	const showEntityFilters = entityFilterCount > 1;
-	const showFilters = filters.modules || showEntityFilters;
 
 	return (
 		<div className="transform-dialog-backdrop transform-workbench-backdrop blueprint-editor__backdrop">
@@ -174,64 +172,17 @@ export function BlueprintEditorDialog({
 							removedComponents={removedComponents}
 						/>
 
-						{showFilters ? (
-							<section
-								className="transform-workflow__section"
-								aria-labelledby="blueprint-editor-filters-heading"
-							>
-								<h4 id="blueprint-editor-filters-heading">Filters</h4>
-								<div className="transform-workflow__checks">
-									{filters.modules ? (
-										<label>
-											<input
-												type="checkbox"
-												checked={!stripModulesSelected}
-												onChange={(event) => {
-													onModulesIncludedChange(event.currentTarget.checked);
-												}}
-											/>{' '}
-											Modules
-										</label>
-									) : null}
-									{showEntityFilters && filters.entities ? (
-										<label>
-											<input
-												type="checkbox"
-												checked={!stripEntitiesSelected}
-												onChange={(event) => {
-													onEntitiesIncludedChange(event.currentTarget.checked);
-												}}
-											/>{' '}
-											Entities
-										</label>
-									) : null}
-									{showEntityFilters && filters.trains ? (
-										<label>
-											<input
-												type="checkbox"
-												checked={!stripTrainsSelected}
-												onChange={(event) => {
-													onTrainsIncludedChange(event.currentTarget.checked);
-												}}
-											/>{' '}
-											Trains
-										</label>
-									) : null}
-									{showEntityFilters && filters.tiles ? (
-										<label>
-											<input
-												type="checkbox"
-												checked={!stripTilesSelected}
-												onChange={(event) => {
-													onTilesIncludedChange(event.currentTarget.checked);
-												}}
-											/>{' '}
-											Tiles
-										</label>
-									) : null}
-								</div>
-							</section>
-						) : null}
+						<BlueprintContentFilters
+							categories={filters}
+							entitiesIncluded={!stripEntitiesSelected}
+							modulesIncluded={!stripModulesSelected}
+							onEntitiesIncludedChange={onEntitiesIncludedChange}
+							onModulesIncludedChange={onModulesIncludedChange}
+							onTilesIncludedChange={onTilesIncludedChange}
+							onTrainsIncludedChange={onTrainsIncludedChange}
+							tilesIncluded={!stripTilesSelected}
+							trainsIncluded={!stripTrainsSelected}
+						/>
 
 						{book ? (
 							<section

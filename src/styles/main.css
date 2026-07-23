@@ -848,6 +848,25 @@ body {
 	padding: 0 14px 12px;
 }
 
+.blueprint-content-filters__options {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 8px;
+	padding: 0 14px 12px;
+}
+
+.blueprint-content-filters__option {
+	width: fit-content;
+	margin: 0;
+	align-items: center;
+}
+
+.blueprint-content-filters__option > div {
+	width: auto;
+	user-select: text;
+}
+
 .transform-dialog-backdrop {
 	position: fixed;
 	z-index: 1000;
