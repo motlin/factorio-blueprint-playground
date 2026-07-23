@@ -12,6 +12,9 @@ const {navigate} = vi.hoisted(() => ({
 	navigate: vi.fn<(options: unknown) => void>(),
 }));
 
+vi.mock('dexie-react-hooks', () => ({
+	useLiveQuery: () => [],
+}));
 vi.mock('@tanstack/react-router', async (importOriginal) => ({
 	...(await importOriginal()),
 	useNavigate: () => navigate,
@@ -31,6 +34,11 @@ function openUpgradePlanner() {
 
 function openBlueprintEditor() {
 	fireEvent.click(screen.getByRole('button', {name: 'Open Blueprint Editor'}));
+}
+
+async function choosePlanner(user: ReturnType<typeof userEvent.setup>, label: string) {
+	await user.click(screen.getByRole('button', {name: /Load planner, currently/}));
+	await user.click(screen.getByRole('button', {name: label}));
 }
 
 describe('TransformPanel', () => {
@@ -226,6 +234,22 @@ describe('TransformPanel', () => {
 				.getByRole('dialog', {name: 'Select the upgrade planner to apply'})
 				.getAttribute('aria-modal'),
 		}).toStrictEqual({description: 'Draft description', disabled: false, expanded: 'true', selector: 'true'});
+
+		await user.click(screen.getByRole('button', {name: 'Default Upgrade'}));
+		expect(navigate).toHaveBeenCalledExactlyOnceWith({
+			to: '/',
+			search: {
+				pasted: serializeBlueprint({
+					blueprint: {
+						item: 'blueprint',
+						version: 0,
+						entities: [{entity_number: 1, name: 'fast-transport-belt', position: {x: 0, y: 0}}],
+						description: 'Draft description',
+					},
+				}),
+				selection: '',
+			},
+		});
 	});
 
 	test('opens the Factorio tools with B and U except while editing text or choosing an icon', async () => {
@@ -482,7 +506,7 @@ describe('TransformPanel', () => {
 		render(<TransformPanel blueprint={qualityBlueprint} />);
 
 		openUpgradePlanner();
-		await user.selectOptions(screen.getByRole('combobox', {name: 'Load planner'}), 'custom');
+		await choosePlanner(user, 'Empty planner');
 		await user.click(screen.getByRole('button', {name: /Add mapping/}));
 		await user.click(screen.getByRole('button', {name: 'Rare quality'}));
 		await user.selectOptions(screen.getByRole('combobox', {name: 'Quality comparison'}), '>');
@@ -526,7 +550,7 @@ describe('TransformPanel', () => {
 		render(<TransformPanel blueprint={blueprint} />);
 
 		openUpgradePlanner();
-		await user.selectOptions(screen.getByRole('combobox', {name: 'Load planner'}), 'custom');
+		await choosePlanner(user, 'Empty planner');
 		await user.click(screen.getByRole('button', {name: '+ Add mapping'}));
 		await user.click(screen.getByRole('button', {name: 'Choose Transport belt'}));
 
@@ -916,7 +940,7 @@ describe('TransformPanel', () => {
 		render(<TransformPanel blueprint={blueprint} />);
 
 		openUpgradePlanner();
-		await user.selectOptions(screen.getByRole('combobox', {name: 'Load planner'}), 'pasted');
+		await choosePlanner(user, 'Paste upgrade planner…');
 		fireEvent.change(screen.getByPlaceholderText('Paste an upgrade planner string or JSON'), {
 			target: {
 				value: JSON.stringify({

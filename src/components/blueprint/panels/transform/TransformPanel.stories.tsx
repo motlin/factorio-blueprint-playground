@@ -89,6 +89,9 @@ export const BlueprintEditor: Story = {
 		await expect(canvas.getByText('Belt test')).toHaveClass('blueprint-editor__title');
 		await expect(canvas.getByRole('button', {name: 'Edit blueprint title'})).toBeVisible();
 		await expect(canvas.queryByRole('heading', {name: 'Preview'})).not.toBeInTheDocument();
+		await userEvent.click(canvas.getByRole('button', {name: 'Upgrade items and entities in the blueprint'}));
+		await expect(canvas.getByRole('dialog', {name: 'Select the upgrade planner to apply'})).toBeVisible();
+		await expect(canvas.getByRole('button', {name: 'Default Upgrade'})).toBeVisible();
 	},
 };
 

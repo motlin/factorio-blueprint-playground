@@ -1,9 +1,12 @@
 import {type ReactNode, useId, useState} from 'react';
 
+import type {BlueprintString} from '../../../../parsing/types';
 import type {BlueprintFilterCategories} from '../../../../transform/strip';
+import type {UpgradeDirection} from '../../../../transform/upgradePlanner';
 import {ButtonGreen} from '../../../ui/ButtonGreen';
 import {BlueprintEditorToolbar} from './BlueprintEditorToolbar';
 import {BlueprintTitleEditor} from './BlueprintTitleEditor';
+import {UpgradePlannerSelectorDialog, type UpgradePlannerChoice} from './UpgradePlannerSelectorDialog';
 
 interface BlueprintEditorDialogProps {
 	book: boolean;
@@ -20,10 +23,12 @@ interface BlueprintEditorDialogProps {
 	onFlattenBookSelectedChange: (selected: boolean) => void;
 	onLabelChange: (label: string) => void;
 	onModulesIncludedChange: (included: boolean) => void;
+	onPlannerChoose: (choice: UpgradePlannerChoice, direction: UpgradeDirection) => void;
 	onSave: () => void;
 	onSortBookSelectedChange: (selected: boolean) => void;
 	onTilesIncludedChange: (included: boolean) => void;
 	onTrainsIncludedChange: (included: boolean) => void;
+	rootBlueprint: BlueprintString;
 	saveDisabled: boolean;
 	saveLabel: string;
 	sortBookSelected: boolean;
@@ -48,10 +53,12 @@ export function BlueprintEditorDialog({
 	onFlattenBookSelectedChange,
 	onLabelChange,
 	onModulesIncludedChange,
+	onPlannerChoose,
 	onSave,
 	onSortBookSelectedChange,
 	onTilesIncludedChange,
 	onTrainsIncludedChange,
+	rootBlueprint,
 	saveDisabled,
 	saveLabel,
 	sortBookSelected,
@@ -62,7 +69,6 @@ export function BlueprintEditorDialog({
 }: BlueprintEditorDialogProps) {
 	const [upgradePlannerSelectorOpen, setUpgradePlannerSelectorOpen] = useState(false);
 	const upgradePlannerSelectorId = useId();
-	const upgradePlannerSelectorHeadingId = useId();
 	const entityFilterCount = [filters.entities, filters.tiles, filters.trains].filter(Boolean).length;
 	const showEntityFilters = entityFilterCount > 1;
 	const showFilters = filters.modules || showEntityFilters;
@@ -247,33 +253,19 @@ export function BlueprintEditorDialog({
 				</footer>
 			</section>
 			{upgradePlannerSelectorOpen ? (
-				<section
-					id={upgradePlannerSelectorId}
-					className="transform-dialog transform-dialog--picker"
-					role="dialog"
-					aria-modal="true"
-					aria-labelledby={upgradePlannerSelectorHeadingId}
-					onKeyDown={(event) => {
-						if (event.key === 'Escape') {
-							setUpgradePlannerSelectorOpen(false);
-						}
+				<UpgradePlannerSelectorDialog
+					dialogId={upgradePlannerSelectorId}
+					includeEditingChoices={false}
+					rootBlueprint={rootBlueprint}
+					selectedSource="suggested"
+					onClose={() => {
+						setUpgradePlannerSelectorOpen(false);
 					}}
-				>
-					<header className="transform-dialog__header">
-						<h3 id={upgradePlannerSelectorHeadingId}>Select the upgrade planner to apply</h3>
-						<button
-							type="button"
-							className="transform-dialog__close"
-							aria-label="Close upgrade planner selector"
-							onClick={() => {
-								setUpgradePlannerSelectorOpen(false);
-							}}
-						>
-							×
-						</button>
-					</header>
-					<p>Choose an upgrade planner to apply to this blueprint.</p>
-				</section>
+					onChoose={(choice, direction) => {
+						setUpgradePlannerSelectorOpen(false);
+						onPlannerChoose(choice, direction);
+					}}
+				/>
 			) : null}
 		</div>
 	);
