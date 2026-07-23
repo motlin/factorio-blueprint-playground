@@ -16,7 +16,7 @@ const meta: Meta<typeof TransformPanel> = {
 		(StoryComponent) => {
 			const rootRoute = createRootRoute({
 				component: () => (
-					<div style={{minWidth: '500px'}}>
+					<div style={{width: 'min(500px, 100vw)', maxWidth: '100%'}}>
 						<StoryComponent />
 					</div>
 				),
@@ -116,6 +116,57 @@ export const UpgradePlanner: Story = {
 		await expect(canvas.getByRole('button', {name: 'Default Upgrade'})).toBeVisible();
 		await expect(canvas.getByRole('button', {name: 'Empty planner'})).toBeVisible();
 		await expect(canvas.getByRole('button', {name: 'Paste upgrade planner…'})).toBeVisible();
+	},
+};
+
+export const ResponsiveUpgradePlanner: Story = {
+	args: Blueprint.args,
+	parameters: {
+		chromatic: {
+			viewports: [320, 480, 860],
+		},
+	},
+	play: async ({canvasElement}) => {
+		const canvas = within(canvasElement);
+		await userEvent.click(canvas.getByRole('button', {name: 'Open Upgrade Planner'}));
+
+		const dialog = canvas.getByRole('dialog', {name: 'Upgrade Planner'});
+		const body = canvas.getByRole('region', {name: 'Upgrade Planner configuration'});
+		const header = dialog.firstElementChild;
+		const footer = dialog.lastElementChild;
+		const configuration = canvas
+			.getByRole('heading', {name: 'Upgrade mappings'})
+			.closest('.upgrade-planner-dialog__configuration');
+		const replacements = canvas
+			.getByRole('heading', {name: 'Book-wide replacements'})
+			.closest('.book-wide-replacements');
+		if (
+			!(header instanceof HTMLElement) ||
+			!(footer instanceof HTMLElement) ||
+			!(configuration instanceof HTMLElement) ||
+			!(replacements instanceof HTMLElement)
+		) {
+			throw new Error('Expected the responsive planner shell and panels.');
+		}
+
+		const dialogBounds = dialog.getBoundingClientRect();
+		const headerBounds = header.getBoundingClientRect();
+		const footerBounds = footer.getBoundingClientRect();
+		const configurationBounds = configuration.getBoundingClientRect();
+		const replacementsBounds = replacements.getBoundingClientRect();
+		await expect({
+			bodyFitsHorizontally: body.scrollWidth <= body.clientWidth,
+			dialogFitsHorizontally: dialogBounds.left >= 0 && dialogBounds.right <= window.innerWidth,
+			footerVisible: footerBounds.bottom <= window.innerHeight,
+			headerVisible: headerBounds.top >= 0,
+			panelBordersAligned: Math.abs(configurationBounds.left - replacementsBounds.left) < 1,
+		}).toStrictEqual({
+			bodyFitsHorizontally: true,
+			dialogFitsHorizontally: true,
+			footerVisible: true,
+			headerVisible: true,
+			panelBordersAligned: true,
+		});
 	},
 };
 

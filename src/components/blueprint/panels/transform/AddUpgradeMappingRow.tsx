@@ -49,7 +49,7 @@ export function AddUpgradeMappingRow({onRemove, onSourceChoose, onTargetChoose, 
 				<small>draft</small>
 			</span>
 			{sourceName === undefined ? (
-				<span />
+				<span className="upgrade-mapping-grid__remove-placeholder" />
 			) : (
 				<button
 					type="button"
