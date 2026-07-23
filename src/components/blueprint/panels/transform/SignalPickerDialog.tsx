@@ -39,6 +39,7 @@ const pickerCategories: readonly PickerCategory[] = [
 export interface SignalPickerDialogProps {
 	initialQuality?: QualitySelection;
 	initialSignal?: PickerSignal;
+	isSelectionAllowed?: (signal: PickerSignal, preserveQuality: boolean) => boolean;
 	onChoose: (signal: PickerSignal, preserveQuality?: boolean) => void;
 	onClose: () => void;
 	options: SignalID[];
@@ -187,6 +188,7 @@ function SignalPickerQualityBar({
 export function SignalPickerDialog({
 	initialQuality,
 	initialSignal,
+	isSelectionAllowed,
 	onChoose,
 	onClose,
 	options,
@@ -236,16 +238,20 @@ export function SignalPickerDialog({
 	const selectedIdentity = selectedSignal === undefined ? undefined : signalIdentity(selectedSignal);
 	const selectedOptionIndex = filteredOptions.findIndex((signal) => signalIdentity(signal) === selectedIdentity);
 	const tabbableOptionIndex = selectedOptionIndex < 0 ? 0 : selectedOptionIndex;
+	const preserveQuality = qualitySelection === 'preserve';
+	const confirmedSignal =
+		selectedSignal === undefined
+			? undefined
+			: selectedSignalWithQuality(selectedSignal, qualityMode, qualitySelection, qualityComparator);
+	const selectionAllowed =
+		confirmedSignal !== undefined && (isSelectionAllowed?.(confirmedSignal, preserveQuality) ?? true);
 
 	const confirmSelection = useCallback(() => {
-		if (selectedSignal === undefined) {
+		if (confirmedSignal === undefined || !selectionAllowed) {
 			return;
 		}
-		onChoose(
-			selectedSignalWithQuality(selectedSignal, qualityMode, qualitySelection, qualityComparator),
-			qualitySelection === 'preserve',
-		);
-	}, [onChoose, qualityComparator, qualityMode, qualitySelection, selectedSignal]);
+		onChoose(confirmedSignal, preserveQuality);
+	}, [confirmedSignal, onChoose, preserveQuality, selectionAllowed]);
 
 	useEffect(() => {
 		const handlePickerShortcut = (event: KeyboardEvent) => {
@@ -399,7 +405,7 @@ export function SignalPickerDialog({
 						/>
 					)}
 					<ButtonGreen
-						disabled={selectedSignal === undefined}
+						disabled={!selectionAllowed}
 						onClick={(event) => {
 							event.preventDefault();
 							confirmSelection();

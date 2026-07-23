@@ -1,6 +1,5 @@
 import {useId, useState} from 'react';
 
-import gameData from '../../../../generated/game-data.json';
 import type {BlueprintString, SignalID, UpgradeSourceSignal} from '../../../../parsing/types';
 import type {UpgradeCandidate, UpgradeRule} from '../../../../transform/upgradePlanner';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
@@ -8,7 +7,12 @@ import {ButtonGreen} from '../../../ui/ButtonGreen';
 import {Textarea} from '../../../ui/Textarea';
 import {SignalPickerDialog} from './SignalPickerDialog';
 import {UpgradeMappingGrid} from './UpgradeMappingGrid';
-import {signalIdentity, signalName} from './upgradePlannerSignals';
+import {
+	isUpgradeTargetSelectionAllowed,
+	signalIdentity,
+	signalName,
+	upgradeTargetOptions,
+} from './upgradePlannerSignals';
 import {UpgradePlannerSelectorDialog, type UpgradePlannerChoice} from './UpgradePlannerSelectorDialog';
 
 interface MappingSourceDraft {
@@ -61,34 +65,6 @@ interface UpgradePlannerDialogProps {
 	scope: 'selection' | 'root';
 	selectionScopeDisabled: boolean;
 	selectionScopeLabel: string;
-}
-
-function upgradeTargetOptions(source: SignalID, currentTarget: SignalID): SignalID[] {
-	const adjacent = new Map<string, Set<string>>();
-	for (const {from, to} of gameData.nextUpgrades) {
-		const fromTargets = adjacent.get(from) ?? new Set<string>();
-		fromTargets.add(to);
-		adjacent.set(from, fromTargets);
-		const toTargets = adjacent.get(to) ?? new Set<string>();
-		toTargets.add(from);
-		adjacent.set(to, toTargets);
-	}
-	const visited = new Set([source.name]);
-	const pending = [source.name];
-	while (pending.length > 0) {
-		const current = pending.shift();
-		if (current === undefined) {
-			break;
-		}
-		for (const candidate of adjacent.get(current) ?? []) {
-			if (!visited.has(candidate)) {
-				visited.add(candidate);
-				pending.push(candidate);
-			}
-		}
-	}
-	visited.add(currentTarget.name);
-	return [...visited].map((name) => ({...currentTarget, name}));
 }
 
 function UpgradeMappingsEditor({
@@ -200,6 +176,9 @@ function UpgradeMappingsEditor({
 					title={`Choose target for ${signalName(targetPickerCandidate.from)}`}
 					options={upgradeTargetOptions(targetPickerCandidate.from, targetPickerCandidate.to)}
 					qualityMode="target"
+					isSelectionAllowed={(target, preserveQuality) =>
+						isUpgradeTargetSelectionAllowed(targetPickerCandidate.from, target, preserveQuality)
+					}
 					onClose={() => {
 						setTargetPickerCandidate(undefined);
 					}}
@@ -237,6 +216,9 @@ function UpgradeMappingsEditor({
 					title={`Choose target for ${signalName(mappingSourceDraft.source)}`}
 					options={upgradeTargetOptions(mappingSourceDraft.source, mappingSourceDraft.source)}
 					qualityMode="target"
+					isSelectionAllowed={(target, preserveQuality) =>
+						isUpgradeTargetSelectionAllowed(mappingSourceDraft.source, target, preserveQuality)
+					}
 					onClose={() => {
 						setMappingSourceDraft(undefined);
 					}}
