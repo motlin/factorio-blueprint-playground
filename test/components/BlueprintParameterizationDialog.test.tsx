@@ -1,4 +1,5 @@
-import {render, screen, within} from '@testing-library/react';
+import {StrictMode, useState} from 'react';
+import {fireEvent, render, screen, waitFor, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {expect, test, vi} from 'vite-plus/test';
 
@@ -28,6 +29,39 @@ const parameters: Parameter[] = [
 		'not-parametrised': true,
 	},
 ];
+
+function ParameterizationHarness() {
+	const [open, setOpen] = useState(false);
+
+	return (
+		<>
+			<section role="dialog" aria-label="Blueprint editor">
+				<button
+					type="button"
+					onClick={() => {
+						setOpen(true);
+					}}
+				>
+					Edit parameters
+				</button>
+			</section>
+			{open ? (
+				<BlueprintParameterizationDialog
+					dialogId="blueprint-parameterization"
+					onClose={() => {
+						setOpen(false);
+					}}
+					onConfirm={vi.fn<(nextParameters: Parameter[]) => void>()}
+					parameters={parameters}
+					signalOptions={[
+						{type: 'item', name: 'iron-plate'},
+						{type: 'item', name: 'iron-gear-wheel'},
+					]}
+				/>
+			) : null}
+		</>
+	);
+}
 
 test('shows editable ID rows and confirms unsupported number parameters unchanged', async () => {
 	const user = userEvent.setup();
@@ -120,4 +154,82 @@ test('edits signal, quality, dependencies, and row membership before confirming'
 			],
 		],
 	]);
+});
+
+test('keeps nested picker focus in the top layer and returns it through the dialog stack', async () => {
+	const user = userEvent.setup();
+	render(
+		<StrictMode>
+			<ParameterizationHarness />
+		</StrictMode>,
+	);
+
+	const editor = screen.getByRole('dialog', {name: 'Blueprint editor'});
+	const parameterInvoker = screen.getByRole('button', {name: 'Edit parameters'});
+	await user.click(parameterInvoker);
+
+	const parameterDialog = screen.getByRole('dialog', {name: 'Blueprint parametrisation'});
+	const firstName = within(parameterDialog).getByRole('textbox', {name: 'Parameter 1 name'});
+	const valueInvoker = within(parameterDialog).getByRole('button', {name: 'Choose value for parameter 1 Plate'});
+	expect({
+		activeElement: document.activeElement,
+		editorAriaHidden: editor.getAttribute('aria-hidden'),
+		editorInert: editor.inert,
+		parameterInert: parameterDialog.inert,
+	}).toStrictEqual({
+		activeElement: firstName,
+		editorAriaHidden: 'true',
+		editorInert: true,
+		parameterInert: false,
+	});
+
+	await user.click(valueInvoker);
+	const picker = screen.getByRole('dialog', {name: 'Choose value for Plate'});
+	const search = within(picker).getByRole('searchbox', {name: 'Search'});
+	const confirm = within(picker).getByRole('button', {name: 'Confirm'});
+	expect({
+		activeElement: document.activeElement,
+		editorInert: editor.inert,
+		parameterAriaHidden: parameterDialog.getAttribute('aria-hidden'),
+		parameterInert: parameterDialog.inert,
+		pickerInert: picker.inert,
+	}).toStrictEqual({
+		activeElement: search,
+		editorInert: true,
+		parameterAriaHidden: 'true',
+		parameterInert: true,
+		pickerInert: false,
+	});
+
+	confirm.focus();
+	await user.tab();
+	expect(document.activeElement).toBe(search);
+
+	fireEvent.keyDown(search, {key: 'Escape'});
+	await waitFor(() => {
+		expect(screen.queryByRole('dialog', {name: 'Choose value for Plate'})).toBeNull();
+		expect(document.activeElement).toBe(valueInvoker);
+	});
+	expect({
+		editorInert: editor.inert,
+		parameterAriaHidden: parameterDialog.getAttribute('aria-hidden'),
+		parameterInert: parameterDialog.inert,
+	}).toStrictEqual({
+		editorInert: true,
+		parameterAriaHidden: null,
+		parameterInert: false,
+	});
+
+	fireEvent.keyDown(valueInvoker, {key: 'Escape'});
+	await waitFor(() => {
+		expect(screen.queryByRole('dialog', {name: 'Blueprint parametrisation'})).toBeNull();
+		expect(document.activeElement).toBe(parameterInvoker);
+	});
+	expect({
+		editorAriaHidden: editor.getAttribute('aria-hidden'),
+		editorInert: editor.inert,
+	}).toStrictEqual({
+		editorAriaHidden: null,
+		editorInert: false,
+	});
 });

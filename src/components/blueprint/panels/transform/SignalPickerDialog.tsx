@@ -1,10 +1,12 @@
-import {useCallback, useEffect, useId, useMemo, useRef, useState} from 'react';
+import {useCallback, useId, useMemo, useRef, useState} from 'react';
+import {createPortal} from 'react-dom';
 
 import type {QualityComparator, SignalID, SignalType} from '../../../../parsing/types';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
 import {ButtonGreen} from '../../../ui/ButtonGreen';
 import {signalWithUpgradeQuality, type UpgradeQualitySelection, type UpgradeQualitySignal} from './upgradeQuality';
 import {UpgradeQualityControls} from './UpgradeQualityControls';
+import {useDialogFocus} from './useDialogFocus';
 
 const gridColumnCount = 10;
 
@@ -68,15 +70,6 @@ function signalName(signal: SignalID): string {
 function signalTitle(signal: PickerSignal): string {
 	const quality = signal.quality === undefined ? '' : `\nQuality: ${signal.comparator ?? '='} ${signal.quality}`;
 	return `${signalName(signal)}\n${normalizedSignalType(signal)}:${signal.name}${quality}`;
-}
-
-function isTextEditingTarget(target: EventTarget | null): boolean {
-	return (
-		target instanceof HTMLInputElement ||
-		target instanceof HTMLTextAreaElement ||
-		target instanceof HTMLSelectElement ||
-		(target instanceof HTMLElement && target.isContentEditable)
-	);
 }
 
 function categoryForSignal(signal: SignalID): PickerCategory {
@@ -157,40 +150,12 @@ export function SignalPickerDialog({
 		}
 		onChoose(confirmedSignal, preserveQuality);
 	}, [confirmedSignal, onChoose, preserveQuality, selectionAllowed]);
-
-	useEffect(() => {
-		const handlePickerShortcut = (event: KeyboardEvent) => {
-			const escapePressed = event.key === 'Escape';
-			const clearCursorPressed =
-				event.code === 'KeyQ' &&
-				!event.altKey &&
-				!event.ctrlKey &&
-				!event.metaKey &&
-				!event.shiftKey &&
-				!isTextEditingTarget(event.target);
-			const confirmPressed =
-				event.key === 'Enter' &&
-				!event.altKey &&
-				!event.ctrlKey &&
-				!event.metaKey &&
-				!event.shiftKey &&
-				!(event.target instanceof HTMLButtonElement);
-			if (!escapePressed && !clearCursorPressed && !confirmPressed) {
-				return;
-			}
-			event.preventDefault();
-			event.stopPropagation();
-			if (confirmPressed) {
-				confirmSelection();
-			} else {
-				onClose();
-			}
-		};
-		window.addEventListener('keydown', handlePickerShortcut);
-		return () => {
-			window.removeEventListener('keydown', handlePickerShortcut);
-		};
-	}, [confirmSelection, onClose]);
+	const dialogReference = useDialogFocus<HTMLElement>({
+		closeOnQ: true,
+		initialFocusSelector: 'input[type="search"]',
+		onClose,
+		onEnter: confirmSelection,
+	});
 
 	const moveGridFocus = (event: React.KeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
 		let nextIndex: number | undefined;
@@ -214,9 +179,10 @@ export function SignalPickerDialog({
 		optionButtons.current[nextIndex]?.focus();
 	};
 
-	return (
+	return createPortal(
 		<div className="transform-dialog-backdrop transform-picker__backdrop">
 			<section
+				ref={dialogReference}
 				className="transform-dialog transform-dialog--picker"
 				role="dialog"
 				aria-modal="true"
@@ -322,6 +288,7 @@ export function SignalPickerDialog({
 					</ButtonGreen>
 				</footer>
 			</section>
-		</div>
+		</div>,
+		document.body,
 	);
 }

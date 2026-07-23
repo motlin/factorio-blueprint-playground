@@ -1,9 +1,11 @@
 import {useId, useMemo, useState} from 'react';
+import {createPortal} from 'react-dom';
 
 import type {Parameter, SignalID} from '../../../../parsing/types';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
 import {ButtonGreen} from '../../../ui/ButtonGreen';
 import {SignalPickerDialog} from './SignalPickerDialog';
+import {useDialogFocus} from './useDialogFocus';
 
 const dependencyOptions = [
 	{field: undefined, label: 'Independent', value: 'independent'},
@@ -128,6 +130,10 @@ export function BlueprintParameterizationDialog({
 		[draftParameters, signalOptions],
 	);
 	const choosingParameter = choosingValueIndex === undefined ? undefined : draftParameters[choosingValueIndex];
+	const dialogReference = useDialogFocus<HTMLElement>({
+		initialFocusSelector: '[data-dialog-initial-focus="true"]',
+		onClose,
+	});
 
 	const updateParameter = (index: number, update: (parameter: Parameter) => Parameter) => {
 		setDraftParameters((current) =>
@@ -135,21 +141,15 @@ export function BlueprintParameterizationDialog({
 		);
 	};
 
-	return (
+	return createPortal(
 		<div className="transform-dialog-backdrop blueprint-parameterization__backdrop">
 			<section
+				ref={dialogReference}
 				id={dialogId}
 				className="transform-dialog blueprint-parameterization"
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby={dialogTitleId}
-				onKeyDown={(event) => {
-					if (event.key === 'Escape') {
-						event.preventDefault();
-						event.stopPropagation();
-						onClose();
-					}
-				}}
 			>
 				<header className="transform-dialog__header blueprint-parameterization__header">
 					<h3 id={dialogTitleId}>Blueprint parametrisation</h3>
@@ -192,6 +192,7 @@ export function BlueprintParameterizationDialog({
 									<label>
 										<span>Name</span>
 										<input
+											data-dialog-initial-focus={editableIndex === 0 ? 'true' : undefined}
 											type="text"
 											aria-label={`Parameter ${parameterNumber.toString()} name`}
 											value={parameter.name ?? ''}
@@ -336,6 +337,7 @@ export function BlueprintParameterizationDialog({
 						</p>
 					)}
 					<button
+						data-dialog-initial-focus="true"
 						type="button"
 						className="blueprint-parameterization__add"
 						onClick={() => {
@@ -398,6 +400,7 @@ export function BlueprintParameterizationDialog({
 					title={`Choose value for ${choosingParameter.name ?? choosingParameter.id ?? 'parameter'}`}
 				/>
 			)}
-		</div>
+		</div>,
+		document.body,
 	);
 }

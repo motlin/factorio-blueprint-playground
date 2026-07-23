@@ -1,4 +1,4 @@
-import {fireEvent, render, screen, within} from '@testing-library/react';
+import {fireEvent, render, screen, waitFor, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {expect, test, vi} from 'vite-plus/test';
 
@@ -56,6 +56,7 @@ test('uses root icons as sources and preserves mappings while incomplete choices
 		throw new Error('The committed icon mapping row was not rendered.');
 	}
 	expect({
+		activeElement: document.activeElement?.getAttribute('aria-label'),
 		count: mapping.querySelector('strong')?.textContent,
 		endpointClasses: ['Source Signal red', 'Target Signal blue'].map(
 			(name) => screen.getByRole('button', {name}).parentElement?.className,
@@ -65,6 +66,7 @@ test('uses root icons as sources and preserves mappings while incomplete choices
 			screen.getByRole('button', {name}).getAttribute('title'),
 		),
 	}).toStrictEqual({
+		activeElement: 'Choose source icon',
 		count: '1',
 		endpointClasses: ['icon-replacement-editor__endpoint', 'icon-replacement-editor__endpoint'],
 		names: ['Signal red', 'Signal blue'],
@@ -80,13 +82,21 @@ test('uses root icons as sources and preserves mappings while incomplete choices
 	).toStrictEqual(['Choose Signal green']);
 
 	fireEvent.keyDown(window, {key: 'q', code: 'KeyQ'});
+	await waitFor(() => {
+		expect(document.activeElement?.getAttribute('aria-label')).toBe('Choose source icon');
+	});
+	const replacementDialog = screen.getByRole('dialog', {name: 'Icon Replacements'});
 	expect({
+		activeElement: document.activeElement?.getAttribute('aria-label'),
 		committedMapping: screen
 			.getByRole('button', {name: 'Remove replacement for Signal red'})
 			.getAttribute('aria-label'),
+		replacementDialogInert: replacementDialog.inert,
 		picker: screen.queryByRole('dialog', {name: 'Choose source icon used here'}),
 	}).toStrictEqual({
+		activeElement: 'Choose source icon',
 		committedMapping: 'Remove replacement for Signal red',
+		replacementDialogInert: false,
 		picker: null,
 	});
 

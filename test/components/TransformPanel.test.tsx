@@ -258,6 +258,7 @@ describe('TransformPanel', () => {
 		render(<TransformPanel blueprint={blueprint} />);
 
 		openBlueprintEditor();
+		const blueprintEditor = screen.getByRole('dialog', {name: 'Blueprint Editor'});
 		const upgradeButton = screen.getByRole<HTMLButtonElement>('button', {
 			name: 'Upgrade items and entities in the blueprint',
 		});
@@ -286,13 +287,15 @@ describe('TransformPanel', () => {
 		await user.click(upgradeButton);
 		const selector = screen.getByRole('dialog', {name: 'Select the upgrade planner to apply'});
 		expect({
-			blueprintEditor: screen.getByRole('dialog', {name: 'Blueprint Editor'}).getAttribute('aria-modal'),
+			blueprintEditorAriaHidden: blueprintEditor.getAttribute('aria-hidden'),
+			blueprintEditorInert: blueprintEditor.inert,
 			controls: upgradeButton.getAttribute('aria-controls'),
 			expanded: upgradeButton.getAttribute('aria-expanded'),
 			selector: selector.getAttribute('aria-modal'),
 			standalonePlanner: screen.queryByRole('dialog', {name: 'Upgrade Planner'}),
 		}).toStrictEqual({
-			blueprintEditor: 'true',
+			blueprintEditorAriaHidden: 'true',
+			blueprintEditorInert: true,
 			controls: selector.id,
 			expanded: 'true',
 			selector: 'true',
@@ -300,13 +303,14 @@ describe('TransformPanel', () => {
 		});
 
 		await user.click(screen.getByRole('button', {name: 'Close upgrade planner selector'}));
-		await user.type(screen.getByRole('textbox', {name: 'Blueprint description'}), 'Draft description');
+		const description = screen.getByRole<HTMLTextAreaElement>('textbox', {name: 'Blueprint description'});
+		await user.type(description, 'Draft description');
 		const draftUpgradeButton = screen.getByRole<HTMLButtonElement>('button', {
 			name: 'Upgrade items and entities in the blueprint',
 		});
 		await user.click(draftUpgradeButton);
 		expect({
-			description: screen.getByRole<HTMLTextAreaElement>('textbox', {name: 'Blueprint description'}).value,
+			description: description.value,
 			disabled: draftUpgradeButton.disabled,
 			expanded: draftUpgradeButton.getAttribute('aria-expanded'),
 			selector: screen
@@ -569,15 +573,22 @@ describe('TransformPanel', () => {
 		render(<TransformPanel blueprint={blueprint} />);
 
 		fireEvent.keyDown(window, {code: 'KeyB'});
-		expect(screen.getByRole('dialog', {name: 'Blueprint Editor'}).getAttribute('aria-modal')).toBe('true');
+		const blueprintEditor = screen.getByRole('dialog', {name: 'Blueprint Editor'});
+		expect(blueprintEditor.getAttribute('aria-modal')).toBe('true');
 
 		await user.click(screen.getByRole('button', {name: 'Choose icon 1'}));
 		fireEvent.keyDown(window, {code: 'KeyU'});
 		expect({
-			blueprintEditor: screen.getByRole('dialog', {name: 'Blueprint Editor'}).getAttribute('aria-modal'),
+			blueprintEditorAriaHidden: blueprintEditor.getAttribute('aria-hidden'),
+			blueprintEditorInert: blueprintEditor.inert,
 			picker: screen.getByRole('dialog', {name: 'Choose label icon 1'}).getAttribute('aria-modal'),
 			upgradePlanner: screen.queryByRole('dialog', {name: 'Upgrade Planner'}),
-		}).toStrictEqual({blueprintEditor: 'true', picker: 'true', upgradePlanner: null});
+		}).toStrictEqual({
+			blueprintEditorAriaHidden: 'true',
+			blueprintEditorInert: true,
+			picker: 'true',
+			upgradePlanner: null,
+		});
 
 		fireEvent.keyDown(window, {code: 'Escape', key: 'Escape'});
 		fireEvent.keyDown(window, {code: 'KeyU'});
@@ -1115,6 +1126,7 @@ describe('TransformPanel', () => {
 		render(<TransformPanel blueprint={blueprint} />);
 
 		openUpgradePlanner();
+		const plannerDialog = screen.getByRole('dialog', {name: 'Upgrade Planner'});
 		await choosePlanner(user, 'Empty planner');
 
 		const emptySource = screen.getByRole('button', {name: 'Choose source for new mapping'});
@@ -1139,6 +1151,18 @@ describe('TransformPanel', () => {
 
 		await user.click(emptySource);
 		await chooseSignal(user, 'Transport belt');
+		expect({
+			plannerAriaHidden: plannerDialog.getAttribute('aria-hidden'),
+			plannerInert: plannerDialog.inert,
+			targetPicker: screen
+				.getByRole('dialog', {name: 'Choose target for Transport belt'})
+				.getAttribute('aria-modal'),
+		}).toStrictEqual({
+			plannerAriaHidden: 'true',
+			plannerInert: true,
+			targetPicker: 'true',
+		});
+		await user.click(screen.getByRole('button', {name: 'Close Choose target for Transport belt'}));
 		const incompleteRow = screen.getByRole('group', {
 			name: 'Incomplete mapping from Transport belt',
 		});
@@ -1150,7 +1174,6 @@ describe('TransformPanel', () => {
 			target: 'Choose target for Transport belt',
 		});
 
-		await user.click(screen.getByRole('button', {name: 'Close Choose target for Transport belt'}));
 		expect({
 			committedRows: screen.queryAllByRole('listitem').length,
 			incompleteRow: screen
@@ -1550,14 +1573,21 @@ describe('TransformPanel', () => {
 		render(<TransformPanel blueprint={blueprint} />);
 
 		openBlueprintEditor();
+		const blueprintEditor = screen.getByRole('dialog', {name: 'Blueprint Editor'});
 		await user.click(screen.getByRole('button', {name: 'Choose icon 1'}));
 		const search = screen.getByRole<HTMLInputElement>('searchbox', {name: 'Search'});
 		await user.type(search, 'q');
 		expect({
-			blueprintEditor: screen.getByRole('dialog', {name: 'Blueprint Editor'}).getAttribute('aria-modal'),
+			blueprintEditorAriaHidden: blueprintEditor.getAttribute('aria-hidden'),
+			blueprintEditorInert: blueprintEditor.inert,
 			picker: screen.getByRole('dialog', {name: 'Choose label icon 1'}).getAttribute('aria-modal'),
 			search: search.value,
-		}).toStrictEqual({blueprintEditor: 'true', picker: 'true', search: 'q'});
+		}).toStrictEqual({
+			blueprintEditorAriaHidden: 'true',
+			blueprintEditorInert: true,
+			picker: 'true',
+			search: 'q',
+		});
 
 		fireEvent.keyDown(search, {key: 'Escape', code: 'Escape'});
 		expect({

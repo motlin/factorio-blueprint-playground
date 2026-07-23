@@ -1,4 +1,5 @@
 import {useMemo, useState} from 'react';
+import {createPortal} from 'react-dom';
 
 import type {BlueprintString, SignalID} from '../../../../parsing/types';
 import {
@@ -10,6 +11,7 @@ import {ButtonGreen} from '../../../ui/ButtonGreen';
 import {SignalPickerDialog} from './SignalPickerDialog';
 import {SignalSlot} from './UpgradeMappingRow';
 import {normalizedSignalType, pickerSignals, signalIdentity, signalName} from './upgradePlannerSignals';
+import {useDialogFocus} from './useDialogFocus';
 
 export interface IconReplacementDialogProps {
 	onChange: (replacements: IconReplacement[]) => void;
@@ -59,10 +61,20 @@ export function IconReplacementDialog({onChange, onClose, replacements, rootBlue
 			!replacements.some((replacement) => signalIdentity(replacement.from) === signalIdentity(candidate.signal)),
 	);
 	const draftCount = draftFrom === undefined ? 0 : replacementCount(candidates, draftFrom);
+	const dialogReference = useDialogFocus<HTMLElement>({
+		initialFocusSelector: '[aria-label="Choose source icon"]',
+		onClose,
+	});
 
-	return (
+	return createPortal(
 		<div className="transform-dialog-backdrop">
-			<section className="transform-dialog" role="dialog" aria-modal="true" aria-label="Icon Replacements">
+			<section
+				ref={dialogReference}
+				className="transform-dialog"
+				role="dialog"
+				aria-modal="true"
+				aria-label="Icon Replacements"
+			>
 				<header className="transform-dialog__header">
 					<h3>Icon Replacements</h3>
 					<button
@@ -177,6 +189,7 @@ export function IconReplacementDialog({onChange, onClose, replacements, rootBlue
 					}}
 				/>
 			) : null}
-		</div>
+		</div>,
+		document.body,
 	);
 }
