@@ -1,3 +1,4 @@
+import type {SignalID, UpgradeSourceSignal} from '../../../../parsing/types';
 import type {UpgradeCandidate, UpgradeRule} from '../../../../transform/upgradePlanner';
 import {UpgradeMappingRow} from './UpgradeMappingRow';
 import {signalIdentity} from './upgradePlannerSignals';
@@ -8,7 +9,9 @@ interface UpgradeMappingGridProps {
 	manualRules: readonly UpgradeRule[];
 	onRemove: (candidate: UpgradeCandidate, manual: boolean) => void;
 	onSourceChoose: (candidate: UpgradeCandidate) => void;
+	onSourceQualityChange: (candidate: UpgradeCandidate, source: UpgradeSourceSignal) => void;
 	onTargetChoose: (candidate: UpgradeCandidate) => void;
+	onTargetQualityChange: (candidate: UpgradeCandidate, target: SignalID, preserveQuality: boolean) => void;
 	showEmptyState: boolean;
 }
 
@@ -18,7 +21,9 @@ export function UpgradeMappingGrid({
 	manualRules,
 	onRemove,
 	onSourceChoose,
+	onSourceQualityChange,
 	onTargetChoose,
+	onTargetQualityChange,
 	showEmptyState,
 }: UpgradeMappingGridProps) {
 	const manualSourceKeys = new Set(manualRules.map((rule) => signalIdentity(rule.from)));
@@ -47,7 +52,9 @@ export function UpgradeMappingGrid({
 									manual={manualSourceKeys.has(sourceKey)}
 									onRemove={onRemove}
 									onSourceChoose={onSourceChoose}
+									onSourceQualityChange={onSourceQualityChange}
 									onTargetChoose={onTargetChoose}
+									onTargetQualityChange={onTargetQualityChange}
 									sourceKey={sourceKey}
 								/>
 							);

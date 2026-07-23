@@ -953,6 +953,52 @@ describe('TransformPanel', () => {
 		});
 	});
 
+	test('applies source and target quality changes from one mapping row', async () => {
+		const user = userEvent.setup();
+		const qualityBlueprint: BlueprintString = {
+			blueprint: {
+				item: 'blueprint',
+				version: 0,
+				entities: [{entity_number: 1, name: 'transport-belt', quality: 'epic', position: {x: 0, y: 0}}],
+			},
+		};
+		render(<TransformPanel blueprint={qualityBlueprint} />);
+
+		openUpgradePlanner();
+		const initialRow = screen.getByRole('listitem', {
+			name: 'Mapping from Transport belt to Fast transport belt',
+		});
+		await user.selectOptions(within(initialRow).getByRole('combobox', {name: 'Source quality selection'}), 'epic');
+		const qualityRow = screen.getByRole('listitem', {
+			name: 'Mapping from Transport belt to Fast transport belt',
+		});
+		await user.selectOptions(
+			within(qualityRow).getByRole('combobox', {name: 'Target quality selection'}),
+			'normal',
+		);
+		await user.click(screen.getByRole('button', {name: 'Apply upgrades'}));
+
+		expect(navigate).toHaveBeenCalledExactlyOnceWith({
+			to: '/',
+			search: {
+				pasted: serializeBlueprint({
+					blueprint: {
+						item: 'blueprint',
+						version: 0,
+						entities: [
+							{
+								entity_number: 1,
+								name: 'fast-transport-belt',
+								position: {x: 0, y: 0},
+							},
+						],
+					},
+				}),
+				selection: '',
+			},
+		});
+	});
+
 	test('adds a custom quality mapping with a source comparator and source-preserving target', async () => {
 		const user = userEvent.setup();
 		const qualityBlueprint: BlueprintString = {
@@ -977,7 +1023,8 @@ describe('TransformPanel', () => {
 		expect({
 			count: screen
 				.getByRole('button', {name: 'Choose source, currently Transport belt'})
-				.parentElement?.querySelector('strong')?.textContent,
+				.closest('.upgrade-mapping-grid__row')
+				?.querySelector('strong')?.textContent,
 			remove: screen.getByRole('button', {name: 'Remove mapping from Transport belt'}).textContent,
 			source: screen.getByRole('button', {name: 'Choose source, currently Transport belt'}).title,
 		}).toStrictEqual({
@@ -1810,10 +1857,11 @@ describe('TransformPanel', () => {
 				}).textContent,
 			},
 			mappings: bookSourceButtons.map((sourceButton) => ({
-				count: sourceButton.parentElement?.querySelector('strong')?.textContent,
+				count: sourceButton.closest('.upgrade-mapping-grid__row')?.querySelector('strong')?.textContent,
 				from: sourceButton.title,
-				to: sourceButton.parentElement?.querySelector<HTMLButtonElement>('button[aria-label^="Choose target"]')
-					?.title,
+				to: sourceButton
+					.closest('.upgrade-mapping-grid__row')
+					?.querySelector<HTMLButtonElement>('button[aria-label^="Choose target"]')?.title,
 			})),
 		}).toStrictEqual({
 			loadedSource: {
@@ -1844,10 +1892,11 @@ describe('TransformPanel', () => {
 		await choosePlanner(user, "Bob's recent planner");
 		expect(
 			screen.getAllByRole('button', {name: /Choose source, currently/}).map((sourceButton) => ({
-				count: sourceButton.parentElement?.querySelector('strong')?.textContent,
+				count: sourceButton.closest('.upgrade-mapping-grid__row')?.querySelector('strong')?.textContent,
 				from: sourceButton.title,
-				to: sourceButton.parentElement?.querySelector<HTMLButtonElement>('button[aria-label^="Choose target"]')
-					?.title,
+				to: sourceButton
+					.closest('.upgrade-mapping-grid__row')
+					?.querySelector<HTMLButtonElement>('button[aria-label^="Choose target"]')?.title,
 			})),
 		).toStrictEqual([
 			{

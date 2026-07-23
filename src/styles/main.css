@@ -1226,7 +1226,7 @@ body {
 
 .upgrade-mapping-grid__headings {
 	display: grid;
-	grid-template-columns: 48px 24px 48px 64px 28px;
+	grid-template-columns: minmax(154px, 1fr) 24px minmax(154px, 1fr) 64px 28px;
 	justify-content: center;
 	gap: 8px;
 	padding: 6px 10px 2px;
@@ -1249,7 +1249,7 @@ body {
 .icon-replacement-editor__mapping,
 .icon-replacement-editor__add {
 	display: grid;
-	grid-template-columns: 48px 24px 48px 64px 28px;
+	grid-template-columns: minmax(154px, 1fr) 24px minmax(154px, 1fr) 64px 28px;
 	align-items: center;
 	justify-content: center;
 	gap: 8px;
@@ -1259,6 +1259,35 @@ body {
 	box-shadow:
 		inset 0 1px 1px #777,
 		inset 0 -1px 1px #171717;
+}
+
+.upgrade-mapping-grid__endpoint {
+	display: flex;
+	min-width: 0;
+	align-items: center;
+	flex-direction: column;
+	gap: 5px;
+}
+
+.upgrade-quality-controls--mapping {
+	display: grid;
+	width: 100%;
+	min-width: 0;
+	grid-template-columns: minmax(0, 1fr) auto;
+	gap: 3px;
+}
+
+.upgrade-quality-controls--mapping select {
+	box-sizing: border-box;
+	width: 100%;
+	min-width: 0;
+	height: 24px;
+	padding: 1px 4px;
+	font-size: 72%;
+}
+
+.upgrade-quality-controls--mapping select + select {
+	width: 42px;
 }
 
 .upgrade-mapping-grid__count {
@@ -1499,14 +1528,14 @@ body {
 	background: repeating-linear-gradient(90deg, rgb(255 255 255 / 3%) 0 2px, transparent 2px 4px), #393839;
 }
 
-.transform-picker__quality-bar {
+.upgrade-quality-controls--picker {
 	display: flex;
 	align-items: center;
 	flex-wrap: wrap;
 	gap: 3px;
 }
 
-.transform-picker__quality-bar button {
+.upgrade-quality-controls--picker button {
 	display: grid;
 	min-width: 36px;
 	height: 36px;
@@ -1522,11 +1551,11 @@ body {
 	cursor: pointer;
 }
 
-.transform-picker__quality-bar button:first-child {
+.upgrade-quality-controls--picker button:first-child {
 	min-width: 120px;
 }
 
-.transform-picker__quality-bar select {
+.upgrade-quality-controls--picker select {
 	min-width: 54px;
 	height: 36px;
 	padding: 4px 7px;
@@ -2043,9 +2072,9 @@ body {
 	gap: 8px;
 }
 
-.transform-picker__quality-bar button:hover,
-.transform-picker__quality-bar button:focus-visible,
-.transform-picker__quality-bar button[aria-pressed='true'] {
+.upgrade-quality-controls--picker button:hover,
+.upgrade-quality-controls--picker button:focus-visible,
+.upgrade-quality-controls--picker button[aria-pressed='true'] {
 	background: #4d4c4d;
 	outline: 2px solid #e39827;
 	outline-offset: -2px;
