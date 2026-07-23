@@ -1,14 +1,6 @@
-import type {SignalID} from '../../../../parsing/types';
 import type {UpgradeCandidate, UpgradeRule} from '../../../../transform/upgradePlanner';
-import {FactorioIcon} from '../../../core/icons/FactorioIcon';
-import {signalIdentity, signalName, signalTitle} from './upgradePlannerSignals';
-
-interface SignalSlotProps {
-	label: string;
-	onClick?: () => void;
-	onContextMenu?: () => void;
-	signal?: SignalID;
-}
+import {UpgradeMappingRow} from './UpgradeMappingRow';
+import {signalIdentity} from './upgradePlannerSignals';
 
 interface UpgradeMappingGridProps {
 	candidates: readonly UpgradeCandidate[];
@@ -18,29 +10,6 @@ interface UpgradeMappingGridProps {
 	onSourceChoose: (candidate: UpgradeCandidate) => void;
 	onTargetChoose: (candidate: UpgradeCandidate) => void;
 	showEmptyState: boolean;
-}
-
-export function SignalSlot({label, onClick, onContextMenu, signal}: SignalSlotProps) {
-	return (
-		<button
-			type="button"
-			className={`transform-signal-slot${signal === undefined ? ' transform-signal-slot--empty' : ''}`}
-			aria-label={label}
-			aria-disabled={onClick === undefined}
-			title={signal === undefined ? label : signalTitle(signal)}
-			onClick={() => {
-				onClick?.();
-			}}
-			onContextMenu={(event) => {
-				if (onContextMenu !== undefined) {
-					event.preventDefault();
-					onContextMenu();
-				}
-			}}
-		>
-			{signal === undefined ? <span aria-hidden="true">+</span> : <FactorioIcon icon={signal} size="large" />}
-		</button>
-	);
 }
 
 export function UpgradeMappingGrid({
@@ -72,44 +41,15 @@ export function UpgradeMappingGrid({
 						{visibleCandidates.map((candidate) => {
 							const sourceKey = signalIdentity(candidate.from);
 							return (
-								<li key={sourceKey} className="upgrade-mapping-grid__row" data-mapping-key={sourceKey}>
-									<SignalSlot
-										label={`Choose source, currently ${signalName(candidate.from)}`}
-										signal={candidate.from}
-										onClick={() => {
-											onSourceChoose(candidate);
-										}}
-									/>
-									<span className="upgrade-mapping-grid__arrow" aria-hidden="true">
-										→
-									</span>
-									<SignalSlot
-										label={`Choose target for ${signalName(candidate.from)}`}
-										signal={candidate.to}
-										onClick={() => {
-											onTargetChoose(candidate);
-										}}
-									/>
-									<span
-										className="upgrade-mapping-grid__count"
-										title={`${candidate.count.toString()} ${
-											candidate.count === 1 ? 'match' : 'matches'
-										}`}
-									>
-										<strong>{candidate.count}</strong>
-										<small>{candidate.count === 1 ? 'match' : 'matches'}</small>
-									</span>
-									<button
-										type="button"
-										className="upgrade-mapping-grid__remove"
-										aria-label={`Remove mapping from ${signalName(candidate.from)}`}
-										onClick={() => {
-											onRemove(candidate, manualSourceKeys.has(sourceKey));
-										}}
-									>
-										×
-									</button>
-								</li>
+								<UpgradeMappingRow
+									key={sourceKey}
+									candidate={candidate}
+									manual={manualSourceKeys.has(sourceKey)}
+									onRemove={onRemove}
+									onSourceChoose={onSourceChoose}
+									onTargetChoose={onTargetChoose}
+									sourceKey={sourceKey}
+								/>
 							);
 						})}
 					</ol>

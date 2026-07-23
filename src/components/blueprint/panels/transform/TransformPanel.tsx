@@ -32,7 +32,7 @@ import {BlueprintEditorDialog} from './BlueprintEditorDialog';
 import {BlueprintLabelIcons} from './BlueprintLabelIcons';
 import {BlueprintToolbelt} from './BlueprintToolbelt';
 import {SignalPickerDialog} from './SignalPickerDialog';
-import {SignalSlot} from './UpgradeMappingGrid';
+import {SignalSlot} from './UpgradeMappingRow';
 import {UpgradePlannerDialog} from './UpgradePlannerDialog';
 import {normalizedSignalType, signalIdentity, signalName, signalTitle} from './upgradePlannerSignals';
 import {useBlueprintEditorDraft} from './useBlueprintEditorDraft';

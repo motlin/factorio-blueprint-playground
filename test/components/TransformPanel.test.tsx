@@ -1004,7 +1004,65 @@ describe('TransformPanel', () => {
 		});
 	});
 
-	test('constrains a new mapping target immediately and keeps completed sources editable', async () => {
+	test('uses the same entity-family constraints for new and edited mapping rows', async () => {
+		const user = userEvent.setup();
+		const mixedBlueprint: BlueprintString = {
+			blueprint: {
+				item: 'blueprint',
+				version: 0,
+				entities: [
+					{entity_number: 1, name: 'transport-belt', position: {x: 0, y: 0}},
+					{entity_number: 2, name: 'assembling-machine-1', position: {x: 1, y: 0}},
+				],
+			},
+		};
+		render(<TransformPanel blueprint={mixedBlueprint} />);
+
+		openUpgradePlanner();
+		await choosePlanner(user, 'Empty planner');
+		await user.click(screen.getByRole('button', {name: '+ Add mapping'}));
+		await chooseSignal(user, 'Transport belt');
+
+		const newTargetPicker = screen.getByRole('dialog', {name: 'Choose target for Transport belt'});
+		expect(
+			within(newTargetPicker)
+				.getAllByRole('button', {name: /^Choose /})
+				.map((button) => button.getAttribute('aria-label')),
+		).toStrictEqual([
+			'Choose Transport belt',
+			'Choose Fast transport belt',
+			'Choose Express transport belt',
+			'Choose Turbo transport belt',
+		]);
+
+		await chooseSignal(user, 'Fast transport belt');
+		await user.click(screen.getByRole('button', {name: 'Choose source, currently Transport belt'}));
+		await chooseSignal(user, 'Assembling machine 1');
+
+		const editedTargetPicker = screen.getByRole('dialog', {name: 'Choose target for Assembling machine 1'});
+		expect(
+			within(editedTargetPicker)
+				.getAllByRole('button', {name: /^Choose /})
+				.map((button) => button.getAttribute('aria-label')),
+		).toStrictEqual(['Choose Assembling machine 1', 'Choose Assembling machine 2', 'Choose Assembling machine 3']);
+
+		await chooseSignal(user, 'Assembling machine 2');
+
+		const row = screen.getByRole('listitem', {
+			name: 'Mapping from Assembling machine 1 to Assembling machine 2',
+		});
+		expect({
+			count: row.querySelector('.upgrade-mapping-grid__count')?.textContent,
+			source: within(row).getByRole('button', {name: /Choose source/}).title,
+			target: within(row).getByRole('button', {name: /Choose target/}).title,
+		}).toStrictEqual({
+			count: '1match',
+			source: 'Assembling machine 1\nentity:assembling-machine-1',
+			target: 'Assembling machine 2\nentity:assembling-machine-2',
+		});
+	});
+
+	test('accepts the same prototype as a quality-only mapping target', async () => {
 		const user = userEvent.setup();
 		render(<TransformPanel blueprint={blueprint} />);
 
@@ -1012,17 +1070,42 @@ describe('TransformPanel', () => {
 		await choosePlanner(user, 'Empty planner');
 		await user.click(screen.getByRole('button', {name: '+ Add mapping'}));
 		await chooseSignal(user, 'Transport belt');
+		const confirm = screen.getByRole<HTMLButtonElement>('button', {name: 'Confirm'});
+		expect(confirm.disabled).toBe(true);
+		await user.click(screen.getByRole('button', {name: 'Rare quality'}));
+		expect(confirm.disabled).toBe(false);
+		await chooseSignal(user, 'Transport belt');
 
+		const row = screen.getByRole('listitem', {name: 'Mapping from Transport belt to Transport belt'});
 		expect({
-			assembler: screen.queryByRole('button', {name: 'Choose Assembling machine 1'}),
-			fastBelt: screen.getByRole('button', {name: 'Choose Fast transport belt'}).getAttribute('aria-label'),
-			sameBelt: screen.getByRole('button', {name: 'Choose Transport belt'}).getAttribute('aria-label'),
-		}).toStrictEqual({assembler: null, fastBelt: 'Choose Fast transport belt', sameBelt: 'Choose Transport belt'});
+			source: within(row).getByRole('button', {name: /Choose source/}).title,
+			target: within(row).getByRole('button', {name: /Choose target/}).title,
+		}).toStrictEqual({
+			source: 'Transport belt\nentity:transport-belt',
+			target: 'Transport belt\nentity:transport-belt\nQuality: = rare',
+		});
 
-		await chooseSignal(user, 'Fast transport belt');
-		await user.click(screen.getByRole('button', {name: 'Choose source, currently Transport belt'}));
-
-		expect(screen.getByRole('dialog', {name: 'Choose mapping source'}).getAttribute('aria-modal')).toBe('true');
+		await user.click(screen.getByRole('button', {name: 'Apply upgrades'}));
+		expect(navigate).toHaveBeenCalledExactlyOnceWith({
+			to: '/',
+			search: {
+				pasted: serializeBlueprint({
+					blueprint: {
+						item: 'blueprint',
+						version: 0,
+						entities: [
+							{
+								entity_number: 1,
+								name: 'transport-belt',
+								position: {x: 0, y: 0},
+								quality: 'rare',
+							},
+						],
+					},
+				}),
+				selection: '',
+			},
+		});
 	});
 
 	test('adds, replaces, removes, and serializes label icons in slot order', async () => {
