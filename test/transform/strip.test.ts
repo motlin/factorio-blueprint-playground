@@ -6,11 +6,9 @@ import {
 	blueprintFilterCategories,
 	stripEntities,
 	stripModules,
-	stripNonTrainEntities,
 	stripQuality,
 	stripTiles,
 	stripTrains,
-	stripWires,
 } from '../../src/transform/strip';
 import {removeEntities} from '../../src/transform/visit';
 import {readFixtureFile} from '../fixtures/utils';
@@ -35,14 +33,12 @@ describe('strip transforms', () => {
 			entities: stripEntities(empty),
 			modules: stripModules(planner),
 			quality: stripQuality(empty),
-			wires: stripWires(empty),
 			trains: stripTrains(planner),
 			tiles: stripTiles(planner),
 		}).toStrictEqual({
 			entities: empty,
 			modules: planner,
 			quality: empty,
-			wires: empty,
 			trains: planner,
 			tiles: planner,
 		});
@@ -89,14 +85,26 @@ describe('strip transforms', () => {
 		});
 	});
 
-	test('valid: categorizes trains separately and removes only ordinary entities', () => {
+	test('valid: treats trains and ordinary entities as independent filters in a mixed blueprint', () => {
 		const input: BlueprintString = {
 			blueprint: {
 				item: 'blueprint',
 				version: 0,
 				entities: [
 					{entity_number: 1, name: 'locomotive', position: {x: 0, y: 0}},
+					{entity_number: 2, name: 'cargo-wagon', position: {x: 1, y: 0}},
 					{entity_number: 10, name: 'train-stop', position: {x: 1, y: 0}},
+					{entity_number: 20, name: 'assembling-machine-3', position: {x: 2, y: 0}},
+				],
+				schedules: [
+					{
+						locomotives: [1],
+						schedule: {records: [{station: 'Test stop', wait_conditions: []}]},
+					},
+				],
+				wires: [
+					[1, 1, 2, 1],
+					[10, 2, 20, 1],
 				],
 				tiles: [{name: 'landfill', position: {x: 0, y: 0}}],
 			},
@@ -104,14 +112,37 @@ describe('strip transforms', () => {
 
 		expect({
 			categories: blueprintFilterCategories(input),
-			withoutEntities: stripNonTrainEntities(input),
+			withoutEntities: stripEntities(input),
+			withoutTrains: stripTrains(input),
 		}).toStrictEqual({
 			categories: {entities: true, modules: false, tiles: true, trains: true},
 			withoutEntities: {
 				blueprint: {
 					item: 'blueprint',
 					version: 0,
-					entities: [{entity_number: 1, name: 'locomotive', position: {x: 0, y: 0}}],
+					entities: [
+						{entity_number: 1, name: 'locomotive', position: {x: 0, y: 0}},
+						{entity_number: 2, name: 'cargo-wagon', position: {x: 1, y: 0}},
+					],
+					schedules: [
+						{
+							locomotives: [1],
+							schedule: {records: [{station: 'Test stop', wait_conditions: []}]},
+						},
+					],
+					wires: [[1, 1, 2, 1]],
+					tiles: [{name: 'landfill', position: {x: 0, y: 0}}],
+				},
+			},
+			withoutTrains: {
+				blueprint: {
+					item: 'blueprint',
+					version: 0,
+					entities: [
+						{entity_number: 10, name: 'train-stop', position: {x: 1, y: 0}},
+						{entity_number: 20, name: 'assembling-machine-3', position: {x: 2, y: 0}},
+					],
+					wires: [[10, 2, 20, 1]],
 					tiles: [{name: 'landfill', position: {x: 0, y: 0}}],
 				},
 			},
@@ -207,7 +238,7 @@ describe('strip transforms', () => {
 		expect(input).toStrictEqual(fixtureJson);
 	});
 
-	test('valid: wire and tile strips remove only their matching blueprint fields', () => {
+	test('valid: tile filter removes only blueprint tiles', () => {
 		const input: BlueprintString = {
 			blueprint: {
 				item: 'blueprint',
@@ -221,73 +252,15 @@ describe('strip transforms', () => {
 			},
 		};
 
-		expect({wires: stripWires(input), tiles: stripTiles(input)}).toStrictEqual({
-			wires: {
-				blueprint: {
-					item: 'blueprint',
-					version: 0,
-					entities: [
-						{entity_number: 10, name: 'constant-combinator', position: {x: 0, y: 0}},
-						{entity_number: 20, name: 'small-lamp', position: {x: 1, y: 0}},
-					],
-					tiles: [{name: 'landfill', position: {x: 0, y: 0}}],
-				},
-			},
-			tiles: {
-				blueprint: {
-					item: 'blueprint',
-					version: 0,
-					entities: [
-						{entity_number: 10, name: 'constant-combinator', position: {x: 0, y: 0}},
-						{entity_number: 20, name: 'small-lamp', position: {x: 1, y: 0}},
-					],
-					wires: [[10, 1, 20, 1]],
-				},
-			},
-		});
-	});
-
-	test('edge: recurses through books while preserving child indexes and planners', () => {
-		const input: BlueprintString = {
-			blueprint_book: {
-				item: 'blueprint-book',
+		expect(stripTiles(input)).toStrictEqual({
+			blueprint: {
+				item: 'blueprint',
 				version: 0,
-				blueprints: [
-					{
-						index: 10,
-						blueprint: {
-							item: 'blueprint',
-							version: 0,
-							wires: [[1, 1, 2, 1]],
-						},
-					},
-					{
-						index: 20,
-						deconstruction_planner: {
-							item: 'deconstruction-planner',
-							version: 0,
-							settings: {},
-						},
-					},
+				entities: [
+					{entity_number: 10, name: 'constant-combinator', position: {x: 0, y: 0}},
+					{entity_number: 20, name: 'small-lamp', position: {x: 1, y: 0}},
 				],
-			},
-		};
-
-		expect(stripWires(input)).toStrictEqual({
-			blueprint_book: {
-				item: 'blueprint-book',
-				version: 0,
-				blueprints: [
-					{index: 10, blueprint: {item: 'blueprint', version: 0}},
-					{
-						index: 20,
-						deconstruction_planner: {
-							item: 'deconstruction-planner',
-							version: 0,
-							settings: {},
-						},
-					},
-				],
+				wires: [[10, 1, 20, 1]],
 			},
 		});
 	});

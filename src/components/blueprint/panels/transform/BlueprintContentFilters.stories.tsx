@@ -11,7 +11,7 @@ const meta = {
 			entities: true,
 			modules: true,
 			tiles: true,
-			trains: false,
+			trains: true,
 		},
 		entitiesIncluded: true,
 		modulesIncluded: true,
@@ -31,7 +31,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const ModulesEntitiesAndTiles: Story = {
+export const AllContentCategories: Story = {
 	play: async ({args, canvasElement}) => {
 		const canvas = within(canvasElement);
 		const modules = canvas.getByRole('checkbox', {name: 'Modules'});
@@ -43,6 +43,7 @@ export const ModulesEntitiesAndTiles: Story = {
 		).toStrictEqual([
 			{checked: true, label: 'Modules'},
 			{checked: true, label: 'Entities'},
+			{checked: true, label: 'Trains'},
 			{checked: true, label: 'Tiles'},
 		]);
 		modules.focus();

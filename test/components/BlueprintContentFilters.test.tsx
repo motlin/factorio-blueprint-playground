@@ -23,6 +23,11 @@ const visibilityCases: VisibilityCase[] = [
 		name: 'mixed entities and tiles',
 	},
 	{
+		categories: {entities: true, modules: false, tiles: false, trains: true},
+		expectedLabels: ['Entities', 'Trains'],
+		name: 'mixed entities and trains',
+	},
+	{
 		categories: {entities: false, modules: false, tiles: false, trains: false},
 		expectedLabels: [],
 		name: 'absent categories',

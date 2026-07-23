@@ -57,10 +57,6 @@ export function stripQuality(root: BlueprintString): BlueprintString {
 }
 
 export function stripEntities(root: BlueprintString): BlueprintString {
-	return mapBlueprints(root, (blueprint) => removeEntities(blueprint, () => true));
-}
-
-export function stripNonTrainEntities(root: BlueprintString): BlueprintString {
 	return mapBlueprints(root, (blueprint) => removeEntities(blueprint, (entity) => !isRollingStock(entity)));
 }
 
@@ -96,14 +92,6 @@ export function stripModules(root: BlueprintString): BlueprintString {
 				return result;
 			}),
 		};
-	});
-}
-
-export function stripWires(root: BlueprintString): BlueprintString {
-	return mapBlueprints(root, (blueprint) => {
-		const result = {...blueprint};
-		delete result.wires;
-		return result;
 	});
 }
 
