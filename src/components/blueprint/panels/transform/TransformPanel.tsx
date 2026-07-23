@@ -5,14 +5,7 @@ import gameData from '../../../../generated/game-data.json';
 import {BlueprintWrapper} from '../../../../parsing/BlueprintWrapper';
 import {serializeBlueprint} from '../../../../parsing/blueprintParser';
 import {extractNames} from '../../../../parsing/modDetection/nameExtractor';
-import type {
-	BlueprintString,
-	Quality,
-	QualityComparator,
-	SignalID,
-	UpgradePlanner,
-	UpgradeSourceSignal,
-} from '../../../../parsing/types';
+import type {BlueprintString, SignalID, UpgradePlanner, UpgradeSourceSignal} from '../../../../parsing/types';
 import {updateNestedBlueprint} from '../../../../transform/applyAtPath';
 import {flattenBook, sortBookByLabel} from '../../../../transform/bookOps';
 import {applyBlueprintEditorMetadata, blueprintEditorMetadata} from '../../../../transform/blueprintEditor';
@@ -51,6 +44,7 @@ import {BlueprintEditorDialog} from './BlueprintEditorDialog';
 import {BlueprintLabelIcons} from './BlueprintLabelIcons';
 import type {PlacedUpgradePlanner} from './BlueprintEditorToolbar';
 import {BlueprintToolbelt} from './BlueprintToolbelt';
+import {SignalPickerDialog} from './SignalPickerDialog';
 import {UpgradePlannerSelectorDialog, type UpgradePlannerChoice} from './UpgradePlannerSelectorDialog';
 
 interface TransformPanelProps {
@@ -62,15 +56,6 @@ interface TransformPanelProps {
 interface ResolvedRules {
 	error: string | undefined;
 	rules: UpgradeRule[];
-}
-
-interface SignalPickerDialogProps {
-	initialQuality?: QualitySelection;
-	onChoose: (signal: PickerSignal, preserveQuality?: boolean) => void;
-	onClose: () => void;
-	options: SignalID[];
-	qualityMode?: 'source' | 'target';
-	title: string;
 }
 
 interface SignalSlotProps {
@@ -106,10 +91,23 @@ interface IconReplacementDialogProps {
 }
 
 const virtualSignals: SignalID[] = gameData.virtualSignals.map((name) => ({type: 'virtual', name}));
-const qualities = ['normal', 'uncommon', 'rare', 'epic', 'legendary'] as const;
-const qualityComparators: readonly QualityComparator[] = ['=', '≠', '<', '≤', '>', '≥'];
-type QualitySelection = 'any' | 'preserve' | Exclude<Quality, undefined>;
-type PickerSignal = SignalID & {comparator?: QualityComparator};
+const pickerSignals: SignalID[] = gameData.pickerSignals.map(({name, type}) => {
+	switch (type) {
+		case 'achievement':
+		case 'fluid':
+		case 'item':
+		case 'item-group':
+		case 'planet':
+		case 'recipe':
+		case 'space-location':
+		case 'technology':
+		case 'tile':
+		case 'virtual':
+			return {type, name};
+		default:
+			throw new Error(`Unknown generated picker signal type: ${type}`);
+	}
+});
 
 interface UpgradeTargetOverride {
 	preserveQuality: boolean;
@@ -128,7 +126,7 @@ function normalizedSignalType(signal: SignalID): string {
 	return signal.type ?? 'item';
 }
 
-function signalIdentity(signal: PickerSignal): string {
+function signalIdentity(signal: UpgradeSourceSignal): string {
 	return [normalizedSignalType(signal), signal.name, signal.quality ?? 'normal', signal.comparator ?? '='].join(':');
 }
 
@@ -137,18 +135,9 @@ function signalName(signal: SignalID): string {
 	return words.slice(0, 1).toUpperCase() + words.slice(1);
 }
 
-function signalTitle(signal: PickerSignal): string {
+function signalTitle(signal: UpgradeSourceSignal): string {
 	const quality = signal.quality === undefined ? '' : `\nQuality: ${signal.comparator ?? '='} ${signal.quality}`;
 	return `${signalName(signal)}\n${normalizedSignalType(signal)}:${signal.name}${quality}`;
-}
-
-function isTextEditingTarget(target: EventTarget | null): boolean {
-	return (
-		target instanceof HTMLInputElement ||
-		target instanceof HTMLTextAreaElement ||
-		target instanceof HTMLSelectElement ||
-		(target instanceof HTMLElement && target.isContentEditable)
-	);
 }
 
 function resolveRules(
@@ -267,158 +256,6 @@ function SignalSlot({label, onClick, onContextMenu, signal}: SignalSlotProps) {
 		>
 			{signal === undefined ? <span aria-hidden="true">+</span> : <FactorioIcon icon={signal} size="large" />}
 		</button>
-	);
-}
-
-function SignalPickerDialog({initialQuality, onChoose, onClose, options, qualityMode, title}: SignalPickerDialogProps) {
-	const [search, setSearch] = useState('');
-	const [qualitySelection, setQualitySelection] = useState<QualitySelection>(
-		initialQuality ?? (qualityMode === 'source' ? 'any' : 'preserve'),
-	);
-	const [qualityComparator, setQualityComparator] = useState<QualityComparator>('=');
-	const normalizedSearch = search.trim().toLowerCase();
-	const filteredOptions = options.filter((signal) =>
-		normalizedSearch === '' ? true : signalName(signal).toLowerCase().includes(normalizedSearch),
-	);
-	useEffect(() => {
-		const closePicker = (event: KeyboardEvent) => {
-			const escapePressed = event.key === 'Escape';
-			const clearCursorPressed =
-				event.code === 'KeyQ' &&
-				!event.altKey &&
-				!event.ctrlKey &&
-				!event.metaKey &&
-				!event.shiftKey &&
-				!isTextEditingTarget(event.target);
-			if (!escapePressed && !clearCursorPressed) {
-				return;
-			}
-			event.preventDefault();
-			event.stopPropagation();
-			onClose();
-		};
-		window.addEventListener('keydown', closePicker);
-		return () => {
-			window.removeEventListener('keydown', closePicker);
-		};
-	}, [onClose]);
-
-	return (
-		<div className="transform-dialog-backdrop">
-			<section
-				className="transform-dialog transform-dialog--picker"
-				role="dialog"
-				aria-modal="true"
-				aria-label={title}
-			>
-				<header className="transform-dialog__header">
-					<h3>{title}</h3>
-					<button
-						type="button"
-						className="transform-dialog__close"
-						aria-label={`Close ${title}`}
-						onClick={onClose}
-					>
-						×
-					</button>
-				</header>
-				<div className="panel-hole transform-picker">
-					<div className="panel-hole-inner transform-picker__search">
-						<label htmlFor="transform-signal-search">Search</label>
-						<input
-							id="transform-signal-search"
-							type="search"
-							value={search}
-							onChange={(event) => {
-								setSearch(event.currentTarget.value);
-							}}
-						/>
-					</div>
-					<div className="transform-picker__grid">
-						{filteredOptions.map((signal) => (
-							<button
-								type="button"
-								key={signalIdentity(signal)}
-								className="transform-picker__option"
-								aria-label={`Choose ${signalName(signal)}`}
-								title={signalTitle(signal)}
-								onClick={() => {
-									const selectedSignal: PickerSignal = {...signal};
-									if (
-										qualitySelection === 'any' ||
-										qualitySelection === 'preserve' ||
-										qualitySelection === 'normal'
-									) {
-										delete selectedSignal.quality;
-									} else {
-										selectedSignal.quality = qualitySelection;
-									}
-									if (qualityMode === 'source' && qualitySelection !== 'any') {
-										selectedSignal.comparator = qualityComparator;
-									}
-									onChoose(selectedSignal, qualitySelection === 'preserve');
-								}}
-							>
-								<FactorioIcon icon={signal} size="large" />
-							</button>
-						))}
-					</div>
-					{qualityMode === undefined ? null : (
-						<div
-							className="transform-picker__qualities"
-							role="group"
-							aria-label={`${signalName({name: qualityMode})} quality`}
-						>
-							<button
-								type="button"
-								aria-pressed={qualitySelection === (qualityMode === 'source' ? 'any' : 'preserve')}
-								onClick={() => {
-									setQualitySelection(qualityMode === 'source' ? 'any' : 'preserve');
-								}}
-							>
-								{qualityMode === 'source' ? 'Any quality' : 'Set as source'}
-							</button>
-							{qualityMode === 'source' ? (
-								<select
-									aria-label="Quality comparison"
-									value={qualityComparator}
-									disabled={qualitySelection === 'any'}
-									onChange={(event) => {
-										const comparator = qualityComparators.find(
-											(candidate) => candidate === event.currentTarget.value,
-										);
-										if (comparator === undefined) {
-											throw new Error(`Unknown quality comparator: ${event.currentTarget.value}`);
-										}
-										setQualityComparator(comparator);
-									}}
-								>
-									{qualityComparators.map((comparator) => (
-										<option key={comparator} value={comparator}>
-											{comparator}
-										</option>
-									))}
-								</select>
-							) : null}
-							{qualities.map((quality) => (
-								<button
-									type="button"
-									key={quality}
-									aria-label={`${signalName({name: quality})} quality`}
-									aria-pressed={qualitySelection === quality}
-									title={`${signalName({name: quality})} quality`}
-									onClick={() => {
-										setQualitySelection(quality);
-									}}
-								>
-									<FactorioIcon icon={{type: 'quality', name: quality}} size="small" />
-								</button>
-							))}
-						</div>
-					)}
-				</div>
-			</section>
-		</div>
 	);
 }
 
@@ -560,6 +397,7 @@ function UpgradeMappingsEditor({
 			) : null}
 			{targetPickerCandidate === undefined ? null : (
 				<SignalPickerDialog
+					initialSignal={targetPickerCandidate.to}
 					initialQuality={
 						targetPickerCandidate.preserveQuality
 							? 'preserve'
@@ -579,6 +417,7 @@ function UpgradeMappingsEditor({
 			)}
 			{sourcePickerCandidate === undefined ? null : (
 				<SignalPickerDialog
+					initialSignal={sourcePickerCandidate?.from}
 					title="Choose mapping source"
 					options={[
 						...new Map(
@@ -600,6 +439,7 @@ function UpgradeMappingsEditor({
 			)}
 			{mappingSourceDraft === undefined ? null : (
 				<SignalPickerDialog
+					initialSignal={mappingSourceDraft.source}
 					title={`Choose target for ${signalName(mappingSourceDraft.source)}`}
 					options={upgradeTargetOptions(mappingSourceDraft.source, mappingSourceDraft.source)}
 					qualityMode="target"
@@ -852,7 +692,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 	const sourceOptions = useMemo(() => upgradeSourceOptions(transformTarget), [transformTarget]);
 	const editorIconOptions = useMemo(() => {
 		const options = new Map<string, SignalID>();
-		for (const signal of [...virtualSignals, ...sourceOptions, ...editorIcons]) {
+		for (const signal of [...pickerSignals, ...sourceOptions, ...editorIcons]) {
 			options.set(signalIdentity(signal), signal);
 		}
 		return [...options.values()];
@@ -1506,6 +1346,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 			)}
 			{editorIconPickerIndex === undefined ? null : (
 				<SignalPickerDialog
+					initialSignal={editorIcons[editorIconPickerIndex]}
 					title={`Choose label icon ${(editorIconPickerIndex + 1).toString()}`}
 					options={editorIconOptions}
 					onClose={() => {
