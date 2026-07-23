@@ -142,7 +142,7 @@ const ButtonWithIcon = ({icon: Icon, text, onClick}: ButtonWithIconProps) => (
 	</ButtonGreen>
 );
 
-export function BlueprintExportButtons({blueprint, path}: BlueprintExportButtonsProps) {
+function BlueprintExportButtons({blueprint, path}: BlueprintExportButtonsProps) {
 	const handleCopyString = () => {
 		const str = serializeBlueprint(blueprint);
 		void copyToClipboard(str);
