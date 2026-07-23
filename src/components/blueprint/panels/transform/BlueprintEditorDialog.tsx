@@ -5,10 +5,10 @@ import type {BlueprintSnapGrid} from '../../../../transform/blueprintEditor';
 import type {BlueprintComponentIdentity, BlueprintComponentRemovalKey} from '../../../../transform/componentRemoval';
 import type {BlueprintFilterCategories} from '../../../../transform/strip';
 import type {UpgradeDirection} from '../../../../transform/upgradePlanner';
-import {ButtonGreen} from '../../../ui/ButtonGreen';
 import {BlueprintComponentsGrid} from './BlueprintComponentsGrid';
 import {BlueprintContentFilters} from './BlueprintContentFilters';
 import {BlueprintDescriptionEditor} from './BlueprintDescriptionEditor';
+import {BlueprintEditorActions} from './BlueprintEditorActions';
 import {BlueprintEditorToolbar, type PlacedUpgradePlanner} from './BlueprintEditorToolbar';
 import {BlueprintParameterizationDialog} from './BlueprintParameterizationDialog';
 import {BlueprintSnapGridEditor} from './BlueprintSnapGridEditor';
@@ -21,6 +21,8 @@ interface BlueprintEditorDialogProps {
 	bookOperationSelected: boolean;
 	breadcrumb: string;
 	description: string;
+	dirty: boolean;
+	draftBlueprint?: BlueprintString;
 	filters: BlueprintFilterCategories;
 	flattenBookSelected: boolean;
 	icons: ReactNode;
@@ -37,7 +39,7 @@ interface BlueprintEditorDialogProps {
 	onModulesIncludedChange: (included: boolean) => void;
 	onParametersChange: (parameters: Parameter[]) => void;
 	onPlannerPlace: (choice: UpgradePlannerChoice, direction: UpgradeDirection) => void;
-	onSave: () => void;
+	onSaved: (savedRoot: BlueprintString) => void;
 	onSnapGridChange: (settings: BlueprintSnapGrid) => void;
 	onSortBookSelectedChange: (selected: boolean) => void;
 	onTilesIncludedChange: (included: boolean) => void;
@@ -47,8 +49,7 @@ interface BlueprintEditorDialogProps {
 	placedPlanner: PlacedUpgradePlanner | undefined;
 	rootBlueprint: BlueprintString;
 	removedComponents: ReadonlySet<BlueprintComponentRemovalKey>;
-	saveDisabled: boolean;
-	saveLabel: string;
+	selectedPath: string;
 	signalOptions: readonly SignalID[];
 	snapGrid: BlueprintSnapGrid | undefined;
 	sortBookSelected: boolean;
@@ -64,6 +65,8 @@ export function BlueprintEditorDialog({
 	bookOperationSelected,
 	breadcrumb,
 	description,
+	dirty,
+	draftBlueprint,
 	filters,
 	flattenBookSelected,
 	icons,
@@ -80,7 +83,7 @@ export function BlueprintEditorDialog({
 	onModulesIncludedChange,
 	onParametersChange,
 	onPlannerPlace,
-	onSave,
+	onSaved,
 	onSnapGridChange,
 	onSortBookSelectedChange,
 	onTilesIncludedChange,
@@ -90,8 +93,7 @@ export function BlueprintEditorDialog({
 	placedPlanner,
 	rootBlueprint,
 	removedComponents,
-	saveDisabled,
-	saveLabel,
+	selectedPath,
 	signalOptions,
 	snapGrid,
 	sortBookSelected,
@@ -234,20 +236,14 @@ export function BlueprintEditorDialog({
 					</div>
 				</div>
 
-				<footer className="transform-workbench__footer transform-workbench__footer--actions">
-					<button type="button" className="transform-button" onClick={onClose}>
-						Cancel
-					</button>
-					<ButtonGreen
-						disabled={saveDisabled}
-						onClick={(event) => {
-							event.preventDefault();
-							onSave();
-						}}
-					>
-						{saveLabel}
-					</ButtonGreen>
-				</footer>
+				<BlueprintEditorActions
+					dirty={dirty}
+					draftBlueprint={draftBlueprint}
+					onClose={onClose}
+					onSaved={onSaved}
+					rootBlueprint={rootBlueprint}
+					selectedPath={selectedPath}
+				/>
 			</section>
 			{upgradePlannerSelectorOpen ? (
 				<UpgradePlannerSelectorDialog

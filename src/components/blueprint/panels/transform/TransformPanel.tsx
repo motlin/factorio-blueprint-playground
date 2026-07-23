@@ -817,9 +817,9 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 		textReplacementEnabled,
 		upgradeScope,
 	]);
-	const editorDraftBlueprint = useMemo(() => {
-		if (rootBlueprint === undefined) {
-			return undefined;
+	const editorDraft = useMemo(() => {
+		if (blueprint === undefined || rootBlueprint === undefined) {
+			return {rootBlueprint: undefined, selectedBlueprint: undefined};
 		}
 		const transformEditor = (target: BlueprintString) => {
 			let transformed = target;
@@ -848,8 +848,13 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 			if (sortBookSelected) transformed = sortBookByLabel(transformed);
 			return transformed;
 		};
-		return updateNestedBlueprint(rootBlueprint, selectedPath, transformEditor) ?? undefined;
+		const selectedBlueprint = transformEditor(blueprint);
+		return {
+			rootBlueprint: updateNestedBlueprint(rootBlueprint, selectedPath, () => selectedBlueprint) ?? undefined,
+			selectedBlueprint,
+		};
 	}, [
+		blueprint,
 		blueprintEditorEnabled,
 		editorDescription,
 		editorIcons,
@@ -866,6 +871,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 		stripTilesSelected,
 		stripTrainsSelected,
 	]);
+	const editorDraftBlueprint = editorDraft.rootBlueprint;
 	if (blueprint === undefined || type === 'deconstruction-planner') {
 		return null;
 	}
@@ -1293,6 +1299,8 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 					bookOperationSelected={hasSelectedBookOperation}
 					breadcrumb={editorBreadcrumb}
 					description={editorDescription}
+					dirty={editorDirty}
+					draftBlueprint={editorDraft.selectedBlueprint}
 					filters={editorFilters}
 					flattenBookSelected={flattenBookSelected}
 					icons={
@@ -1342,10 +1350,10 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 						setEditorPlacedPlanner({choice, direction});
 						setEditorPlannerDropError(undefined);
 					}}
-					onSave={() => {
-						if (editorDraftBlueprint !== undefined) {
-							commitBlueprint(editorDraftBlueprint);
-						}
+					onSaved={() => {
+						setBlueprintEditorOpen(false);
+						setIconReplacementOpen(false);
+						setUpgradePlannerOpen(false);
 					}}
 					onSnapGridChange={setEditorSnapGrid}
 					onSortBookSelectedChange={setSortBookSelected}
@@ -1360,8 +1368,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 					placedPlanner={editorPlacedPlanner}
 					rootBlueprint={rootBlueprint ?? blueprint}
 					removedComponents={removedEditorComponents}
-					saveDisabled={editorDraftBlueprint === undefined || !editorDirty}
-					saveLabel={selectedPath === '' ? 'Save blueprint' : 'Save to book'}
+					selectedPath={selectedPath}
 					signalOptions={editorIconOptions}
 					snapGrid={editorSnapGrid}
 					sortBookSelected={sortBookSelected}
