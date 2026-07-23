@@ -1,4 +1,4 @@
-import type {Blueprint, BlueprintBook, BlueprintString, Icon} from '../parsing/types';
+import type {Blueprint, BlueprintBook, BlueprintString, Icon, Parameter} from '../parsing/types';
 
 export interface BlueprintEditorMetadata {
 	description: string;
@@ -74,6 +74,37 @@ export function applyBlueprintSnapGrid(root: BlueprintString, settings: Blueprin
 				y: settings.positionY,
 			};
 		}
+	}
+	return {...root, blueprint: updated};
+}
+
+export function blueprintParameters(root: BlueprintString): Parameter[] {
+	const blueprint = root.blueprint;
+	if (blueprint === undefined) {
+		throw new Error('Blueprint parametrisation requires a blueprint.');
+	}
+	return (blueprint.parameters ?? []).map((parameter) => ({
+		...parameter,
+		...(parameter['quality-condition'] === undefined
+			? {}
+			: {'quality-condition': {...parameter['quality-condition']}}),
+	}));
+}
+
+export function applyBlueprintParameters(root: BlueprintString, parameters: readonly Parameter[]): BlueprintString {
+	const blueprint = root.blueprint;
+	if (blueprint === undefined) {
+		throw new Error('Blueprint parametrisation requires a blueprint.');
+	}
+	const updated = {...blueprint};
+	delete updated.parameters;
+	if (parameters.length > 0) {
+		updated.parameters = parameters.map((parameter) => ({
+			...parameter,
+			...(parameter['quality-condition'] === undefined
+				? {}
+				: {'quality-condition': {...parameter['quality-condition']}}),
+		}));
 	}
 	return {...root, blueprint: updated};
 }

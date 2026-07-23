@@ -8,6 +8,7 @@ test('renders the supported Factorio editor action with accessible states and a 
 	const onApplyPlacedPlanner = vi.fn<(direction: UpgradeDirection) => void>();
 	const onClearPlacedPlanner = vi.fn<() => void>();
 	const onDropPlanner = vi.fn<(serializedPlanner: string) => void>();
+	const onOpenParameterization = vi.fn<() => void>();
 	const onOpenUpgradePlannerSelector = vi.fn<() => void>();
 	const {rerender} = render(
 		<BlueprintEditorToolbar
@@ -15,7 +16,11 @@ test('renders the supported Factorio editor action with accessible states and a 
 			onApplyPlacedPlanner={onApplyPlacedPlanner}
 			onClearPlacedPlanner={onClearPlacedPlanner}
 			onDropPlanner={onDropPlanner}
+			onOpenParameterization={onOpenParameterization}
 			onOpenUpgradePlannerSelector={onOpenUpgradePlannerSelector}
+			parameterizationAvailable={false}
+			parameterizationDialogId="blueprint-parameterization"
+			parameterizationOpen={false}
 			placedPlanner={undefined}
 			selectorDialogId="upgrade-planner-selector"
 			selectorOpen={false}
@@ -58,7 +63,11 @@ test('renders the supported Factorio editor action with accessible states and a 
 			onApplyPlacedPlanner={onApplyPlacedPlanner}
 			onClearPlacedPlanner={onClearPlacedPlanner}
 			onDropPlanner={onDropPlanner}
+			onOpenParameterization={onOpenParameterization}
 			onOpenUpgradePlannerSelector={onOpenUpgradePlannerSelector}
+			parameterizationAvailable={false}
+			parameterizationDialogId="blueprint-parameterization"
+			parameterizationOpen={false}
 			placedPlanner={undefined}
 			selectorDialogId="upgrade-planner-selector"
 			selectorOpen={true}
@@ -74,5 +83,44 @@ test('renders the supported Factorio editor action with accessible states and a 
 		expanded: 'true',
 		onOpenUpgradePlannerSelectorCalls: [[]],
 		tooltip: 'Upgrade items and entities in the blueprint.',
+	});
+});
+
+test('opens Blueprint parametrisation only when the current format supports it', () => {
+	const onOpenParameterization = vi.fn<() => void>();
+	render(
+		<BlueprintEditorToolbar
+			dropError={undefined}
+			onApplyPlacedPlanner={vi.fn<(direction: UpgradeDirection) => void>()}
+			onClearPlacedPlanner={vi.fn<() => void>()}
+			onDropPlanner={vi.fn<(serializedPlanner: string) => void>()}
+			onOpenParameterization={onOpenParameterization}
+			onOpenUpgradePlannerSelector={vi.fn<() => void>()}
+			parameterizationAvailable={true}
+			parameterizationDialogId="blueprint-parameterization"
+			parameterizationOpen={false}
+			placedPlanner={undefined}
+			selectorDialogId="upgrade-planner-selector"
+			selectorOpen={false}
+		/>,
+	);
+
+	const button = screen.getByRole('button', {name: 'Parametrise or reconfigure the blueprint'});
+	fireEvent.click(button);
+
+	expect({
+		controls: button.getAttribute('aria-controls'),
+		expanded: button.getAttribute('aria-expanded'),
+		hasPopup: button.getAttribute('aria-haspopup'),
+		icon: button.querySelector('img')?.getAttribute('src'),
+		onOpenParameterizationCalls: onOpenParameterization.mock.calls,
+		tooltip: screen.getByText('Parametrise/reconfigure the blueprint.').textContent,
+	}).toStrictEqual({
+		controls: 'blueprint-parameterization',
+		expanded: 'false',
+		hasPopup: 'dialog',
+		icon: 'https://factorio-icon-cdn.pages.dev/item/parameter-.webp',
+		onOpenParameterizationCalls: [[]],
+		tooltip: 'Parametrise/reconfigure the blueprint.',
 	});
 });

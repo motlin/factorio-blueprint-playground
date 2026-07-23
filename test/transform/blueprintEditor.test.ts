@@ -1,7 +1,13 @@
 import {describe, expect, test} from 'vite-plus/test';
 
-import type {BlueprintString} from '../../src/parsing/types';
-import {applyBlueprintSnapGrid, blueprintSnapGrid, type BlueprintSnapGrid} from '../../src/transform/blueprintEditor';
+import type {BlueprintString, Parameter} from '../../src/parsing/types';
+import {
+	applyBlueprintParameters,
+	applyBlueprintSnapGrid,
+	blueprintParameters,
+	blueprintSnapGrid,
+	type BlueprintSnapGrid,
+} from '../../src/transform/blueprintEditor';
 
 const blueprint: BlueprintString = {
 	blueprint: {
@@ -104,5 +110,103 @@ describe('blueprint snap-to-grid settings', () => {
 				entities: [{entity_number: 100, name: 'transport-belt', position: {x: 0, y: 0}}],
 			},
 		});
+	});
+});
+
+describe('blueprint parameters', () => {
+	const parameters: Parameter[] = [
+		{
+			type: 'id',
+			id: 'iron-plate',
+			name: 'Plate',
+			'quality-condition': {quality: 'rare', comparator: '≥'},
+		},
+		{
+			type: 'id',
+			id: 'iron-gear-wheel',
+			name: 'Gear',
+			'item-ingredient-of': 'iron-plate',
+		},
+		{
+			type: 'number',
+			name: 'Crafting count',
+			number: '12',
+			variable: 'N',
+			dependent: true,
+			formula: 'N * 2',
+			'not-parametrised': true,
+		},
+	];
+	const parameterizedBlueprint: BlueprintString = {
+		blueprint: {
+			item: 'blueprint',
+			version: 0,
+			label: 'Parameterized factory',
+			parameters,
+		},
+	};
+
+	test('reads cloned parameters without exposing nested source data', () => {
+		const result = blueprintParameters(parameterizedBlueprint);
+		const qualityCondition = result[0]?.['quality-condition'];
+		if (qualityCondition === undefined) {
+			throw new Error('Expected the first parameter to have a quality condition.');
+		}
+		qualityCondition.quality = 'legendary';
+
+		expect({
+			result,
+			source: parameterizedBlueprint.blueprint?.parameters,
+		}).toStrictEqual({
+			result: [
+				{
+					type: 'id',
+					id: 'iron-plate',
+					name: 'Plate',
+					'quality-condition': {quality: 'legendary', comparator: '≥'},
+				},
+				parameters[1],
+				parameters[2],
+			],
+			source: parameters,
+		});
+	});
+
+	test('writes edited ID parameters while preserving unsupported number parameters losslessly', () => {
+		const edited = blueprintParameters(parameterizedBlueprint);
+		edited[0] = {...edited[0], name: 'Any plate'};
+
+		expect(applyBlueprintParameters(parameterizedBlueprint, edited)).toStrictEqual({
+			blueprint: {
+				item: 'blueprint',
+				version: 0,
+				label: 'Parameterized factory',
+				parameters: [
+					{
+						type: 'id',
+						id: 'iron-plate',
+						name: 'Any plate',
+						'quality-condition': {quality: 'rare', comparator: '≥'},
+					},
+					parameters[1],
+					parameters[2],
+				],
+			},
+		});
+	});
+
+	test('removes the field for an empty parameter list and rejects unsupported roots', () => {
+		expect(applyBlueprintParameters(parameterizedBlueprint, [])).toStrictEqual({
+			blueprint: {
+				item: 'blueprint',
+				version: 0,
+				label: 'Parameterized factory',
+			},
+		});
+		expect(() =>
+			blueprintParameters({
+				blueprint_book: {item: 'blueprint-book', version: 0, blueprints: []},
+			}),
+		).toThrow('Blueprint parametrisation requires a blueprint.');
 	});
 });

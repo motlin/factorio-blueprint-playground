@@ -1,6 +1,6 @@
 import {type ReactNode, useId, useState} from 'react';
 
-import type {BlueprintString} from '../../../../parsing/types';
+import type {BlueprintString, Parameter, SignalID} from '../../../../parsing/types';
 import type {BlueprintSnapGrid} from '../../../../transform/blueprintEditor';
 import type {BlueprintComponentIdentity, BlueprintComponentRemovalKey} from '../../../../transform/componentRemoval';
 import type {BlueprintFilterCategories} from '../../../../transform/strip';
@@ -10,6 +10,7 @@ import {BlueprintComponentsGrid} from './BlueprintComponentsGrid';
 import {BlueprintContentFilters} from './BlueprintContentFilters';
 import {BlueprintDescriptionEditor} from './BlueprintDescriptionEditor';
 import {BlueprintEditorToolbar, type PlacedUpgradePlanner} from './BlueprintEditorToolbar';
+import {BlueprintParameterizationDialog} from './BlueprintParameterizationDialog';
 import {BlueprintSnapGridEditor} from './BlueprintSnapGridEditor';
 import {BlueprintTitleEditor} from './BlueprintTitleEditor';
 import {UpgradePlannerSelectorDialog, type UpgradePlannerChoice} from './UpgradePlannerSelectorDialog';
@@ -34,18 +35,21 @@ interface BlueprintEditorDialogProps {
 	onFlattenBookSelectedChange: (selected: boolean) => void;
 	onLabelChange: (label: string) => void;
 	onModulesIncludedChange: (included: boolean) => void;
+	onParametersChange: (parameters: Parameter[]) => void;
 	onPlannerPlace: (choice: UpgradePlannerChoice, direction: UpgradeDirection) => void;
 	onSave: () => void;
 	onSnapGridChange: (settings: BlueprintSnapGrid) => void;
 	onSortBookSelectedChange: (selected: boolean) => void;
 	onTilesIncludedChange: (included: boolean) => void;
 	onTrainsIncludedChange: (included: boolean) => void;
+	parameters: readonly Parameter[];
 	plannerDropError: string | undefined;
 	placedPlanner: PlacedUpgradePlanner | undefined;
 	rootBlueprint: BlueprintString;
 	removedComponents: ReadonlySet<BlueprintComponentRemovalKey>;
 	saveDisabled: boolean;
 	saveLabel: string;
+	signalOptions: readonly SignalID[];
 	snapGrid: BlueprintSnapGrid | undefined;
 	sortBookSelected: boolean;
 	stripEntitiesSelected: boolean;
@@ -74,18 +78,21 @@ export function BlueprintEditorDialog({
 	onFlattenBookSelectedChange,
 	onLabelChange,
 	onModulesIncludedChange,
+	onParametersChange,
 	onPlannerPlace,
 	onSave,
 	onSnapGridChange,
 	onSortBookSelectedChange,
 	onTilesIncludedChange,
 	onTrainsIncludedChange,
+	parameters,
 	plannerDropError,
 	placedPlanner,
 	rootBlueprint,
 	removedComponents,
 	saveDisabled,
 	saveLabel,
+	signalOptions,
 	snapGrid,
 	sortBookSelected,
 	stripEntitiesSelected,
@@ -94,7 +101,9 @@ export function BlueprintEditorDialog({
 	stripTrainsSelected,
 }: BlueprintEditorDialogProps) {
 	const [upgradePlannerSelectorOpen, setUpgradePlannerSelectorOpen] = useState(false);
+	const [parameterizationOpen, setParameterizationOpen] = useState(false);
 	const upgradePlannerSelectorId = useId();
+	const parameterizationDialogId = useId();
 
 	return (
 		<div className="transform-dialog-backdrop transform-workbench-backdrop blueprint-editor__backdrop">
@@ -139,9 +148,15 @@ export function BlueprintEditorDialog({
 								onApplyPlacedPlanner={onApplyPlacedPlanner}
 								onClearPlacedPlanner={onClearPlacedPlanner}
 								onDropPlanner={onDropPlanner}
+								onOpenParameterization={() => {
+									setParameterizationOpen(true);
+								}}
 								onOpenUpgradePlannerSelector={() => {
 									setUpgradePlannerSelectorOpen(true);
 								}}
+								parameterizationAvailable={blueprint.blueprint !== undefined}
+								parameterizationDialogId={parameterizationDialogId}
+								parameterizationOpen={parameterizationOpen}
 								placedPlanner={placedPlanner}
 								selectorDialogId={upgradePlannerSelectorId}
 								selectorOpen={upgradePlannerSelectorOpen}
@@ -247,6 +262,20 @@ export function BlueprintEditorDialog({
 						setUpgradePlannerSelectorOpen(false);
 						onPlannerPlace(choice, direction);
 					}}
+				/>
+			) : null}
+			{parameterizationOpen ? (
+				<BlueprintParameterizationDialog
+					dialogId={parameterizationDialogId}
+					onClose={() => {
+						setParameterizationOpen(false);
+					}}
+					onConfirm={(nextParameters) => {
+						onParametersChange(nextParameters);
+						setParameterizationOpen(false);
+					}}
+					parameters={parameters}
+					signalOptions={signalOptions}
 				/>
 			) : null}
 		</div>

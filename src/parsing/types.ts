@@ -233,18 +233,24 @@ export interface Tile {
 
 export interface Parameter {
 	type: 'id' | 'number';
-	name: string;
+	name?: string;
 	id?: string;
 	number?: string;
 	variable?: string;
 	formula?: string;
 	dependent?: boolean;
 	'not-parametrised'?: boolean;
+	parameter?: boolean;
 	'quality-condition'?: {
 		quality: Quality;
-		comparator: string;
+		comparator: QualityComparator;
 	};
 	'ingredient-of'?: string;
+	'product-of'?: string;
+	'item-ingredient-of'?: string;
+	'fluid-ingredient-of'?: string;
+	'item-product-of'?: string;
+	'fluid-product-of'?: string;
 }
 
 // Common fields across all blueprint types

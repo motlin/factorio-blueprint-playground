@@ -14,7 +14,11 @@ interface BlueprintEditorToolbarProps {
 	onApplyPlacedPlanner: (direction: UpgradeDirection) => void;
 	onClearPlacedPlanner: () => void;
 	onDropPlanner: (serializedPlanner: string) => void;
+	onOpenParameterization: () => void;
 	onOpenUpgradePlannerSelector: () => void;
+	parameterizationAvailable: boolean;
+	parameterizationDialogId: string;
+	parameterizationOpen: boolean;
 	placedPlanner: PlacedUpgradePlanner | undefined;
 	selectorDialogId: string;
 	selectorOpen: boolean;
@@ -25,12 +29,17 @@ export function BlueprintEditorToolbar({
 	onApplyPlacedPlanner,
 	onClearPlacedPlanner,
 	onDropPlanner,
+	onOpenParameterization,
 	onOpenUpgradePlannerSelector,
+	parameterizationAvailable,
+	parameterizationDialogId,
+	parameterizationOpen,
 	placedPlanner,
 	selectorDialogId,
 	selectorOpen,
 }: BlueprintEditorToolbarProps) {
 	const tooltipId = useId();
+	const parameterizationTooltipId = useId();
 	const dropErrorId = useId();
 	const selectedPlannerLabel = placedPlanner?.choice.label;
 
@@ -131,6 +140,27 @@ export function BlueprintEditorToolbar({
 					{dropError}
 				</p>
 			</div>
+			{parameterizationAvailable ? (
+				<div className="factorio-toolbar-control">
+					<button
+						type="button"
+						className="factorio-toolbar-button blueprint-editor-toolbar__button blueprint-editor-toolbar__button--parameterization"
+						aria-label="Parametrise or reconfigure the blueprint"
+						aria-controls={parameterizationDialogId}
+						aria-describedby={parameterizationTooltipId}
+						aria-expanded={parameterizationOpen}
+						aria-haspopup="dialog"
+						onClick={() => {
+							onOpenParameterization();
+						}}
+					>
+						<FactorioIcon icon={{type: 'item', name: 'parameter-'}} size="large" />
+					</button>
+					<span id={parameterizationTooltipId} className="factorio-toolbar-tooltip" role="tooltip">
+						Parametrise/reconfigure the blueprint.
+					</span>
+				</div>
+			) : null}
 		</div>
 	);
 }
