@@ -761,7 +761,7 @@ describe('TransformPanel', () => {
 		expect(screen.getByRole('dialog', {name: 'Choose mapping source'}).getAttribute('aria-modal')).toBe('true');
 	});
 
-	test('edits blueprint metadata and label icons one by one', async () => {
+	test('adds, replaces, removes, and serializes label icons in slot order', async () => {
 		const user = userEvent.setup();
 		const iconBlueprint: BlueprintString = {
 			blueprint: {
@@ -770,8 +770,9 @@ describe('TransformPanel', () => {
 				description: 'Old description',
 				version: 0,
 				icons: [
-					{index: 1, signal: {type: 'virtual', name: 'signal-red'}},
 					{index: 2, signal: {type: 'virtual', name: 'signal-green'}},
+					{index: 3, signal: {type: 'virtual', name: 'signal-blue'}},
+					{index: 1, signal: {type: 'virtual', name: 'signal-red'}},
 				],
 			},
 		};
@@ -784,9 +785,12 @@ describe('TransformPanel', () => {
 		await user.clear(screen.getByRole('textbox', {name: 'Blueprint description'}));
 		await user.type(screen.getByRole('textbox', {name: 'Blueprint description'}), 'New description');
 		await user.click(screen.getByRole('button', {name: 'Edit icon 1'}));
-		await user.type(screen.getByRole('searchbox', {name: 'Search'}), 'blue');
-		await user.click(screen.getByRole('button', {name: 'Choose Signal blue'}));
+		await user.type(screen.getByRole('searchbox', {name: 'Search'}), 'yellow');
+		await user.click(screen.getByRole('button', {name: 'Choose Signal yellow'}));
 		fireEvent.contextMenu(screen.getByRole('button', {name: 'Edit icon 2'}));
+		await user.click(screen.getByRole('button', {name: 'Choose icon 3'}));
+		await user.type(screen.getByRole('searchbox', {name: 'Search'}), 'green');
+		await user.click(screen.getByRole('button', {name: 'Choose Signal green'}));
 		await user.click(screen.getByRole('button', {name: 'Save blueprint'}));
 
 		expect(navigate).toHaveBeenCalledExactlyOnceWith({
@@ -797,7 +801,11 @@ describe('TransformPanel', () => {
 						item: 'blueprint',
 						version: 0,
 						description: 'New description',
-						icons: [{index: 1, signal: {type: 'virtual', name: 'signal-blue'}}],
+						icons: [
+							{index: 1, signal: {type: 'virtual', name: 'signal-yellow'}},
+							{index: 2, signal: {type: 'virtual', name: 'signal-blue'}},
+							{index: 3, signal: {type: 'virtual', name: 'signal-green'}},
+						],
 						label: 'Blue starter',
 					},
 				}),
@@ -815,7 +823,15 @@ describe('TransformPanel', () => {
 				version: 0,
 				blueprints: [
 					{index: 100, blueprint: {item: 'blueprint', label: 'Old label', version: 0}},
-					{index: 200, blueprint: {item: 'blueprint', label: 'Unchanged', version: 0}},
+					{
+						index: 200,
+						blueprint: {
+							item: 'blueprint',
+							label: 'Unchanged',
+							version: 0,
+							icons: [{index: 1, signal: {type: 'virtual', name: 'signal-green'}}],
+						},
+					},
 				],
 			},
 		};
@@ -826,6 +842,9 @@ describe('TransformPanel', () => {
 		await user.click(screen.getByRole('button', {name: 'Edit blueprint title'}));
 		await user.clear(screen.getByRole('textbox', {name: 'Blueprint title'}));
 		await user.type(screen.getByRole('textbox', {name: 'Blueprint title'}), 'New label{Enter}');
+		await user.click(screen.getByRole('button', {name: 'Choose icon 1'}));
+		await user.type(screen.getByRole('searchbox', {name: 'Search'}), 'red');
+		await user.click(screen.getByRole('button', {name: 'Choose Signal red'}));
 		await user.click(screen.getByRole('button', {name: 'Close Blueprint Editor'}));
 
 		expect({
@@ -847,8 +866,24 @@ describe('TransformPanel', () => {
 						label: "Alice's test book",
 						version: 0,
 						blueprints: [
-							{index: 100, blueprint: {item: 'blueprint', version: 0, label: 'New label'}},
-							{index: 200, blueprint: {item: 'blueprint', label: 'Unchanged', version: 0}},
+							{
+								index: 100,
+								blueprint: {
+									item: 'blueprint',
+									version: 0,
+									icons: [{index: 1, signal: {type: 'virtual', name: 'signal-red'}}],
+									label: 'New label',
+								},
+							},
+							{
+								index: 200,
+								blueprint: {
+									item: 'blueprint',
+									label: 'Unchanged',
+									version: 0,
+									icons: [{index: 1, signal: {type: 'virtual', name: 'signal-green'}}],
+								},
+							},
 						],
 					},
 				}),

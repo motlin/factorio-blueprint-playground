@@ -48,6 +48,7 @@ import {FactorioIcon} from '../../../core/icons/FactorioIcon';
 import {ButtonGreen} from '../../../ui/ButtonGreen';
 import {Textarea} from '../../../ui/Textarea';
 import {BlueprintEditorDialog} from './BlueprintEditorDialog';
+import {BlueprintLabelIcons} from './BlueprintLabelIcons';
 import type {PlacedUpgradePlanner} from './BlueprintEditorToolbar';
 import {BlueprintToolbelt} from './BlueprintToolbelt';
 import {UpgradePlannerSelectorDialog, type UpgradePlannerChoice} from './UpgradePlannerSelectorDialog';
@@ -1403,28 +1404,14 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 					description={editorDescription}
 					filters={editorFilters}
 					flattenBookSelected={flattenBookSelected}
-					icons={[0, 1, 2, 3].map((index) => {
-						const icon = editorIcons.at(index);
-						return (
-							<SignalSlot
-								key={index}
-								label={`${icon === undefined ? 'Choose' : 'Edit'} icon ${(index + 1).toString()}`}
-								signal={icon}
-								onClick={() => {
-									setEditorIconPickerIndex(index);
-								}}
-								onContextMenu={
-									icon === undefined
-										? undefined
-										: () => {
-												setEditorIcons((current) =>
-													current.filter((_signal, iconIndex) => iconIndex !== index),
-												);
-											}
-								}
-							/>
-						);
-					})}
+					icons={
+						<BlueprintLabelIcons
+							icons={editorIcons}
+							onChange={setEditorIcons}
+							onChoose={setEditorIconPickerIndex}
+							signalTitle={signalTitle}
+						/>
+					}
 					label={editorLabel}
 					onApplyPlacedPlanner={(direction) => {
 						if (editorPlacedPlanner === undefined) {
