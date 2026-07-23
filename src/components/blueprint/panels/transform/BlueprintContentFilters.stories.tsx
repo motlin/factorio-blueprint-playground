@@ -2,6 +2,7 @@ import type {Meta, StoryObj} from '@storybook/react-vite';
 import {expect, fn, userEvent, within} from 'storybook/test';
 
 import {BlueprintContentFilters} from './BlueprintContentFilters';
+import {transformStoryParameters} from './transformStoryParameters';
 
 const meta = {
 	title: 'Blueprint/Panels/Transform/BlueprintContentFilters',
@@ -22,9 +23,7 @@ const meta = {
 		tilesIncluded: true,
 		trainsIncluded: true,
 	},
-	parameters: {
-		layout: 'centered',
-	},
+	parameters: transformStoryParameters,
 	tags: ['autodocs'],
 } satisfies Meta<typeof BlueprintContentFilters>;
 

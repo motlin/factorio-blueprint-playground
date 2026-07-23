@@ -2,6 +2,7 @@ import type {Meta, StoryObj} from '@storybook/react-vite';
 import {expect, fn, userEvent, within} from 'storybook/test';
 
 import {BlueprintEditorToolbar} from './BlueprintEditorToolbar';
+import {transformStoryParameters} from './transformStoryParameters';
 
 const meta = {
 	title: 'Blueprint/Panels/Transform/BlueprintEditorToolbar',
@@ -20,9 +21,7 @@ const meta = {
 		selectorDialogId: 'upgrade-planner-selector',
 		selectorOpen: false,
 	},
-	parameters: {
-		layout: 'centered',
-	},
+	parameters: transformStoryParameters,
 	tags: ['autodocs'],
 } satisfies Meta<typeof BlueprintEditorToolbar>;
 
