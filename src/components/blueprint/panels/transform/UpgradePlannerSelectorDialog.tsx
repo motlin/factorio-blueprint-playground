@@ -16,6 +16,7 @@ interface UpgradePlannerSelectorDialogProps {
 	onClose: () => void;
 	rootBlueprint: BlueprintString;
 	selectedSource: string;
+	sessionChoice?: UpgradePlannerChoice;
 }
 
 function serializedPlanner(planner: UpgradePlanner): string {
@@ -31,9 +32,14 @@ function createUpgradePlannerChoices(
 	rootBlueprint: BlueprintString,
 	historyBlueprints: readonly DatabaseBlueprint[],
 	includeEditingChoices: boolean,
+	sessionChoice: UpgradePlannerChoice | undefined,
 ): UpgradePlannerChoice[] {
 	const choices: UpgradePlannerChoice[] = [{label: 'Default Upgrade', source: 'suggested'}];
 	const serializedPlanners = new Set<string>();
+
+	if (sessionChoice !== undefined) {
+		choices.push(sessionChoice);
+	}
 
 	for (const source of findUpgradePlanners(rootBlueprint)) {
 		const serialized = serializedPlanner(source.planner);
@@ -70,6 +76,7 @@ export function UpgradePlannerSelectorDialog({
 	onClose,
 	rootBlueprint,
 	selectedSource,
+	sessionChoice,
 }: UpgradePlannerSelectorDialogProps) {
 	const headingId = useId();
 	const instructionsId = useId();
@@ -88,8 +95,8 @@ export function UpgradePlannerSelectorDialog({
 		[],
 	);
 	const choices = useMemo(
-		() => createUpgradePlannerChoices(rootBlueprint, historyBlueprints, includeEditingChoices),
-		[rootBlueprint, historyBlueprints, includeEditingChoices],
+		() => createUpgradePlannerChoices(rootBlueprint, historyBlueprints, includeEditingChoices, sessionChoice),
+		[rootBlueprint, historyBlueprints, includeEditingChoices, sessionChoice],
 	);
 	const [activeIndex, setActiveIndex] = useState(() =>
 		Math.max(

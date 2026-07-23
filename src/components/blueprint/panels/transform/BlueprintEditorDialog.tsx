@@ -53,6 +53,7 @@ interface BlueprintEditorDialogProps {
 	rootBlueprint: BlueprintString;
 	removedComponents: ReadonlySet<BlueprintComponentRemovalKey>;
 	selectedPath: string;
+	sessionPlanner?: UpgradePlannerChoice;
 	signalOptions: readonly SignalID[];
 	snapGrid: BlueprintSnapGrid | undefined;
 	sortBookSelected: boolean;
@@ -100,6 +101,7 @@ export function BlueprintEditorDialog({
 	rootBlueprint,
 	removedComponents,
 	selectedPath,
+	sessionPlanner,
 	signalOptions,
 	snapGrid,
 	sortBookSelected,
@@ -260,6 +262,7 @@ export function BlueprintEditorDialog({
 					includeEditingChoices={false}
 					rootBlueprint={rootBlueprint}
 					selectedSource={placedPlanner?.choice.source ?? ''}
+					sessionChoice={sessionPlanner}
 					onClose={() => {
 						setUpgradePlannerSelectorOpen(false);
 					}}

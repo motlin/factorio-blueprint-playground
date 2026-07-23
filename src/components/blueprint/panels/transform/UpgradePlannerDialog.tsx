@@ -43,16 +43,15 @@ interface UpgradePlannerMappings {
 }
 
 interface UpgradePlannerDialogProps {
-	applyDisabled: boolean;
 	breadcrumb: string;
 	canChooseRootScope: boolean;
 	mappings: UpgradePlannerMappings;
 	matchCount: number;
-	onApplyDowngrades: () => void;
-	onApplyUpgrades: () => void;
 	onClose: () => void;
+	onSave: () => void;
 	onScopeChange: (scope: 'selection' | 'root') => void;
 	replacements: BookWideReplacementsProps;
+	saveDisabled: boolean;
 	scope: 'selection' | 'root';
 	selectionScopeDisabled: boolean;
 	selectionScopeLabel: string;
@@ -310,16 +309,15 @@ function UpgradeMappingsEditor({
 }
 
 export function UpgradePlannerDialog({
-	applyDisabled,
 	breadcrumb,
 	canChooseRootScope,
 	mappings,
 	matchCount,
-	onApplyDowngrades,
-	onApplyUpgrades,
 	onClose,
+	onSave,
 	onScopeChange,
 	replacements,
+	saveDisabled,
 	scope,
 	selectionScopeDisabled,
 	selectionScopeLabel,
@@ -416,26 +414,9 @@ export function UpgradePlannerDialog({
 					>
 						Cancel
 					</button>
-					<div className="transform-workbench__apply-actions">
-						<button
-							type="button"
-							className="transform-button"
-							disabled={applyDisabled}
-							onClick={() => {
-								onApplyDowngrades();
-							}}
-						>
-							Apply downgrades
-						</button>
-						<ButtonGreen
-							disabled={applyDisabled}
-							onClick={() => {
-								onApplyUpgrades();
-							}}
-						>
-							Apply upgrades
-						</ButtonGreen>
-					</div>
+					<ButtonGreen disabled={saveDisabled} onClick={onSave}>
+						Save planner
+					</ButtonGreen>
 				</footer>
 			</section>
 		</div>
