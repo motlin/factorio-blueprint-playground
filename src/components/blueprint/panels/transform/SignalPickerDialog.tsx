@@ -1,4 +1,4 @@
-import {useEffect, useId, useMemo, useRef, useState} from 'react';
+import {useCallback, useEffect, useId, useMemo, useRef, useState} from 'react';
 
 import type {Quality, QualityComparator, SignalID, SignalType} from '../../../../parsing/types';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
@@ -11,6 +11,7 @@ const qualityComparators: readonly QualityComparator[] = ['=', '≠', '<', '≤'
 type QualitySelection = 'any' | 'preserve' | Exclude<Quality, undefined>;
 type PickerSignal = SignalID & {comparator?: QualityComparator};
 type PickerCategoryId = 'items' | 'recipes' | 'fluids' | 'virtual' | 'environment' | 'other';
+type QualityMode = 'source' | 'target';
 
 interface PickerCategory {
 	id: PickerCategoryId;
@@ -41,8 +42,16 @@ export interface SignalPickerDialogProps {
 	onChoose: (signal: PickerSignal, preserveQuality?: boolean) => void;
 	onClose: () => void;
 	options: SignalID[];
-	qualityMode?: 'source' | 'target';
+	qualityMode?: QualityMode;
 	title: string;
+}
+
+interface SignalPickerQualityBarProps {
+	mode: QualityMode;
+	onComparatorChange: (comparator: QualityComparator) => void;
+	onQualityChange: (selection: QualitySelection) => void;
+	qualityComparator: QualityComparator;
+	qualitySelection: QualitySelection;
 }
 
 function normalizedSignalType(signal: SignalID): SignalType {
@@ -89,20 +98,90 @@ function categoryForSignal(signal: SignalID): PickerCategory {
 
 function selectedSignalWithQuality(
 	signal: SignalID,
-	qualityMode: 'source' | 'target' | undefined,
+	qualityMode: QualityMode | undefined,
 	qualitySelection: QualitySelection,
 	qualityComparator: QualityComparator,
 ): PickerSignal {
 	const selectedSignal: PickerSignal = {...signal};
-	if (qualitySelection === 'any' || qualitySelection === 'preserve' || qualitySelection === 'normal') {
-		delete selectedSignal.quality;
-	} else {
-		selectedSignal.quality = qualitySelection;
+	if (qualityMode === undefined) {
+		return selectedSignal;
 	}
-	if (qualityMode === 'source' && qualitySelection !== 'any') {
+	delete selectedSignal.comparator;
+	delete selectedSignal.quality;
+	if (qualitySelection === 'any' || qualitySelection === 'preserve') {
+		if (
+			(qualityMode === 'source' && qualitySelection !== 'any') ||
+			(qualityMode === 'target' && qualitySelection !== 'preserve')
+		) {
+			throw new Error(`${qualitySelection} is not valid for ${qualityMode} quality selection.`);
+		}
+		return selectedSignal;
+	}
+	selectedSignal.quality = qualitySelection;
+	if (qualityMode === 'source') {
 		selectedSignal.comparator = qualityComparator;
 	}
 	return selectedSignal;
+}
+
+function SignalPickerQualityBar({
+	mode,
+	onComparatorChange,
+	onQualityChange,
+	qualityComparator,
+	qualitySelection,
+}: SignalPickerQualityBarProps) {
+	const sentinel = mode === 'source' ? 'any' : 'preserve';
+	return (
+		<div className="transform-picker__quality-bar" role="group" aria-label={`${signalName({name: mode})} quality`}>
+			<button
+				type="button"
+				aria-label={mode === 'source' ? 'Any quality' : 'Set as source'}
+				aria-pressed={qualitySelection === sentinel}
+				onClick={() => {
+					onQualityChange(sentinel);
+				}}
+			>
+				{mode === 'source' ? 'Any quality' : 'Set as source'}
+			</button>
+			{mode === 'source' ? (
+				<select
+					aria-label="Quality comparison"
+					value={qualityComparator}
+					disabled={qualitySelection === 'any'}
+					onChange={(event) => {
+						const comparator = qualityComparators.find(
+							(candidate) => candidate === event.currentTarget.value,
+						);
+						if (comparator === undefined) {
+							throw new Error(`Unknown quality comparator: ${event.currentTarget.value}`);
+						}
+						onComparatorChange(comparator);
+					}}
+				>
+					{qualityComparators.map((comparator) => (
+						<option key={comparator} value={comparator}>
+							{comparator}
+						</option>
+					))}
+				</select>
+			) : null}
+			{qualities.map((quality) => (
+				<button
+					type="button"
+					key={quality}
+					aria-label={`${signalName({name: quality})} quality`}
+					aria-pressed={qualitySelection === quality}
+					title={`${signalName({name: quality})} quality`}
+					onClick={() => {
+						onQualityChange(quality);
+					}}
+				>
+					<FactorioIcon icon={{type: 'quality', name: quality}} size="small" />
+				</button>
+			))}
+		</div>
+	);
 }
 
 export function SignalPickerDialog({
@@ -135,7 +214,12 @@ export function SignalPickerDialog({
 			: initialSignal,
 	);
 	const [qualitySelection, setQualitySelection] = useState<QualitySelection>(
-		initialQuality ?? (qualityMode === 'source' ? 'any' : qualityMode === 'target' ? 'preserve' : 'normal'),
+		initialQuality ??
+			(qualityMode === 'source'
+				? (initialSignal?.quality ?? 'any')
+				: qualityMode === 'target'
+					? 'preserve'
+					: 'normal'),
 	);
 	const [qualityComparator, setQualityComparator] = useState<QualityComparator>(initialSignal?.comparator ?? '=');
 	const activeCategory: PickerCategory | undefined =
@@ -153,8 +237,18 @@ export function SignalPickerDialog({
 	const selectedOptionIndex = filteredOptions.findIndex((signal) => signalIdentity(signal) === selectedIdentity);
 	const tabbableOptionIndex = selectedOptionIndex < 0 ? 0 : selectedOptionIndex;
 
+	const confirmSelection = useCallback(() => {
+		if (selectedSignal === undefined) {
+			return;
+		}
+		onChoose(
+			selectedSignalWithQuality(selectedSignal, qualityMode, qualitySelection, qualityComparator),
+			qualitySelection === 'preserve',
+		);
+	}, [onChoose, qualityComparator, qualityMode, qualitySelection, selectedSignal]);
+
 	useEffect(() => {
-		const closePicker = (event: KeyboardEvent) => {
+		const handlePickerShortcut = (event: KeyboardEvent) => {
 			const escapePressed = event.key === 'Escape';
 			const clearCursorPressed =
 				event.code === 'KeyQ' &&
@@ -163,18 +257,29 @@ export function SignalPickerDialog({
 				!event.metaKey &&
 				!event.shiftKey &&
 				!isTextEditingTarget(event.target);
-			if (!escapePressed && !clearCursorPressed) {
+			const confirmPressed =
+				event.key === 'Enter' &&
+				!event.altKey &&
+				!event.ctrlKey &&
+				!event.metaKey &&
+				!event.shiftKey &&
+				!(event.target instanceof HTMLButtonElement);
+			if (!escapePressed && !clearCursorPressed && !confirmPressed) {
 				return;
 			}
 			event.preventDefault();
 			event.stopPropagation();
-			onClose();
+			if (confirmPressed) {
+				confirmSelection();
+			} else {
+				onClose();
+			}
 		};
-		window.addEventListener('keydown', closePicker);
+		window.addEventListener('keydown', handlePickerShortcut);
 		return () => {
-			window.removeEventListener('keydown', closePicker);
+			window.removeEventListener('keydown', handlePickerShortcut);
 		};
-	}, [onClose]);
+	}, [confirmSelection, onClose]);
 
 	const moveGridFocus = (event: React.KeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
 		let nextIndex: number | undefined;
@@ -196,16 +301,6 @@ export function SignalPickerDialog({
 		}
 		event.preventDefault();
 		optionButtons.current[nextIndex]?.focus();
-	};
-
-	const confirmSelection = () => {
-		if (selectedSignal === undefined) {
-			return;
-		}
-		onChoose(
-			selectedSignalWithQuality(selectedSignal, qualityMode, qualitySelection, qualityComparator),
-			qualitySelection === 'preserve',
-		);
 	};
 
 	return (
@@ -233,7 +328,9 @@ export function SignalPickerDialog({
 						type="button"
 						className="transform-dialog__close"
 						aria-label={`Close ${title}`}
-						onClick={onClose}
+						onClick={() => {
+							onClose();
+						}}
 					>
 						×
 					</button>
@@ -293,57 +390,13 @@ export function SignalPickerDialog({
 					{qualityMode === undefined ? (
 						<span />
 					) : (
-						<div
-							className="transform-picker__qualities"
-							role="group"
-							aria-label={`${signalName({name: qualityMode})} quality`}
-						>
-							<button
-								type="button"
-								aria-pressed={qualitySelection === (qualityMode === 'source' ? 'any' : 'preserve')}
-								onClick={() => {
-									setQualitySelection(qualityMode === 'source' ? 'any' : 'preserve');
-								}}
-							>
-								{qualityMode === 'source' ? 'Any quality' : 'Set as source'}
-							</button>
-							{qualityMode === 'source' ? (
-								<select
-									aria-label="Quality comparison"
-									value={qualityComparator}
-									disabled={qualitySelection === 'any'}
-									onChange={(event) => {
-										const comparator = qualityComparators.find(
-											(candidate) => candidate === event.currentTarget.value,
-										);
-										if (comparator === undefined) {
-											throw new Error(`Unknown quality comparator: ${event.currentTarget.value}`);
-										}
-										setQualityComparator(comparator);
-									}}
-								>
-									{qualityComparators.map((comparator) => (
-										<option key={comparator} value={comparator}>
-											{comparator}
-										</option>
-									))}
-								</select>
-							) : null}
-							{qualities.map((quality) => (
-								<button
-									type="button"
-									key={quality}
-									aria-label={`${signalName({name: quality})} quality`}
-									aria-pressed={qualitySelection === quality}
-									title={`${signalName({name: quality})} quality`}
-									onClick={() => {
-										setQualitySelection(quality);
-									}}
-								>
-									<FactorioIcon icon={{type: 'quality', name: quality}} size="small" />
-								</button>
-							))}
-						</div>
+						<SignalPickerQualityBar
+							mode={qualityMode}
+							qualityComparator={qualityComparator}
+							qualitySelection={qualitySelection}
+							onComparatorChange={setQualityComparator}
+							onQualityChange={setQualitySelection}
+						/>
 					)}
 					<ButtonGreen
 						disabled={selectedSignal === undefined}
@@ -352,7 +405,8 @@ export function SignalPickerDialog({
 							confirmSelection();
 						}}
 					>
-						Confirm
+						<span aria-hidden="true">✓</span>
+						<span className="transform-picker__confirm-label">Confirm</span>
 					</ButtonGreen>
 				</footer>
 			</section>

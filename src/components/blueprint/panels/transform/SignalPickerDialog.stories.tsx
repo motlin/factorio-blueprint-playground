@@ -3,6 +3,13 @@ import {fn} from 'storybook/test';
 
 import {SignalPickerDialog} from './SignalPickerDialog';
 
+const qualitySourceSignal = {
+	type: 'entity',
+	name: 'transport-belt',
+	quality: 'rare',
+	comparator: '≥',
+} as const;
+
 const meta = {
 	title: 'Blueprint/Panels/Transform/SignalPickerDialog',
 	component: SignalPickerDialog,
@@ -46,5 +53,19 @@ export const QualityTarget: Story = {
 			{type: 'entity', name: 'turbo-transport-belt'},
 		],
 		qualityMode: 'target',
+	},
+};
+
+export const QualitySource: Story = {
+	args: {
+		title: 'Choose mapping source',
+		initialSignal: qualitySourceSignal,
+		options: [
+			qualitySourceSignal,
+			{type: 'entity', name: 'fast-transport-belt'},
+			{type: 'entity', name: 'express-transport-belt'},
+			{type: 'entity', name: 'turbo-transport-belt'},
+		],
+		qualityMode: 'source',
 	},
 };
