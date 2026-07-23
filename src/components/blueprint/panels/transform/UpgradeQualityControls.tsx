@@ -35,23 +35,26 @@ function QualityComparatorSelect({
 	qualityComparator: QualityComparator;
 }) {
 	return (
-		<select
-			aria-label="Quality comparison"
-			value={qualityComparator}
-			disabled={disabled}
-			onChange={(event) => {
-				if (!isUpgradeQualityComparator(event.currentTarget.value)) {
-					throw new Error(`Unknown quality comparator: ${event.currentTarget.value}`);
-				}
-				onComparatorChange(event.currentTarget.value);
-			}}
-		>
-			{upgradeQualityComparators.map((comparator) => (
-				<option key={comparator} value={comparator}>
-					{comparator}
-				</option>
-			))}
-		</select>
+		<label>
+			<span className="transform-visually-hidden">Quality comparison</span>
+			<select
+				aria-label="Quality comparison"
+				value={qualityComparator}
+				disabled={disabled}
+				onChange={(event) => {
+					if (!isUpgradeQualityComparator(event.currentTarget.value)) {
+						throw new Error(`Unknown quality comparator: ${event.currentTarget.value}`);
+					}
+					onComparatorChange(event.currentTarget.value);
+				}}
+			>
+				{upgradeQualityComparators.map((comparator) => (
+					<option key={comparator} value={comparator}>
+						{comparator}
+					</option>
+				))}
+			</select>
+		</label>
 	);
 }
 
@@ -80,23 +83,26 @@ export function UpgradeQualityControls({
 				role="group"
 				aria-label={`${modeLabel} quality`}
 			>
-				<select
-					aria-label={`${modeLabel} quality selection`}
-					value={qualitySelection}
-					onChange={(event) => {
-						if (!isUpgradeQualitySelection(event.currentTarget.value)) {
-							throw new Error(`Unknown quality selection: ${event.currentTarget.value}`);
-						}
-						onQualityChange(event.currentTarget.value);
-					}}
-				>
-					<option value={sentinel}>{sentinelLabel}</option>
-					{upgradeQualities.map((quality) => (
-						<option key={quality} value={quality}>
-							{signalName({name: quality})}
-						</option>
-					))}
-				</select>
+				<label>
+					<span className="transform-visually-hidden">{modeLabel} quality selection</span>
+					<select
+						aria-label={`${modeLabel} quality selection`}
+						value={qualitySelection}
+						onChange={(event) => {
+							if (!isUpgradeQualitySelection(event.currentTarget.value)) {
+								throw new Error(`Unknown quality selection: ${event.currentTarget.value}`);
+							}
+							onQualityChange(event.currentTarget.value);
+						}}
+					>
+						<option value={sentinel}>{sentinelLabel}</option>
+						{upgradeQualities.map((quality) => (
+							<option key={quality} value={quality}>
+								{signalName({name: quality})}
+							</option>
+						))}
+					</select>
+				</label>
 				{mode === 'source' ? (
 					<QualityComparatorSelect
 						disabled={qualitySelection === 'any'}

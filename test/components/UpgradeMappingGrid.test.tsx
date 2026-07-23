@@ -66,8 +66,12 @@ describe('UpgradeMappingGrid', () => {
 		renderGrid();
 
 		const rows = screen.getAllByRole('listitem');
-		expect(
-			rows.map((row) => ({
+		expect({
+			headings: ['From', 'To', 'Matches'].map((heading) => ({
+				ariaHidden: screen.getByText(heading).getAttribute('aria-hidden'),
+				text: screen.getByText(heading).textContent,
+			})),
+			rows: rows.map((row) => ({
 				count: row.querySelector('.upgrade-mapping-grid__count')?.textContent,
 				key: row.getAttribute('data-mapping-key'),
 				remove: within(row)
@@ -76,29 +80,36 @@ describe('UpgradeMappingGrid', () => {
 				source: within(row).getByRole('button', {name: /Choose source/}).title,
 				target: within(row).getByRole('button', {name: /Choose target/}).title,
 			})),
-		).toStrictEqual([
-			{
-				count: '4matches',
-				key: 'entity:transport-belt:normal:=',
-				remove: 'Remove mapping from Transport belt',
-				source: 'Transport belt\nentity:transport-belt',
-				target: 'Fast transport belt\nentity:fast-transport-belt',
-			},
-			{
-				count: '0matches',
-				key: 'item:speed-module:normal:=',
-				remove: 'Remove mapping from Speed module',
-				source: 'Speed module\nitem:speed-module',
-				target: 'Speed module 2\nitem:speed-module-2',
-			},
-			{
-				count: '1match',
-				key: 'entity:inserter:rare:=',
-				remove: 'Remove mapping from Inserter',
-				source: 'Inserter\nentity:inserter\nQuality: = rare',
-				target: 'Fast inserter\nentity:fast-inserter\nQuality: = epic',
-			},
-		]);
+		}).toStrictEqual({
+			headings: [
+				{ariaHidden: null, text: 'From'},
+				{ariaHidden: null, text: 'To'},
+				{ariaHidden: null, text: 'Matches'},
+			],
+			rows: [
+				{
+					count: '4matches',
+					key: 'entity:transport-belt:normal:=',
+					remove: 'Remove mapping from Transport belt',
+					source: 'Transport belt\nentity:transport-belt',
+					target: 'Fast transport belt\nentity:fast-transport-belt',
+				},
+				{
+					count: '0matches',
+					key: 'item:speed-module:normal:=',
+					remove: 'Remove mapping from Speed module',
+					source: 'Speed module\nitem:speed-module',
+					target: 'Speed module 2\nitem:speed-module-2',
+				},
+				{
+					count: '1match',
+					key: 'entity:inserter:rare:=',
+					remove: 'Remove mapping from Inserter',
+					source: 'Inserter\nentity:inserter\nQuality: = rare',
+					target: 'Fast inserter\nentity:fast-inserter\nQuality: = epic',
+				},
+			],
+		});
 	});
 
 	test('uses mapping identities as keys while preserving the supplied order', () => {

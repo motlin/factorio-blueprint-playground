@@ -42,6 +42,7 @@ export function UpgradePlannerSelectorItem({
 			className="upgrade-planner-selector__tile"
 			aria-label={choice.label}
 			aria-describedby={instructionsId}
+			aria-keyshortcuts={directional ? 'Shift+Enter' : undefined}
 			aria-pressed={selected}
 			tabIndex={active ? 0 : -1}
 			title={choice.label}

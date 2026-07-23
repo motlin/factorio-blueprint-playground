@@ -56,9 +56,15 @@ export function BlueprintEditorToolbar({
 								: `Apply ${selectedPlannerLabel} as ${placedPlanner.direction}`
 						}
 						aria-describedby={tooltipId}
+						aria-keyshortcuts={placedPlanner === undefined ? undefined : 'Shift+Enter'}
 						aria-controls={selectedPlannerLabel === undefined ? selectorDialogId : undefined}
 						aria-expanded={selectedPlannerLabel === undefined ? selectorOpen : undefined}
 						aria-haspopup={selectedPlannerLabel === undefined ? 'dialog' : undefined}
+						title={
+							placedPlanner === undefined
+								? 'Upgrade items and entities in the blueprint'
+								: `Apply ${selectedPlannerLabel} as ${placedPlanner.direction}`
+						}
 						onClick={() => {
 							if (placedPlanner === undefined) {
 								onOpenUpgradePlannerSelector();
@@ -93,6 +99,11 @@ export function BlueprintEditorToolbar({
 						aria-describedby={dropError === undefined ? undefined : dropErrorId}
 						aria-expanded={selectorOpen}
 						aria-haspopup="dialog"
+						title={
+							selectedPlannerLabel === undefined
+								? 'Choose upgrade planner for toolbar slot'
+								: `Change placed upgrade planner, currently ${selectedPlannerLabel}`
+						}
 						onClick={onOpenUpgradePlannerSelector}
 						onDragOver={(event) => {
 							if (event.dataTransfer.types.includes('text/plain')) {
@@ -121,6 +132,7 @@ export function BlueprintEditorToolbar({
 							type="button"
 							className="blueprint-editor-toolbar__planner-clear"
 							aria-label={`Remove ${selectedPlannerLabel} from toolbar slot`}
+							title={`Remove ${selectedPlannerLabel} from toolbar slot`}
 							onClick={onClearPlacedPlanner}
 						>
 							×
@@ -150,6 +162,7 @@ export function BlueprintEditorToolbar({
 						aria-describedby={parameterizationTooltipId}
 						aria-expanded={parameterizationOpen}
 						aria-haspopup="dialog"
+						title="Parametrise or reconfigure the blueprint"
 						onClick={() => {
 							onOpenParameterization();
 						}}

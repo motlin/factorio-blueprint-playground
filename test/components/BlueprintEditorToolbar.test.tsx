@@ -124,3 +124,50 @@ test('opens Blueprint parametrisation only when the current format supports it',
 		tooltip: 'Parametrise/reconfigure the blueprint.',
 	});
 });
+
+test('names the Change control and provides a keyboard alternative for the opposite direction', () => {
+	const onApplyPlacedPlanner = vi.fn<(direction: UpgradeDirection) => void>();
+	render(
+		<BlueprintEditorToolbar
+			dropError={undefined}
+			onApplyPlacedPlanner={onApplyPlacedPlanner}
+			onClearPlacedPlanner={vi.fn<() => void>()}
+			onDropPlanner={vi.fn<(serializedPlanner: string) => void>()}
+			onOpenParameterization={vi.fn<() => void>()}
+			onOpenUpgradePlannerSelector={vi.fn<() => void>()}
+			parameterizationAvailable={false}
+			parameterizationDialogId="blueprint-parameterization"
+			parameterizationOpen={false}
+			placedPlanner={{
+				choice: {label: 'Belt planner', source: 'book:1'},
+				direction: 'upgrade',
+			}}
+			selectorDialogId="upgrade-planner-selector"
+			selectorOpen={false}
+		/>,
+	);
+
+	const apply = screen.getByRole('button', {name: 'Apply Belt planner as upgrade'});
+	const change = screen.getByRole('button', {
+		name: 'Change placed upgrade planner, currently Belt planner',
+	});
+	const remove = screen.getByRole('button', {name: 'Remove Belt planner from toolbar slot'});
+	const contextMenuAllowed = fireEvent.contextMenu(apply);
+	fireEvent.keyDown(apply, {key: 'Enter', shiftKey: true});
+
+	expect({
+		applyCalls: onApplyPlacedPlanner.mock.calls,
+		applyKeyshortcuts: apply.getAttribute('aria-keyshortcuts'),
+		applyTooltip: apply.getAttribute('title'),
+		changeTooltip: change.getAttribute('title'),
+		contextMenuAllowed,
+		removeTooltip: remove.getAttribute('title'),
+	}).toStrictEqual({
+		applyCalls: [['downgrade'], ['downgrade']],
+		applyKeyshortcuts: 'Shift+Enter',
+		applyTooltip: 'Apply Belt planner as upgrade',
+		changeTooltip: 'Change placed upgrade planner, currently Belt planner',
+		contextMenuAllowed: false,
+		removeTooltip: 'Remove Belt planner from toolbar slot',
+	});
+});

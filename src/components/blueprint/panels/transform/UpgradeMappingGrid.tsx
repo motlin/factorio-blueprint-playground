@@ -35,7 +35,7 @@ export function UpgradeMappingGrid({
 				<p className="upgrade-mapping-grid__empty">No matching entities or modules in this scope.</p>
 			) : (
 				<>
-					<div className="upgrade-mapping-grid__headings" aria-hidden="true">
+					<div className="upgrade-mapping-grid__headings">
 						<span>From</span>
 						<span />
 						<span>To</span>

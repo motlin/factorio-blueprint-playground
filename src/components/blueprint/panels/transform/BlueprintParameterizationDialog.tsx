@@ -157,6 +157,7 @@ export function BlueprintParameterizationDialog({
 						type="button"
 						className="transform-dialog__close"
 						aria-label="Close Blueprint parametrisation"
+						title="Close Blueprint parametrisation"
 						onClick={onClose}
 					>
 						×
@@ -190,7 +191,13 @@ export function BlueprintParameterizationDialog({
 							<div className="blueprint-parameterization__row" key={index}>
 								<div className="blueprint-parameterization__primary">
 									<label>
-										<span>Name</span>
+										<span>
+											Name
+											<span className="transform-visually-hidden">
+												{' '}
+												for parameter {parameterNumber}
+											</span>
+										</span>
 										<input
 											data-dialog-initial-focus={editableIndex === 0 ? 'true' : undefined}
 											type="text"
@@ -216,7 +223,7 @@ export function BlueprintParameterizationDialog({
 											type="button"
 											className={`transform-signal-slot${signal === undefined ? ' transform-signal-slot--empty' : ''}`}
 											aria-label={`Choose value for parameter ${parameterNumber.toString()}${parameter.name === undefined ? '' : ` ${parameter.name}`}`}
-											title={parameter.id}
+											title={`Choose value for parameter ${parameterNumber.toString()}${parameter.name === undefined ? '' : ` ${parameter.name}`}`}
 											onClick={() => {
 												setChoosingValueIndex(index);
 											}}
@@ -232,6 +239,7 @@ export function BlueprintParameterizationDialog({
 										type="button"
 										className="blueprint-parameterization__remove"
 										aria-label={`Remove parameter ${parameterNumber.toString()}${parameter.name === undefined ? '' : ` ${parameter.name}`}`}
+										title={`Remove parameter ${parameterNumber.toString()}${parameter.name === undefined ? '' : ` ${parameter.name}`}`}
 										onClick={() => {
 											setDraftParameters((current) =>
 												current.filter(
@@ -263,65 +271,84 @@ export function BlueprintParameterizationDialog({
 											}}
 										/>{' '}
 										Parameter
+										<span className="transform-visually-hidden"> {parameterNumber}</span>
 									</label>
-									<select
-										aria-label={`Parameter ${parameterNumber.toString()} dependency mode`}
-										value={currentDependency.value}
-										disabled={parameter.parameter === false}
-										onChange={(event) => {
-											const selected = dependencyOptions.find(
-												(option) => option.value === event.currentTarget.value,
-											);
-											if (selected === undefined) {
-												throw new Error(
-													`Unknown parameter dependency mode: ${event.currentTarget.value}`,
+									<label className="blueprint-parameterization__select-label">
+										<span>
+											Dependency
+											<span className="transform-visually-hidden">
+												{' '}
+												mode for parameter {parameterNumber}
+											</span>
+										</span>
+										<select
+											aria-label={`Parameter ${parameterNumber.toString()} dependency mode`}
+											value={currentDependency.value}
+											disabled={parameter.parameter === false}
+											onChange={(event) => {
+												const selected = dependencyOptions.find(
+													(option) => option.value === event.currentTarget.value,
 												);
+												if (selected === undefined) {
+													throw new Error(
+														`Unknown parameter dependency mode: ${event.currentTarget.value}`,
+													);
+												}
+												updateParameter(index, (current) => {
+													const next = withoutDependencies(current);
+													const source = currentSource || sourceOptions.at(0)?.id;
+													if (selected.field !== undefined && source !== undefined) {
+														next[selected.field] = source;
+													}
+													return next;
+												});
+											}}
+										>
+											{dependencyOptions.map((option) => (
+												<option key={option.value} value={option.value}>
+													{option.label}
+												</option>
+											))}
+										</select>
+									</label>
+									<label className="blueprint-parameterization__select-label">
+										<span>
+											Source parameter
+											<span className="transform-visually-hidden">
+												{' '}
+												for parameter {parameterNumber}
+											</span>
+										</span>
+										<select
+											aria-label={`Parameter ${parameterNumber.toString()} dependency source`}
+											value={currentSource}
+											disabled={
+												parameter.parameter === false || currentDependency.field === undefined
 											}
-											updateParameter(index, (current) => {
-												const next = withoutDependencies(current);
-												const source = currentSource || sourceOptions.at(0)?.id;
-												if (selected.field !== undefined && source !== undefined) {
-													next[selected.field] = source;
-												}
-												return next;
-											});
-										}}
-									>
-										{dependencyOptions.map((option) => (
-											<option key={option.value} value={option.value}>
-												{option.label}
-											</option>
-										))}
-									</select>
-									<select
-										aria-label={`Parameter ${parameterNumber.toString()} dependency source`}
-										value={currentSource}
-										disabled={
-											parameter.parameter === false || currentDependency.field === undefined
-										}
-										onChange={(event) => {
-											const source = event.currentTarget.value;
-											updateParameter(index, (current) => {
-												const option = dependencyOption(current);
-												const next = withoutDependencies(current);
-												if (option.field !== undefined && source !== '') {
-													next[option.field] = source;
-												}
-												return next;
-											});
-										}}
-									>
-										<option value="">Select source</option>
-										{currentSource !== '' &&
-										!sourceOptions.some((option) => option.id === currentSource) ? (
-											<option value={currentSource}>{currentSource} (unavailable)</option>
-										) : null}
-										{sourceOptions.map((option) => (
-											<option key={option.id} value={option.id}>
-												{option.name}
-											</option>
-										))}
-									</select>
+											onChange={(event) => {
+												const source = event.currentTarget.value;
+												updateParameter(index, (current) => {
+													const option = dependencyOption(current);
+													const next = withoutDependencies(current);
+													if (option.field !== undefined && source !== '') {
+														next[option.field] = source;
+													}
+													return next;
+												});
+											}}
+										>
+											<option value="">Select source</option>
+											{currentSource !== '' &&
+											!sourceOptions.some((option) => option.id === currentSource) ? (
+												<option value={currentSource}>{currentSource} (unavailable)</option>
+											) : null}
+											{sourceOptions.map((option) => (
+												<option key={option.id} value={option.id}>
+													{option.name}
+												</option>
+											))}
+										</select>
+									</label>
 								</div>
 							</div>
 						);

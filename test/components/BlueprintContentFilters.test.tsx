@@ -95,9 +95,11 @@ test('toggles a fully named filter with the native keyboard control', async () =
 		activeElement: document.activeElement,
 		calls: callbacks.onTrainsIncludedChange.mock.calls,
 		factorioCheckbox: trains.nextElementSibling?.className,
+		labelElement: trains.labels?.[0]?.tagName,
 	}).toStrictEqual({
 		activeElement: trains,
 		calls: [[false]],
 		factorioCheckbox: 'checkbox',
+		labelElement: 'LABEL',
 	});
 });

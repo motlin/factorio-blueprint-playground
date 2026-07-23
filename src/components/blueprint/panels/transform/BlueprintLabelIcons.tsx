@@ -20,12 +20,20 @@ export function BlueprintLabelIcons({icons, onChange, onChoose, signalTitle}: Bl
 				key={index}
 				className={`transform-signal-slot${icon === undefined ? ' transform-signal-slot--empty' : ''}`}
 				aria-label={label}
+				aria-keyshortcuts={icon === undefined ? undefined : 'Delete Backspace'}
 				title={icon === undefined ? label : signalTitle(icon)}
 				onClick={() => {
 					onChoose(index);
 				}}
 				onContextMenu={(event) => {
 					if (icon === undefined) {
+						return;
+					}
+					event.preventDefault();
+					onChange(icons.filter((_signal, iconIndex) => iconIndex !== index));
+				}}
+				onKeyDown={(event) => {
+					if (icon === undefined || (event.key !== 'Delete' && event.key !== 'Backspace')) {
 						return;
 					}
 					event.preventDefault();
