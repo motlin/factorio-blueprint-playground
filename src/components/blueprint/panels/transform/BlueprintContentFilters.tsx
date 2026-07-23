@@ -48,43 +48,49 @@ export function BlueprintContentFilters({
 	trainsIncluded,
 }: BlueprintContentFiltersProps) {
 	const headingId = useId();
-	const structuralCategoryCount = [categories.entities, categories.tiles, categories.trains].filter(Boolean).length;
-	const showStructuralFilters = structuralCategoryCount > 1;
+	const structuralOptions: ContentFilterCheckboxProps[] = [];
+	if (categories.entities) {
+		structuralOptions.push({
+			included: entitiesIncluded,
+			label: 'Entities',
+			onIncludedChange: onEntitiesIncludedChange,
+		});
+	}
+	if (categories.trains) {
+		structuralOptions.push({
+			included: trainsIncluded,
+			label: 'Trains',
+			onIncludedChange: onTrainsIncludedChange,
+		});
+	}
+	if (categories.tiles) {
+		structuralOptions.push({
+			included: tilesIncluded,
+			label: 'Tiles',
+			onIncludedChange: onTilesIncludedChange,
+		});
+	}
+	const options: ContentFilterCheckboxProps[] = [];
+	if (categories.modules) {
+		options.push({
+			included: modulesIncluded,
+			label: 'Modules',
+			onIncludedChange: onModulesIncludedChange,
+		});
+	}
+	if (structuralOptions.length > 1) {
+		options.push(...structuralOptions);
+	}
 
-	if (!categories.modules && !showStructuralFilters) return null;
+	if (options.length === 0) return null;
 
 	return (
 		<section className="transform-workflow__section blueprint-content-filters" aria-labelledby={headingId}>
 			<h4 id={headingId}>Filters</h4>
 			<div className="blueprint-content-filters__options">
-				{categories.modules ? (
-					<ContentFilterCheckbox
-						included={modulesIncluded}
-						label="Modules"
-						onIncludedChange={onModulesIncludedChange}
-					/>
-				) : null}
-				{showStructuralFilters && categories.entities ? (
-					<ContentFilterCheckbox
-						included={entitiesIncluded}
-						label="Entities"
-						onIncludedChange={onEntitiesIncludedChange}
-					/>
-				) : null}
-				{showStructuralFilters && categories.trains ? (
-					<ContentFilterCheckbox
-						included={trainsIncluded}
-						label="Trains"
-						onIncludedChange={onTrainsIncludedChange}
-					/>
-				) : null}
-				{showStructuralFilters && categories.tiles ? (
-					<ContentFilterCheckbox
-						included={tilesIncluded}
-						label="Tiles"
-						onIncludedChange={onTilesIncludedChange}
-					/>
-				) : null}
+				{options.map((option) => (
+					<ContentFilterCheckbox key={option.label} {...option} />
+				))}
 			</div>
 		</section>
 	);

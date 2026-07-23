@@ -32,8 +32,8 @@ import {
 } from '../../../../transform/metadataSubstitution';
 import {
 	blueprintFilterCategories,
+	stripEntities,
 	stripModules,
-	stripNonTrainEntities,
 	stripTiles,
 	stripTrains,
 } from '../../../../transform/strip';
@@ -826,7 +826,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 			}
 			transformed = removeBlueprintComponents(transformed, removedEditorComponents);
 			if (stripTrainsSelected) transformed = stripTrains(transformed);
-			if (stripEntitiesSelected) transformed = stripNonTrainEntities(transformed);
+			if (stripEntitiesSelected) transformed = stripEntities(transformed);
 			if (stripModulesSelected) transformed = stripModules(transformed);
 			if (stripTilesSelected) transformed = stripTiles(transformed);
 			if (flattenBookSelected) transformed = flattenBook(transformed);
