@@ -506,6 +506,54 @@ describe('TransformPanel', () => {
 		});
 	});
 
+	test('removes and restores blueprint components within the editor draft', async () => {
+		const user = userEvent.setup();
+		render(<TransformPanel blueprint={blueprint} />);
+
+		openBlueprintEditor();
+		const activeComponent = screen.getByRole('button', {name: /Transport belt, 1/});
+		const contextMenuAllowed = fireEvent.contextMenu(activeComponent);
+		const removedComponent = screen.getByRole('button', {name: /Transport belt, removed/});
+		expect({
+			contextMenuAllowed,
+			count: removedComponent.querySelector('.blueprint-components__count')?.textContent,
+			navigation: navigate.mock.calls,
+			saveDisabled: screen.getByRole<HTMLButtonElement>('button', {name: 'Save blueprint'}).disabled,
+		}).toStrictEqual({
+			contextMenuAllowed: false,
+			count: '0',
+			navigation: [],
+			saveDisabled: false,
+		});
+
+		await user.click(removedComponent);
+		const restoredComponent = screen.getByRole('button', {name: /Transport belt, 1/});
+		expect({
+			count: restoredComponent.querySelector('.blueprint-components__count')?.textContent,
+			saveDisabled: screen.getByRole<HTMLButtonElement>('button', {name: 'Save blueprint'}).disabled,
+		}).toStrictEqual({
+			count: '1',
+			saveDisabled: true,
+		});
+
+		fireEvent.keyDown(restoredComponent, {key: 'Delete'});
+		await user.click(screen.getByRole('button', {name: 'Save blueprint'}));
+
+		expect(navigate).toHaveBeenCalledExactlyOnceWith({
+			to: '/',
+			search: {
+				pasted: serializeBlueprint({
+					blueprint: {
+						item: 'blueprint',
+						version: 0,
+						entities: [],
+					},
+				}),
+				selection: '',
+			},
+		});
+	});
+
 	test('requires an explicit icon source and clears an incomplete mapping', async () => {
 		const user = userEvent.setup();
 		const iconBlueprint: BlueprintString = {

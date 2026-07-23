@@ -2,6 +2,7 @@ import {type ReactNode, useId, useState} from 'react';
 
 import type {BlueprintString} from '../../../../parsing/types';
 import type {BlueprintSnapGrid} from '../../../../transform/blueprintEditor';
+import type {BlueprintComponentIdentity, BlueprintComponentRemovalKey} from '../../../../transform/componentRemoval';
 import type {BlueprintFilterCategories} from '../../../../transform/strip';
 import type {UpgradeDirection} from '../../../../transform/upgradePlanner';
 import {ButtonGreen} from '../../../ui/ButtonGreen';
@@ -25,6 +26,7 @@ interface BlueprintEditorDialogProps {
 	onApplyPlacedPlanner: (direction: UpgradeDirection) => void;
 	onClose: () => void;
 	onClearPlacedPlanner: () => void;
+	onComponentRemovedChange: (component: BlueprintComponentIdentity, removed: boolean) => void;
 	onDescriptionChange: (description: string) => void;
 	onDropPlanner: (serializedPlanner: string) => void;
 	onEntitiesIncludedChange: (included: boolean) => void;
@@ -40,6 +42,7 @@ interface BlueprintEditorDialogProps {
 	plannerDropError: string | undefined;
 	placedPlanner: PlacedUpgradePlanner | undefined;
 	rootBlueprint: BlueprintString;
+	removedComponents: ReadonlySet<BlueprintComponentRemovalKey>;
 	saveDisabled: boolean;
 	saveLabel: string;
 	snapGrid: BlueprintSnapGrid | undefined;
@@ -63,6 +66,7 @@ export function BlueprintEditorDialog({
 	onApplyPlacedPlanner,
 	onClose,
 	onClearPlacedPlanner,
+	onComponentRemovedChange,
 	onDescriptionChange,
 	onDropPlanner,
 	onEntitiesIncludedChange,
@@ -78,6 +82,7 @@ export function BlueprintEditorDialog({
 	plannerDropError,
 	placedPlanner,
 	rootBlueprint,
+	removedComponents,
 	saveDisabled,
 	saveLabel,
 	snapGrid,
@@ -163,7 +168,11 @@ export function BlueprintEditorDialog({
 							<BlueprintSnapGridEditor settings={snapGrid} onChange={onSnapGridChange} />
 						)}
 
-						<BlueprintComponentsGrid blueprint={blueprint} />
+						<BlueprintComponentsGrid
+							blueprint={blueprint}
+							onComponentRemovedChange={onComponentRemovedChange}
+							removedComponents={removedComponents}
+						/>
 
 						{showFilters ? (
 							<section
