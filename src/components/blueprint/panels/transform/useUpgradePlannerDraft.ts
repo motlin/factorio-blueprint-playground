@@ -220,12 +220,13 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 			return override === undefined ? rule : {...rule, ...override};
 		});
 	}, [manualRulePositions, manualRules, manualSourceKeys, resolvedRules.rules, targetOverrides]);
+	const reverseRules = useMemo(() => effectiveRules.map(reverseUpgradeRule), [effectiveRules]);
 	const candidates = useMemo(() => {
-		if (transformTarget === undefined) {
+		if (!plannerOpen || transformTarget === undefined || effectiveRules.length === 0) {
 			return [];
 		}
 		const forwardMatches = analyzeUpgradeRules(transformTarget, effectiveRules);
-		const reverseMatches = analyzeUpgradeRules(transformTarget, effectiveRules.map(reverseUpgradeRule));
+		const reverseMatches = analyzeUpgradeRules(transformTarget, reverseRules);
 		const forwardCounts = new Map(
 			forwardMatches.map((candidate) => [signalIdentity(candidate.from), candidate.count]),
 		);
@@ -246,7 +247,7 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 				count: (forwardCounts.get(sourceKey) ?? 0) + (reverseCounts.get(sourceKey) ?? 0),
 			};
 		});
-	}, [effectiveRules, manualSourceKeys, source, transformTarget]);
+	}, [effectiveRules, manualSourceKeys, plannerOpen, reverseRules, source, transformTarget]);
 	const selectedCandidates = useMemo(
 		() => candidates.filter((candidate) => !excludedSources.has(signalIdentity(candidate.from))),
 		[candidates, excludedSources],
@@ -257,17 +258,17 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 	);
 	const metadataReplacementCount = useMemo(
 		() =>
-			rootBlueprint === undefined || metadataFind === ''
+			!plannerOpen || rootBlueprint === undefined || metadataFind === ''
 				? 0
 				: analyzeMetadataSubstitution(rootBlueprint, metadataSubstitution),
-		[metadataFind, metadataSubstitution, rootBlueprint],
+		[metadataFind, metadataSubstitution, plannerOpen, rootBlueprint],
 	);
 	const iconReplacementCount = useMemo(
 		() =>
-			rootBlueprint === undefined || iconReplacements.length === 0
+			!plannerOpen || rootBlueprint === undefined || iconReplacements.length === 0
 				? 0
 				: analyzeIconReplacements(rootBlueprint, iconReplacements),
-		[iconReplacements, rootBlueprint],
+		[iconReplacements, plannerOpen, rootBlueprint],
 	);
 	const sourceOptions = useMemo(() => upgradeSourceOptions(transformTarget), [transformTarget]);
 	const matchCount =

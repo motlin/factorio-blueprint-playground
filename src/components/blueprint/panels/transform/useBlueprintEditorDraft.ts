@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useMemo, useState} from 'react';
+import {useCallback, useMemo, useState} from 'react';
 
 import type {BlueprintString, Parameter, SignalID} from '../../../../parsing/types';
 import {updateNestedBlueprint} from '../../../../transform/applyAtPath';
@@ -81,27 +81,47 @@ export function useBlueprintEditorDraft({blueprint, rootBlueprint, selectedPath}
 		setSortBookSelected(false);
 	}, [metadata.description, metadata.label, sourceIcons, sourceParameters, sourceSnapGrid]);
 
-	useEffect(() => {
-		resetBlueprintEditorDraft();
-	}, [resetBlueprintEditorDraft, selectedPath]);
-
-	const editorDirty =
-		editorLabel !== metadata.label ||
-		editorDescription !== metadata.description ||
-		JSON.stringify(editorIcons) !== JSON.stringify(sourceIcons) ||
-		JSON.stringify(editorSnapGrid) !== JSON.stringify(sourceSnapGrid) ||
-		JSON.stringify(editorParameters) !== JSON.stringify(sourceParameters) ||
-		removedEditorComponents.size > 0 ||
-		stripEntitiesSelected ||
-		stripModulesSelected ||
-		stripTrainsSelected ||
-		stripTilesSelected ||
-		flattenBookSelected ||
-		sortBookSelected;
+	const editorDirty = useMemo(
+		() =>
+			editorLabel !== metadata.label ||
+			editorDescription !== metadata.description ||
+			JSON.stringify(editorIcons) !== JSON.stringify(sourceIcons) ||
+			JSON.stringify(editorSnapGrid) !== JSON.stringify(sourceSnapGrid) ||
+			JSON.stringify(editorParameters) !== JSON.stringify(sourceParameters) ||
+			removedEditorComponents.size > 0 ||
+			stripEntitiesSelected ||
+			stripModulesSelected ||
+			stripTrainsSelected ||
+			stripTilesSelected ||
+			flattenBookSelected ||
+			sortBookSelected,
+		[
+			editorDescription,
+			editorIcons,
+			editorLabel,
+			editorParameters,
+			editorSnapGrid,
+			flattenBookSelected,
+			metadata.description,
+			metadata.label,
+			removedEditorComponents,
+			sortBookSelected,
+			sourceIcons,
+			sourceParameters,
+			sourceSnapGrid,
+			stripEntitiesSelected,
+			stripModulesSelected,
+			stripTilesSelected,
+			stripTrainsSelected,
+		],
+	);
 
 	const editorDraft = useMemo(() => {
 		if (blueprint === undefined || rootBlueprint === undefined) {
 			return {rootBlueprint: undefined, selectedBlueprint: undefined};
+		}
+		if (!blueprintEditorOpen) {
+			return {rootBlueprint, selectedBlueprint: blueprint};
 		}
 		let selectedBlueprint = blueprint;
 		if (selectedBlueprint.blueprint !== undefined || selectedBlueprint.blueprint_book !== undefined) {
@@ -130,6 +150,7 @@ export function useBlueprintEditorDraft({blueprint, rootBlueprint, selectedPath}
 		};
 	}, [
 		blueprint,
+		blueprintEditorOpen,
 		editorDescription,
 		editorIcons,
 		editorLabel,

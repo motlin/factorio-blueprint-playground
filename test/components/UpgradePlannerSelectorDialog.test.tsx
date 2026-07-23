@@ -14,11 +14,22 @@ import upgradePlannerFixture from '../fixtures/blueprints/json/upgrade.json';
 
 const mocks = vi.hoisted(() => ({
 	historyBlueprints: [] as DatabaseBlueprint[],
+	serializationCount: 0,
 }));
 
 vi.mock('dexie-react-hooks', () => ({
 	useLiveQuery: () => mocks.historyBlueprints,
 }));
+vi.mock('../../src/parsing/blueprintParser', async (importOriginal) => {
+	const original = await importOriginal<typeof import('../../src/parsing/blueprintParser')>();
+	return {
+		...original,
+		serializeBlueprint: (...parameters: Parameters<typeof original.serializeBlueprint>) => {
+			mocks.serializationCount += 1;
+			return original.serializeBlueprint(...parameters);
+		},
+	};
+});
 
 const fixturePlanner: UpgradePlanner = {
 	...parseUpgradePlanner(JSON.stringify(upgradePlannerFixture)),
@@ -65,6 +76,47 @@ describe('UpgradePlannerSelectorDialog', () => {
 			storedPlanner('sha-100', fixturePlanner, 'Duplicate fixture planner', 1000),
 			storedPlanner('sha-200', zeroMatchPlanner, 'Zero-match history planner', 0),
 		];
+		mocks.serializationCount = 0;
+	});
+
+	test('reuses serialized planners while focus and session choices change', async () => {
+		const user = userEvent.setup();
+		const properties = {
+			dialogId: 'upgrade-planner-selector',
+			includeEditingChoices: false,
+			onChoose: vi.fn<(choice: UpgradePlannerChoice, direction: UpgradeDirection) => void>(),
+			onClose: vi.fn<() => void>(),
+			rootBlueprint,
+			selectedSource: 'suggested',
+		};
+		const {rerender} = render(<UpgradePlannerSelectorDialog {...properties} />);
+		const serializationsAfterRender = mocks.serializationCount;
+
+		await user.keyboard('{ArrowRight}{ArrowRight}{ArrowLeft}');
+		rerender(
+			<UpgradePlannerSelectorDialog
+				{...properties}
+				sessionChoice={{
+					label: 'Saved Upgrade Planner',
+					planner: zeroMatchPlanner,
+					source: 'session:saved-upgrade-planner',
+				}}
+			/>,
+		);
+
+		expect({
+			activeElement: document.activeElement?.getAttribute('aria-label'),
+			serializations: {
+				afterFocusAndSessionChanges: mocks.serializationCount,
+				afterRender: serializationsAfterRender,
+			},
+		}).toStrictEqual({
+			activeElement: 'Default Upgrade',
+			serializations: {
+				afterFocusAndSessionChanges: 3,
+				afterRender: 3,
+			},
+		});
 	});
 
 	test('shows every load source once in an inventory grid', () => {
