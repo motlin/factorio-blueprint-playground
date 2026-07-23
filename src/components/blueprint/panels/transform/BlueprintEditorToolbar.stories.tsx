@@ -7,8 +7,9 @@ const meta = {
 	title: 'Blueprint/Panels/Transform/BlueprintEditorToolbar',
 	component: BlueprintEditorToolbar,
 	args: {
-		disabled: false,
-		onOpenUpgradePlanner: fn(),
+		onOpenUpgradePlannerSelector: fn(),
+		selectorDialogId: 'upgrade-planner-selector',
+		selectorOpen: false,
 	},
 	parameters: {
 		layout: 'centered',
@@ -25,20 +26,22 @@ export const Available: Story = {
 		const button = canvas.getByRole('button', {name: 'Upgrade items and entities in the blueprint'});
 		await userEvent.hover(button);
 		await expect(canvas.getByRole('tooltip')).toBeVisible();
+		await userEvent.unhover(button);
+		await userEvent.tab();
+		await expect(button).toHaveFocus();
+		await expect(canvas.getByRole('tooltip')).toBeVisible();
 		await userEvent.click(button);
-		await expect(args.onOpenUpgradePlanner.mock.calls).toStrictEqual([[]]);
+		await expect(args.onOpenUpgradePlannerSelector.mock.calls).toStrictEqual([[]]);
 	},
 };
 
-export const Disabled: Story = {
+export const Expanded: Story = {
 	args: {
-		disabled: true,
+		selectorOpen: true,
 	},
 	play: async ({canvasElement}) => {
 		const canvas = within(canvasElement);
 		const button = canvas.getByRole('button', {name: 'Upgrade items and entities in the blueprint'});
-		await expect(button).toBeDisabled();
-		await userEvent.hover(button);
-		await expect(canvas.getByRole('tooltip')).toBeVisible();
+		await expect(button).toHaveAttribute('aria-expanded', 'true');
 	},
 };

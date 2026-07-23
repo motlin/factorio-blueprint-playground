@@ -4,8 +4,14 @@ import {expect, test, vi} from 'vite-plus/test';
 import {BlueprintEditorToolbar} from '../../src/components/blueprint/panels/transform/BlueprintEditorToolbar';
 
 test('renders the supported Factorio editor action with accessible states and a visible tooltip', () => {
-	const onOpenUpgradePlanner = vi.fn<() => void>();
-	const {rerender} = render(<BlueprintEditorToolbar disabled={false} onOpenUpgradePlanner={onOpenUpgradePlanner} />);
+	const onOpenUpgradePlannerSelector = vi.fn<() => void>();
+	const {rerender} = render(
+		<BlueprintEditorToolbar
+			onOpenUpgradePlannerSelector={onOpenUpgradePlannerSelector}
+			selectorDialogId="upgrade-planner-selector"
+			selectorOpen={false}
+		/>,
+	);
 
 	const toolbar = screen.getByRole('toolbar', {name: 'Blueprint editor actions'});
 	const button = screen.getByRole<HTMLButtonElement>('button', {
@@ -16,35 +22,43 @@ test('renders the supported Factorio editor action with accessible states and a 
 
 	expect({
 		buttonClass: button.className,
+		controls: button.getAttribute('aria-controls'),
 		describedBy: button.getAttribute('aria-describedby'),
-		disabled: button.disabled,
+		expanded: button.getAttribute('aria-expanded'),
+		hasPopup: button.getAttribute('aria-haspopup'),
 		icon: button.querySelector('img')?.getAttribute('src'),
-		onOpenUpgradePlannerCalls: onOpenUpgradePlanner.mock.calls,
+		onOpenUpgradePlannerSelectorCalls: onOpenUpgradePlannerSelector.mock.calls,
 		toolbarButtons: [...toolbar.querySelectorAll('button')].map((control) => control.getAttribute('aria-label')),
 		tooltip: {id: tooltip.id, text: tooltip.textContent},
 	}).toStrictEqual({
-		buttonClass: 'factorio-toolbar-button blueprint-editor-toolbar__button',
+		buttonClass:
+			'factorio-toolbar-button blueprint-editor-toolbar__button blueprint-editor-toolbar__button--upgrade',
+		controls: 'upgrade-planner-selector',
 		describedBy: tooltip.id,
-		disabled: false,
+		expanded: 'false',
+		hasPopup: 'dialog',
 		icon: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
-		onOpenUpgradePlannerCalls: [[]],
+		onOpenUpgradePlannerSelectorCalls: [[]],
 		toolbarButtons: ['Upgrade items and entities in the blueprint'],
 		tooltip: {id: tooltip.id, text: 'Upgrade items and entities in the blueprint.'},
 	});
 
-	rerender(<BlueprintEditorToolbar disabled={true} onOpenUpgradePlanner={onOpenUpgradePlanner} />);
-	const disabledButton = screen.getByRole<HTMLButtonElement>('button', {
-		name: 'Upgrade items and entities in the blueprint',
-	});
-	fireEvent.click(disabledButton);
+	rerender(
+		<BlueprintEditorToolbar
+			onOpenUpgradePlannerSelector={onOpenUpgradePlannerSelector}
+			selectorDialogId="upgrade-planner-selector"
+			selectorOpen={true}
+		/>,
+	);
+	const expandedButton = screen.getByRole('button', {name: 'Upgrade items and entities in the blueprint'});
 
 	expect({
-		disabled: disabledButton.disabled,
-		onOpenUpgradePlannerCalls: onOpenUpgradePlanner.mock.calls,
+		expanded: expandedButton.getAttribute('aria-expanded'),
+		onOpenUpgradePlannerSelectorCalls: onOpenUpgradePlannerSelector.mock.calls,
 		tooltip: screen.getByRole('tooltip').textContent,
 	}).toStrictEqual({
-		disabled: true,
-		onOpenUpgradePlannerCalls: [[]],
-		tooltip: 'Save or cancel your Blueprint Editor changes before opening the Upgrade Planner.',
+		expanded: 'true',
+		onOpenUpgradePlannerSelectorCalls: [[]],
+		tooltip: 'Upgrade items and entities in the blueprint.',
 	});
 });

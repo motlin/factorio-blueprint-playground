@@ -1353,7 +1353,6 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 					onModulesIncludedChange={(included) => {
 						setStripModulesSelected(!included);
 					}}
-					onOpenUpgradePlanner={openUpgradePlanner}
 					onSave={() => {
 						if (editorDraftBlueprint !== undefined) {
 							commitBlueprint(editorDraftBlueprint);
@@ -1373,7 +1372,6 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 					stripModulesSelected={stripModulesSelected}
 					stripTilesSelected={stripTilesSelected}
 					stripTrainsSelected={stripTrainsSelected}
-					upgradePlannerDisabled={editorDirty}
 				/>
 			) : null}
 			{discardConfirmation === undefined ? null : (

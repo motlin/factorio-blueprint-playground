@@ -1213,6 +1213,19 @@ body {
 	height: 36px;
 }
 
+.blueprint-editor-toolbar__button--upgrade {
+	background: #65a95d;
+	box-shadow:
+		inset 0 1px 1px #a6d69d,
+		inset 0 -2px 2px #294c25;
+}
+
+.blueprint-editor-toolbar__button--upgrade:hover:not(:disabled),
+.blueprint-editor-toolbar__button--upgrade:focus-visible,
+.blueprint-editor-toolbar__button--upgrade[aria-expanded='true'] {
+	background: #78bd70;
+}
+
 .blueprint-editor__icons > div {
 	display: flex;
 	gap: 5px;
