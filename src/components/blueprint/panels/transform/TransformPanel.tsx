@@ -1,34 +1,13 @@
 import {useNavigate} from '@tanstack/react-router';
-import {useEffect, useId, useMemo, useState} from 'react';
+import {useId, useMemo, useState} from 'react';
 
 import gameData from '../../../../generated/game-data.json';
 import {BlueprintWrapper} from '../../../../parsing/BlueprintWrapper';
 import {serializeBlueprint} from '../../../../parsing/blueprintParser';
 import {extractNames} from '../../../../parsing/modDetection/nameExtractor';
-import type {
-	BlueprintString,
-	Parameter,
-	SignalID,
-	UpgradePlanner,
-	UpgradeSourceSignal,
-} from '../../../../parsing/types';
+import type {BlueprintString, SignalID, UpgradePlanner, UpgradeSourceSignal} from '../../../../parsing/types';
 import {updateNestedBlueprint} from '../../../../transform/applyAtPath';
-import {flattenBook, sortBookByLabel} from '../../../../transform/bookOps';
-import {
-	applyBlueprintEditorMetadata,
-	applyBlueprintParameters,
-	applyBlueprintSnapGrid,
-	blueprintEditorMetadata,
-	blueprintParameters,
-	blueprintSnapGrid,
-	type BlueprintSnapGrid,
-} from '../../../../transform/blueprintEditor';
-import {
-	blueprintComponentRemovalKey,
-	type BlueprintComponentIdentity,
-	type BlueprintComponentRemovalKey,
-	removeBlueprintComponents,
-} from '../../../../transform/componentRemoval';
+import {blueprintComponentRemovalKey, type BlueprintComponentIdentity} from '../../../../transform/componentRemoval';
 import {
 	analyzeIconReplacements,
 	analyzeMetadataIcons,
@@ -38,13 +17,7 @@ import {
 	type IconReplacement,
 	type MetadataIconCandidate,
 } from '../../../../transform/metadataSubstitution';
-import {
-	blueprintFilterCategories,
-	stripEntities,
-	stripModules,
-	stripTiles,
-	stripTrains,
-} from '../../../../transform/strip';
+import {blueprintFilterCategories} from '../../../../transform/strip';
 import {
 	analyzeUpgradeRules,
 	applyUpgradeRules,
@@ -62,9 +35,9 @@ import {ButtonGreen} from '../../../ui/ButtonGreen';
 import {Textarea} from '../../../ui/Textarea';
 import {BlueprintEditorDialog} from './BlueprintEditorDialog';
 import {BlueprintLabelIcons} from './BlueprintLabelIcons';
-import type {PlacedUpgradePlanner} from './BlueprintEditorToolbar';
 import {BlueprintToolbelt} from './BlueprintToolbelt';
 import {SignalPickerDialog} from './SignalPickerDialog';
+import {useBlueprintEditorDraft} from './useBlueprintEditorDraft';
 import {UpgradePlannerSelectorDialog, type UpgradePlannerChoice} from './UpgradePlannerSelectorDialog';
 
 interface TransformPanelProps {
@@ -628,19 +601,11 @@ function IconReplacementDialog({candidates, onChange, onClose, replacements}: Ic
 
 export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPath = ''}: TransformPanelProps) {
 	const navigate = useNavigate();
-	const [stripEntitiesSelected, setStripEntitiesSelected] = useState(false);
-	const [stripModulesSelected, setStripModulesSelected] = useState(false);
-	const [stripTrainsSelected, setStripTrainsSelected] = useState(false);
-	const [stripTilesSelected, setStripTilesSelected] = useState(false);
-	const [flattenBookSelected, setFlattenBookSelected] = useState(false);
-	const [sortBookSelected, setSortBookSelected] = useState(false);
-	const [blueprintEditorEnabled, setBlueprintEditorEnabled] = useState(false);
-	const [blueprintEditorOpen, setBlueprintEditorOpen] = useState(false);
 	const [upgradeEnabled, setUpgradeEnabled] = useState(false);
 	const [upgradePlannerOpen, setUpgradePlannerOpen] = useState(false);
 	const [upgradeDraftChanged, setUpgradeDraftChanged] = useState(false);
 	const [iconReplacementOpen, setIconReplacementOpen] = useState(false);
-	const [discardConfirmation, setDiscardConfirmation] = useState<'blueprint' | 'upgrade'>();
+	const [upgradeDiscardConfirmationOpen, setUpgradeDiscardConfirmationOpen] = useState(false);
 	const planners = useMemo(
 		() => (rootBlueprint === undefined ? [] : findUpgradePlanners(rootBlueprint)),
 		[rootBlueprint],
@@ -665,43 +630,49 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 	const [textReplacementEnabled, setTextReplacementEnabled] = useState(true);
 	const [metadataFind, setMetadataFind] = useState('');
 	const [metadataReplace, setMetadataReplace] = useState('');
-	const [editorLabel, setEditorLabel] = useState('');
-	const [editorDescription, setEditorDescription] = useState('');
-	const [editorIcons, setEditorIcons] = useState<SignalID[]>([]);
-	const [editorSnapGrid, setEditorSnapGrid] = useState<BlueprintSnapGrid | undefined>(() =>
-		blueprint?.blueprint === undefined ? undefined : blueprintSnapGrid(blueprint),
-	);
-	const [editorParameters, setEditorParameters] = useState<Parameter[]>(() =>
-		blueprint?.blueprint === undefined ? [] : blueprintParameters(blueprint),
-	);
-	const [editorIconPickerIndex, setEditorIconPickerIndex] = useState<number>();
-	const [editorPlacedPlanner, setEditorPlacedPlanner] = useState<PlacedUpgradePlanner>();
-	const [editorPlannerDropError, setEditorPlannerDropError] = useState<string>();
-	const [removedEditorComponents, setRemovedEditorComponents] = useState<Set<BlueprintComponentRemovalKey>>(
-		() => new Set(),
-	);
+	const {
+		blueprintEditorOpen,
+		closeConfirmationOpen: blueprintCloseConfirmationOpen,
+		closeBlueprintEditor,
+		discardBlueprintEditorDraft,
+		editorDescription,
+		editorDirty,
+		editorDraft,
+		editorIconPickerIndex,
+		editorIcons,
+		editorLabel,
+		editorParameters,
+		editorPlacedPlanner,
+		editorPlannerDropError,
+		editorSnapGrid,
+		flattenBookSelected,
+		keepEditingBlueprint,
+		openBlueprintEditor: openBlueprintEditorDraft,
+		removedEditorComponents,
+		requestCloseBlueprintEditor,
+		setEditorDescription,
+		setEditorIconPickerIndex,
+		setEditorIcons,
+		setEditorLabel,
+		setEditorParameters,
+		setEditorPlacedPlanner,
+		setEditorPlannerDropError,
+		setEditorSnapGrid,
+		setFlattenBookSelected,
+		setRemovedEditorComponents,
+		setSortBookSelected,
+		setStripEntitiesSelected,
+		setStripModulesSelected,
+		setStripTilesSelected,
+		setStripTrainsSelected,
+		sortBookSelected,
+		stripEntitiesSelected,
+		stripModulesSelected,
+		stripTilesSelected,
+		stripTrainsSelected,
+	} = useBlueprintEditorDraft({blueprint, rootBlueprint, selectedPath});
 
 	const type = blueprint === undefined ? undefined : new BlueprintWrapper(blueprint).getType();
-	useEffect(() => {
-		if (blueprint?.blueprint === undefined && blueprint?.blueprint_book === undefined) {
-			return;
-		}
-		const metadata = blueprintEditorMetadata(blueprint);
-		setEditorLabel(metadata.label);
-		setEditorDescription(metadata.description);
-		setEditorSnapGrid(blueprint.blueprint === undefined ? undefined : blueprintSnapGrid(blueprint));
-		setEditorParameters(blueprint.blueprint === undefined ? [] : blueprintParameters(blueprint));
-		setRemovedEditorComponents(new Set());
-		const nextIcons = [...metadata.icons]
-			.sort((left, right) => left.index - right.index)
-			.map((icon) => icon.signal);
-		setEditorIcons((current) =>
-			current.length === nextIcons.length &&
-			current.every((signal, index) => signalIdentity(signal) === signalIdentity(nextIcons[index]))
-				? current
-				: nextIcons,
-		);
-	}, [blueprint, selectedPath]);
 	const transformTarget = upgradeScope === 'root' ? rootBlueprint : blueprint;
 	const resolvedRules = useMemo(
 		() => resolveRules(upgradeSource, 'upgrade', plannerInput, planners, selectedPlanner),
@@ -817,60 +788,6 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 		textReplacementEnabled,
 		upgradeScope,
 	]);
-	const editorDraft = useMemo(() => {
-		if (blueprint === undefined || rootBlueprint === undefined) {
-			return {rootBlueprint: undefined, selectedBlueprint: undefined};
-		}
-		const transformEditor = (target: BlueprintString) => {
-			let transformed = target;
-			if (
-				blueprintEditorEnabled &&
-				(transformed.blueprint !== undefined || transformed.blueprint_book !== undefined)
-			) {
-				transformed = applyBlueprintEditorMetadata(transformed, {
-					description: editorDescription,
-					icons: editorIcons.map((signal, index) => ({index: index + 1, signal})),
-					label: editorLabel,
-				});
-			}
-			if (blueprintEditorEnabled && transformed.blueprint !== undefined && editorSnapGrid !== undefined) {
-				transformed = applyBlueprintSnapGrid(transformed, editorSnapGrid);
-			}
-			if (blueprintEditorEnabled && transformed.blueprint !== undefined) {
-				transformed = applyBlueprintParameters(transformed, editorParameters);
-			}
-			transformed = removeBlueprintComponents(transformed, removedEditorComponents);
-			if (stripTrainsSelected) transformed = stripTrains(transformed);
-			if (stripEntitiesSelected) transformed = stripEntities(transformed);
-			if (stripModulesSelected) transformed = stripModules(transformed);
-			if (stripTilesSelected) transformed = stripTiles(transformed);
-			if (flattenBookSelected) transformed = flattenBook(transformed);
-			if (sortBookSelected) transformed = sortBookByLabel(transformed);
-			return transformed;
-		};
-		const selectedBlueprint = transformEditor(blueprint);
-		return {
-			rootBlueprint: updateNestedBlueprint(rootBlueprint, selectedPath, () => selectedBlueprint) ?? undefined,
-			selectedBlueprint,
-		};
-	}, [
-		blueprint,
-		blueprintEditorEnabled,
-		editorDescription,
-		editorIcons,
-		editorLabel,
-		editorParameters,
-		editorSnapGrid,
-		flattenBookSelected,
-		rootBlueprint,
-		removedEditorComponents,
-		selectedPath,
-		sortBookSelected,
-		stripEntitiesSelected,
-		stripModulesSelected,
-		stripTilesSelected,
-		stripTrainsSelected,
-	]);
 	const editorDraftBlueprint = editorDraft.rootBlueprint;
 	if (blueprint === undefined || type === 'deconstruction-planner') {
 		return null;
@@ -887,73 +804,24 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 			: (new BlueprintWrapper(rootBlueprint).getLabel() ?? 'Blueprint book');
 	const selectedLabel = new BlueprintWrapper(blueprint).getLabel() ?? 'Untitled blueprint';
 	const editorBreadcrumb = selectedPath === '' ? selectedLabel : `${rootLabel} › ${selectedLabel}`;
-	const originalEditorMetadata =
-		blueprint.blueprint === undefined && blueprint.blueprint_book === undefined
-			? {description: '', icons: [], label: ''}
-			: blueprintEditorMetadata(blueprint);
-	const originalSnapGrid = blueprint.blueprint === undefined ? undefined : blueprintSnapGrid(blueprint);
-	const originalParameters = blueprint.blueprint === undefined ? [] : blueprintParameters(blueprint);
-	const editorDirty =
-		editorLabel !== originalEditorMetadata.label ||
-		editorDescription !== originalEditorMetadata.description ||
-		JSON.stringify(editorIcons) !==
-			JSON.stringify(
-				[...originalEditorMetadata.icons]
-					.sort((left, right) => left.index - right.index)
-					.map((icon) => icon.signal),
-			) ||
-		JSON.stringify(editorSnapGrid) !== JSON.stringify(originalSnapGrid) ||
-		JSON.stringify(editorParameters) !== JSON.stringify(originalParameters) ||
-		removedEditorComponents.size > 0 ||
-		stripEntitiesSelected ||
-		stripModulesSelected ||
-		stripTrainsSelected ||
-		stripTilesSelected ||
-		flattenBookSelected ||
-		sortBookSelected;
 	const plannerDirty = upgradeDraftChanged;
-	const resetBlueprintEditorDraft = () => {
-		setEditorLabel(originalEditorMetadata.label);
-		setEditorDescription(originalEditorMetadata.description);
-		setEditorSnapGrid(originalSnapGrid);
-		setEditorParameters(originalParameters);
-		setEditorIcons(
-			[...originalEditorMetadata.icons]
-				.sort((left, right) => left.index - right.index)
-				.map((icon) => icon.signal),
-		);
-		setStripEntitiesSelected(false);
-		setStripModulesSelected(false);
-		setStripTrainsSelected(false);
-		setStripTilesSelected(false);
-		setFlattenBookSelected(false);
-		setSortBookSelected(false);
-		setRemovedEditorComponents(new Set());
-		setEditorPlacedPlanner(undefined);
-		setEditorPlannerDropError(undefined);
-	};
 	const openBlueprintEditor = () => {
-		resetBlueprintEditorDraft();
 		setUpgradePlannerOpen(false);
-		setBlueprintEditorEnabled(true);
-		setBlueprintEditorOpen(true);
+		openBlueprintEditorDraft();
 	};
 	const openUpgradePlanner = () => {
-		setBlueprintEditorOpen(false);
+		if (editorDirty) {
+			requestCloseBlueprintEditor();
+			return;
+		}
+		closeBlueprintEditor();
 		setUpgradeEnabled(true);
 		setUpgradeDraftChanged(false);
 		setUpgradePlannerOpen(true);
 	};
-	const requestCloseBlueprintEditor = () => {
-		if (editorDirty) {
-			setDiscardConfirmation('blueprint');
-		} else {
-			setBlueprintEditorOpen(false);
-		}
-	};
 	const requestCloseUpgradePlanner = () => {
 		if (plannerDirty) {
-			setDiscardConfirmation('upgrade');
+			setUpgradeDiscardConfirmationOpen(true);
 		} else {
 			setUpgradePlannerOpen(false);
 		}
@@ -978,7 +846,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 		setUpgradeDraftChanged(false);
 	};
 	const commitBlueprint = (committedBlueprint: BlueprintString) => {
-		setBlueprintEditorOpen(false);
+		closeBlueprintEditor();
 		setIconReplacementOpen(false);
 		setUpgradePlannerOpen(false);
 		void navigate({
@@ -1301,6 +1169,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 					description={editorDescription}
 					dirty={editorDirty}
 					draftBlueprint={editorDraft.selectedBlueprint}
+					closeConfirmationOpen={blueprintCloseConfirmationOpen}
 					filters={editorFilters}
 					flattenBookSelected={flattenBookSelected}
 					icons={
@@ -1336,12 +1205,14 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 						});
 					}}
 					onDescriptionChange={setEditorDescription}
+					onDiscard={discardBlueprintEditorDraft}
 					onDropPlanner={placeDroppedPlanner}
 					onEntitiesIncludedChange={(included) => {
 						setStripEntitiesSelected(!included);
 					}}
 					onFlattenBookSelectedChange={setFlattenBookSelected}
 					onLabelChange={setEditorLabel}
+					onKeepEditing={keepEditingBlueprint}
 					onModulesIncludedChange={(included) => {
 						setStripModulesSelected(!included);
 					}}
@@ -1351,7 +1222,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 						setEditorPlannerDropError(undefined);
 					}}
 					onSaved={() => {
-						setBlueprintEditorOpen(false);
+						closeBlueprintEditor();
 						setIconReplacementOpen(false);
 						setUpgradePlannerOpen(false);
 					}}
@@ -1378,7 +1249,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 					stripTrainsSelected={stripTrainsSelected}
 				/>
 			) : null}
-			{discardConfirmation === undefined ? null : (
+			{upgradeDiscardConfirmationOpen ? (
 				<div className="transform-dialog-backdrop transform-dialog-backdrop--confirmation">
 					<section
 						className="transform-dialog transform-dialog--confirmation"
@@ -1395,7 +1266,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 								type="button"
 								className="transform-button"
 								onClick={() => {
-									setDiscardConfirmation(undefined);
+									setUpgradeDiscardConfirmationOpen(false);
 								}}
 							>
 								Keep editing
@@ -1404,14 +1275,9 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 								type="button"
 								className="transform-button transform-button--danger"
 								onClick={() => {
-									if (discardConfirmation === 'blueprint') {
-										resetBlueprintEditorDraft();
-										setBlueprintEditorOpen(false);
-									} else {
-										resetUpgradePlannerDraft();
-										setUpgradePlannerOpen(false);
-									}
-									setDiscardConfirmation(undefined);
+									resetUpgradePlannerDraft();
+									setUpgradePlannerOpen(false);
+									setUpgradeDiscardConfirmationOpen(false);
 								}}
 							>
 								Discard changes
@@ -1419,7 +1285,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 						</div>
 					</section>
 				</div>
-			)}
+			) : null}
 			{editorIconPickerIndex === undefined ? null : (
 				<SignalPickerDialog
 					initialSignal={editorIcons[editorIconPickerIndex]}

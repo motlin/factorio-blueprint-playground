@@ -20,6 +20,7 @@ interface BlueprintEditorDialogProps {
 	book: boolean;
 	bookOperationSelected: boolean;
 	breadcrumb: string;
+	closeConfirmationOpen: boolean;
 	description: string;
 	dirty: boolean;
 	draftBlueprint?: BlueprintString;
@@ -32,10 +33,12 @@ interface BlueprintEditorDialogProps {
 	onClearPlacedPlanner: () => void;
 	onComponentRemovedChange: (component: BlueprintComponentIdentity, removed: boolean) => void;
 	onDescriptionChange: (description: string) => void;
+	onDiscard: () => void;
 	onDropPlanner: (serializedPlanner: string) => void;
 	onEntitiesIncludedChange: (included: boolean) => void;
 	onFlattenBookSelectedChange: (selected: boolean) => void;
 	onLabelChange: (label: string) => void;
+	onKeepEditing: () => void;
 	onModulesIncludedChange: (included: boolean) => void;
 	onParametersChange: (parameters: Parameter[]) => void;
 	onPlannerPlace: (choice: UpgradePlannerChoice, direction: UpgradeDirection) => void;
@@ -64,6 +67,7 @@ export function BlueprintEditorDialog({
 	book,
 	bookOperationSelected,
 	breadcrumb,
+	closeConfirmationOpen,
 	description,
 	dirty,
 	draftBlueprint,
@@ -76,10 +80,12 @@ export function BlueprintEditorDialog({
 	onClearPlacedPlanner,
 	onComponentRemovedChange,
 	onDescriptionChange,
+	onDiscard,
 	onDropPlanner,
 	onEntitiesIncludedChange,
 	onFlattenBookSelectedChange,
 	onLabelChange,
+	onKeepEditing,
 	onModulesIncludedChange,
 	onParametersChange,
 	onPlannerPlace,
@@ -237,9 +243,12 @@ export function BlueprintEditorDialog({
 				</div>
 
 				<BlueprintEditorActions
+					closeConfirmationOpen={closeConfirmationOpen}
 					dirty={dirty}
 					draftBlueprint={draftBlueprint}
 					onClose={onClose}
+					onDiscard={onDiscard}
+					onKeepEditing={onKeepEditing}
 					onSaved={onSaved}
 					rootBlueprint={rootBlueprint}
 					selectedPath={selectedPath}
