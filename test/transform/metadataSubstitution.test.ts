@@ -9,6 +9,52 @@ import {
 	applyMetadataSubstitution,
 } from '../../src/transform/metadataSubstitution';
 
+const plannerMetadataBook: BlueprintString = {
+	blueprint_book: {
+		item: 'blueprint-book',
+		label: "Alice's Red book",
+		description: 'red RED Red',
+		version: 0,
+		icons: [{index: 1, signal: {type: 'virtual', name: 'signal-red'}}],
+		blueprints: [
+			{
+				index: 100,
+				blueprint: {
+					item: 'blueprint',
+					label: '[virtual-signal=signal-red] Red balancer',
+					description: 'No match',
+					version: 0,
+					icons: [{index: 1, signal: {type: 'virtual', name: 'signal-green'}}],
+				},
+			},
+			{
+				index: 200,
+				upgrade_planner: {
+					item: 'upgrade-planner',
+					label: 'Red planner',
+					version: 0,
+					settings: {
+						description: 'Replace red',
+						icons: [{index: 1, signal: {type: 'virtual', name: 'signal-red'}}],
+						mappers: [],
+					},
+				},
+			},
+			{
+				index: 300,
+				deconstruction_planner: {
+					item: 'deconstruction-planner',
+					version: 0,
+					settings: {
+						description: 'RED only',
+						icons: [{index: 1, signal: {type: 'virtual', name: 'signal-red'}}],
+					},
+				},
+			},
+		],
+	},
+};
+
 test('preserves Red, red, and RED capitalization throughout nested book metadata', () => {
 	const input: BlueprintString = {
 		blueprint_book: {
@@ -72,6 +118,62 @@ test('preserves Red, red, and RED capitalization throughout nested book metadata
 									},
 								},
 							],
+						},
+					},
+				],
+			},
+		},
+	});
+});
+
+test('preserves case in blueprint and planner titles, descriptions, and rich signal labels', () => {
+	const substitution = {find: 'red', replace: 'blue'};
+
+	expect({
+		count: analyzeMetadataSubstitution(plannerMetadataBook, substitution),
+		result: applyMetadataSubstitution(plannerMetadataBook, substitution),
+	}).toStrictEqual({
+		count: 9,
+		result: {
+			blueprint_book: {
+				item: 'blueprint-book',
+				label: "Alice's Blue book",
+				description: 'blue BLUE Blue',
+				version: 0,
+				icons: [{index: 1, signal: {type: 'virtual', name: 'signal-red'}}],
+				blueprints: [
+					{
+						index: 100,
+						blueprint: {
+							item: 'blueprint',
+							label: '[virtual-signal=signal-blue] Blue balancer',
+							description: 'No match',
+							version: 0,
+							icons: [{index: 1, signal: {type: 'virtual', name: 'signal-green'}}],
+						},
+					},
+					{
+						index: 200,
+						upgrade_planner: {
+							item: 'upgrade-planner',
+							label: 'Blue planner',
+							version: 0,
+							settings: {
+								description: 'Replace blue',
+								icons: [{index: 1, signal: {type: 'virtual', name: 'signal-red'}}],
+								mappers: [],
+							},
+						},
+					},
+					{
+						index: 300,
+						deconstruction_planner: {
+							item: 'deconstruction-planner',
+							version: 0,
+							settings: {
+								description: 'BLUE only',
+								icons: [{index: 1, signal: {type: 'virtual', name: 'signal-red'}}],
+							},
 						},
 					},
 				],

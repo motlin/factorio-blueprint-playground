@@ -1,9 +1,12 @@
 import {describe, expect, test} from 'vite-plus/test';
 
 import type {BlueprintString, Parameter} from '../../src/parsing/types';
+import {updateNestedBlueprint} from '../../src/transform/applyAtPath';
 import {
+	applyBlueprintEditorMetadata,
 	applyBlueprintParameters,
 	applyBlueprintSnapGrid,
+	blueprintEditorMetadata,
 	blueprintParameters,
 	blueprintSnapGrid,
 	type BlueprintSnapGrid,
@@ -19,6 +22,111 @@ const blueprint: BlueprintString = {
 		entities: [{entity_number: 100, name: 'transport-belt', position: {x: 0, y: 0}}],
 	},
 };
+
+const editableChildBlueprint: BlueprintString = {
+	blueprint: {
+		item: 'blueprint',
+		label: "Alice's local factory",
+		description: 'Original child description',
+		version: 0,
+		icons: [{index: 1, signal: {type: 'virtual', name: 'signal-red'}}],
+		entities: [{entity_number: 100, name: 'assembling-machine-1', position: {x: 0, y: 0}}],
+	},
+};
+
+const nestedEditorBook: BlueprintString = {
+	blueprint_book: {
+		item: 'blueprint-book',
+		label: "Alice's root book",
+		version: 0,
+		blueprints: [
+			{
+				index: 100,
+				blueprint_book: {
+					item: 'blueprint-book',
+					label: "Alice's nested book",
+					version: 0,
+					blueprints: [{index: 200, ...editableChildBlueprint}],
+				},
+			},
+			{
+				index: 300,
+				blueprint: {
+					item: 'blueprint',
+					label: "Bob's untouched factory",
+					version: 0,
+				},
+			},
+		],
+	},
+};
+
+describe('blueprint editor metadata', () => {
+	test('updates child metadata in the root book without changing parent or sibling labels', () => {
+		const metadata = {
+			description: 'Updated child description',
+			icons: [{index: 1, signal: {type: 'virtual' as const, name: 'signal-blue'}}],
+			label: "Alice's updated local factory",
+		};
+
+		expect({
+			initialMetadata: blueprintEditorMetadata(editableChildBlueprint),
+			result: updateNestedBlueprint(nestedEditorBook, '1.1', (child) =>
+				applyBlueprintEditorMetadata(child, metadata),
+			),
+		}).toStrictEqual({
+			initialMetadata: {
+				description: 'Original child description',
+				icons: [{index: 1, signal: {type: 'virtual', name: 'signal-red'}}],
+				label: "Alice's local factory",
+			},
+			result: {
+				blueprint_book: {
+					item: 'blueprint-book',
+					label: "Alice's root book",
+					version: 0,
+					blueprints: [
+						{
+							index: 100,
+							blueprint_book: {
+								item: 'blueprint-book',
+								label: "Alice's nested book",
+								version: 0,
+								blueprints: [
+									{
+										index: 200,
+										blueprint: {
+											item: 'blueprint',
+											label: "Alice's updated local factory",
+											description: 'Updated child description',
+											version: 0,
+											icons: [{index: 1, signal: {type: 'virtual', name: 'signal-blue'}}],
+											entities: [
+												{
+													entity_number: 100,
+													name: 'assembling-machine-1',
+													position: {x: 0, y: 0},
+												},
+											],
+										},
+									},
+								],
+							},
+						},
+						{
+							index: 300,
+							blueprint: {
+								item: 'blueprint',
+								label: "Bob's untouched factory",
+								version: 0,
+							},
+						},
+					],
+				},
+			},
+		});
+	});
+});
 
 describe('blueprint snap-to-grid settings', () => {
 	test('reads concrete absolute grid metadata including zero and negative positions', () => {
