@@ -41,6 +41,14 @@ async function choosePlanner(user: ReturnType<typeof userEvent.setup>, label: st
 	await user.click(screen.getByRole('button', {name: label}));
 }
 
+async function chooseSignal(user: ReturnType<typeof userEvent.setup>, label: string) {
+	if (screen.queryByRole('button', {name: `Choose ${label}`}) === null && label.startsWith('Signal ')) {
+		await user.click(screen.getByRole('tab', {name: 'Virtual signals'}));
+	}
+	await user.click(screen.getByRole('button', {name: `Choose ${label}`}));
+	await user.click(screen.getByRole('button', {name: 'Confirm'}));
+}
+
 describe('TransformPanel', () => {
 	beforeEach(() => {
 		navigate.mockReset();
@@ -518,7 +526,7 @@ describe('TransformPanel', () => {
 		}).toStrictEqual({clearButton: null, sourceImage: null, targetDisabled: 'true'});
 
 		await user.click(sourceSlot);
-		await user.click(screen.getByRole('button', {name: 'Choose Signal red'}));
+		await chooseSignal(user, 'Signal red');
 		expect({
 			clearButtonLabel: screen.getByRole('button', {name: 'Clear source Signal red'}).getAttribute('aria-label'),
 			sourceImage: sourceSlot.querySelector('img')?.getAttribute('src'),
@@ -656,7 +664,7 @@ describe('TransformPanel', () => {
 		openUpgradePlanner();
 		await user.click(screen.getByRole('button', {name: 'Choose target for Transport belt'}));
 		await user.click(screen.getByRole('button', {name: 'Rare quality'}));
-		await user.click(screen.getByRole('button', {name: 'Choose Fast transport belt'}));
+		await chooseSignal(user, 'Fast transport belt');
 
 		expect(
 			screen
@@ -705,10 +713,10 @@ describe('TransformPanel', () => {
 		await user.click(screen.getByRole('button', {name: /Add mapping/}));
 		await user.click(screen.getByRole('button', {name: 'Rare quality'}));
 		await user.selectOptions(screen.getByRole('combobox', {name: 'Quality comparison'}), '>');
-		await user.click(screen.getByRole('button', {name: 'Choose Transport belt'}));
+		await chooseSignal(user, 'Transport belt');
 
 		expect(screen.getByRole('button', {name: 'Set as source'}).getAttribute('aria-pressed')).toBe('true');
-		await user.click(screen.getByRole('button', {name: 'Choose Fast transport belt'}));
+		await chooseSignal(user, 'Fast transport belt');
 
 		expect({
 			count: screen
@@ -747,7 +755,7 @@ describe('TransformPanel', () => {
 		openUpgradePlanner();
 		await choosePlanner(user, 'Empty planner');
 		await user.click(screen.getByRole('button', {name: '+ Add mapping'}));
-		await user.click(screen.getByRole('button', {name: 'Choose Transport belt'}));
+		await chooseSignal(user, 'Transport belt');
 
 		expect({
 			assembler: screen.queryByRole('button', {name: 'Choose Assembling machine 1'}),
@@ -755,7 +763,7 @@ describe('TransformPanel', () => {
 			sameBelt: screen.getByRole('button', {name: 'Choose Transport belt'}).getAttribute('aria-label'),
 		}).toStrictEqual({assembler: null, fastBelt: 'Choose Fast transport belt', sameBelt: 'Choose Transport belt'});
 
-		await user.click(screen.getByRole('button', {name: 'Choose Fast transport belt'}));
+		await chooseSignal(user, 'Fast transport belt');
 		await user.click(screen.getByRole('button', {name: 'Choose source, currently Transport belt'}));
 
 		expect(screen.getByRole('dialog', {name: 'Choose mapping source'}).getAttribute('aria-modal')).toBe('true');
@@ -786,11 +794,11 @@ describe('TransformPanel', () => {
 		await user.type(screen.getByRole('textbox', {name: 'Blueprint description'}), 'New description');
 		await user.click(screen.getByRole('button', {name: 'Edit icon 1'}));
 		await user.type(screen.getByRole('searchbox', {name: 'Search'}), 'yellow');
-		await user.click(screen.getByRole('button', {name: 'Choose Signal yellow'}));
+		await chooseSignal(user, 'Signal yellow');
 		fireEvent.contextMenu(screen.getByRole('button', {name: 'Edit icon 2'}));
 		await user.click(screen.getByRole('button', {name: 'Choose icon 3'}));
 		await user.type(screen.getByRole('searchbox', {name: 'Search'}), 'green');
-		await user.click(screen.getByRole('button', {name: 'Choose Signal green'}));
+		await chooseSignal(user, 'Signal green');
 		await user.click(screen.getByRole('button', {name: 'Save blueprint'}));
 
 		expect(navigate).toHaveBeenCalledExactlyOnceWith({
@@ -844,7 +852,7 @@ describe('TransformPanel', () => {
 		await user.type(screen.getByRole('textbox', {name: 'Blueprint title'}), 'New label{Enter}');
 		await user.click(screen.getByRole('button', {name: 'Choose icon 1'}));
 		await user.type(screen.getByRole('searchbox', {name: 'Search'}), 'red');
-		await user.click(screen.getByRole('button', {name: 'Choose Signal red'}));
+		await chooseSignal(user, 'Signal red');
 		await user.click(screen.getByRole('button', {name: 'Close Blueprint Editor'}));
 
 		expect({
@@ -1029,10 +1037,10 @@ describe('TransformPanel', () => {
 		openUpgradePlanner();
 		await user.click(screen.getByRole('button', {name: /Icon replacements/i}));
 		await user.click(screen.getByRole('button', {name: 'Choose source icon'}));
-		await user.click(screen.getByRole('button', {name: 'Choose Signal red'}));
+		await chooseSignal(user, 'Signal red');
 		await user.click(screen.getByRole('button', {name: 'Choose target icon'}));
 		await user.type(screen.getByRole('searchbox', {name: 'Search'}), 'blue');
-		await user.click(screen.getByRole('button', {name: 'Choose Signal blue'}));
+		await chooseSignal(user, 'Signal blue');
 		await user.click(screen.getByRole('button', {name: 'Done'}));
 		await user.type(screen.getByRole('textbox', {name: 'Find'}), 'red');
 		await user.type(screen.getByRole('textbox', {name: 'Replace with'}), 'blue');

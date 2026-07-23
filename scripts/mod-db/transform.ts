@@ -89,6 +89,37 @@ export interface PrototypeUpgrade {
 	to: string;
 }
 
+export interface PickerSignalPrototype {
+	name: string;
+	type:
+		| 'achievement'
+		| 'fluid'
+		| 'item'
+		| 'item-group'
+		| 'planet'
+		| 'recipe'
+		| 'space-location'
+		| 'technology'
+		| 'tile'
+		| 'virtual';
+}
+
+const pickerPrototypeTypes: readonly {
+	prototypeType: string;
+	signalType: PickerSignalPrototype['type'];
+}[] = [
+	{prototypeType: 'item', signalType: 'item'},
+	{prototypeType: 'recipe', signalType: 'recipe'},
+	{prototypeType: 'fluid', signalType: 'fluid'},
+	{prototypeType: 'virtual-signal', signalType: 'virtual'},
+	{prototypeType: 'planet', signalType: 'planet'},
+	{prototypeType: 'space-location', signalType: 'space-location'},
+	{prototypeType: 'tile', signalType: 'tile'},
+	{prototypeType: 'technology', signalType: 'technology'},
+	{prototypeType: 'item-group', signalType: 'item-group'},
+	{prototypeType: 'achievement', signalType: 'achievement'},
+];
+
 export function extractPrototypeNames(sources: readonly string[], prototypeType: string): string[] {
 	const prototypes = new Map<string, string>();
 	for (const source of sources) {
@@ -135,6 +166,12 @@ export function extractPrototypeNames(sources: readonly string[], prototypeType:
 			leftOrder === rightOrder ? leftName.localeCompare(rightName) : leftOrder.localeCompare(rightOrder),
 		)
 		.map(([name]) => name);
+}
+
+export function extractPickerSignals(sources: readonly string[]): PickerSignalPrototype[] {
+	return pickerPrototypeTypes.flatMap(({prototypeType, signalType}) =>
+		extractPrototypeNames(sources, prototypeType).map((name) => ({type: signalType, name})),
+	);
 }
 
 function longBracketClosing(source: string, start: number): {closing: string; contentStart: number} | undefined {
