@@ -430,7 +430,7 @@ body {
 }
 
 .transform-workflow {
-	padding: 3px;
+	padding: var(--transform-frame-gap, 3px);
 }
 
 .transform-toolbelt {
@@ -525,14 +525,12 @@ body {
 
 .transform-workbench-backdrop {
 	align-items: center;
-	padding: 28px;
 	background: rgb(0 0 0 / 58%);
 }
 
 .transform-workbench {
 	display: flex;
 	width: min(820px, 100%);
-	max-height: calc(100vh - 56px);
 	flex-direction: column;
 	padding: 0;
 	overflow: hidden;
@@ -542,17 +540,8 @@ body {
 	width: min(1120px, 100%);
 }
 
-.upgrade-planner-dialog__backdrop {
-	box-sizing: border-box;
-	overflow: hidden;
-}
-
 .transform-dialog.transform-workbench--planner {
-	box-sizing: border-box;
 	width: min(860px, 100%);
-	max-width: 100%;
-	max-height: calc(100vh - 56px);
-	max-height: calc(100dvh - 56px);
 	padding: 0;
 	overflow: hidden;
 }
@@ -587,7 +576,7 @@ body {
 
 .upgrade-planner-dialog__configuration {
 	min-width: 0;
-	padding: 3px;
+	padding: var(--transform-frame-gap);
 }
 
 .upgrade-planner-dialog__panel-heading {
@@ -616,17 +605,17 @@ body {
 }
 
 .upgrade-planner-dialog__configuration > .transform-workflow__scope {
-	margin-top: 3px;
+	margin-top: var(--transform-frame-gap);
 }
 
 .upgrade-planner-dialog__configuration > .upgrade-planner-editor {
-	padding: 3px 0 0;
+	padding: var(--transform-frame-gap) 0 0;
 }
 
 .transform-workbench__header {
 	gap: 18px;
 	margin: 0;
-	padding: 12px 14px;
+	padding: 12px var(--transform-edge-space);
 	border-bottom: 1px solid #171717;
 	background: repeating-linear-gradient(90deg, rgb(255 255 255 / 4%) 0 2px, transparent 2px 4px), #393839;
 	box-shadow: inset 0 1px 1px #777;
@@ -661,7 +650,10 @@ body {
 }
 
 .transform-workbench__body {
-	padding: 10px;
+	min-width: 0;
+	min-height: 0;
+	flex: 1 1 auto;
+	padding: var(--transform-content-space);
 	overflow: auto;
 }
 
@@ -673,11 +665,13 @@ body {
 
 .transform-workbench__footer {
 	display: flex;
+	min-width: 0;
+	flex: 0 0 auto;
 	align-items: center;
 	justify-content: flex-end;
 	flex-wrap: wrap;
 	gap: 12px;
-	padding: 10px 12px;
+	padding: var(--transform-content-space) var(--transform-edge-space);
 	border-top: 1px solid #171717;
 	background: #292829;
 	box-shadow: inset 0 2px 3px #111;
@@ -935,7 +929,7 @@ body {
 
 .upgrade-planner-dialog__content > .book-wide-replacements {
 	margin: 0;
-	padding: 3px;
+	padding: var(--transform-frame-gap);
 	border-top: 2px solid #e39827;
 	background: #343334;
 }
@@ -979,20 +973,37 @@ body {
 }
 
 .transform-dialog-backdrop {
+	--transform-content-space: 10px;
+	--transform-edge-space: 12px;
+	--transform-frame-gap: 3px;
+	--transform-viewport-gutter: 24px;
 	position: fixed;
 	z-index: 1000;
 	inset: 0;
 	display: grid;
-	padding: 24px;
+	box-sizing: border-box;
+	padding: var(--transform-viewport-gutter);
+	overflow: hidden;
 	background: rgb(0 0 0 / 72%);
 	place-items: center;
 }
 
+.transform-dialog,
+.transform-dialog *,
+.transform-dialog *::before,
+.transform-dialog *::after {
+	box-sizing: border-box;
+}
+
 .transform-dialog {
+	display: flex;
 	width: min(620px, 100%);
-	max-height: calc(100vh - 48px);
-	padding: 12px;
-	overflow: auto;
+	max-width: 100%;
+	max-height: calc(100vh - var(--transform-viewport-gutter) - var(--transform-viewport-gutter));
+	max-height: calc(100dvh - var(--transform-viewport-gutter) - var(--transform-viewport-gutter));
+	flex-direction: column;
+	padding: var(--transform-edge-space);
+	overflow: hidden;
 	border: 1px solid #141414;
 	background: #313031;
 	box-shadow:
@@ -1001,16 +1012,8 @@ body {
 	color: #f1efed;
 }
 
-.blueprint-editor__backdrop {
-	box-sizing: border-box;
-	overflow: hidden;
-}
-
 .transform-dialog.transform-workbench--blueprint {
-	box-sizing: border-box;
 	width: min(720px, 100%);
-	max-width: 100%;
-	max-height: 100%;
 	padding: 0;
 	overflow: hidden;
 }
@@ -1026,7 +1029,6 @@ body {
 }
 
 .transform-dialog--picker {
-	box-sizing: border-box;
 	width: min(604px, 100%);
 	padding: 0;
 	overflow: hidden;
@@ -1034,6 +1036,8 @@ body {
 
 .transform-dialog__header {
 	display: flex;
+	min-width: 0;
+	flex: 0 0 auto;
 	align-items: center;
 	justify-content: space-between;
 	margin-bottom: 10px;
@@ -1062,14 +1066,22 @@ body {
 
 .transform-dialog__actions {
 	display: flex;
+	flex: 0 0 auto;
 	justify-content: flex-end;
-	padding-top: 12px;
+	padding-top: var(--transform-edge-space);
 }
 
 .upgrade-planner-editor,
 .icon-replacement-editor,
 .transform-picker {
-	padding: 3px;
+	padding: var(--transform-frame-gap);
+}
+
+.icon-replacement-editor {
+	min-width: 0;
+	min-height: 0;
+	flex: 1 1 auto;
+	overflow: auto;
 }
 
 .upgrade-planner-editor__source {
@@ -1121,7 +1133,6 @@ body {
 }
 
 .upgrade-planner-selector {
-	box-sizing: border-box;
 	width: min(720px, 100%);
 	padding: 0;
 	overflow: hidden;
@@ -1150,6 +1161,9 @@ body {
 
 .upgrade-planner-selector__grid {
 	display: grid;
+	min-width: 0;
+	min-height: 0;
+	flex: 1 1 auto;
 	grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
 	gap: 8px;
 	max-height: min(520px, 65vh);
@@ -1227,16 +1241,16 @@ body {
 .icon-replacement-editor__mappings {
 	display: flex;
 	flex-direction: column;
-	gap: 3px;
-	margin-top: 3px;
+	gap: var(--transform-frame-gap);
+	margin-top: var(--transform-frame-gap);
 }
 
 .upgrade-mapping-grid__headings {
 	display: grid;
-	grid-template-columns: minmax(154px, 1fr) 24px minmax(154px, 1fr) 64px 28px;
+	grid-template-columns: minmax(0, 1fr) 24px minmax(0, 1fr) 64px 28px;
 	justify-content: center;
 	gap: 8px;
-	padding: 6px 10px 2px;
+	padding: 6px var(--transform-content-space) 2px;
 	color: #ffe6c0;
 	font-size: 82%;
 	font-weight: bold;
@@ -1246,7 +1260,7 @@ body {
 .upgrade-mapping-grid__rows {
 	display: flex;
 	flex-direction: column;
-	gap: 3px;
+	gap: var(--transform-frame-gap);
 	margin: 0;
 	padding: 0;
 	list-style: none;
@@ -1256,12 +1270,12 @@ body {
 .icon-replacement-editor__mapping,
 .icon-replacement-editor__add {
 	display: grid;
-	grid-template-columns: minmax(154px, 1fr) 24px minmax(154px, 1fr) 64px 28px;
+	grid-template-columns: minmax(0, 1fr) 24px minmax(0, 1fr) 64px 28px;
 	align-items: center;
 	justify-content: center;
 	gap: 8px;
 	min-height: 54px;
-	padding: 5px 10px;
+	padding: 5px var(--transform-content-space);
 	background: #3e3d3e;
 	box-shadow:
 		inset 0 1px 1px #777,
@@ -1338,7 +1352,7 @@ body {
 }
 
 .upgrade-mapping-grid__row--incomplete {
-	margin-top: 3px;
+	margin-top: var(--transform-frame-gap);
 }
 
 .upgrade-mapping-grid__remove:hover,
@@ -1441,8 +1455,8 @@ body {
 }
 
 .icon-replacement-editor__add {
-	margin-top: 3px;
-	padding: 10px 12px;
+	margin-top: var(--transform-frame-gap);
+	padding: var(--transform-content-space) var(--transform-edge-space);
 }
 
 .transform-picker__backdrop {
@@ -1483,13 +1497,19 @@ body {
 }
 
 .transform-picker {
-	margin: 3px;
+	display: flex;
+	min-width: 0;
+	min-height: 0;
+	flex: 1 1 auto;
+	flex-direction: column;
+	margin: var(--transform-frame-gap);
 	padding: 0;
 	overflow: hidden;
 }
 
 .transform-picker__tabs {
 	display: flex;
+	flex: 0 0 auto;
 	gap: 2px;
 	padding: 4px 4px 0;
 	overflow-x: auto;
@@ -1521,11 +1541,13 @@ body {
 
 .transform-picker__grid {
 	display: grid;
+	min-width: 0;
+	min-height: 0;
+	flex: 1 1 auto;
 	grid-template-columns: repeat(10, 42px);
 	justify-content: center;
 	align-content: start;
 	gap: 3px;
-	min-height: 180px;
 	max-height: min(440px, 58vh);
 	padding: 7px;
 	overflow: auto;
@@ -1558,6 +1580,8 @@ body {
 
 .transform-picker__footer {
 	display: flex;
+	min-width: 0;
+	flex: 0 0 auto;
 	align-items: center;
 	justify-content: space-between;
 	gap: 12px;
@@ -1975,7 +1999,6 @@ body {
 }
 
 .transform-dialog.blueprint-parameterization {
-	box-sizing: border-box;
 	width: min(780px, 100%);
 	padding: 0;
 	overflow: hidden;
@@ -1991,6 +2014,9 @@ body {
 
 .blueprint-parameterization__body {
 	display: flex;
+	min-width: 0;
+	min-height: 0;
+	flex: 1 1 auto;
 	flex-direction: column;
 	gap: 10px;
 	margin: 0 12px;
@@ -2088,6 +2114,8 @@ body {
 
 .blueprint-parameterization__footer {
 	display: flex;
+	min-width: 0;
+	flex: 0 0 auto;
 	justify-content: flex-end;
 	padding: 12px;
 	border-top: 1px solid #171616;
@@ -2174,20 +2202,7 @@ body {
 	}
 
 	.transform-dialog-backdrop {
-		padding: 8px;
-	}
-
-	.transform-workbench-backdrop {
-		padding: 8px 8px 84px;
-	}
-
-	.transform-workbench {
-		max-height: calc(100vh - 92px);
-	}
-
-	.transform-dialog.transform-workbench--planner {
-		max-height: calc(100vh - 92px);
-		max-height: calc(100dvh - 92px);
+		--transform-viewport-gutter: 8px;
 	}
 
 	.transform-workbench__header {
@@ -2235,5 +2250,41 @@ body {
 
 	.mod-detection__source-summary > .mod-detection__count {
 		margin-left: auto;
+	}
+}
+
+@media (max-width: 480px) {
+	.upgrade-mapping-grid__headings {
+		display: none;
+	}
+
+	.upgrade-mapping-grid__row {
+		grid-template-columns: minmax(0, 1fr) 20px minmax(0, 1fr) 28px;
+		gap: 6px;
+		padding-inline: 6px;
+	}
+
+	.upgrade-mapping-grid__count {
+		grid-row: 2;
+		grid-column: 1 / 4;
+		flex-direction: row;
+		justify-content: center;
+		gap: 5px;
+	}
+
+	.upgrade-mapping-grid__count small {
+		margin-top: 0;
+	}
+
+	.upgrade-mapping-grid__remove,
+	.upgrade-mapping-grid__remove-placeholder {
+		grid-row: 1 / 3;
+		grid-column: 4;
+	}
+}
+
+@media (max-height: 640px) {
+	.transform-dialog-backdrop {
+		--transform-viewport-gutter: 8px;
 	}
 }
