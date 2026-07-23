@@ -1586,11 +1586,37 @@ body {
 	place-items: center;
 }
 
-.blueprint-components__slot:focus-visible {
+.blueprint-components__slot-button {
+	display: grid;
+	width: 100%;
+	height: 100%;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	cursor: pointer;
+	place-items: center;
+}
+
+.blueprint-components__slot-button:hover,
+.blueprint-components__slot-button:focus-visible {
 	z-index: 1;
-	background: #555355;
+	background: #d88716;
 	outline: 2px solid #e39827;
 	outline-offset: -2px;
+}
+
+.blueprint-components__slot--removed {
+	background: #592b2b;
+	box-shadow:
+		inset 1px 1px 1px #845050,
+		inset -2px -2px 2px #211313;
+}
+
+.blueprint-components__slot--removed img {
+	opacity: 0.42;
+	filter: grayscale(0.55);
 }
 
 .blueprint-components__slot--empty {
