@@ -46,6 +46,7 @@ import {
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
 import {ButtonGreen} from '../../../ui/ButtonGreen';
 import {Textarea} from '../../../ui/Textarea';
+import {BlueprintEditorDialog} from './BlueprintEditorDialog';
 
 interface TransformPanelProps {
 	blueprint?: BlueprintString;
@@ -860,11 +861,6 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 		return [...options.values()];
 	}, [editorIcons, sourceOptions]);
 	const editorFilters = useMemo(() => blueprintFilterCategories(blueprint ?? {}), [blueprint]);
-	const editorEntityFilterCount = [editorFilters.entities, editorFilters.tiles, editorFilters.trains].filter(
-		Boolean,
-	).length;
-	const showEditorEntityFilters = editorEntityFilterCount > 1;
-	const showEditorFilters = editorFilters.modules || showEditorEntityFilters;
 	const candidates = useMemo(() => {
 		if (transformTarget === undefined) {
 			return [];
@@ -1384,238 +1380,66 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 				</div>
 			) : null}
 			{blueprintEditorOpen ? (
-				<div className="transform-dialog-backdrop transform-workbench-backdrop">
-					<section
-						className="transform-dialog transform-workbench transform-workbench--blueprint"
-						role="dialog"
-						aria-modal="true"
-						aria-label="Blueprint Editor"
-						onKeyDown={(event) => {
-							if (event.key === 'Escape') {
-								requestCloseBlueprintEditor();
-							}
-						}}
-					>
-						<header className="transform-dialog__header transform-workbench__header">
-							<div className="transform-workbench__title">
-								<div>
-									<h3>
-										{type === 'blueprint-book'
-											? 'Blueprint book in the blueprint library'
-											: 'Blueprint in the blueprint library'}
-									</h3>
-									<span>{editorBreadcrumb}</span>
-								</div>
-							</div>
-							<button
-								type="button"
-								className="transform-dialog__close"
-								aria-label="Close Blueprint Editor"
+				<BlueprintEditorDialog
+					book={type === 'blueprint-book'}
+					bookOperationSelected={hasSelectedBookOperation}
+					breadcrumb={editorBreadcrumb}
+					description={editorDescription}
+					filters={editorFilters}
+					flattenBookSelected={flattenBookSelected}
+					icons={[0, 1, 2, 3].map((index) => {
+						const icon = editorIcons.at(index);
+						return (
+							<SignalSlot
+								key={index}
+								label={`${icon === undefined ? 'Choose' : 'Edit'} icon ${(index + 1).toString()}`}
+								signal={icon}
 								onClick={() => {
-									requestCloseBlueprintEditor();
+									setEditorIconPickerIndex(index);
 								}}
-							>
-								×
-							</button>
-						</header>
-
-						<div className="transform-workbench__body blueprint-editor__layout">
-							<div className="panel-hole transform-workflow blueprint-editor__settings">
-								<div className="panel-hole-inner blueprint-editor__name">
-									<label htmlFor="blueprint-editor-name">Name</label>
-									<input
-										id="blueprint-editor-name"
-										type="text"
-										value={editorLabel}
-										onChange={(event) => {
-											setEditorLabel(event.currentTarget.value);
-										}}
-									/>
-								</div>
-
-								<section
-									className="transform-workflow__section blueprint-editor__icons"
-									aria-labelledby="blueprint-editor-icons-heading"
-								>
-									<h4 id="blueprint-editor-icons-heading">Icon</h4>
-									<div>
-										{[0, 1, 2, 3].map((index) => {
-											const icon = editorIcons.at(index);
-											return (
-												<SignalSlot
-													key={index}
-													label={`${icon === undefined ? 'Choose' : 'Edit'} icon ${(index + 1).toString()}`}
-													signal={icon}
-													onClick={() => {
-														setEditorIconPickerIndex(index);
-													}}
-													onContextMenu={
-														icon === undefined
-															? undefined
-															: () => {
-																	setEditorIcons((current) =>
-																		current.filter(
-																			(_signal, iconIndex) => iconIndex !== index,
-																		),
-																	);
-																}
-													}
-												/>
-											);
-										})}
-									</div>
-									<small>Left-click to edit. Right-click to remove.</small>
-								</section>
-
-								<section
-									className="transform-workflow__section blueprint-editor__description"
-									aria-labelledby="blueprint-editor-description-heading"
-								>
-									<h4 id="blueprint-editor-description-heading">Description</h4>
-									<textarea
-										aria-label="Blueprint description"
-										value={editorDescription}
-										onChange={(event) => {
-											setEditorDescription(event.currentTarget.value);
-										}}
-									/>
-								</section>
-
-								{showEditorFilters ? (
-									<section
-										className="transform-workflow__section"
-										aria-labelledby="blueprint-editor-filters-heading"
-									>
-										<h4 id="blueprint-editor-filters-heading">Filters</h4>
-										<div className="transform-workflow__checks">
-											{editorFilters.modules ? (
-												<label>
-													<input
-														type="checkbox"
-														checked={!stripModulesSelected}
-														onChange={(event) => {
-															setStripModulesSelected(!event.currentTarget.checked);
-														}}
-													/>{' '}
-													Modules
-												</label>
-											) : null}
-											{showEditorEntityFilters && editorFilters.entities ? (
-												<label>
-													<input
-														type="checkbox"
-														checked={!stripEntitiesSelected}
-														onChange={(event) => {
-															setStripEntitiesSelected(!event.currentTarget.checked);
-														}}
-													/>{' '}
-													Entities
-												</label>
-											) : null}
-											{showEditorEntityFilters && editorFilters.trains ? (
-												<label>
-													<input
-														type="checkbox"
-														checked={!stripTrainsSelected}
-														onChange={(event) => {
-															setStripTrainsSelected(!event.currentTarget.checked);
-														}}
-													/>{' '}
-													Trains
-												</label>
-											) : null}
-											{showEditorEntityFilters && editorFilters.tiles ? (
-												<label>
-													<input
-														type="checkbox"
-														checked={!stripTilesSelected}
-														onChange={(event) => {
-															setStripTilesSelected(!event.currentTarget.checked);
-														}}
-													/>{' '}
-													Tiles
-												</label>
-											) : null}
-										</div>
-									</section>
-								) : null}
-								{type === 'blueprint-book' ? (
-									<section
-										className="transform-workflow__section"
-										aria-labelledby="transform-book-operations-heading"
-									>
-										<h4 id="transform-book-operations-heading">
-											Book operations{hasSelectedBookOperation ? ' · selected' : ''}
-										</h4>
-										<div className="transform-workflow__checks">
-											<label>
-												<input
-													type="checkbox"
-													checked={flattenBookSelected}
-													onChange={(event) => {
-														setFlattenBookSelected(event.currentTarget.checked);
-													}}
-												/>{' '}
-												Flatten nested books
-											</label>
-											<label>
-												<input
-													type="checkbox"
-													checked={sortBookSelected}
-													onChange={(event) => {
-														setSortBookSelected(event.currentTarget.checked);
-													}}
-												/>{' '}
-												Sort entries by label
-											</label>
-										</div>
-									</section>
-								) : null}
-							</div>
-							<aside className="panel-hole blueprint-editor__preview" aria-label="Save destination">
-								<h4>Preview</h4>
-								<div className="blueprint-editor__preview-card">
-									<FactorioIcon icon={{type: 'item', name: 'blueprint'}} size="large" />
-									<strong>{editorLabel === '' ? 'Untitled blueprint' : editorLabel}</strong>
-									<div className="blueprint-editor__preview-icons">
-										{editorIcons.map((signal, index) => (
-											<FactorioIcon
-												key={`${signalIdentity(signal)}:${index.toString()}`}
-												icon={signal}
-												size="large"
-											/>
-										))}
-									</div>
-								</div>
-								<p>
-									{selectedPath === ''
-										? 'Save updates the loaded blueprint.'
-										: `Save writes this blueprint back into ${rootLabel}.`}
-								</p>
-								<strong className="blueprint-editor__output-label">
-									Output: {selectedPath === '' ? selectedLabel : `Entire ${rootLabel}`}
-								</strong>
-							</aside>
-						</div>
-
-						<footer className="transform-workbench__footer transform-workbench__footer--actions">
-							<button type="button" className="transform-button" onClick={requestCloseBlueprintEditor}>
-								Cancel
-							</button>
-							<ButtonGreen
-								disabled={editorDraftBlueprint === undefined || !editorDirty}
-								onClick={(event) => {
-									event.preventDefault();
-									if (editorDraftBlueprint !== undefined) {
-										commitBlueprint(editorDraftBlueprint);
-									}
-								}}
-							>
-								{selectedPath === '' ? 'Save blueprint' : 'Save to book'}
-							</ButtonGreen>
-						</footer>
-					</section>
-				</div>
+								onContextMenu={
+									icon === undefined
+										? undefined
+										: () => {
+												setEditorIcons((current) =>
+													current.filter((_signal, iconIndex) => iconIndex !== index),
+												);
+											}
+								}
+							/>
+						);
+					})}
+					label={editorLabel}
+					onClose={requestCloseBlueprintEditor}
+					onDescriptionChange={setEditorDescription}
+					onEntitiesIncludedChange={(included) => {
+						setStripEntitiesSelected(!included);
+					}}
+					onFlattenBookSelectedChange={setFlattenBookSelected}
+					onLabelChange={setEditorLabel}
+					onModulesIncludedChange={(included) => {
+						setStripModulesSelected(!included);
+					}}
+					onSave={() => {
+						if (editorDraftBlueprint !== undefined) {
+							commitBlueprint(editorDraftBlueprint);
+						}
+					}}
+					onSortBookSelectedChange={setSortBookSelected}
+					onTilesIncludedChange={(included) => {
+						setStripTilesSelected(!included);
+					}}
+					onTrainsIncludedChange={(included) => {
+						setStripTrainsSelected(!included);
+					}}
+					saveDisabled={editorDraftBlueprint === undefined || !editorDirty}
+					saveLabel={selectedPath === '' ? 'Save blueprint' : 'Save to book'}
+					sortBookSelected={sortBookSelected}
+					stripEntitiesSelected={stripEntitiesSelected}
+					stripModulesSelected={stripModulesSelected}
+					stripTilesSelected={stripTilesSelected}
+					stripTrainsSelected={stripTrainsSelected}
+				/>
 			) : null}
 			{discardConfirmation === undefined ? null : (
 				<div className="transform-dialog-backdrop transform-dialog-backdrop--confirmation">
