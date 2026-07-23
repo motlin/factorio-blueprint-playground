@@ -155,3 +155,78 @@ export async function compareScreenshots(testName: string, html: string, selecto
 		}
 	}
 }
+
+export interface DialogViewportLayout {
+	bodyFitsHorizontally: boolean;
+	bodyOwnsScrolling: boolean;
+	dialogFitsViewport: boolean;
+	footerVisible: boolean;
+	headerVisible: boolean;
+	mappingFitsHorizontally: boolean;
+	panelBordersAligned: boolean;
+}
+
+export async function inspectDialogViewport(
+	testName: string,
+	html: string,
+	viewport: {height: number; width: number},
+): Promise<DialogViewportLayout | undefined> {
+	if (skipBrowserTests || browser === null) {
+		return undefined;
+	}
+
+	const viewportPage = await browser.newPage({viewport});
+	try {
+		const htmlPath = await renderToHtmlFile(
+			html,
+			`${testName}-${viewport.width.toString()}x${viewport.height.toString()}`,
+		);
+		await viewportPage.goto(`file://${htmlPath}`);
+		await viewportPage.waitForSelector('.upgrade-planner-dialog');
+
+		return await viewportPage.evaluate(() => {
+			const dialog = document.querySelector<HTMLElement>('.upgrade-planner-dialog');
+			const body = document.querySelector<HTMLElement>('.upgrade-planner-dialog__scroll-region');
+			if (dialog === null || body === null) {
+				throw new Error('Expected the upgrade planner dialog and scroll region.');
+			}
+			const header = dialog.querySelector<HTMLElement>(':scope > .transform-workbench__header');
+			const footer = dialog.querySelector<HTMLElement>(':scope > .transform-workbench__footer');
+			const mapping = dialog.querySelector<HTMLElement>('.upgrade-mapping-grid__row');
+			const configuration = dialog.querySelector<HTMLElement>('.upgrade-planner-dialog__configuration');
+			const replacements = dialog.querySelector<HTMLElement>('.book-wide-replacements');
+			if (
+				header === null ||
+				footer === null ||
+				mapping === null ||
+				configuration === null ||
+				replacements === null
+			) {
+				throw new Error('Expected the complete upgrade planner layout.');
+			}
+
+			const dialogBounds = dialog.getBoundingClientRect();
+			const headerBounds = header.getBoundingClientRect();
+			const footerBounds = footer.getBoundingClientRect();
+			const configurationBounds = configuration.getBoundingClientRect();
+			const replacementsBounds = replacements.getBoundingClientRect();
+			const bodyStyle = getComputedStyle(body);
+			const dialogStyle = getComputedStyle(dialog);
+			return {
+				bodyFitsHorizontally: body.scrollWidth <= body.clientWidth,
+				bodyOwnsScrolling: bodyStyle.overflowY === 'auto' && dialogStyle.overflow === 'hidden',
+				dialogFitsViewport:
+					dialogBounds.top >= 0 &&
+					dialogBounds.right <= window.innerWidth &&
+					dialogBounds.bottom <= window.innerHeight &&
+					dialogBounds.left >= 0,
+				footerVisible: footerBounds.bottom <= window.innerHeight,
+				headerVisible: headerBounds.top >= 0,
+				mappingFitsHorizontally: mapping.scrollWidth <= mapping.clientWidth,
+				panelBordersAligned: Math.abs(configurationBounds.left - replacementsBounds.left) < 1,
+			};
+		});
+	} finally {
+		await viewportPage.close();
+	}
+}

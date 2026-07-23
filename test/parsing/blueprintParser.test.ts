@@ -71,6 +71,41 @@ describe('blueprintParser', () => {
 			const parsed = deserializeBlueprint(result);
 			expect(parsed).toEqual(blueprint);
 		});
+
+		it('round-trips Factorio 2.1 ID and number parameter fields', () => {
+			const blueprint: BlueprintString = {
+				blueprint: {
+					item: 'blueprint',
+					version: 562949954076673,
+					parameters: [
+						{
+							type: 'id',
+							name: 'Input',
+							id: 'iron-plate',
+							parameter: false,
+							'quality-condition': {quality: 'epic', comparator: '≠'},
+						},
+						{
+							type: 'id',
+							name: 'Output',
+							id: 'iron-gear-wheel',
+							'fluid-product-of': 'iron-plate',
+						},
+						{
+							type: 'number',
+							name: 'Count',
+							number: '20',
+							variable: 'N',
+							dependent: true,
+							formula: 'N + 1',
+							'not-parametrised': true,
+						},
+					],
+				},
+			};
+
+			expect(deserializeBlueprint(serializeBlueprint(blueprint))).toStrictEqual(blueprint);
+		});
 	});
 
 	describe('extractBlueprint', () => {

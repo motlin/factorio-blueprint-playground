@@ -73,6 +73,107 @@ interface LuaTableFrame {
 	placeResults: Set<string>;
 }
 
+interface LuaUpgradeFrame {
+	name: string | undefined;
+	nextUpgrade: string | undefined;
+}
+
+interface LuaPrototypeFrame {
+	name: string | undefined;
+	order: string | undefined;
+	type: string | undefined;
+}
+
+export interface PrototypeUpgrade {
+	from: string;
+	to: string;
+}
+
+export interface PickerSignalPrototype {
+	name: string;
+	type:
+		| 'achievement'
+		| 'fluid'
+		| 'item'
+		| 'item-group'
+		| 'planet'
+		| 'recipe'
+		| 'space-location'
+		| 'technology'
+		| 'tile'
+		| 'virtual';
+}
+
+const pickerPrototypeTypes: readonly {
+	prototypeType: string;
+	signalType: PickerSignalPrototype['type'];
+}[] = [
+	{prototypeType: 'item', signalType: 'item'},
+	{prototypeType: 'recipe', signalType: 'recipe'},
+	{prototypeType: 'fluid', signalType: 'fluid'},
+	{prototypeType: 'virtual-signal', signalType: 'virtual'},
+	{prototypeType: 'planet', signalType: 'planet'},
+	{prototypeType: 'space-location', signalType: 'space-location'},
+	{prototypeType: 'tile', signalType: 'tile'},
+	{prototypeType: 'technology', signalType: 'technology'},
+	{prototypeType: 'item-group', signalType: 'item-group'},
+	{prototypeType: 'achievement', signalType: 'achievement'},
+];
+
+export function extractPrototypeNames(sources: readonly string[], prototypeType: string): string[] {
+	const prototypes = new Map<string, string>();
+	for (const source of sources) {
+		const frames: LuaPrototypeFrame[] = [];
+		const tokens = tokenizeLua(source);
+		for (let index = 0; index < tokens.length; index += 1) {
+			const token = tokens[index];
+			if (token.kind === LuaTokenKind.OpeningBrace) {
+				frames.push({name: undefined, order: undefined, type: undefined});
+				continue;
+			}
+			if (token.kind === LuaTokenKind.ClosingBrace) {
+				const frame = frames.pop();
+				if (frame === undefined) {
+					throw new Error('Unexpected closing brace in Lua source.');
+				}
+				if (frame.type === prototypeType && frame.name !== undefined) {
+					prototypes.set(frame.name, frame.order ?? frame.name);
+				}
+				continue;
+			}
+			if (token.kind !== LuaTokenKind.Identifier || tokens[index + 1]?.kind !== LuaTokenKind.Equals) {
+				continue;
+			}
+			const frame = frames.at(-1);
+			const value = tokens.at(index + 2);
+			if (frame === undefined || value?.kind !== LuaTokenKind.String) {
+				continue;
+			}
+			if (token.value === 'type') {
+				frame.type = value.value;
+			} else if (token.value === 'name') {
+				frame.name = value.value;
+			} else if (token.value === 'order') {
+				frame.order = value.value;
+			}
+		}
+		if (frames.length > 0) {
+			throw new Error('Unclosed table in Lua source.');
+		}
+	}
+	return [...prototypes]
+		.sort(([leftName, leftOrder], [rightName, rightOrder]) =>
+			leftOrder === rightOrder ? leftName.localeCompare(rightName) : leftOrder.localeCompare(rightOrder),
+		)
+		.map(([name]) => name);
+}
+
+export function extractPickerSignals(sources: readonly string[]): PickerSignalPrototype[] {
+	return pickerPrototypeTypes.flatMap(({prototypeType, signalType}) =>
+		extractPrototypeNames(sources, prototypeType).map((name) => ({type: signalType, name})),
+	);
+}
+
 function longBracketClosing(source: string, start: number): {closing: string; contentStart: number} | undefined {
 	if (source[start] !== '[') {
 		return undefined;
@@ -207,6 +308,85 @@ export function extractHiddenPlaceResults(source: string): string[] {
 		throw new Error('Unclosed table in Lua source.');
 	}
 	return [...placeResults].sort();
+}
+
+export function extractPrototypeUpgrades(sources: readonly string[]): PrototypeUpgrade[] {
+	const upgrades = new Map<string, string>();
+	const addUpgrade = (from: string, to: string) => {
+		const existing = upgrades.get(from);
+		if (existing !== undefined && existing !== to) {
+			throw new Error(`Prototype ${from} has conflicting next upgrades: ${existing} and ${to}.`);
+		}
+		upgrades.set(from, to);
+	};
+
+	for (const source of sources) {
+		const frames: LuaUpgradeFrame[] = [];
+		const tokens = tokenizeLua(source);
+		for (let index = 0; index < tokens.length; index += 1) {
+			const token = tokens[index];
+			if (token.kind === LuaTokenKind.OpeningBrace) {
+				frames.push({name: undefined, nextUpgrade: undefined});
+				continue;
+			}
+			if (token.kind === LuaTokenKind.ClosingBrace) {
+				const frame = frames.pop();
+				if (frame === undefined) {
+					throw new Error('Unexpected closing brace in Lua source.');
+				}
+				if (frame.name !== undefined && frame.nextUpgrade !== undefined) {
+					addUpgrade(frame.name, frame.nextUpgrade);
+				}
+				continue;
+			}
+			if (token.kind !== LuaTokenKind.Identifier || tokens[index + 1]?.kind !== LuaTokenKind.Equals) {
+				continue;
+			}
+			const frame = frames.at(-1);
+			const value = tokens.at(index + 2);
+			if (frame === undefined || value?.kind !== LuaTokenKind.String) {
+				continue;
+			}
+			if (token.value === 'name') {
+				frame.name = value.value;
+			} else if (token.value === 'next_upgrade') {
+				frame.nextUpgrade = value.value;
+			}
+		}
+		if (frames.length > 0) {
+			throw new Error('Unclosed table in Lua source.');
+		}
+
+		const directAssignment =
+			/^\s*data\.raw\[["']([^"']+)["']\]\[["']([^"']+)["']\]\.next_upgrade\s*=\s*["']([^"']+)["']/gm;
+		for (const match of source.matchAll(directAssignment)) {
+			addUpgrade(match[2], match[3]);
+		}
+	}
+
+	const remaining = new Map(upgrades);
+	const targets = new Set(remaining.values());
+	const starts = [...remaining.keys()].filter((from) => !targets.has(from)).sort();
+	const result: PrototypeUpgrade[] = [];
+	const appendChain = (start: string) => {
+		let from = start;
+		while (true) {
+			const to = remaining.get(from);
+			if (to === undefined) {
+				return;
+			}
+			result.push({from, to});
+			remaining.delete(from);
+			from = to;
+		}
+	};
+	for (const start of starts) {
+		appendChain(start);
+	}
+	for (const start of [...remaining.keys()].sort()) {
+		appendChain(start);
+	}
+	return result;
 }
 
 export function parseFactorioLabDataset(value: unknown): FactorioLabDataset {
