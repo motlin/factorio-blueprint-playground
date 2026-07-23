@@ -135,6 +135,9 @@ describe('TransformPanel', () => {
 				(name) => screen.getByRole('button', {name}).textContent,
 			),
 			preserveCapitalization: screen.queryByRole('checkbox', {name: 'Preserve capitalization'}),
+			sectionOrder: [...configuration.querySelectorAll('.upgrade-planner-dialog__content > section')].map(
+				(section) => section.querySelector('h4')?.textContent,
+			),
 			scrollTabIndex: configuration.tabIndex,
 			sourceIcon: screen
 				.getByRole('button', {name: 'Choose source, currently Transport belt'})
@@ -148,7 +151,7 @@ describe('TransformPanel', () => {
 			websiteLabel: within(configuration).getByText('Website extension').textContent,
 		}).toStrictEqual({
 			bodyClass: 'transform-workbench__body upgrade-planner-dialog__scroll-region',
-			bookWidePanel: 'panel-hole transform-workflow__section transform-workflow__website-replacements',
+			bookWidePanel: 'panel-hole transform-workflow__section book-wide-replacements',
 			changeIn: null,
 			closeButton: 'Close Upgrade Planner',
 			configurationPanel: 'panel-hole upgrade-planner-dialog__configuration',
@@ -161,6 +164,7 @@ describe('TransformPanel', () => {
 			modeButtons: [null, null, null],
 			operationButtons: ['Apply upgrades', 'Apply downgrades'],
 			preserveCapitalization: null,
+			sectionOrder: ['Upgrade mappings', 'Book-wide replacements'],
 			scrollTabIndex: 0,
 			sourceIcon: 'https://factorio-icon-cdn.pages.dev/entity/transport-belt.webp',
 			targetIcon: 'https://factorio-icon-cdn.pages.dev/entity/fast-transport-belt.webp',
@@ -207,6 +211,7 @@ describe('TransformPanel', () => {
 				(name) => screen.getByRole<HTMLInputElement>('checkbox', {name}).checked,
 			),
 			headerElement: dialog.firstElementChild?.tagName,
+			iconReplacements: screen.queryByRole('button', {name: /Icon replacements/}),
 			iconSlots: [1, 2, 3, 4].map((index) =>
 				screen.getByRole('button', {name: `Choose icon ${index.toString()}`}).getAttribute('aria-label'),
 			),
@@ -214,6 +219,7 @@ describe('TransformPanel', () => {
 			plannerMappings: screen.queryByRole('group', {name: 'Planner operation'}),
 			preview: screen.queryByRole('heading', {name: 'Preview'}),
 			saveDestination: screen.queryByLabelText('Save destination'),
+			textReplacement: screen.queryByRole('checkbox', {name: /Text replacement/}),
 		}).toStrictEqual({
 			bookWideReplacements: null,
 			bodyClass: 'transform-workbench__body blueprint-editor__layout',
@@ -224,11 +230,13 @@ describe('TransformPanel', () => {
 			footerElement: 'FOOTER',
 			filters: [true, true, true, true],
 			headerElement: 'HEADER',
+			iconReplacements: null,
 			iconSlots: ['Choose icon 1', 'Choose icon 2', 'Choose icon 3', 'Choose icon 4'],
 			title: 'Untitled blueprint',
 			plannerMappings: null,
 			preview: null,
 			saveDestination: null,
+			textReplacement: null,
 		});
 	});
 
@@ -1587,7 +1595,7 @@ describe('TransformPanel', () => {
 		});
 	});
 
-	test('combines entity, visual icon, and text replacements across the root book', async () => {
+	test('combines selection-scoped entity mappings with root-book icon and text replacements', async () => {
 		const user = userEvent.setup();
 		const rootBlueprint: BlueprintString = {
 			blueprint_book: {
@@ -1621,6 +1629,16 @@ describe('TransformPanel', () => {
 		render(<TransformPanel blueprint={selectedBlueprint} rootBlueprint={rootBlueprint} selectedPath="1" />);
 
 		openUpgradePlanner();
+		expect({
+			entityScope: screen.getByRole<HTMLSelectElement>('combobox', {name: 'Apply to'}).value,
+			replacementScope: screen.getByText(
+				'Always applies to titles, descriptions, and label icons throughout the entire root book, regardless of the selected blueprint.',
+			).textContent,
+		}).toStrictEqual({
+			entityScope: 'selection',
+			replacementScope:
+				'Always applies to titles, descriptions, and label icons throughout the entire root book, regardless of the selected blueprint.',
+		});
 		await user.click(screen.getByRole('button', {name: /Icon replacements/i}));
 		await user.click(screen.getByRole('button', {name: 'Choose source icon'}));
 		await chooseSignal(user, 'Signal red');

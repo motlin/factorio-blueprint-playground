@@ -97,6 +97,11 @@ export const UpgradePlanner: Story = {
 		await expect(canvas.getByRole('button', {name: 'Choose source for new mapping'})).toBeVisible();
 		await expect(canvas.getByText('Website extension')).toBeVisible();
 		await expect(canvas.getByRole('heading', {name: 'Book-wide replacements'})).toBeVisible();
+		await expect(
+			canvas.getByText(
+				'Always applies to titles, descriptions, and label icons throughout the entire root book, regardless of the selected blueprint.',
+			),
+		).toBeVisible();
 		await expect(canvas.queryByText('Live result')).not.toBeInTheDocument();
 		await expect(canvas.queryByRole('heading', {name: 'Preview'})).not.toBeInTheDocument();
 		await expect(canvas.queryByRole('button', {name: 'Strip quality'})).not.toBeInTheDocument();
@@ -117,6 +122,8 @@ export const BlueprintEditor: Story = {
 		await expect(canvas.getByRole('dialog', {name: 'Blueprint Editor'})).toHaveAttribute('aria-modal', 'true');
 		await expect(canvas.getByText('Belt test')).toHaveClass('blueprint-editor__title');
 		await expect(canvas.getByRole('button', {name: 'Edit blueprint title'})).toBeVisible();
+		await expect(canvas.queryByRole('heading', {name: 'Book-wide replacements'})).not.toBeInTheDocument();
+		await expect(canvas.queryByRole('button', {name: /Icon replacements/})).not.toBeInTheDocument();
 		await expect(canvas.getByRole('textbox', {name: 'Blueprint description'})).toHaveValue(
 			'[item=transport-belt] Belt test\nKeeps rich-text strings unchanged.',
 		);

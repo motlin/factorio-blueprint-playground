@@ -6,6 +6,7 @@ import {FactorioIcon} from '../../../core/icons/FactorioIcon';
 import {ButtonGreen} from '../../../ui/ButtonGreen';
 import {Textarea} from '../../../ui/Textarea';
 import {AddUpgradeMappingRow} from './AddUpgradeMappingRow';
+import {BookWideReplacements, type BookWideReplacementsProps} from './BookWideReplacements';
 import {SignalPickerDialog} from './SignalPickerDialog';
 import {UpgradeMappingGrid} from './UpgradeMappingGrid';
 import {
@@ -41,19 +42,6 @@ interface UpgradePlannerMappings {
 	sourceOptions: SignalID[];
 }
 
-interface UpgradePlannerReplacements {
-	iconMappingCount: number;
-	iconReplacementCount: number;
-	metadataFind: string;
-	metadataReplace: string;
-	metadataReplacementCount: number;
-	onIconReplacementsOpen: () => void;
-	onMetadataFindChange: (value: string) => void;
-	onMetadataReplaceChange: (value: string) => void;
-	onTextReplacementEnabledChange: (enabled: boolean) => void;
-	textReplacementEnabled: boolean;
-}
-
 interface UpgradePlannerDialogProps {
 	applyDisabled: boolean;
 	breadcrumb: string;
@@ -64,7 +52,7 @@ interface UpgradePlannerDialogProps {
 	onApplyUpgrades: () => void;
 	onClose: () => void;
 	onScopeChange: (scope: 'selection' | 'root') => void;
-	replacements: UpgradePlannerReplacements;
+	replacements: BookWideReplacementsProps;
 	scope: 'selection' | 'root';
 	selectionScopeDisabled: boolean;
 	selectionScopeLabel: string;
@@ -338,7 +326,6 @@ export function UpgradePlannerDialog({
 }: UpgradePlannerDialogProps) {
 	const dialogHeadingId = useId();
 	const configurationHeadingId = useId();
-	const replacementsHeadingId = useId();
 
 	return (
 		<div className="transform-dialog-backdrop transform-workbench-backdrop upgrade-planner-dialog__backdrop">
@@ -415,73 +402,7 @@ export function UpgradePlannerDialog({
 							<UpgradeMappingsEditor {...mappings} />
 						</section>
 
-						<section
-							className="panel-hole transform-workflow__section transform-workflow__website-replacements"
-							aria-labelledby={replacementsHeadingId}
-						>
-							<div className="transform-workflow__website-label">Website extension</div>
-							<h4 id={replacementsHeadingId}>Book-wide replacements</h4>
-							<p className="transform-workflow__scope-note">
-								Applies to titles, descriptions, and label icons throughout the entire book.
-							</p>
-							<div className="transform-workflow__operations">
-								<button
-									type="button"
-									className="transform-operation"
-									onClick={() => {
-										replacements.onIconReplacementsOpen();
-									}}
-								>
-									<span className="transform-operation__icon">
-										<span aria-hidden="true">+</span>
-									</span>
-									<span className="transform-operation__text">
-										<strong>Icon replacements</strong>
-										<small>
-											{replacements.iconMappingCount}{' '}
-											{replacements.iconMappingCount === 1 ? 'mapping' : 'mappings'} ·{' '}
-											{replacements.iconReplacementCount}{' '}
-											{replacements.iconReplacementCount === 1 ? 'replacement' : 'replacements'}
-										</small>
-									</span>
-									<span>Edit…</span>
-								</button>
-							</div>
-
-							<div className="transform-workflow__text">
-								<label className="transform-workflow__text-toggle">
-									<input
-										type="checkbox"
-										checked={replacements.textReplacementEnabled}
-										onChange={(event) => {
-											replacements.onTextReplacementEnabledChange(event.currentTarget.checked);
-										}}
-									/>{' '}
-									Text replacement <strong>{replacements.metadataReplacementCount}</strong>
-								</label>
-								<div>
-									<label htmlFor="metadata-find">Find</label>
-									<input
-										id="metadata-find"
-										type="text"
-										value={replacements.metadataFind}
-										onChange={(event) => {
-											replacements.onMetadataFindChange(event.currentTarget.value);
-										}}
-									/>
-									<span aria-hidden="true">→</span>
-									<label htmlFor="metadata-replace">Replace with</label>
-									<input
-										id="metadata-replace"
-										type="text"
-										value={replacements.metadataReplace}
-										onChange={(event) => {
-											replacements.onMetadataReplaceChange(event.currentTarget.value);
-										}}
-									/>
-								</div>
-							</div>
-						</section>
+						<BookWideReplacements {...replacements} />
 					</div>
 				</div>
 

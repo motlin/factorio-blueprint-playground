@@ -766,7 +766,7 @@ body {
 }
 
 .transform-workflow__scope strong,
-.transform-workflow__text-toggle {
+.book-wide-replacements__text-toggle {
 	color: #ffe6c0;
 	font-weight: bold;
 }
@@ -854,13 +854,13 @@ body {
 	white-space: nowrap;
 }
 
-.transform-workflow__text-toggle {
+.book-wide-replacements__text-toggle {
 	display: flex;
 	align-items: center;
 	gap: 5px;
 }
 
-.transform-workflow__text-toggle strong {
+.book-wide-replacements__text-toggle strong {
 	display: inline-block;
 	min-width: 24px;
 	margin-left: 3px;
@@ -877,7 +877,7 @@ body {
 	accent-color: #e39827;
 }
 
-.transform-workflow__text {
+.book-wide-replacements__text {
 	display: flex;
 	flex-direction: column;
 	gap: 9px;
@@ -889,14 +889,14 @@ body {
 		inset 0 -1px 1px #171717;
 }
 
-.transform-workflow__text > div {
+.book-wide-replacements__text > div {
 	display: grid;
 	grid-template-columns: auto minmax(90px, 1fr) auto auto minmax(90px, 1fr);
 	align-items: center;
 	gap: 8px;
 }
 
-.transform-workflow__text input[type='text'] {
+.book-wide-replacements__text input[type='text'] {
 	min-width: 0;
 	padding: 7px 8px;
 }
@@ -916,24 +916,24 @@ body {
 	font-weight: bold;
 }
 
-.transform-workflow__scope-note {
+.book-wide-replacements__scope {
 	margin: -3px 12px 10px;
 	color: #b7b2ad;
 	font-size: 82%;
 }
 
-.transform-workflow__website-replacements .transform-workflow__operations {
+.book-wide-replacements .transform-workflow__operations {
 	margin-top: 0;
 }
 
-.upgrade-planner-dialog__content > .transform-workflow__website-replacements {
+.upgrade-planner-dialog__content > .book-wide-replacements {
 	margin: 0;
 	padding: 3px;
 	border-top: 2px solid #e39827;
 	background: #343334;
 }
 
-.transform-workflow__website-label {
+.book-wide-replacements__website-label {
 	width: fit-content;
 	margin: 7px 9px 0;
 	padding: 2px 6px;
@@ -2082,7 +2082,7 @@ body {
 
 @media (max-width: 620px) {
 	.transform-workflow__scope,
-	.transform-workflow__text > div {
+	.book-wide-replacements__text > div {
 		grid-template-columns: 1fr;
 	}
 
