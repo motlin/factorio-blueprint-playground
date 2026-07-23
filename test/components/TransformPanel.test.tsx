@@ -211,7 +211,11 @@ describe('TransformPanel', () => {
 			expanded: 'false',
 			icon: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
 			inTitleRow: true,
-			toolbarActions: ['Upgrade items and entities in the blueprint', 'Choose upgrade planner for toolbar slot'],
+			toolbarActions: [
+				'Upgrade items and entities in the blueprint',
+				'Choose upgrade planner for toolbar slot',
+				'Parametrise or reconfigure the blueprint',
+			],
 		});
 
 		await user.click(upgradeButton);
@@ -503,6 +507,69 @@ describe('TransformPanel', () => {
 		}).toStrictEqual({
 			dialog: null,
 			navigation: [],
+		});
+	});
+
+	test('saves Blueprint parametrisation edits and preserves unsupported parameter rows', async () => {
+		const user = userEvent.setup();
+		const parameterizedBlueprint: BlueprintString = {
+			blueprint: {
+				item: 'blueprint',
+				version: 0,
+				parameters: [
+					{
+						type: 'id',
+						name: 'Plate',
+						id: 'iron-plate',
+						'quality-condition': {quality: 'normal', comparator: '='},
+					},
+					{
+						type: 'number',
+						name: 'Count',
+						number: '10',
+						variable: 'N',
+						dependent: true,
+						formula: 'N + 2',
+					},
+				],
+			},
+		};
+		render(<TransformPanel blueprint={parameterizedBlueprint} />);
+
+		openBlueprintEditor();
+		await user.click(screen.getByRole('button', {name: 'Parametrise or reconfigure the blueprint'}));
+		await user.clear(screen.getByRole('textbox', {name: 'Parameter 1 name'}));
+		await user.type(screen.getByRole('textbox', {name: 'Parameter 1 name'}), 'Any plate');
+		await user.click(screen.getByRole('button', {name: 'Confirm'}));
+		await user.click(screen.getByRole('button', {name: 'Save blueprint'}));
+
+		expect(navigate).toHaveBeenCalledExactlyOnceWith({
+			to: '/',
+			search: {
+				pasted: serializeBlueprint({
+					blueprint: {
+						item: 'blueprint',
+						version: 0,
+						parameters: [
+							{
+								type: 'id',
+								id: 'iron-plate',
+								'quality-condition': {quality: 'normal', comparator: '='},
+								name: 'Any plate',
+							},
+							{
+								type: 'number',
+								name: 'Count',
+								number: '10',
+								variable: 'N',
+								dependent: true,
+								formula: 'N + 2',
+							},
+						],
+					},
+				}),
+				selection: '',
+			},
 		});
 	});
 
