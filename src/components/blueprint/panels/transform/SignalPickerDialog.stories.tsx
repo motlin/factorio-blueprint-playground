@@ -2,6 +2,7 @@ import type {Meta, StoryObj} from '@storybook/react-vite';
 import {fn} from 'storybook/test';
 
 import {SignalPickerDialog} from './SignalPickerDialog';
+import {transformStoryParameters} from './transformStoryParameters';
 
 const qualitySourceSignal = {
 	type: 'entity',
@@ -13,9 +14,7 @@ const qualitySourceSignal = {
 const meta = {
 	title: 'Blueprint/Panels/Transform/SignalPickerDialog',
 	component: SignalPickerDialog,
-	parameters: {
-		layout: 'fullscreen',
-	},
+	parameters: transformStoryParameters,
 	args: {
 		onChoose: fn(),
 		onClose: fn(),

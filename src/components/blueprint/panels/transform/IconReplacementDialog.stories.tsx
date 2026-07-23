@@ -2,6 +2,7 @@ import type {Meta, StoryObj} from '@storybook/react-vite';
 import {expect, fn, userEvent, within} from 'storybook/test';
 
 import {IconReplacementDialog} from './IconReplacementDialog';
+import {transformStoryParameters} from './transformStoryParameters';
 
 const meta = {
 	title: 'Blueprint/Panels/Transform/IconReplacementDialog',
@@ -33,9 +34,7 @@ const meta = {
 			},
 		},
 	},
-	parameters: {
-		layout: 'fullscreen',
-	},
+	parameters: transformStoryParameters,
 	tags: ['autodocs'],
 } satisfies Meta<typeof IconReplacementDialog>;
 
