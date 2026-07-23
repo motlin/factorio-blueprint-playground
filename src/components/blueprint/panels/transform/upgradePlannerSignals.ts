@@ -1,6 +1,13 @@
 import gameData from '../../../../generated/game-data.json';
 import type {SignalID, UpgradeSourceSignal} from '../../../../parsing/types';
 
+function upgradeModuleFamily(signal: SignalID): string | undefined {
+	if (normalizedSignalType(signal) !== 'item') {
+		return undefined;
+	}
+	return signal.name.match(/^(efficiency|productivity|quality|speed)-module(?:-[23])?$/)?.[1];
+}
+
 export function normalizedSignalType(signal: SignalID): string {
 	if (signal.type === 'virtual-signal') {
 		return 'virtual';
@@ -20,6 +27,14 @@ export function signalName(signal: SignalID): string {
 export function signalTitle(signal: UpgradeSourceSignal): string {
 	const quality = signal.quality === undefined ? '' : `\nQuality: ${signal.comparator ?? '='} ${signal.quality}`;
 	return `${signalName(signal)}\n${normalizedSignalType(signal)}:${signal.name}${quality}`;
+}
+
+export function signalPrototypeIdentity(signal: SignalID): string {
+	return `${normalizedSignalType(signal)}:${signal.name}`;
+}
+
+export function isUpgradeSourceOption(signal: SignalID): boolean {
+	return normalizedSignalType(signal) === 'entity' || upgradeModuleFamily(signal) !== undefined;
 }
 
 export function isUpgradeTargetSelectionAllowed(
@@ -60,6 +75,13 @@ export function upgradeTargetOptions(source: UpgradeSourceSignal, currentTarget:
 		normalizedSignalType(source) === normalizedSignalType(currentTarget)
 	) {
 		visited.add(currentTarget.name);
+	}
+	const moduleFamily = upgradeModuleFamily(source);
+	if (moduleFamily !== undefined) {
+		return [`${moduleFamily}-module`, `${moduleFamily}-module-2`, `${moduleFamily}-module-3`].map((name) => ({
+			...currentTarget,
+			name,
+		}));
 	}
 	return [...visited].map((name) => ({...currentTarget, name}));
 }
