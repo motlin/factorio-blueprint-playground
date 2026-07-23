@@ -1159,14 +1159,11 @@ describe('TransformPanel', () => {
 		const initialRow = screen.getByRole('listitem', {
 			name: 'Mapping from Transport belt to Fast transport belt',
 		});
-		await user.selectOptions(within(initialRow).getByRole('combobox', {name: 'Source quality selection'}), 'epic');
+		await user.click(within(initialRow).getAllByRole('button', {name: 'Epic quality'})[0]);
 		const qualityRow = screen.getByRole('listitem', {
 			name: 'Mapping from Transport belt to Fast transport belt',
 		});
-		await user.selectOptions(
-			within(qualityRow).getByRole('combobox', {name: 'Target quality selection'}),
-			'normal',
-		);
+		await user.click(within(qualityRow).getAllByRole('button', {name: 'Normal quality'})[1]);
 		await saveAndApplyPlanner(user);
 
 		expect(navigate).toHaveBeenCalledExactlyOnceWith({

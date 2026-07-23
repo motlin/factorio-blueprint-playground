@@ -162,13 +162,10 @@ describe('UpgradeMappingGrid', () => {
 		await user.click(screen.getByRole('button', {name: 'Remove mapping from Speed module'}));
 		const beltRow = screen.getByRole('listitem', {name: 'Mapping from Transport belt to Fast transport belt'});
 		const inserterRow = screen.getByRole('listitem', {name: 'Mapping from Inserter to Fast inserter'});
-		await user.selectOptions(within(beltRow).getByRole('combobox', {name: 'Source quality selection'}), 'normal');
+		await user.click(within(beltRow).getAllByRole('button', {name: 'Normal quality'})[0]);
 		await user.selectOptions(within(inserterRow).getByRole('combobox', {name: 'Quality comparison'}), '≥');
-		await user.selectOptions(within(beltRow).getByRole('combobox', {name: 'Target quality selection'}), 'epic');
-		await user.selectOptions(
-			within(inserterRow).getByRole('combobox', {name: 'Target quality selection'}),
-			'preserve',
-		);
+		await user.click(within(beltRow).getAllByRole('button', {name: 'Epic quality'})[1]);
+		await user.click(within(inserterRow).getByRole('button', {name: 'Set as source'}));
 
 		expect({
 			remove: onRemove.mock.calls,

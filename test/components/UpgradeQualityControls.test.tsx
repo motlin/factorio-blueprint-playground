@@ -56,37 +56,33 @@ describe('UpgradeQualityControls', () => {
 			/>,
 		);
 
-		await user.selectOptions(screen.getByRole('combobox', {name: 'Source quality selection'}), 'epic');
+		await user.click(screen.getByRole('button', {name: 'Epic quality'}));
 		await user.selectOptions(screen.getByRole('combobox', {name: 'Quality comparison'}), '≤');
 
-		const qualitySelect = screen.getByRole<HTMLSelectElement>('combobox', {name: 'Source quality selection'});
 		const comparatorSelect = screen.getByRole<HTMLSelectElement>('combobox', {name: 'Quality comparison'});
 		expect({
+			buttons: screen.getAllByRole('button').map((button) => ({
+				label: button.getAttribute('aria-label'),
+				pressed: button.getAttribute('aria-pressed'),
+				title: button.title,
+			})),
 			comparatorChanges: onComparatorChange.mock.calls,
 			comparatorLabel: comparatorSelect.labels[0].firstElementChild?.textContent,
 			comparatorLabelElement: comparatorSelect.labels[0].tagName,
 			qualityChanges: onQualityChange.mock.calls,
-			qualityLabel: qualitySelect.labels[0].firstElementChild?.textContent,
-			qualityLabelElement: qualitySelect.labels[0].tagName,
-			qualityOptions: screen
-				.getAllByRole('option')
-				.filter((option) => option.closest('[aria-label="Source quality selection"]') !== null)
-				.map((option) => ({label: option.textContent, value: option.getAttribute('value')})),
 		}).toStrictEqual({
+			buttons: [
+				{label: 'Any quality', pressed: 'false', title: 'Any quality'},
+				{label: 'Normal quality', pressed: 'false', title: 'Normal quality'},
+				{label: 'Uncommon quality', pressed: 'false', title: 'Uncommon quality'},
+				{label: 'Rare quality', pressed: 'true', title: 'Rare quality'},
+				{label: 'Epic quality', pressed: 'false', title: 'Epic quality'},
+				{label: 'Legendary quality', pressed: 'false', title: 'Legendary quality'},
+			],
 			comparatorChanges: [['≤']],
 			comparatorLabel: 'Quality comparison',
 			comparatorLabelElement: 'LABEL',
 			qualityChanges: [['epic']],
-			qualityLabel: 'Source quality selection',
-			qualityLabelElement: 'LABEL',
-			qualityOptions: [
-				{label: 'Any quality', value: 'any'},
-				{label: 'Normal', value: 'normal'},
-				{label: 'Uncommon', value: 'uncommon'},
-				{label: 'Rare', value: 'rare'},
-				{label: 'Epic', value: 'epic'},
-				{label: 'Legendary', value: 'legendary'},
-			],
 		});
 	});
 
@@ -103,26 +99,26 @@ describe('UpgradeQualityControls', () => {
 			/>,
 		);
 
-		const qualitySelect = screen.getByRole('combobox', {name: 'Target quality selection'});
-		await user.selectOptions(qualitySelect, 'legendary');
+		await user.click(screen.getByRole('button', {name: 'Legendary quality'}));
 
 		expect({
-			comparator: screen.queryByRole('combobox', {name: 'Quality comparison'}),
-			options: screen.getAllByRole('option').map((option) => ({
-				label: option.textContent,
-				value: option.getAttribute('value'),
+			buttons: screen.getAllByRole('button').map((button) => ({
+				label: button.getAttribute('aria-label'),
+				pressed: button.getAttribute('aria-pressed'),
+				title: button.title,
 			})),
+			comparator: screen.queryByRole('combobox', {name: 'Quality comparison'}),
 			qualityChanges: onQualityChange.mock.calls,
 		}).toStrictEqual({
-			comparator: null,
-			options: [
-				{label: 'Set as source', value: 'preserve'},
-				{label: 'Normal', value: 'normal'},
-				{label: 'Uncommon', value: 'uncommon'},
-				{label: 'Rare', value: 'rare'},
-				{label: 'Epic', value: 'epic'},
-				{label: 'Legendary', value: 'legendary'},
+			buttons: [
+				{label: 'Set as source', pressed: 'true', title: 'Set as source'},
+				{label: 'Normal quality', pressed: 'false', title: 'Normal quality'},
+				{label: 'Uncommon quality', pressed: 'false', title: 'Uncommon quality'},
+				{label: 'Rare quality', pressed: 'false', title: 'Rare quality'},
+				{label: 'Epic quality', pressed: 'false', title: 'Epic quality'},
+				{label: 'Legendary quality', pressed: 'false', title: 'Legendary quality'},
 			],
+			comparator: null,
 			qualityChanges: [['legendary']],
 		});
 	});

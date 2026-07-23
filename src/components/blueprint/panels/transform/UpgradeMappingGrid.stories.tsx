@@ -1,5 +1,5 @@
 import type {Meta, StoryObj} from '@storybook/react-vite';
-import {fn} from 'storybook/test';
+import {expect, fn, userEvent, within} from 'storybook/test';
 
 import {transformStoryParameters} from './transformStoryParameters';
 import {UpgradeMappingGrid} from './UpgradeMappingGrid';
@@ -38,4 +38,24 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const OrderedMappings: Story = {};
+export const OrderedMappings: Story = {
+	play: async ({args, canvasElement}) => {
+		const canvas = within(canvasElement);
+		const rareQualityButtons = canvas.getAllByRole('button', {name: 'Rare quality'});
+
+		await userEvent.click(rareQualityButtons[0]);
+		await userEvent.click(rareQualityButtons[1]);
+
+		await expect(args.onSourceQualityChange).toHaveBeenLastCalledWith(args.candidates[0], {
+			comparator: '=',
+			name: 'transport-belt',
+			quality: 'rare',
+			type: 'entity',
+		});
+		await expect(args.onTargetQualityChange).toHaveBeenLastCalledWith(
+			args.candidates[0],
+			{name: 'fast-transport-belt', quality: 'rare', type: 'entity'},
+			false,
+		);
+	},
+};
