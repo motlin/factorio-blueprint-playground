@@ -7,15 +7,9 @@ import {FactorioIcon} from '../../../core/icons/FactorioIcon';
 import {ButtonGreen} from '../../../ui/ButtonGreen';
 import {Textarea} from '../../../ui/Textarea';
 import {SignalPickerDialog} from './SignalPickerDialog';
-import {signalIdentity, signalName, signalTitle} from './upgradePlannerSignals';
+import {UpgradeMappingGrid} from './UpgradeMappingGrid';
+import {signalIdentity, signalName} from './upgradePlannerSignals';
 import {UpgradePlannerSelectorDialog, type UpgradePlannerChoice} from './UpgradePlannerSelectorDialog';
-
-interface SignalSlotProps {
-	label: string;
-	onClick?: () => void;
-	onContextMenu?: () => void;
-	signal?: SignalID;
-}
 
 interface MappingSourceDraft {
 	candidate?: UpgradeCandidate;
@@ -97,29 +91,6 @@ function upgradeTargetOptions(source: SignalID, currentTarget: SignalID): Signal
 	return [...visited].map((name) => ({...currentTarget, name}));
 }
 
-export function SignalSlot({label, onClick, onContextMenu, signal}: SignalSlotProps) {
-	return (
-		<button
-			type="button"
-			className={`transform-signal-slot${signal === undefined ? ' transform-signal-slot--empty' : ''}`}
-			aria-label={label}
-			aria-disabled={onClick === undefined}
-			title={signal === undefined ? label : signalTitle(signal)}
-			onClick={() => {
-				onClick?.();
-			}}
-			onContextMenu={(event) => {
-				if (onContextMenu !== undefined) {
-					event.preventDefault();
-					onContextMenu();
-				}
-			}}
-		>
-			{signal === undefined ? <span aria-hidden="true">+</span> : <FactorioIcon icon={signal} size="large" />}
-		</button>
-	);
-}
-
 function UpgradeMappingsEditor({
 	candidates,
 	error,
@@ -142,8 +113,6 @@ function UpgradeMappingsEditor({
 	const [targetPickerCandidate, setTargetPickerCandidate] = useState<UpgradeCandidate>();
 	const [sourcePickerCandidate, setSourcePickerCandidate] = useState<UpgradeCandidate | null>();
 	const [mappingSourceDraft, setMappingSourceDraft] = useState<MappingSourceDraft>();
-	const manualSourceKeys = new Set(manualRules.map((rule) => signalIdentity(rule.from)));
-	const visibleCandidates = candidates.filter((candidate) => !excludedSources.has(signalIdentity(candidate.from)));
 
 	return (
 		<>
@@ -180,57 +149,21 @@ function UpgradeMappingsEditor({
 						{error}
 					</p>
 				)}
-				<div className="upgrade-planner-editor__mappings" role="group" aria-label="From and To mappings">
-					{visibleCandidates.length === 0 && error === undefined ? (
-						<p className="upgrade-planner-editor__empty">No matching entities or modules in this scope.</p>
-					) : (
-						<>
-							<div className="upgrade-planner-editor__mapping-headings" aria-hidden="true">
-								<span>From</span>
-								<span />
-								<span>To</span>
-								<span>Matches</span>
-								<span />
-							</div>
-							{visibleCandidates.map((candidate) => {
-								const sourceKey = signalIdentity(candidate.from);
-								const manual = manualSourceKeys.has(sourceKey);
-								return (
-									<div key={sourceKey} className="upgrade-planner-editor__mapping">
-										<SignalSlot
-											label={`Choose source, currently ${signalName(candidate.from)}`}
-											signal={candidate.from}
-											onClick={() => {
-												setSourcePickerCandidate(candidate);
-											}}
-										/>
-										<span className="upgrade-planner-editor__arrow" aria-hidden="true">
-											→
-										</span>
-										<SignalSlot
-											label={`Choose target for ${signalName(candidate.from)}`}
-											signal={candidate.to}
-											onClick={() => {
-												setTargetPickerCandidate(candidate);
-											}}
-										/>
-										<strong>{candidate.count}</strong>
-										<button
-											type="button"
-											className="upgrade-planner-editor__remove"
-											aria-label={`Remove mapping from ${signalName(candidate.from)}`}
-											onClick={() => {
-												onRemoveRule(candidate.from, manual);
-											}}
-										>
-											×
-										</button>
-									</div>
-								);
-							})}
-						</>
-					)}
-				</div>
+				<UpgradeMappingGrid
+					candidates={candidates}
+					excludedSources={excludedSources}
+					manualRules={manualRules}
+					showEmptyState={error === undefined}
+					onRemove={(candidate, manual) => {
+						onRemoveRule(candidate.from, manual);
+					}}
+					onSourceChoose={(candidate) => {
+						setSourcePickerCandidate(candidate);
+					}}
+					onTargetChoose={(candidate) => {
+						setTargetPickerCandidate(candidate);
+					}}
+				/>
 				<button
 					type="button"
 					className="upgrade-planner-editor__add"

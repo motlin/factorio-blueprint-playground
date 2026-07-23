@@ -1603,6 +1603,13 @@ describe('TransformPanel', () => {
 			],
 		});
 
+		await user.click(screen.getByRole('button', {name: 'Choose source, currently Transport belt'}));
+		await chooseSignal(user, 'Transport belt');
+		await chooseSignal(user, 'Express transport belt');
+		expect(
+			screen.getAllByRole('button', {name: /Choose source, currently/}).map((sourceButton) => sourceButton.title),
+		).toStrictEqual(['Transport belt\nentity:transport-belt', 'Speed module\nitem:speed-module']);
+
 		await choosePlanner(user, "Bob's recent planner");
 		expect(
 			screen.getAllByRole('button', {name: /Choose source, currently/}).map((sourceButton) => ({
