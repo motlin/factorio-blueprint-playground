@@ -1255,6 +1255,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 			) : null}
 			{blueprintEditorOpen ? (
 				<BlueprintEditorDialog
+					blueprint={blueprint}
 					book={type === 'blueprint-book'}
 					bookOperationSelected={hasSelectedBookOperation}
 					breadcrumb={editorBreadcrumb}
