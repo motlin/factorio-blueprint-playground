@@ -86,6 +86,8 @@ export const BlueprintEditor: Story = {
 		await userEvent.click(canvas.getByRole('button', {name: 'Open Blueprint Editor'}));
 
 		await expect(canvas.getByRole('dialog', {name: 'Blueprint Editor'})).toHaveAttribute('aria-modal', 'true');
+		await expect(canvas.getByText('Belt test')).toHaveClass('blueprint-editor__title');
+		await expect(canvas.getByRole('button', {name: 'Edit blueprint title'})).toBeVisible();
 		await expect(canvas.queryByRole('heading', {name: 'Preview'})).not.toBeInTheDocument();
 	},
 };
