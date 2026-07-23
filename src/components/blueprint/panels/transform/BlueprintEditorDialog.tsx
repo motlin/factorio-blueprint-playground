@@ -2,6 +2,7 @@ import type {ReactNode} from 'react';
 
 import type {BlueprintFilterCategories} from '../../../../transform/strip';
 import {ButtonGreen} from '../../../ui/ButtonGreen';
+import {BlueprintEditorToolbar} from './BlueprintEditorToolbar';
 import {BlueprintTitleEditor} from './BlueprintTitleEditor';
 
 interface BlueprintEditorDialogProps {
@@ -19,6 +20,7 @@ interface BlueprintEditorDialogProps {
 	onFlattenBookSelectedChange: (selected: boolean) => void;
 	onLabelChange: (label: string) => void;
 	onModulesIncludedChange: (included: boolean) => void;
+	onOpenUpgradePlanner: () => void;
 	onSave: () => void;
 	onSortBookSelectedChange: (selected: boolean) => void;
 	onTilesIncludedChange: (included: boolean) => void;
@@ -30,6 +32,7 @@ interface BlueprintEditorDialogProps {
 	stripModulesSelected: boolean;
 	stripTilesSelected: boolean;
 	stripTrainsSelected: boolean;
+	upgradePlannerDisabled: boolean;
 }
 
 export function BlueprintEditorDialog({
@@ -47,6 +50,7 @@ export function BlueprintEditorDialog({
 	onFlattenBookSelectedChange,
 	onLabelChange,
 	onModulesIncludedChange,
+	onOpenUpgradePlanner,
 	onSave,
 	onSortBookSelectedChange,
 	onTilesIncludedChange,
@@ -58,6 +62,7 @@ export function BlueprintEditorDialog({
 	stripModulesSelected,
 	stripTilesSelected,
 	stripTrainsSelected,
+	upgradePlannerDisabled,
 }: BlueprintEditorDialogProps) {
 	const entityFilterCount = [filters.entities, filters.tiles, filters.trains].filter(Boolean).length;
 	const showEntityFilters = entityFilterCount > 1;
@@ -99,7 +104,13 @@ export function BlueprintEditorDialog({
 
 				<div className="transform-workbench__body blueprint-editor__layout">
 					<div className="panel-hole transform-workflow blueprint-editor__settings">
-						<BlueprintTitleEditor label={label} onLabelChange={onLabelChange} />
+						<div className="panel-hole-inner blueprint-editor__title-row">
+							<BlueprintTitleEditor label={label} onLabelChange={onLabelChange} />
+							<BlueprintEditorToolbar
+								disabled={upgradePlannerDisabled}
+								onOpenUpgradePlanner={onOpenUpgradePlanner}
+							/>
+						</div>
 
 						<section
 							className="transform-workflow__section blueprint-editor__icons"

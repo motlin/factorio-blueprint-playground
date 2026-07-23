@@ -24,7 +24,7 @@ export function BlueprintTitleEditor({label, onLabelChange}: BlueprintTitleEdito
 	};
 
 	return (
-		<div className="panel-hole-inner blueprint-editor__title-editor">
+		<div className="blueprint-editor__title-editor">
 			{editing ? (
 				<input
 					type="text"
@@ -52,7 +52,7 @@ export function BlueprintTitleEditor({label, onLabelChange}: BlueprintTitleEdito
 					<span className="blueprint-editor__title">{label === '' ? 'Untitled blueprint' : label}</span>
 					<button
 						type="button"
-						className="blueprint-editor__title-edit"
+						className="factorio-toolbar-button blueprint-editor__title-edit"
 						aria-label="Edit blueprint title"
 						onClick={beginEditing}
 					>
