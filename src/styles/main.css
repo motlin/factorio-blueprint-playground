@@ -1559,6 +1559,70 @@ body {
 	color: #b7b2ad;
 }
 
+.blueprint-components__grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, 42px);
+	gap: 2px;
+	margin: 0 12px 12px;
+	padding: 4px;
+	background: #242324;
+	box-shadow:
+		inset 0 2px 4px #111,
+		0 1px 0 #686868;
+	list-style: none;
+}
+
+.blueprint-components__slot {
+	position: relative;
+	display: grid;
+	box-sizing: border-box;
+	width: 42px;
+	height: 42px;
+	border: 1px solid #171717;
+	background: #414041;
+	box-shadow:
+		inset 1px 1px 1px #777,
+		inset -2px -2px 2px #1c1b1c;
+	place-items: center;
+}
+
+.blueprint-components__slot:focus-visible {
+	z-index: 1;
+	background: #555355;
+	outline: 2px solid #e39827;
+	outline-offset: -2px;
+}
+
+.blueprint-components__slot--empty {
+	background: #343334;
+	box-shadow:
+		inset 1px 1px 1px #555,
+		inset -2px -2px 2px #1c1b1c;
+}
+
+.blueprint-components__count {
+	position: absolute;
+	right: 2px;
+	bottom: 0;
+	color: #fff;
+	font-size: 14px;
+	font-weight: bold;
+	line-height: 1;
+	text-shadow:
+		-1px -1px 1px #000,
+		1px -1px 1px #000,
+		-1px 1px 1px #000,
+		1px 1px 1px #000;
+}
+
+.blueprint-components__empty {
+	margin: 0 12px 12px;
+	padding: 10px 12px;
+	background: #2f2e2f;
+	box-shadow: inset 0 2px 4px #171717;
+	color: #b7b2ad;
+}
+
 .blueprint-description-editor__field {
 	margin: 0 12px 12px;
 	padding: 3px;

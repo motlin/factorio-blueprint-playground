@@ -5,6 +5,7 @@ import type {BlueprintSnapGrid} from '../../../../transform/blueprintEditor';
 import type {BlueprintFilterCategories} from '../../../../transform/strip';
 import type {UpgradeDirection} from '../../../../transform/upgradePlanner';
 import {ButtonGreen} from '../../../ui/ButtonGreen';
+import {BlueprintComponentsGrid} from './BlueprintComponentsGrid';
 import {BlueprintDescriptionEditor} from './BlueprintDescriptionEditor';
 import {BlueprintEditorToolbar, type PlacedUpgradePlanner} from './BlueprintEditorToolbar';
 import {BlueprintSnapGridEditor} from './BlueprintSnapGridEditor';
@@ -12,6 +13,7 @@ import {BlueprintTitleEditor} from './BlueprintTitleEditor';
 import {UpgradePlannerSelectorDialog, type UpgradePlannerChoice} from './UpgradePlannerSelectorDialog';
 
 interface BlueprintEditorDialogProps {
+	blueprint: BlueprintString;
 	book: boolean;
 	bookOperationSelected: boolean;
 	breadcrumb: string;
@@ -49,6 +51,7 @@ interface BlueprintEditorDialogProps {
 }
 
 export function BlueprintEditorDialog({
+	blueprint,
 	book,
 	bookOperationSelected,
 	breadcrumb,
@@ -159,6 +162,8 @@ export function BlueprintEditorDialog({
 						{snapGrid === undefined ? null : (
 							<BlueprintSnapGridEditor settings={snapGrid} onChange={onSnapGridChange} />
 						)}
+
+						<BlueprintComponentsGrid blueprint={blueprint} />
 
 						{showFilters ? (
 							<section
