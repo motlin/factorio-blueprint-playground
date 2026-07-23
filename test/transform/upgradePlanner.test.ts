@@ -313,7 +313,7 @@ describe('upgrade planner transforms', () => {
 				],
 			},
 		};
-		const substitution = {find: 'red', replace: 'blue', matchCase: false};
+		const substitution = {find: 'red', replace: 'blue'};
 
 		expect({
 			count: analyzeMetadataSubstitution(input, substitution),

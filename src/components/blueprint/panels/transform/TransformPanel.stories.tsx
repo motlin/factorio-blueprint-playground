@@ -102,6 +102,9 @@ export const UpgradePlanner: Story = {
 				'Always applies to titles, descriptions, and label icons throughout the entire root book, regardless of the selected blueprint.',
 			),
 		).toBeVisible();
+		await expect(canvas.getByRole('group', {name: 'Text replacement'})).toBeVisible();
+		await expect(canvas.getByText('0 affected')).toBeVisible();
+		await expect(canvas.queryByRole('checkbox', {name: 'Preserve case'})).not.toBeInTheDocument();
 		await expect(canvas.queryByText('Live result')).not.toBeInTheDocument();
 		await expect(canvas.queryByRole('heading', {name: 'Preview'})).not.toBeInTheDocument();
 		await expect(canvas.queryByRole('button', {name: 'Strip quality'})).not.toBeInTheDocument();

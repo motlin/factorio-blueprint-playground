@@ -1647,13 +1647,17 @@ describe('TransformPanel', () => {
 		await chooseSignal(user, 'Signal blue');
 		await user.click(screen.getByRole('button', {name: 'Done'}));
 		await user.type(screen.getByRole('textbox', {name: 'Find'}), 'red');
-		await user.type(screen.getByRole('textbox', {name: 'Replace with'}), 'blue');
+		await user.type(screen.getByRole('textbox', {name: 'Replace'}), 'blue');
 
 		expect({
 			status: screen.getByLabelText('7 matches').getAttribute('aria-label'),
-			textReplacement: screen.getByRole<HTMLInputElement>('checkbox', {name: 'Text replacement 3'}).checked,
+			textAffected: screen.getByText('3 affected').textContent,
+			textReplacement: screen.getByRole<HTMLInputElement>('checkbox', {
+				name: 'Enable text replacement',
+			}).checked,
 		}).toStrictEqual({
 			status: '7 matches',
+			textAffected: '3 affected',
 			textReplacement: true,
 		});
 

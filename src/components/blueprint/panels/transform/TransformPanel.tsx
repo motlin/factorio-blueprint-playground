@@ -255,7 +255,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 	);
 	const upgradeReplacementCount = selectedCandidates.reduce((total, candidate) => total + candidate.count, 0);
 	const metadataSubstitution = useMemo(
-		() => ({find: metadataFind, replace: metadataReplace, matchCase: false}),
+		() => ({find: metadataFind, replace: metadataReplace}),
 		[metadataFind, metadataReplace],
 	);
 	const metadataReplacementCount = useMemo(
