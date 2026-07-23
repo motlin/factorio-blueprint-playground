@@ -22,6 +22,53 @@ function deepFreeze(value: unknown): void {
 	}
 }
 
+const nestedTrainBook: BlueprintString = {
+	blueprint_book: {
+		item: 'blueprint-book',
+		label: "Alice's rail book",
+		version: 0,
+		blueprints: [
+			{
+				index: 100,
+				blueprint_book: {
+					item: 'blueprint-book',
+					label: "Alice's rolling stock",
+					version: 0,
+					blueprints: [
+						{
+							index: 200,
+							blueprint: {
+								item: 'blueprint',
+								label: 'All rolling stock',
+								version: 0,
+								entities: [
+									{entity_number: 100, name: 'locomotive', position: {x: 0, y: 0}},
+									{entity_number: 200, name: 'cargo-wagon', position: {x: 1, y: 0}},
+									{entity_number: 300, name: 'fluid-wagon', position: {x: 2, y: 0}},
+									{entity_number: 400, name: 'artillery-wagon', position: {x: 3, y: 0}},
+									{entity_number: 500, name: 'train-stop', position: {x: 4, y: 0}},
+								],
+								schedules: [{locomotives: [100], schedule: {records: []}}],
+								wires: [[100, 1, 500, 1]],
+								tiles: [{name: 'landfill', position: {x: 0, y: 1}}],
+							},
+						},
+					],
+				},
+			},
+			{
+				index: 300,
+				blueprint: {
+					item: 'blueprint',
+					label: "Bob's factory",
+					version: 0,
+					entities: [{entity_number: 600, name: 'assembling-machine-1', position: {x: 0, y: 0}}],
+				},
+			},
+		],
+	},
+};
+
 describe('strip transforms', () => {
 	test('empty: returns empty and planner roots unchanged', () => {
 		const empty: BlueprintString = {};
@@ -144,6 +191,66 @@ describe('strip transforms', () => {
 					],
 					wires: [[10, 2, 20, 1]],
 					tiles: [{name: 'landfill', position: {x: 0, y: 0}}],
+				},
+			},
+		});
+	});
+
+	test('valid: train filters recurse through books and recognize every rolling-stock prototype', () => {
+		expect({
+			categories: blueprintFilterCategories(nestedTrainBook),
+			withoutTrains: stripTrains(nestedTrainBook),
+		}).toStrictEqual({
+			categories: {entities: true, modules: false, tiles: true, trains: true},
+			withoutTrains: {
+				blueprint_book: {
+					item: 'blueprint-book',
+					label: "Alice's rail book",
+					version: 0,
+					blueprints: [
+						{
+							index: 100,
+							blueprint_book: {
+								item: 'blueprint-book',
+								label: "Alice's rolling stock",
+								version: 0,
+								blueprints: [
+									{
+										index: 200,
+										blueprint: {
+											item: 'blueprint',
+											label: 'All rolling stock',
+											version: 0,
+											entities: [
+												{
+													entity_number: 500,
+													name: 'train-stop',
+													position: {x: 4, y: 0},
+												},
+											],
+											wires: [],
+											tiles: [{name: 'landfill', position: {x: 0, y: 1}}],
+										},
+									},
+								],
+							},
+						},
+						{
+							index: 300,
+							blueprint: {
+								item: 'blueprint',
+								label: "Bob's factory",
+								version: 0,
+								entities: [
+									{
+										entity_number: 600,
+										name: 'assembling-machine-1',
+										position: {x: 0, y: 0},
+									},
+								],
+							},
+						},
+					],
 				},
 			},
 		});
