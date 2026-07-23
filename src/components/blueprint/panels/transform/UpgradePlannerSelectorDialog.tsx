@@ -1,10 +1,12 @@
 import {useLiveQuery} from 'dexie-react-hooks';
 import {useEffect, useId, useMemo, useRef, useState} from 'react';
+import {createPortal} from 'react-dom';
 
 import {serializeBlueprint} from '../../../../parsing/blueprintParser';
 import type {BlueprintString, UpgradePlanner} from '../../../../parsing/types';
 import {findUpgradePlanners, parseUpgradePlanner, type UpgradeDirection} from '../../../../transform/upgradePlanner';
 import {db, type DatabaseBlueprint} from '../../../../storage/db';
+import {useDialogFocus} from './useDialogFocus';
 import {UpgradePlannerSelectorItem, type UpgradePlannerChoice} from './UpgradePlannerSelectorItem';
 
 export type {UpgradePlannerChoice} from './UpgradePlannerSelectorItem';
@@ -104,6 +106,10 @@ export function UpgradePlannerSelectorDialog({
 			choices.findIndex((choice) => choice.source === selectedSource),
 		),
 	);
+	const dialogReference = useDialogFocus<HTMLElement>({
+		initialFocusSelector: '.upgrade-planner-selector__tile[tabindex="0"]',
+		onClose,
+	});
 
 	useEffect(() => {
 		setActiveIndex(
@@ -123,20 +129,15 @@ export function UpgradePlannerSelectorDialog({
 		setActiveIndex(wrappedIndex);
 	};
 
-	return (
+	return createPortal(
 		<div className="transform-dialog-backdrop upgrade-planner-selector__backdrop">
 			<section
+				ref={dialogReference}
 				id={dialogId}
 				className="transform-dialog upgrade-planner-selector"
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby={headingId}
-				onKeyDown={(event) => {
-					if (event.key === 'Escape') {
-						event.stopPropagation();
-						onClose();
-					}
-				}}
 			>
 				<header className="transform-dialog__header upgrade-planner-selector__header">
 					<h3 id={headingId}>
@@ -186,6 +187,7 @@ export function UpgradePlannerSelectorDialog({
 					))}
 				</div>
 			</section>
-		</div>
+		</div>,
+		document.body,
 	);
 }

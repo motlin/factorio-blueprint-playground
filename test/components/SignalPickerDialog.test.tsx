@@ -35,6 +35,7 @@ test('groups only caller-supplied game signals and confirms a selected icon', as
 	const tabs = screen.getByRole('tablist', {name: 'Signal categories'});
 	expect({
 		activeTab: within(tabs).getByRole('tab', {name: 'Items and entities'}).getAttribute('aria-selected'),
+		initialFocusIsSearch: document.activeElement === screen.getByRole('searchbox', {name: 'Search'}),
 		confirmDisabled: screen.getByRole<HTMLButtonElement>('button', {name: 'Confirm'}).disabled,
 		tabLabels: within(tabs)
 			.getAllByRole('tab')
@@ -44,6 +45,7 @@ test('groups only caller-supplied game signals and confirms a selected icon', as
 			.map((choice) => choice.getAttribute('aria-label')),
 	}).toStrictEqual({
 		activeTab: 'true',
+		initialFocusIsSearch: true,
 		confirmDisabled: true,
 		tabLabels: ['Items and entities', 'Recipes', 'Fluids', 'Virtual signals', 'Environment', 'Other signals'],
 		visibleChoices: ['Choose Iron plate', 'Choose Transport belt'],

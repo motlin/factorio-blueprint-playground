@@ -85,6 +85,7 @@ describe('UpgradePlannerSelectorDialog', () => {
 			throw new Error('Expected selector instructions.');
 		}
 		expect({
+			activeElement: document.activeElement?.getAttribute('aria-label'),
 			heading: screen.getByRole('heading', {name: 'Load an upgrade planner'}).textContent,
 			instructions: instructions.textContent,
 			tiles: tiles.map((tile) => ({
@@ -96,6 +97,7 @@ describe('UpgradePlannerSelectorDialog', () => {
 				title: tile.title,
 			})),
 		}).toStrictEqual({
+			activeElement: 'Default Upgrade',
 			heading: 'Load an upgrade planner',
 			instructions: 'Choose a planner to copy all of its mappings into the editable draft.',
 			tiles: [
