@@ -93,6 +93,8 @@ export const UpgradePlanner: Story = {
 		await expect(canvas.getByRole('region', {name: 'Upgrade Planner configuration'})).toBeVisible();
 		await expect(canvas.getByRole('heading', {name: 'Upgrade mappings'})).toBeVisible();
 		await expect(canvas.getByRole('group', {name: 'From and To mappings'})).toBeVisible();
+		await expect(canvas.getByRole('group', {name: 'Add mapping'})).toBeVisible();
+		await expect(canvas.getByRole('button', {name: 'Choose source for new mapping'})).toBeVisible();
 		await expect(canvas.getByText('Website extension')).toBeVisible();
 		await expect(canvas.getByRole('heading', {name: 'Book-wide replacements'})).toBeVisible();
 		await expect(canvas.queryByText('Live result')).not.toBeInTheDocument();

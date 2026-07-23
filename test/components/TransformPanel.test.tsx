@@ -966,7 +966,7 @@ describe('TransformPanel', () => {
 
 		openUpgradePlanner();
 		await choosePlanner(user, 'Empty planner');
-		await user.click(screen.getByRole('button', {name: /Add mapping/}));
+		await user.click(screen.getByRole('button', {name: 'Choose source for new mapping'}));
 		await user.click(screen.getByRole('button', {name: 'Rare quality'}));
 		await user.selectOptions(screen.getByRole('combobox', {name: 'Quality comparison'}), '>');
 		await chooseSignal(user, 'Transport belt');
@@ -1004,6 +1004,152 @@ describe('TransformPanel', () => {
 		});
 	});
 
+	test('keeps an incomplete mapping row through picker cancellation until it is removed', async () => {
+		const user = userEvent.setup();
+		render(<TransformPanel blueprint={blueprint} />);
+
+		openUpgradePlanner();
+		await choosePlanner(user, 'Empty planner');
+
+		const emptySource = screen.getByRole('button', {name: 'Choose source for new mapping'});
+		const emptyTarget = screen.getByRole('button', {
+			name: 'Choose a source before choosing a target',
+		});
+		expect({
+			row: screen.getByRole('group', {name: 'Add mapping'}).textContent,
+			sourceIcon: emptySource.querySelector('img'),
+			targetDisabled: emptyTarget.getAttribute('aria-disabled'),
+			targetIcon: emptyTarget.querySelector('img'),
+		}).toStrictEqual({
+			row: '+→+—draft',
+			sourceIcon: null,
+			targetDisabled: 'true',
+			targetIcon: null,
+		});
+
+		await user.click(emptySource);
+		await user.click(screen.getByRole('button', {name: 'Close Choose source for new mapping'}));
+		expect(screen.queryByRole('dialog', {name: 'Choose source for new mapping'})).toBe(null);
+
+		await user.click(emptySource);
+		await chooseSignal(user, 'Transport belt');
+		const incompleteRow = screen.getByRole('group', {
+			name: 'Incomplete mapping from Transport belt',
+		});
+		expect({
+			source: within(incompleteRow).getByRole('button', {name: /Choose source/}).title,
+			target: within(incompleteRow).getByRole('button', {name: /Choose target/}).title,
+		}).toStrictEqual({
+			source: 'Transport belt\nentity:transport-belt',
+			target: 'Choose target for Transport belt',
+		});
+
+		await user.click(screen.getByRole('button', {name: 'Close Choose target for Transport belt'}));
+		expect({
+			committedRows: screen.queryAllByRole('listitem').length,
+			incompleteRow: screen
+				.getByRole('group', {
+					name: 'Incomplete mapping from Transport belt',
+				})
+				.getAttribute('aria-label'),
+			targetDialog: screen.queryByRole('dialog', {name: 'Choose target for Transport belt'}),
+		}).toStrictEqual({
+			committedRows: 0,
+			incompleteRow: 'Incomplete mapping from Transport belt',
+			targetDialog: null,
+		});
+
+		await user.click(screen.getByRole('button', {name: 'Choose target for Transport belt'}));
+		await user.click(screen.getByRole('button', {name: 'Close Choose target for Transport belt'}));
+		await user.click(screen.getByRole('button', {name: 'Remove incomplete mapping from Transport belt'}));
+		expect({
+			emptyRow: screen.getByRole('group', {name: 'Add mapping'}).getAttribute('aria-label'),
+			remove: screen.queryByRole('button', {name: /Remove incomplete mapping/}),
+		}).toStrictEqual({
+			emptyRow: 'Add mapping',
+			remove: null,
+		});
+	});
+
+	test('filters occupied sources and appends a manual rule without losing zero-match mappings', async () => {
+		const user = userEvent.setup();
+		const mixedBlueprint: BlueprintString = {
+			blueprint: {
+				item: 'blueprint',
+				version: 0,
+				entities: [
+					{entity_number: 1, name: 'transport-belt', position: {x: 0, y: 0}},
+					{entity_number: 2, name: 'assembling-machine-1', position: {x: 1, y: 0}},
+				],
+			},
+		};
+		render(<TransformPanel blueprint={mixedBlueprint} />);
+
+		openUpgradePlanner();
+		await choosePlanner(user, 'Paste upgrade planner…');
+		fireEvent.change(screen.getByPlaceholderText('Paste an upgrade planner string or JSON'), {
+			target: {
+				value: JSON.stringify({
+					upgrade_planner: {
+						item: 'upgrade-planner',
+						version: 0,
+						settings: {
+							mappers: [
+								{
+									index: 100,
+									from: {type: 'entity', name: 'transport-belt'},
+									to: {type: 'entity', name: 'fast-transport-belt'},
+								},
+								{
+									index: 200,
+									from: {type: 'item', name: 'speed-module'},
+									to: {type: 'item', name: 'speed-module-2'},
+								},
+							],
+						},
+					},
+				}),
+			},
+		});
+
+		await user.click(screen.getByRole('button', {name: 'Choose source for new mapping'}));
+		const sourcePicker = screen.getByRole('dialog', {name: 'Choose source for new mapping'});
+		expect(
+			within(sourcePicker)
+				.getAllByRole('button', {name: /^Choose /})
+				.map((button) => button.getAttribute('aria-label')),
+		).toStrictEqual(['Choose Assembling machine 1']);
+
+		await chooseSignal(user, 'Assembling machine 1');
+		const targetPicker = screen.getByRole('dialog', {name: 'Choose target for Assembling machine 1'});
+		expect(
+			within(targetPicker)
+				.getAllByRole('button', {name: /^Choose /})
+				.map((button) => button.getAttribute('aria-label')),
+		).toStrictEqual(['Choose Assembling machine 1', 'Choose Assembling machine 2', 'Choose Assembling machine 3']);
+		await chooseSignal(user, 'Assembling machine 2');
+
+		expect(
+			screen.getAllByRole('listitem').map((row) => ({
+				count: row.querySelector('.upgrade-mapping-grid__count')?.textContent,
+				label: row.getAttribute('aria-label'),
+			})),
+		).toStrictEqual([
+			{
+				count: '1match',
+				label: 'Mapping from Transport belt to Fast transport belt',
+			},
+			{
+				count: '0matches',
+				label: 'Mapping from Speed module to Speed module 2',
+			},
+			{
+				count: '1match',
+				label: 'Mapping from Assembling machine 1 to Assembling machine 2',
+			},
+		]);
+	});
+
 	test('uses the same entity-family constraints for new and edited mapping rows', async () => {
 		const user = userEvent.setup();
 		const mixedBlueprint: BlueprintString = {
@@ -1020,7 +1166,7 @@ describe('TransformPanel', () => {
 
 		openUpgradePlanner();
 		await choosePlanner(user, 'Empty planner');
-		await user.click(screen.getByRole('button', {name: '+ Add mapping'}));
+		await user.click(screen.getByRole('button', {name: 'Choose source for new mapping'}));
 		await chooseSignal(user, 'Transport belt');
 
 		const newTargetPicker = screen.getByRole('dialog', {name: 'Choose target for Transport belt'});
@@ -1068,13 +1214,15 @@ describe('TransformPanel', () => {
 
 		openUpgradePlanner();
 		await choosePlanner(user, 'Empty planner');
-		await user.click(screen.getByRole('button', {name: '+ Add mapping'}));
+		await user.click(screen.getByRole('button', {name: 'Choose source for new mapping'}));
 		await chooseSignal(user, 'Transport belt');
 		const confirm = screen.getByRole<HTMLButtonElement>('button', {name: 'Confirm'});
 		expect(confirm.disabled).toBe(true);
 		await user.click(screen.getByRole('button', {name: 'Rare quality'}));
+		expect(confirm.disabled).toBe(true);
+		await user.click(screen.getByRole('button', {name: 'Choose Transport belt'}));
 		expect(confirm.disabled).toBe(false);
-		await chooseSignal(user, 'Transport belt');
+		await user.click(confirm);
 
 		const row = screen.getByRole('listitem', {name: 'Mapping from Transport belt to Transport belt'});
 		expect({
@@ -1642,7 +1790,7 @@ describe('TransformPanel', () => {
 		]);
 
 		await user.click(screen.getByRole('button', {name: 'Empty planner'}));
-		await user.click(screen.getByRole('button', {name: '+ Add mapping'}));
+		await user.click(screen.getByRole('button', {name: 'Choose source for new mapping'}));
 		await chooseSignal(user, 'Transport belt');
 		await chooseSignal(user, 'Express transport belt');
 		expect(screen.getByRole('button', {name: 'Choose target for Transport belt'}).title).toBe(
