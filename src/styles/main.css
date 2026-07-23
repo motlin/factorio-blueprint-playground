@@ -657,10 +657,35 @@ body {
 	overflow: auto;
 }
 
-.transform-workbench label {
+.transform-dialog,
+.transform-dialog :where(h3, h4, p, small, strong, span, label, legend) {
 	-webkit-user-select: text;
 	-moz-user-select: text;
 	user-select: text;
+}
+
+.transform-visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+.transform-dialog input:focus-visible,
+.transform-dialog select:focus-visible,
+.transform-dialog textarea:focus-visible {
+	outline: 2px solid #e39827;
+	outline-offset: 1px;
+}
+
+.transform-dialog .checkbox-label input:focus-visible ~ .checkbox {
+	outline: 2px solid #ffe6c0;
+	outline-offset: 2px;
 }
 
 .transform-workbench__footer {
@@ -1064,6 +1089,13 @@ body {
 	color: #fff;
 }
 
+.transform-dialog__close:focus-visible,
+.icon-replacement-editor__remove:focus-visible,
+.blueprint-parameterization__remove:focus-visible {
+	outline: 2px solid #ffe6c0;
+	outline-offset: 2px;
+}
+
 .transform-dialog__actions {
 	display: flex;
 	flex: 0 0 auto;
@@ -1223,6 +1255,12 @@ body {
 
 .upgrade-planner-editor__paste {
 	padding-top: 3px;
+}
+
+.upgrade-planner-editor__paste-label {
+	display: grid;
+	gap: 4px;
+	color: #c9c4bf;
 }
 
 .upgrade-planner-editor__paste textarea {
@@ -1657,6 +1695,12 @@ body {
 	gap: 5px;
 }
 
+.blueprint-editor__title-input {
+	display: flex;
+	min-width: 0;
+	flex: 1;
+}
+
 .blueprint-editor__title {
 	min-width: 0;
 	color: #ffe6c0;
@@ -2087,6 +2131,12 @@ body {
 
 .blueprint-parameterization__secondary label {
 	white-space: nowrap;
+}
+
+.blueprint-parameterization__secondary .blueprint-parameterization__select-label {
+	display: grid;
+	gap: 4px;
+	color: #c9c4bf;
 }
 
 .blueprint-parameterization__secondary select:disabled {

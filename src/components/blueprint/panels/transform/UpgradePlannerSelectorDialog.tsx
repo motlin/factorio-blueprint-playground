@@ -147,6 +147,7 @@ export function UpgradePlannerSelectorDialog({
 						type="button"
 						className="transform-dialog__close"
 						aria-label="Close upgrade planner selector"
+						title="Close upgrade planner selector"
 						onClick={onClose}
 					>
 						×

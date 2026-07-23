@@ -91,6 +91,7 @@ export function SignalPickerDialog({
 	qualityMode,
 	title,
 }: SignalPickerDialogProps) {
+	const headingId = useId();
 	const searchId = useId();
 	const gridId = useId();
 	const optionButtons = useRef<Array<HTMLButtonElement | null>>([]);
@@ -186,10 +187,10 @@ export function SignalPickerDialog({
 				className="transform-dialog transform-dialog--picker"
 				role="dialog"
 				aria-modal="true"
-				aria-label={title}
+				aria-labelledby={headingId}
 			>
 				<header className="transform-dialog__header transform-picker__header">
-					<h3>{title}</h3>
+					<h3 id={headingId}>{title}</h3>
 					<label className="transform-picker__search" htmlFor={searchId}>
 						<span>Search</span>
 						<input
@@ -205,6 +206,7 @@ export function SignalPickerDialog({
 						type="button"
 						className="transform-dialog__close"
 						aria-label={`Close ${title}`}
+						title={`Close ${title}`}
 						onClick={() => {
 							onClose();
 						}}

@@ -59,16 +59,26 @@ describe('UpgradeQualityControls', () => {
 		await user.selectOptions(screen.getByRole('combobox', {name: 'Source quality selection'}), 'epic');
 		await user.selectOptions(screen.getByRole('combobox', {name: 'Quality comparison'}), '≤');
 
+		const qualitySelect = screen.getByRole<HTMLSelectElement>('combobox', {name: 'Source quality selection'});
+		const comparatorSelect = screen.getByRole<HTMLSelectElement>('combobox', {name: 'Quality comparison'});
 		expect({
 			comparatorChanges: onComparatorChange.mock.calls,
+			comparatorLabel: comparatorSelect.labels[0].firstElementChild?.textContent,
+			comparatorLabelElement: comparatorSelect.labels[0].tagName,
 			qualityChanges: onQualityChange.mock.calls,
+			qualityLabel: qualitySelect.labels[0].firstElementChild?.textContent,
+			qualityLabelElement: qualitySelect.labels[0].tagName,
 			qualityOptions: screen
 				.getAllByRole('option')
 				.filter((option) => option.closest('[aria-label="Source quality selection"]') !== null)
 				.map((option) => ({label: option.textContent, value: option.getAttribute('value')})),
 		}).toStrictEqual({
 			comparatorChanges: [['≤']],
+			comparatorLabel: 'Quality comparison',
+			comparatorLabelElement: 'LABEL',
 			qualityChanges: [['epic']],
+			qualityLabel: 'Source quality selection',
+			qualityLabelElement: 'LABEL',
 			qualityOptions: [
 				{label: 'Any quality', value: 'any'},
 				{label: 'Normal', value: 'normal'},

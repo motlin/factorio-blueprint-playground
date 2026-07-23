@@ -33,10 +33,18 @@ test('groups only caller-supplied game signals and confirms a selected icon', as
 	);
 
 	const tabs = screen.getByRole('tablist', {name: 'Signal categories'});
+	const dialog = screen.getByRole('dialog', {name: 'Choose test signal'});
+	const heading = screen.getByRole('heading', {name: 'Choose test signal'});
+	const search = screen.getByRole<HTMLInputElement>('searchbox', {name: 'Search'});
+	const close = screen.getByRole('button', {name: 'Close Choose test signal'});
 	expect({
 		activeTab: within(tabs).getByRole('tab', {name: 'Items and entities'}).getAttribute('aria-selected'),
-		initialFocusIsSearch: document.activeElement === screen.getByRole('searchbox', {name: 'Search'}),
+		closeTooltip: close.getAttribute('title'),
 		confirmDisabled: screen.getByRole<HTMLButtonElement>('button', {name: 'Confirm'}).disabled,
+		dialogLabelledBy: dialog.getAttribute('aria-labelledby'),
+		headingId: heading.id,
+		initialFocusIsSearch: document.activeElement === search,
+		searchLabel: search.labels?.[0]?.textContent,
 		tabLabels: within(tabs)
 			.getAllByRole('tab')
 			.map((tab) => tab.textContent),
@@ -45,8 +53,12 @@ test('groups only caller-supplied game signals and confirms a selected icon', as
 			.map((choice) => choice.getAttribute('aria-label')),
 	}).toStrictEqual({
 		activeTab: 'true',
+		closeTooltip: 'Close Choose test signal',
 		initialFocusIsSearch: true,
 		confirmDisabled: true,
+		dialogLabelledBy: heading.id,
+		headingId: heading.id,
+		searchLabel: 'Search',
 		tabLabels: ['Items and entities', 'Recipes', 'Fluids', 'Virtual signals', 'Environment', 'Other signals'],
 		visibleChoices: ['Choose Iron plate', 'Choose Transport belt'],
 	});

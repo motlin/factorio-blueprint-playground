@@ -26,27 +26,29 @@ export function BlueprintTitleEditor({label, onLabelChange}: BlueprintTitleEdito
 	return (
 		<div className="blueprint-editor__title-editor">
 			{editing ? (
-				<input
-					type="text"
-					aria-label="Blueprint title"
-					autoFocus
-					value={draftLabel}
-					onBlur={commit}
-					onChange={(event) => {
-						setDraftLabel(event.currentTarget.value);
-					}}
-					onKeyDown={(event) => {
-						if (event.key === 'Enter') {
-							event.preventDefault();
-							event.stopPropagation();
-							commit();
-						} else if (event.key === 'Escape') {
-							event.preventDefault();
-							event.stopPropagation();
-							cancel();
-						}
-					}}
-				/>
+				<label className="blueprint-editor__title-input">
+					<span className="transform-visually-hidden">Blueprint title</span>
+					<input
+						type="text"
+						autoFocus
+						value={draftLabel}
+						onBlur={commit}
+						onChange={(event) => {
+							setDraftLabel(event.currentTarget.value);
+						}}
+						onKeyDown={(event) => {
+							if (event.key === 'Enter') {
+								event.preventDefault();
+								event.stopPropagation();
+								commit();
+							} else if (event.key === 'Escape') {
+								event.preventDefault();
+								event.stopPropagation();
+								cancel();
+							}
+						}}
+					/>
+				</label>
 			) : (
 				<>
 					<span className="blueprint-editor__title">{label === '' ? 'Untitled blueprint' : label}</span>
@@ -54,6 +56,7 @@ export function BlueprintTitleEditor({label, onLabelChange}: BlueprintTitleEdito
 						type="button"
 						className="factorio-toolbar-button blueprint-editor__title-edit"
 						aria-label="Edit blueprint title"
+						title="Edit blueprint title"
 						onClick={beginEditing}
 					>
 						<Pencil size={14} aria-hidden="true" />

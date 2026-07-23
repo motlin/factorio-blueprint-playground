@@ -143,6 +143,7 @@ export function BlueprintEditorDialog({
 						type="button"
 						className="transform-dialog__close"
 						aria-label="Close Blueprint Editor"
+						title="Close Blueprint Editor"
 						onClick={onClose}
 					>
 						×
@@ -179,7 +180,7 @@ export function BlueprintEditorDialog({
 						>
 							<h4 id="blueprint-editor-icons-heading">Icon</h4>
 							<div>{icons}</div>
-							<small>Left-click to edit. Right-click to remove.</small>
+							<small>Left-click or press Enter to edit. Right-click or press Delete to remove.</small>
 						</section>
 
 						<BlueprintDescriptionEditor

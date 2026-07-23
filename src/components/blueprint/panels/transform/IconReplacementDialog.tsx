@@ -1,4 +1,4 @@
-import {useMemo, useState} from 'react';
+import {useId, useMemo, useState} from 'react';
 import {createPortal} from 'react-dom';
 
 import type {BlueprintString, SignalID} from '../../../../parsing/types';
@@ -52,6 +52,7 @@ function targetOptions(source: SignalID): SignalID[] {
 }
 
 export function IconReplacementDialog({onChange, onClose, replacements, rootBlueprint}: IconReplacementDialogProps) {
+	const headingId = useId();
 	const candidates = useMemo(() => analyzeMetadataIcons(rootBlueprint), [rootBlueprint]);
 	const [draftFrom, setDraftFrom] = useState<SignalID>();
 	const [choosingSource, setChoosingSource] = useState(false);
@@ -73,14 +74,15 @@ export function IconReplacementDialog({onChange, onClose, replacements, rootBlue
 				className="transform-dialog"
 				role="dialog"
 				aria-modal="true"
-				aria-label="Icon Replacements"
+				aria-labelledby={headingId}
 			>
 				<header className="transform-dialog__header">
-					<h3>Icon Replacements</h3>
+					<h3 id={headingId}>Icon Replacements</h3>
 					<button
 						type="button"
 						className="transform-dialog__close"
 						aria-label="Close Icon Replacements"
+						title="Close Icon Replacements"
 						onClick={onClose}
 					>
 						×
@@ -106,6 +108,7 @@ export function IconReplacementDialog({onChange, onClose, replacements, rootBlue
 									type="button"
 									className="icon-replacement-editor__remove"
 									aria-label={`Remove replacement for ${signalName(replacement.from)}`}
+									title={`Remove replacement for ${signalName(replacement.from)}`}
 									onClick={() => {
 										onChange(
 											replacements.filter(
@@ -149,6 +152,7 @@ export function IconReplacementDialog({onChange, onClose, replacements, rootBlue
 								type="button"
 								className="icon-replacement-editor__remove"
 								aria-label={`Clear source ${signalName(draftFrom)}`}
+								title={`Clear source ${signalName(draftFrom)}`}
 								onClick={() => {
 									setDraftFrom(undefined);
 								}}

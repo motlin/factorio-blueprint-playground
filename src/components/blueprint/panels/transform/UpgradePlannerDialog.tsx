@@ -126,12 +126,15 @@ function UpgradeMappingsEditor({
 				</div>
 				{source === 'pasted' ? (
 					<div className="upgrade-planner-editor__paste">
-						<Textarea
-							value={plannerInput}
-							onChange={onPlannerInputChange}
-							placeholder="Paste an upgrade planner string or JSON"
-							rows={3}
-						/>
+						<label className="upgrade-planner-editor__paste-label">
+							<span>Planner string or JSON</span>
+							<Textarea
+								value={plannerInput}
+								onChange={onPlannerInputChange}
+								placeholder="Paste an upgrade planner string or JSON"
+								rows={3}
+							/>
+						</label>
 					</div>
 				) : null}
 				{error === undefined ? null : (
@@ -357,6 +360,7 @@ export function UpgradePlannerDialog({
 						type="button"
 						className="transform-dialog__close"
 						aria-label="Close Upgrade Planner"
+						title="Close Upgrade Planner"
 						onClick={() => {
 							onClose();
 						}}
@@ -381,21 +385,23 @@ export function UpgradePlannerDialog({
 								<span>One ordered From/To configuration</span>
 							</header>
 							<div className="panel-hole-inner transform-workflow__scope">
-								<strong>Apply mappings to</strong>
-								<select
-									aria-label="Apply to"
-									value={scope}
-									onChange={(event) => {
-										onScopeChange(event.currentTarget.value === 'root' ? 'root' : 'selection');
-									}}
-								>
-									<option value="selection" disabled={selectionScopeDisabled}>
-										{selectionScopeLabel}
-									</option>
-									{canChooseRootScope || selectionScopeDisabled ? (
-										<option value="root">Entire root book</option>
-									) : null}
-								</select>
+								<label>
+									<strong>Apply mappings to</strong>
+									<select
+										aria-label="Apply to"
+										value={scope}
+										onChange={(event) => {
+											onScopeChange(event.currentTarget.value === 'root' ? 'root' : 'selection');
+										}}
+									>
+										<option value="selection" disabled={selectionScopeDisabled}>
+											{selectionScopeLabel}
+										</option>
+										{canChooseRootScope || selectionScopeDisabled ? (
+											<option value="root">Entire root book</option>
+										) : null}
+									</select>
+								</label>
 							</div>
 							<UpgradeMappingsEditor {...mappings} />
 						</section>
