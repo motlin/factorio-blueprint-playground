@@ -1,6 +1,24 @@
 import gameData from '../../../../generated/game-data.json';
 import type {SignalID, UpgradeSourceSignal} from '../../../../parsing/types';
 
+export const pickerSignals: readonly SignalID[] = gameData.pickerSignals.map(({name, type}) => {
+	switch (type) {
+		case 'achievement':
+		case 'fluid':
+		case 'item':
+		case 'item-group':
+		case 'planet':
+		case 'recipe':
+		case 'space-location':
+		case 'technology':
+		case 'tile':
+		case 'virtual':
+			return {type, name};
+		default:
+			throw new Error(`Unknown generated picker signal type: ${type}`);
+	}
+});
+
 function upgradeModuleFamily(signal: SignalID): string | undefined {
 	if (normalizedSignalType(signal) !== 'item') {
 		return undefined;
