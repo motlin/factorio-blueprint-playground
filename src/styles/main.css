@@ -1320,6 +1320,14 @@ body {
 		inset 0 -1px 1px #171717;
 }
 
+.upgrade-mapping-grid__row {
+	padding: 8px var(--transform-content-space);
+	background: #343334;
+	box-shadow:
+		inset 0 2px 4px #171717,
+		inset 0 -1px 1px #686868;
+}
+
 .upgrade-mapping-grid__endpoint {
 	display: flex;
 	min-width: 0;
@@ -1329,24 +1337,57 @@ body {
 }
 
 .upgrade-quality-controls--mapping {
-	display: grid;
-	width: 100%;
+	display: flex;
 	min-width: 0;
-	grid-template-columns: minmax(0, 1fr) auto;
-	gap: 3px;
+	align-items: center;
+	justify-content: center;
+	flex-wrap: wrap;
+	gap: 2px;
+}
+
+.upgrade-quality-controls--mapping button,
+.upgrade-quality-controls--mapping select {
+	height: 28px;
+}
+
+.upgrade-quality-controls--mapping button {
+	display: grid;
+	min-width: 28px;
+	padding: 2px;
+	border: 1px solid #171717;
+	background: #383738;
+	box-shadow:
+		inset 0 1px 1px #777,
+		inset 0 -2px 2px #181818;
+	color: #d8d4d0;
+	font: inherit;
+	place-items: center;
+	cursor: pointer;
+}
+
+.upgrade-quality-controls--mapping .upgrade-quality-controls__sentinel {
+	min-width: 76px;
+	padding-inline: 5px;
+	font-size: 65%;
+	white-space: nowrap;
 }
 
 .upgrade-quality-controls--mapping select {
-	box-sizing: border-box;
-	width: 100%;
-	min-width: 0;
-	height: 24px;
-	padding: 1px 4px;
-	font-size: 72%;
+	width: 36px;
+	min-width: 36px;
+	padding: 2px 3px;
+	font-size: 78%;
 }
 
-.upgrade-quality-controls--mapping select + select {
-	width: 42px;
+.upgrade-quality-controls--mapping button:hover,
+.upgrade-quality-controls--mapping button:focus-visible,
+.upgrade-quality-controls--mapping button[aria-pressed='true'] {
+	background: #b27824;
+	box-shadow:
+		inset 0 1px 1px #ffd37a,
+		inset 0 -2px 2px #5b320d;
+	outline: 2px solid #ffc451;
+	outline-offset: -2px;
 }
 
 .upgrade-mapping-grid__count {
@@ -1652,7 +1693,7 @@ body {
 	cursor: pointer;
 }
 
-.upgrade-quality-controls--picker button:first-child {
+.upgrade-quality-controls--picker > .upgrade-quality-controls__sentinel {
 	min-width: 120px;
 }
 
@@ -1660,6 +1701,17 @@ body {
 	min-width: 54px;
 	height: 36px;
 	padding: 4px 7px;
+}
+
+.upgrade-quality-controls--picker button:hover,
+.upgrade-quality-controls--picker button:focus-visible,
+.upgrade-quality-controls--picker button[aria-pressed='true'] {
+	background: #b27824;
+	box-shadow:
+		inset 0 1px 1px #ffd37a,
+		inset 0 -2px 2px #5b320d;
+	outline: 2px solid #ffc451;
+	outline-offset: -2px;
 }
 
 .transform-picker__footer > .button-green-right {

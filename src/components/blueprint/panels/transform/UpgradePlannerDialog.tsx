@@ -382,7 +382,6 @@ export function UpgradePlannerDialog({
 						>
 							<header className="upgrade-planner-dialog__panel-heading">
 								<h4 id={configurationHeadingId}>Upgrade mappings</h4>
-								<span>One ordered From/To configuration</span>
 							</header>
 							<div className="panel-hole-inner transform-workflow__scope">
 								<label>

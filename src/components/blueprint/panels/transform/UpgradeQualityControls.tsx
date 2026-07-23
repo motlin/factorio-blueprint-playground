@@ -17,10 +17,6 @@ interface UpgradeQualityControlsProps {
 	qualitySelection: UpgradeQualitySelection;
 }
 
-function isUpgradeQualitySelection(value: string): value is UpgradeQualitySelection {
-	return value === 'any' || value === 'preserve' || upgradeQualities.some((quality) => quality === value);
-}
-
 function isUpgradeQualityComparator(value: string): value is QualityComparator {
 	return upgradeQualityComparators.some((comparator) => comparator === value);
 }
@@ -58,6 +54,33 @@ function QualityComparatorSelect({
 	);
 }
 
+function QualityButtons({
+	onQualityChange,
+	qualitySelection,
+}: {
+	onQualityChange: (selection: UpgradeQualitySelection) => void;
+	qualitySelection: UpgradeQualitySelection;
+}) {
+	return upgradeQualities.map((quality) => {
+		const label = `${signalName({name: quality})} quality`;
+		return (
+			<button
+				type="button"
+				className="upgrade-quality-controls__quality"
+				key={quality}
+				aria-label={label}
+				aria-pressed={qualitySelection === quality}
+				title={label}
+				onClick={() => {
+					onQualityChange(quality);
+				}}
+			>
+				<FactorioIcon icon={{type: 'quality', name: quality}} size="small" />
+			</button>
+		);
+	});
+}
+
 export function UpgradeQualityControls({
 	layout,
 	mode,
@@ -83,26 +106,18 @@ export function UpgradeQualityControls({
 				role="group"
 				aria-label={`${modeLabel} quality`}
 			>
-				<label>
-					<span className="transform-visually-hidden">{modeLabel} quality selection</span>
-					<select
-						aria-label={`${modeLabel} quality selection`}
-						value={qualitySelection}
-						onChange={(event) => {
-							if (!isUpgradeQualitySelection(event.currentTarget.value)) {
-								throw new Error(`Unknown quality selection: ${event.currentTarget.value}`);
-							}
-							onQualityChange(event.currentTarget.value);
-						}}
-					>
-						<option value={sentinel}>{sentinelLabel}</option>
-						{upgradeQualities.map((quality) => (
-							<option key={quality} value={quality}>
-								{signalName({name: quality})}
-							</option>
-						))}
-					</select>
-				</label>
+				<button
+					type="button"
+					className="upgrade-quality-controls__sentinel"
+					aria-label={sentinelLabel}
+					aria-pressed={qualitySelection === sentinel}
+					title={sentinelLabel}
+					onClick={() => {
+						onQualityChange(sentinel);
+					}}
+				>
+					{sentinelLabel}
+				</button>
 				{mode === 'source' ? (
 					<QualityComparatorSelect
 						disabled={qualitySelection === 'any'}
@@ -110,6 +125,7 @@ export function UpgradeQualityControls({
 						qualityComparator={qualityComparator}
 					/>
 				) : null}
+				<QualityButtons onQualityChange={onQualityChange} qualitySelection={qualitySelection} />
 			</div>
 		);
 	}
@@ -137,20 +153,7 @@ export function UpgradeQualityControls({
 					qualityComparator={qualityComparator}
 				/>
 			) : null}
-			{upgradeQualities.map((quality) => (
-				<button
-					type="button"
-					key={quality}
-					aria-label={`${signalName({name: quality})} quality`}
-					aria-pressed={qualitySelection === quality}
-					title={`${signalName({name: quality})} quality`}
-					onClick={() => {
-						onQualityChange(quality);
-					}}
-				>
-					<FactorioIcon icon={{type: 'quality', name: quality}} size="small" />
-				</button>
-			))}
+			<QualityButtons onQualityChange={onQualityChange} qualitySelection={qualitySelection} />
 		</div>
 	);
 }
