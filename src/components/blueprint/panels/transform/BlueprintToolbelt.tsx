@@ -62,7 +62,7 @@ export function BlueprintToolbelt({
 			{blueprintEditorAvailable ? (
 				<button
 					type="button"
-					className="transform-toolbelt__button"
+					className="factorio-toolbar-button transform-toolbelt__button"
 					aria-label="Open Blueprint Editor"
 					aria-keyshortcuts="B"
 					aria-expanded={blueprintEditorOpen}
@@ -76,7 +76,7 @@ export function BlueprintToolbelt({
 			) : null}
 			<button
 				type="button"
-				className="transform-toolbelt__button"
+				className="factorio-toolbar-button transform-toolbelt__button"
 				aria-label="Open Upgrade Planner"
 				aria-keyshortcuts="U"
 				aria-expanded={upgradePlannerOpen}

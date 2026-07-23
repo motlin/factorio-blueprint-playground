@@ -170,6 +170,43 @@ describe('TransformPanel', () => {
 		});
 	});
 
+	test('opens the Upgrade Planner from the editor title toolbar without discarding a dirty draft', async () => {
+		const user = userEvent.setup();
+		render(<TransformPanel blueprint={blueprint} />);
+
+		openBlueprintEditor();
+		const upgradeButton = screen.getByRole<HTMLButtonElement>('button', {
+			name: 'Upgrade items and entities in the blueprint',
+		});
+		expect({
+			disabled: upgradeButton.disabled,
+			icon: upgradeButton.querySelector('img')?.getAttribute('src'),
+			inTitleRow: upgradeButton.closest('.blueprint-editor__title-row') !== null,
+			toolbarActions: [
+				...screen.getByRole('toolbar', {name: 'Blueprint editor actions'}).querySelectorAll('button'),
+			].map((button) => button.getAttribute('aria-label')),
+		}).toStrictEqual({
+			disabled: false,
+			icon: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
+			inTitleRow: true,
+			toolbarActions: ['Upgrade items and entities in the blueprint'],
+		});
+
+		await user.click(upgradeButton);
+		expect({
+			blueprintEditor: screen.queryByRole('dialog', {name: 'Blueprint Editor'}),
+			upgradePlanner: screen.getByRole('dialog', {name: 'Upgrade Planner'}).getAttribute('aria-modal'),
+		}).toStrictEqual({blueprintEditor: null, upgradePlanner: 'true'});
+
+		openBlueprintEditor();
+		await user.type(screen.getByRole('textbox', {name: 'Blueprint description'}), 'Draft description');
+		expect(
+			screen.getByRole<HTMLButtonElement>('button', {
+				name: 'Upgrade items and entities in the blueprint',
+			}).disabled,
+		).toBe(true);
+	});
+
 	test('opens the Factorio tools with B and U except while editing text or choosing an icon', async () => {
 		const user = userEvent.setup();
 		render(<TransformPanel blueprint={blueprint} />);

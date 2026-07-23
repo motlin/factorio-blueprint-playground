@@ -449,27 +449,78 @@ body {
 	transform: translateX(-50%);
 }
 
-.transform-toolbelt__button {
+.factorio-toolbar-button {
 	display: grid;
-	width: 48px;
-	height: 48px;
 	padding: 2px;
 	place-items: center;
-	border: 0;
-	background: #3d3c3d;
+	border: 1px solid #171717;
+	background: #454445;
 	box-shadow:
 		inset 0 1px 1px #777,
-		inset 0 -2px 2px #171717;
+		inset 0 -2px 2px #181818;
 	color: #dedbd7;
 	cursor: pointer;
 }
 
-.transform-toolbelt__button:hover,
-.transform-toolbelt__button:focus-visible,
-.transform-toolbelt__button[aria-expanded='true'] {
-	background: #4b4a4b;
+.factorio-toolbar-button:hover:not(:disabled),
+.factorio-toolbar-button:focus-visible,
+.factorio-toolbar-button[aria-expanded='true'],
+.factorio-toolbar-button[aria-pressed='true'] {
+	background: #565556;
 	outline: 2px solid #e39827;
 	outline-offset: -2px;
+}
+
+.factorio-toolbar-button:active:not(:disabled) {
+	box-shadow:
+		inset 0 2px 3px #181818,
+		inset 0 -1px 1px #777;
+	transform: translateY(1px);
+}
+
+.factorio-toolbar-button:disabled {
+	filter: grayscale(0.75);
+	opacity: 0.45;
+	cursor: default;
+}
+
+.factorio-toolbar-control {
+	position: relative;
+}
+
+.factorio-toolbar-tooltip {
+	position: absolute;
+	z-index: 20;
+	top: calc(100% + 7px);
+	right: 0;
+	width: max-content;
+	max-width: min(340px, 80vw);
+	padding: 7px 10px;
+	border: 1px solid #171717;
+	background: #191819;
+	box-shadow: 0 3px 8px rgb(0 0 0 / 65%);
+	color: #f1efed;
+	font-size: 90%;
+	font-weight: normal;
+	line-height: 1.25;
+	opacity: 0;
+	pointer-events: none;
+	text-align: left;
+	transition: opacity 80ms linear;
+	visibility: hidden;
+}
+
+.factorio-toolbar-control:hover .factorio-toolbar-tooltip,
+.factorio-toolbar-control:focus-within .factorio-toolbar-tooltip {
+	opacity: 1;
+	visibility: visible;
+}
+
+.transform-toolbelt__button {
+	width: 48px;
+	height: 48px;
+	border: 0;
+	background: #3d3c3d;
 }
 
 .transform-workbench-backdrop {
@@ -1115,12 +1166,20 @@ body {
 	padding: 4px 7px;
 }
 
-.blueprint-editor__title-editor {
+.blueprint-editor__title-row {
 	display: flex;
 	align-items: center;
 	min-height: 30px;
+	gap: 8px;
+	padding: 6px 8px 6px 12px;
+}
+
+.blueprint-editor__title-editor {
+	display: flex;
+	min-width: 0;
+	flex: 1;
+	align-items: center;
 	gap: 5px;
-	padding: 10px 12px;
 }
 
 .blueprint-editor__title {
@@ -1138,25 +1197,20 @@ body {
 }
 
 .blueprint-editor__title-edit {
-	display: grid;
 	width: 24px;
 	height: 24px;
 	padding: 4px;
-	border: 1px solid #171717;
-	background: #454445;
-	box-shadow:
-		inset 0 1px 1px #777,
-		inset 0 -2px 2px #181818;
-	color: #d8d4d0;
-	place-items: center;
-	cursor: pointer;
 }
 
-.blueprint-editor__title-edit:hover,
-.blueprint-editor__title-edit:focus-visible {
-	background: #5a595a;
-	outline: 2px solid #e39827;
-	outline-offset: -2px;
+.blueprint-editor-toolbar {
+	display: flex;
+	flex: 0 0 auto;
+	align-items: center;
+}
+
+.blueprint-editor-toolbar__button {
+	width: 36px;
+	height: 36px;
 }
 
 .blueprint-editor__icons > div {
