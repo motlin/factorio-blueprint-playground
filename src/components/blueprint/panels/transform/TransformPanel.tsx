@@ -47,6 +47,7 @@ import {FactorioIcon} from '../../../core/icons/FactorioIcon';
 import {ButtonGreen} from '../../../ui/ButtonGreen';
 import {Textarea} from '../../../ui/Textarea';
 import {BlueprintEditorDialog} from './BlueprintEditorDialog';
+import {BlueprintToolbelt} from './BlueprintToolbelt';
 
 interface TransformPanelProps {
 	blueprint?: BlueprintString;
@@ -793,46 +794,6 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 				: nextIcons,
 		);
 	}, [blueprint, selectedPath]);
-	useEffect(() => {
-		const openTool = (event: KeyboardEvent) => {
-			if (!event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
-				return;
-			}
-			if (isTextEditingTarget(event.target)) {
-				return;
-			}
-			if (event.code === 'KeyB' && type !== 'upgrade-planner') {
-				event.preventDefault();
-				if (blueprint?.blueprint !== undefined || blueprint?.blueprint_book !== undefined) {
-					const metadata = blueprintEditorMetadata(blueprint);
-					setEditorLabel(metadata.label);
-					setEditorDescription(metadata.description);
-					setEditorIcons(
-						[...metadata.icons].sort((left, right) => left.index - right.index).map((icon) => icon.signal),
-					);
-				}
-				setStripEntitiesSelected(false);
-				setStripModulesSelected(false);
-				setStripTrainsSelected(false);
-				setStripTilesSelected(false);
-				setFlattenBookSelected(false);
-				setSortBookSelected(false);
-				setUpgradePlannerOpen(false);
-				setBlueprintEditorEnabled(true);
-				setBlueprintEditorOpen(true);
-			} else if (event.code === 'KeyU') {
-				event.preventDefault();
-				setBlueprintEditorOpen(false);
-				setUpgradeEnabled(true);
-				setUpgradeDraftChanged(false);
-				setUpgradePlannerOpen(true);
-			}
-		};
-		window.addEventListener('keydown', openTool);
-		return () => {
-			window.removeEventListener('keydown', openTool);
-		};
-	}, [blueprint, type]);
 	const transformTarget = upgradeScope === 'root' ? rootBlueprint : blueprint;
 	const resolvedRules = useMemo(
 		() => resolveRules(upgradeSource, 'upgrade', plannerInput, planners),
@@ -1043,6 +1004,12 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 		setBlueprintEditorEnabled(true);
 		setBlueprintEditorOpen(true);
 	};
+	const openUpgradePlanner = () => {
+		setBlueprintEditorOpen(false);
+		setUpgradeEnabled(true);
+		setUpgradeDraftChanged(false);
+		setUpgradePlannerOpen(true);
+	};
 	const requestCloseBlueprintEditor = () => {
 		if (editorDirty) {
 			setDiscardConfirmation('blueprint');
@@ -1107,47 +1074,13 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 
 	return (
 		<>
-			<div className="transform-toolbelt" role="toolbar" aria-label="Blueprint tools">
-				{type === 'upgrade-planner' ? null : (
-					<button
-						type="button"
-						className="transform-toolbelt__button"
-						aria-label="Open Blueprint Editor"
-						aria-expanded={blueprintEditorOpen}
-						title="Blueprint editor (Alt+B)"
-						onClick={() => {
-							openBlueprintEditor();
-						}}
-					>
-						<span className="transform-toolbelt__icon">
-							<FactorioIcon icon={{type: 'item', name: 'blueprint'}} size="large" />
-						</span>
-						<span>
-							Blueprint editor <kbd>Alt+B</kbd>
-						</span>
-					</button>
-				)}
-				<button
-					type="button"
-					className="transform-toolbelt__button"
-					aria-label="Open Upgrade Planner"
-					aria-expanded={upgradePlannerOpen}
-					title="Upgrade planner (Alt+U)"
-					onClick={() => {
-						setBlueprintEditorOpen(false);
-						setUpgradeEnabled(true);
-						setUpgradeDraftChanged(false);
-						setUpgradePlannerOpen(true);
-					}}
-				>
-					<span className="transform-toolbelt__icon">
-						<FactorioIcon icon={{type: 'item', name: 'upgrade-planner'}} size="large" />
-					</span>
-					<span>
-						Upgrade planner <kbd>Alt+U</kbd>
-					</span>
-				</button>
-			</div>
+			<BlueprintToolbelt
+				blueprintEditorAvailable={type !== 'upgrade-planner'}
+				blueprintEditorOpen={blueprintEditorOpen}
+				onOpenBlueprintEditor={openBlueprintEditor}
+				onOpenUpgradePlanner={openUpgradePlanner}
+				upgradePlannerOpen={upgradePlannerOpen}
+			/>
 
 			{upgradePlannerOpen ? (
 				<div className="transform-dialog-backdrop transform-workbench-backdrop">
