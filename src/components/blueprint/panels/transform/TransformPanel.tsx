@@ -10,12 +10,10 @@ import {updateNestedBlueprint} from '../../../../transform/applyAtPath';
 import {blueprintComponentRemovalKey, type BlueprintComponentIdentity} from '../../../../transform/componentRemoval';
 import {
 	analyzeIconReplacements,
-	analyzeMetadataIcons,
 	analyzeMetadataSubstitution,
 	applyIconReplacements,
 	applyMetadataSubstitution,
 	type IconReplacement,
-	type MetadataIconCandidate,
 } from '../../../../transform/metadataSubstitution';
 import {blueprintFilterCategories} from '../../../../transform/strip';
 import {
@@ -27,14 +25,13 @@ import {
 	type UpgradeDirection,
 	type UpgradeRule,
 } from '../../../../transform/upgradePlanner';
-import {ButtonGreen} from '../../../ui/ButtonGreen';
 import {BlueprintEditorDialog} from './BlueprintEditorDialog';
 import {BlueprintLabelIcons} from './BlueprintLabelIcons';
 import {BlueprintToolbelt} from './BlueprintToolbelt';
+import {IconReplacementDialog} from './IconReplacementDialog';
 import {SignalPickerDialog} from './SignalPickerDialog';
-import {SignalSlot} from './UpgradeMappingRow';
 import {UpgradePlannerDialog} from './UpgradePlannerDialog';
-import {normalizedSignalType, signalIdentity, signalName, signalTitle} from './upgradePlannerSignals';
+import {normalizedSignalType, pickerSignals, signalIdentity, signalTitle} from './upgradePlannerSignals';
 import {useBlueprintEditorDraft} from './useBlueprintEditorDraft';
 import type {UpgradePlannerChoice} from './UpgradePlannerSelectorDialog';
 
@@ -48,32 +45,6 @@ interface ResolvedRules {
 	error: string | undefined;
 	rules: UpgradeRule[];
 }
-
-interface IconReplacementDialogProps {
-	candidates: MetadataIconCandidate[];
-	onChange: (replacements: IconReplacement[]) => void;
-	onClose: () => void;
-	replacements: IconReplacement[];
-}
-
-const virtualSignals: SignalID[] = gameData.virtualSignals.map((name) => ({type: 'virtual', name}));
-const pickerSignals: SignalID[] = gameData.pickerSignals.map(({name, type}) => {
-	switch (type) {
-		case 'achievement':
-		case 'fluid':
-		case 'item':
-		case 'item-group':
-		case 'planet':
-		case 'recipe':
-		case 'space-location':
-		case 'technology':
-		case 'tile':
-		case 'virtual':
-			return {type, name};
-		default:
-			throw new Error(`Unknown generated picker signal type: ${type}`);
-	}
-});
 
 interface UpgradeTargetOverride {
 	preserveQuality: boolean;
@@ -141,151 +112,6 @@ function reverseUpgradeRule(rule: UpgradeRule): UpgradeRule {
 		preserveQuality: rule.preserveQuality,
 		to: target,
 	};
-}
-
-function IconReplacementDialog({candidates, onChange, onClose, replacements}: IconReplacementDialogProps) {
-	const availableCandidates = candidates.filter(
-		(candidate) =>
-			!replacements.some((replacement) => signalIdentity(replacement.from) === signalIdentity(candidate.signal)),
-	);
-	const [draftFrom, setDraftFrom] = useState<SignalID>();
-	const [choosingSource, setChoosingSource] = useState(false);
-	const [choosingTarget, setChoosingTarget] = useState(false);
-	const draftCount = candidates.find(
-		(candidate) => draftFrom !== undefined && signalIdentity(candidate.signal) === signalIdentity(draftFrom),
-	)?.count;
-	const targetOptions =
-		draftFrom === undefined
-			? []
-			: normalizedSignalType(draftFrom) === 'virtual'
-				? virtualSignals.filter((signal) => signalIdentity(signal) !== signalIdentity(draftFrom))
-				: candidates
-						.map((candidate) => candidate.signal)
-						.filter(
-							(signal) =>
-								normalizedSignalType(signal) === normalizedSignalType(draftFrom) &&
-								signalIdentity(signal) !== signalIdentity(draftFrom),
-						);
-	return (
-		<div className="transform-dialog-backdrop">
-			<section className="transform-dialog" role="dialog" aria-modal="true" aria-label="Icon Replacements">
-				<header className="transform-dialog__header">
-					<h3>Icon Replacements</h3>
-					<button
-						type="button"
-						className="transform-dialog__close"
-						aria-label="Close Icon Replacements"
-						onClick={onClose}
-					>
-						×
-					</button>
-				</header>
-				<div className="panel-hole icon-replacement-editor">
-					<div className="icon-replacement-editor__mappings">
-						{replacements.map((replacement) => (
-							<div key={signalIdentity(replacement.from)} className="icon-replacement-editor__mapping">
-								<SignalSlot
-									label={`Source ${signalName(replacement.from)}`}
-									signal={replacement.from}
-								/>
-								<span aria-hidden="true">→</span>
-								<SignalSlot label={`Target ${signalName(replacement.to)}`} signal={replacement.to} />
-								<strong>
-									{candidates.find(
-										(candidate) =>
-											signalIdentity(candidate.signal) === signalIdentity(replacement.from),
-									)?.count ?? 0}
-								</strong>
-								<button
-									type="button"
-									className="icon-replacement-editor__remove"
-									aria-label={`Remove replacement for ${signalName(replacement.from)}`}
-									onClick={() => {
-										onChange(
-											replacements.filter(
-												(candidate) =>
-													signalIdentity(candidate.from) !== signalIdentity(replacement.from),
-											),
-										);
-									}}
-								>
-									×
-								</button>
-							</div>
-						))}
-					</div>
-					<div className="panel-hole-inner icon-replacement-editor__add">
-						<SignalSlot
-							label="Choose source icon"
-							signal={draftFrom}
-							onClick={() => {
-								setChoosingSource(true);
-							}}
-						/>
-						<span aria-hidden="true">→</span>
-						<SignalSlot
-							label="Choose target icon"
-							onClick={
-								draftFrom === undefined
-									? undefined
-									: () => {
-											setChoosingTarget(true);
-										}
-							}
-						/>
-						<strong>{draftCount ?? 0}</strong>
-						{draftFrom === undefined ? (
-							<span aria-hidden="true" />
-						) : (
-							<button
-								type="button"
-								className="icon-replacement-editor__remove"
-								aria-label={`Clear source ${signalName(draftFrom)}`}
-								onClick={() => {
-									setDraftFrom(undefined);
-								}}
-							>
-								×
-							</button>
-						)}
-					</div>
-				</div>
-				<div className="transform-dialog__actions">
-					<ButtonGreen onClick={onClose}>Done</ButtonGreen>
-				</div>
-			</section>
-			{choosingSource ? (
-				<SignalPickerDialog
-					title="Choose source icon used here"
-					options={availableCandidates.map((candidate) => candidate.signal)}
-					onClose={() => {
-						setChoosingSource(false);
-					}}
-					onChoose={(signal) => {
-						setDraftFrom(signal);
-						setChoosingSource(false);
-					}}
-				/>
-			) : null}
-			{choosingTarget ? (
-				<SignalPickerDialog
-					title="Choose target icon"
-					options={targetOptions}
-					onClose={() => {
-						setChoosingTarget(false);
-					}}
-					onChoose={(signal) => {
-						if (draftFrom === undefined) {
-							throw new Error('An icon replacement requires a source signal.');
-						}
-						onChange([...replacements, {from: draftFrom, to: signal}]);
-						setDraftFrom(undefined);
-						setChoosingTarget(false);
-					}}
-				/>
-			) : null}
-		</div>
-	);
 }
 
 export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPath = ''}: TransformPanelProps) {
@@ -438,10 +264,6 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 				? 0
 				: analyzeMetadataSubstitution(rootBlueprint, metadataSubstitution),
 		[rootBlueprint, metadataFind, metadataSubstitution],
-	);
-	const metadataIconCandidates = useMemo(
-		() => (rootBlueprint === undefined ? [] : analyzeMetadataIcons(rootBlueprint)),
-		[rootBlueprint],
 	);
 	const iconReplacementCount = useMemo(
 		() =>
@@ -909,7 +731,6 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 			)}
 			{iconReplacementOpen ? (
 				<IconReplacementDialog
-					candidates={metadataIconCandidates}
 					onChange={(replacements) => {
 						setUpgradeDraftChanged(true);
 						setIconReplacements(replacements);
@@ -918,6 +739,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 						setIconReplacementOpen(false);
 					}}
 					replacements={iconReplacements}
+					rootBlueprint={rootBlueprint ?? blueprint}
 				/>
 			) : null}
 		</>

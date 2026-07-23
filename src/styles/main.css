@@ -1360,9 +1360,41 @@ body {
 	text-align: center;
 }
 
+.icon-replacement-editor__endpoint {
+	position: relative;
+	display: grid;
+	justify-items: center;
+}
+
+.icon-replacement-editor__name {
+	position: absolute;
+	z-index: 1;
+	bottom: calc(100% + 4px);
+	left: 50%;
+	width: max-content;
+	max-width: 190px;
+	padding: 4px 7px;
+	translate: -50% 2px;
+	border: 1px solid #171717;
+	background: #292829;
+	box-shadow: 0 2px 5px #111;
+	color: #ffe6c0;
+	font-size: 12px;
+	line-height: 1.2;
+	opacity: 0;
+	pointer-events: none;
+	visibility: hidden;
+}
+
+.icon-replacement-editor__endpoint:hover .icon-replacement-editor__name,
+.icon-replacement-editor__endpoint:focus-within .icon-replacement-editor__name {
+	translate: -50% 0;
+	opacity: 1;
+	visibility: visible;
+}
+
 .upgrade-mapping-grid__arrow,
-.icon-replacement-editor__mapping > span,
-.icon-replacement-editor__add span {
+.icon-replacement-editor__arrow {
 	font-size: 24px;
 	text-align: center;
 }
