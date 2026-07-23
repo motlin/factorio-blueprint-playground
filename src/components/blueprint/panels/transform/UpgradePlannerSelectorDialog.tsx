@@ -5,13 +5,9 @@ import {serializeBlueprint} from '../../../../parsing/blueprintParser';
 import type {BlueprintString, UpgradePlanner} from '../../../../parsing/types';
 import {findUpgradePlanners, parseUpgradePlanner, type UpgradeDirection} from '../../../../transform/upgradePlanner';
 import {db, type DatabaseBlueprint} from '../../../../storage/db';
-import {FactorioIcon} from '../../../core/icons/FactorioIcon';
+import {UpgradePlannerSelectorItem, type UpgradePlannerChoice} from './UpgradePlannerSelectorItem';
 
-export interface UpgradePlannerChoice {
-	label: string;
-	planner?: UpgradePlanner;
-	source: string;
-}
+export type {UpgradePlannerChoice} from './UpgradePlannerSelectorItem';
 
 interface UpgradePlannerSelectorDialogProps {
 	dialogId: string;
@@ -76,6 +72,7 @@ export function UpgradePlannerSelectorDialog({
 	selectedSource,
 }: UpgradePlannerSelectorDialogProps) {
 	const headingId = useId();
+	const instructionsId = useId();
 	const buttonReferences = useRef<Array<HTMLButtonElement | null>>([]);
 	const historyBlueprints = useLiveQuery(
 		async () =>
@@ -145,53 +142,31 @@ export function UpgradePlannerSelectorDialog({
 						×
 					</button>
 				</header>
-				<p className="upgrade-planner-selector__hint">
-					<span>Click</span> to apply as upgrade. <span>Right-click</span> to apply as downgrade.
+				<p id={instructionsId} className="upgrade-planner-selector__hint">
+					<span>Left-click</span> to apply as upgrade. <span>Right-click</span> to apply as downgrade. Enter
+					applies as upgrade; Shift+Enter applies as downgrade.
 				</p>
 				<div className="upgrade-planner-selector__grid" role="grid" aria-label="Upgrade planners">
 					{choices.map((choice, index) => (
-						<button
+						<UpgradePlannerSelectorItem
 							key={choice.source}
-							ref={(button) => {
+							active={index === activeIndex}
+							buttonRef={(button) => {
 								buttonReferences.current[index] = button;
 							}}
-							type="button"
-							className="upgrade-planner-selector__tile"
-							aria-label={choice.label}
-							aria-pressed={choice.source === selectedSource}
-							tabIndex={index === activeIndex ? 0 : -1}
-							title={choice.label}
-							onClick={() => {
-								onChoose(choice, 'upgrade');
-							}}
-							onContextMenu={(event) => {
-								event.preventDefault();
-								onChoose(choice, 'downgrade');
+							choice={choice}
+							choiceCount={choices.length}
+							index={index}
+							instructionsId={instructionsId}
+							onApply={(direction) => {
+								onChoose(choice, direction);
 							}}
 							onFocus={() => {
 								setActiveIndex(index);
 							}}
-							onKeyDown={(event) => {
-								if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
-									event.preventDefault();
-									moveFocus(index + 1);
-								} else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
-									event.preventDefault();
-									moveFocus(index - 1);
-								} else if (event.key === 'Home') {
-									event.preventDefault();
-									moveFocus(0);
-								} else if (event.key === 'End') {
-									event.preventDefault();
-									moveFocus(choices.length - 1);
-								}
-							}}
-						>
-							<span className="upgrade-planner-selector__icon" aria-hidden="true">
-								<FactorioIcon icon={{type: 'item', name: 'upgrade-planner'}} size="large" />
-							</span>
-							<span>{choice.label}</span>
-						</button>
+							onMoveFocus={moveFocus}
+							selected={choice.source === selectedSource}
+						/>
 					))}
 				</div>
 			</section>

@@ -4,7 +4,7 @@ import {beforeEach, describe, expect, test, vi} from 'vite-plus/test';
 
 import {TransformPanel} from '../../src/components/blueprint/panels/transform/TransformPanel';
 import {serializeBlueprint} from '../../src/parsing/blueprintParser';
-import type {BlueprintString} from '../../src/parsing/types';
+import type {BlueprintString, BlueprintStringWithIndex} from '../../src/parsing/types';
 import {stripTiles, stripTrains} from '../../src/transform/strip';
 import {applyUpgradeRules, builtInUpgradeRules} from '../../src/transform/upgradePlanner';
 
@@ -235,7 +235,7 @@ describe('TransformPanel', () => {
 				.getAttribute('aria-modal'),
 		}).toStrictEqual({description: 'Draft description', disabled: false, expanded: 'true', selector: 'true'});
 
-		await user.click(screen.getByRole('button', {name: 'Default Upgrade'}));
+		await user.click(screen.getByRole('button', {name: /Default Upgrade/}));
 		expect(navigate).toHaveBeenCalledExactlyOnceWith({
 			to: '/',
 			search: {
@@ -251,6 +251,91 @@ describe('TransformPanel', () => {
 			},
 		});
 	});
+
+	test.each([
+		{direction: 'upgrade', expectedEntity: 'fast-transport-belt', startingEntity: 'transport-belt'},
+		{direction: 'downgrade', expectedEntity: 'transport-belt', startingEntity: 'fast-transport-belt'},
+	])(
+		'applies a $direction gesture to the selected child and closes the editor',
+		async ({direction, expectedEntity, startingEntity}) => {
+			const user = userEvent.setup();
+			const selectedChild: BlueprintStringWithIndex = {
+				index: 100,
+				blueprint: {
+					item: 'blueprint',
+					version: 0,
+					entities: [{entity_number: 1, name: startingEntity, position: {x: 0, y: 0}}],
+				},
+			};
+			const untouchedChild: BlueprintStringWithIndex = {
+				index: 200,
+				blueprint: {
+					item: 'blueprint',
+					version: 0,
+					entities: [{entity_number: 1, name: 'assembling-machine-1', position: {x: 0, y: 0}}],
+				},
+			};
+			const rootBook: BlueprintString = {
+				blueprint_book: {
+					item: 'blueprint-book',
+					version: 0,
+					blueprints: [selectedChild, untouchedChild],
+				},
+			};
+			render(<TransformPanel blueprint={selectedChild} rootBlueprint={rootBook} selectedPath="1" />);
+
+			openBlueprintEditor();
+			await user.click(screen.getByRole('button', {name: 'Upgrade items and entities in the blueprint'}));
+			const planner = screen.getByRole('button', {name: /Default Upgrade/});
+			if (direction === 'upgrade') {
+				await user.click(planner);
+			} else {
+				planner.focus();
+				await user.keyboard('{Shift>}{Enter}{/Shift}');
+			}
+
+			expect({
+				blueprintEditor: screen.queryByRole('dialog', {name: 'Blueprint Editor'}),
+				navigation: navigate.mock.calls,
+				selector: screen.queryByRole('dialog', {name: 'Select the upgrade planner to apply'}),
+			}).toStrictEqual({
+				blueprintEditor: null,
+				navigation: [
+					[
+						{
+							to: '/',
+							search: {
+								pasted: serializeBlueprint({
+									blueprint_book: {
+										item: 'blueprint-book',
+										version: 0,
+										blueprints: [
+											{
+												...selectedChild,
+												blueprint: {
+													...selectedChild.blueprint!,
+													entities: [
+														{
+															entity_number: 1,
+															name: expectedEntity,
+															position: {x: 0, y: 0},
+														},
+													],
+												},
+											},
+											untouchedChild,
+										],
+									},
+								}),
+								selection: '1',
+							},
+						},
+					],
+				],
+				selector: null,
+			});
+		},
+	);
 
 	test('opens the Factorio tools with B and U except while editing text or choosing an icon', async () => {
 		const user = userEvent.setup();

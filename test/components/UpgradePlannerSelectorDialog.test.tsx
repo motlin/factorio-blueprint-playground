@@ -80,40 +80,53 @@ describe('UpgradePlannerSelectorDialog', () => {
 		);
 
 		const tiles = within(screen.getByRole('grid', {name: 'Upgrade planners'})).getAllByRole('button');
-		expect(
-			tiles.map((tile) => ({
+		const instructions = document.getElementById(tiles[0].getAttribute('aria-describedby') ?? '');
+		if (instructions === null) {
+			throw new Error('Expected selector instructions.');
+		}
+		expect({
+			instructions: instructions.textContent,
+			tiles: tiles.map((tile) => ({
+				describedBy: tile.getAttribute('aria-describedby'),
 				icon: tile.querySelector('img')?.getAttribute('src'),
 				label: tile.getAttribute('aria-label'),
 				pressed: tile.getAttribute('aria-pressed'),
 				tabIndex: tile.tabIndex,
 				title: tile.title,
 			})),
-		).toStrictEqual([
-			{
-				icon: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
-				label: 'Default Upgrade',
-				pressed: 'true',
-				tabIndex: 0,
-				title: 'Default Upgrade',
-			},
-			{
-				icon: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
-				label: "Alice's fixture belt upgrades",
-				pressed: 'false',
-				tabIndex: -1,
-				title: "Alice's fixture belt upgrades",
-			},
-			{
-				icon: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
-				label: 'Zero-match module planner',
-				pressed: 'false',
-				tabIndex: -1,
-				title: 'Zero-match module planner',
-			},
-		]);
+		}).toStrictEqual({
+			instructions:
+				'Left-click to apply as upgrade. Right-click to apply as downgrade. Enter applies as upgrade; Shift+Enter applies as downgrade.',
+			tiles: [
+				{
+					describedBy: instructions.id,
+					icon: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
+					label: 'Default Upgrade',
+					pressed: 'true',
+					tabIndex: 0,
+					title: 'Default Upgrade',
+				},
+				{
+					describedBy: instructions.id,
+					icon: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
+					label: "Alice's fixture belt upgrades",
+					pressed: 'false',
+					tabIndex: -1,
+					title: "Alice's fixture belt upgrades",
+				},
+				{
+					describedBy: instructions.id,
+					icon: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
+					label: 'Zero-match module planner',
+					pressed: 'false',
+					tabIndex: -1,
+					title: 'Zero-match module planner',
+				},
+			],
+		});
 	});
 
-	test('supports arrow-key upgrade selection and context-click downgrade selection', async () => {
+	test('applies pointer and keyboard gestures in their exact directions', async () => {
 		const user = userEvent.setup();
 		const onChoose = vi.fn<(choice: UpgradePlannerChoice, direction: UpgradeDirection) => void>();
 		render(
@@ -127,26 +140,47 @@ describe('UpgradePlannerSelectorDialog', () => {
 			/>,
 		);
 
-		await user.keyboard('{ArrowRight}{Enter}');
-		fireEvent.contextMenu(screen.getByRole('button', {name: 'Zero-match module planner'}));
+		const defaultPlanner = screen.getByRole('button', {name: /Default Upgrade/});
+		const fixturePlannerButton = screen.getByRole('button', {name: /Alice's fixture belt upgrades/});
+		const zeroMatchPlannerButton = screen.getByRole('button', {name: /Zero-match module planner/});
+		await user.click(defaultPlanner);
+		const contextMenuAllowed = fireEvent.contextMenu(fixturePlannerButton);
+		zeroMatchPlannerButton.focus();
+		await user.keyboard('{Enter}');
+		await user.keyboard('{Shift>}{Enter}{/Shift}');
 
-		expect(onChoose.mock.calls).toStrictEqual([
-			[
-				{
-					label: "Alice's fixture belt upgrades",
-					planner: fixturePlanner,
-					source: 'book:1',
-				},
-				'upgrade',
+		expect({
+			contextMenuAllowed,
+			selections: onChoose.mock.calls,
+		}).toStrictEqual({
+			contextMenuAllowed: false,
+			selections: [
+				[{label: 'Default Upgrade', source: 'suggested'}, 'upgrade'],
+				[
+					{
+						label: "Alice's fixture belt upgrades",
+						planner: fixturePlanner,
+						source: 'book:1',
+					},
+					'downgrade',
+				],
+				[
+					{
+						label: 'Zero-match module planner',
+						planner: zeroMatchPlanner,
+						source: 'history:sha-200',
+					},
+					'upgrade',
+				],
+				[
+					{
+						label: 'Zero-match module planner',
+						planner: zeroMatchPlanner,
+						source: 'history:sha-200',
+					},
+					'downgrade',
+				],
 			],
-			[
-				{
-					label: 'Zero-match module planner',
-					planner: zeroMatchPlanner,
-					source: 'history:sha-200',
-				},
-				'downgrade',
-			],
-		]);
+		});
 	});
 });
