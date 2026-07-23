@@ -1,4 +1,4 @@
-import {render, screen} from '@testing-library/react';
+import {render, screen, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {beforeEach, expect, test, vi} from 'vite-plus/test';
 
@@ -31,9 +31,12 @@ test('saves an edited root blueprint for export and preserves the root selection
 	};
 	const {rerender} = render(
 		<BlueprintEditorActions
+			closeConfirmationOpen={false}
 			dirty={false}
 			draftBlueprint={rootBlueprint}
 			onClose={onClose}
+			onDiscard={vi.fn<() => void>()}
+			onKeepEditing={vi.fn<() => void>()}
 			onSaved={onSaved}
 			rootBlueprint={rootBlueprint}
 			selectedPath=""
@@ -54,8 +57,11 @@ test('saves an edited root blueprint for export and preserves the root selection
 	});
 	rerender(
 		<BlueprintEditorActions
+			closeConfirmationOpen={false}
 			dirty
 			onClose={onClose}
+			onDiscard={vi.fn<() => void>()}
+			onKeepEditing={vi.fn<() => void>()}
 			onSaved={onSaved}
 			rootBlueprint={rootBlueprint}
 			selectedPath=""
@@ -68,9 +74,12 @@ test('saves an edited root blueprint for export and preserves the root selection
 
 	rerender(
 		<BlueprintEditorActions
+			closeConfirmationOpen={false}
 			dirty
 			draftBlueprint={draftBlueprint}
 			onClose={onClose}
+			onDiscard={vi.fn<() => void>()}
+			onKeepEditing={vi.fn<() => void>()}
 			onSaved={onSaved}
 			rootBlueprint={rootBlueprint}
 			selectedPath=""
@@ -126,9 +135,12 @@ test('writes an edited child into the entire book and preserves the nested selec
 	};
 	render(
 		<BlueprintEditorActions
+			closeConfirmationOpen={false}
 			dirty
 			draftBlueprint={draftBlueprint}
 			onClose={vi.fn<() => void>()}
+			onDiscard={vi.fn<() => void>()}
+			onKeepEditing={vi.fn<() => void>()}
 			onSaved={onSaved}
 			rootBlueprint={rootBlueprint}
 			selectedPath="1"
@@ -157,5 +169,61 @@ test('writes an edited child into the entire book and preserves the nested selec
 			],
 		],
 		onSaved: [[savedRoot]],
+	});
+});
+
+test('offers every dirty-close choice and saves the same root draft from the confirmation', async () => {
+	const user = userEvent.setup();
+	const onDiscard = vi.fn<() => void>();
+	const onKeepEditing = vi.fn<() => void>();
+	const onSaved = vi.fn<(savedRoot: BlueprintString) => void>();
+	const rootBlueprint: BlueprintString = {
+		blueprint: {item: 'blueprint', label: 'Alice', version: 0},
+	};
+	const draftBlueprint: BlueprintString = {
+		blueprint: {item: 'blueprint', label: 'Bob', version: 0},
+	};
+	render(
+		<BlueprintEditorActions
+			closeConfirmationOpen
+			dirty
+			draftBlueprint={draftBlueprint}
+			onClose={vi.fn<() => void>()}
+			onDiscard={onDiscard}
+			onKeepEditing={onKeepEditing}
+			onSaved={onSaved}
+			rootBlueprint={rootBlueprint}
+			selectedPath=""
+		/>,
+	);
+
+	const confirmation = screen.getByRole('alertdialog', {name: 'Discard unsaved changes?'});
+	expect(
+		within(confirmation)
+			.getAllByRole('button')
+			.map((button) => button.textContent),
+	).toStrictEqual(['Keep editing', 'Discard changes', 'Save blueprint']);
+
+	await user.click(within(confirmation).getByRole('button', {name: 'Keep editing'}));
+	await user.click(within(confirmation).getByRole('button', {name: 'Discard changes'}));
+	await user.click(within(confirmation).getByRole('button', {name: 'Save blueprint'}));
+
+	expect({
+		navigation: navigate.mock.calls,
+		onDiscard: onDiscard.mock.calls,
+		onKeepEditing: onKeepEditing.mock.calls,
+		onSaved: onSaved.mock.calls,
+	}).toStrictEqual({
+		navigation: [
+			[
+				{
+					to: '/',
+					search: {pasted: serializeBlueprint(draftBlueprint), selection: ''},
+				},
+			],
+		],
+		onDiscard: [[]],
+		onKeepEditing: [[]],
+		onSaved: [[draftBlueprint]],
 	});
 });

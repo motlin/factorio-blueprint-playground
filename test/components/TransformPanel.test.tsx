@@ -1,4 +1,4 @@
-import {fireEvent, render, screen} from '@testing-library/react';
+import {fireEvent, render, screen, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {beforeEach, describe, expect, test, vi} from 'vite-plus/test';
 
@@ -510,6 +510,101 @@ describe('TransformPanel', () => {
 		});
 	});
 
+	test('keeps or discards dirty title, icon, description, and filter drafts on every close path', async () => {
+		const user = userEvent.setup();
+		const sourceBlueprint: BlueprintString = {
+			blueprint: {
+				item: 'blueprint',
+				label: 'Alice',
+				description: 'Source description',
+				version: 0,
+				icons: [{index: 1, signal: {type: 'virtual', name: 'signal-green'}}],
+				entities: [
+					{
+						entity_number: 1,
+						name: 'assembling-machine-1',
+						position: {x: 0, y: 0},
+						items: [
+							{
+								id: {name: 'speed-module'},
+								items: {in_inventory: [{inventory: 1, stack: 0, count: 1}]},
+							},
+						],
+					},
+					{entity_number: 2, name: 'locomotive', position: {x: 1, y: 0}},
+				],
+				tiles: [{name: 'landfill', position: {x: 0, y: 0}}],
+			},
+		};
+		render(<TransformPanel blueprint={sourceBlueprint} />);
+
+		openBlueprintEditor();
+		await user.click(screen.getByRole('button', {name: 'Edit blueprint title'}));
+		await user.clear(screen.getByRole('textbox', {name: 'Blueprint title'}));
+		await user.type(screen.getByRole('textbox', {name: 'Blueprint title'}), 'Bob{Enter}');
+		await user.clear(screen.getByRole('textbox', {name: 'Blueprint description'}));
+		await user.type(screen.getByRole('textbox', {name: 'Blueprint description'}), 'Draft description');
+		await user.click(screen.getByRole('button', {name: 'Edit icon 1'}));
+		await user.type(screen.getByRole('searchbox', {name: 'Search'}), 'red');
+		await chooseSignal(user, 'Signal red');
+		await user.click(screen.getByRole('checkbox', {name: 'Modules'}));
+		await user.click(screen.getByRole('checkbox', {name: 'Tiles'}));
+
+		fireEvent.keyDown(screen.getByRole('dialog', {name: 'Blueprint Editor'}), {key: 'Escape'});
+		const firstConfirmation = screen.getByRole('alertdialog', {name: 'Discard unsaved changes?'});
+		expect({
+			buttons: within(firstConfirmation)
+				.getAllByRole('button')
+				.map((button) => button.textContent),
+			navigation: navigate.mock.calls,
+		}).toStrictEqual({
+			buttons: ['Keep editing', 'Discard changes', 'Save blueprint'],
+			navigation: [],
+		});
+
+		await user.click(within(firstConfirmation).getByRole('button', {name: 'Keep editing'}));
+		expect({
+			confirmation: screen.queryByRole('alertdialog', {name: 'Discard unsaved changes?'}),
+			description: screen.getByRole<HTMLTextAreaElement>('textbox', {name: 'Blueprint description'}).value,
+			filters: ['Modules', 'Entities', 'Trains', 'Tiles'].map(
+				(name) => screen.getByRole<HTMLInputElement>('checkbox', {name}).checked,
+			),
+			icon: screen.getByRole('button', {name: 'Edit icon 1'}).getAttribute('title'),
+			title: screen.getByText('Bob', {selector: '.blueprint-editor__title'}).textContent,
+		}).toStrictEqual({
+			confirmation: null,
+			description: 'Draft description',
+			filters: [false, true, true, false],
+			icon: 'Signal red\nvirtual:signal-red',
+			title: 'Bob',
+		});
+
+		await user.click(screen.getByRole('button', {name: 'Close Blueprint Editor'}));
+		const secondConfirmation = screen.getByRole('alertdialog', {name: 'Discard unsaved changes?'});
+		await user.click(within(secondConfirmation).getByRole('button', {name: 'Discard changes'}));
+		expect({
+			dialog: screen.queryByRole('dialog', {name: 'Blueprint Editor'}),
+			navigation: navigate.mock.calls,
+		}).toStrictEqual({dialog: null, navigation: []});
+
+		openBlueprintEditor();
+		expect({
+			description: screen.getByRole<HTMLTextAreaElement>('textbox', {name: 'Blueprint description'}).value,
+			filters: ['Modules', 'Entities', 'Trains', 'Tiles'].map(
+				(name) => screen.getByRole<HTMLInputElement>('checkbox', {name}).checked,
+			),
+			icon: screen.getByRole('button', {name: 'Edit icon 1'}).getAttribute('title'),
+			saveDisabled: screen.getByRole<HTMLButtonElement>('button', {name: 'Save blueprint'}).disabled,
+			title: screen.getByText('Alice', {selector: '.blueprint-editor__title'}).textContent,
+		}).toStrictEqual({
+			description: 'Source description',
+			filters: [true, true, true, true],
+			icon: 'Signal green\nvirtual:signal-green',
+			saveDisabled: true,
+			title: 'Alice',
+		});
+	});
+
 	test('saves Blueprint parametrisation edits and preserves unsupported parameter rows', async () => {
 		const user = userEvent.setup();
 		const parameterizedBlueprint: BlueprintString = {
@@ -997,7 +1092,36 @@ describe('TransformPanel', () => {
 			},
 		};
 		const selectedBlueprint = rootBlueprint.blueprint_book?.blueprints[0];
-		render(<TransformPanel blueprint={selectedBlueprint} rootBlueprint={rootBlueprint} selectedPath="1" />);
+		const savedRoot: BlueprintString = {
+			blueprint_book: {
+				item: 'blueprint-book',
+				label: "Alice's test book",
+				version: 0,
+				blueprints: [
+					{
+						index: 100,
+						blueprint: {
+							item: 'blueprint',
+							version: 0,
+							icons: [{index: 1, signal: {type: 'virtual', name: 'signal-red'}}],
+							label: 'New label',
+						},
+					},
+					{
+						index: 200,
+						blueprint: {
+							item: 'blueprint',
+							label: 'Unchanged',
+							version: 0,
+							icons: [{index: 1, signal: {type: 'virtual', name: 'signal-green'}}],
+						},
+					},
+				],
+			},
+		};
+		const {rerender} = render(
+			<TransformPanel blueprint={selectedBlueprint} rootBlueprint={rootBlueprint} selectedPath="1" />,
+		);
 
 		openBlueprintEditor();
 		await user.click(screen.getByRole('button', {name: 'Edit blueprint title'}));
@@ -1021,35 +1145,22 @@ describe('TransformPanel', () => {
 		expect(navigate).toHaveBeenCalledExactlyOnceWith({
 			to: '/',
 			search: {
-				pasted: serializeBlueprint({
-					blueprint_book: {
-						item: 'blueprint-book',
-						label: "Alice's test book",
-						version: 0,
-						blueprints: [
-							{
-								index: 100,
-								blueprint: {
-									item: 'blueprint',
-									version: 0,
-									icons: [{index: 1, signal: {type: 'virtual', name: 'signal-red'}}],
-									label: 'New label',
-								},
-							},
-							{
-								index: 200,
-								blueprint: {
-									item: 'blueprint',
-									label: 'Unchanged',
-									version: 0,
-									icons: [{index: 1, signal: {type: 'virtual', name: 'signal-green'}}],
-								},
-							},
-						],
-					},
-				}),
+				pasted: serializeBlueprint(savedRoot),
 				selection: '1',
 			},
+		});
+
+		const savedBlueprint = savedRoot.blueprint_book?.blueprints[0];
+		rerender(<TransformPanel blueprint={savedBlueprint} rootBlueprint={savedRoot} selectedPath="1" />);
+		openBlueprintEditor();
+		expect({
+			icon: screen.getByRole('button', {name: 'Edit icon 1'}).getAttribute('title'),
+			saveDisabled: screen.getByRole<HTMLButtonElement>('button', {name: 'Save to book'}).disabled,
+			title: screen.getByText('New label', {selector: '.blueprint-editor__title'}).textContent,
+		}).toStrictEqual({
+			icon: 'Signal red\nvirtual:signal-red',
+			saveDisabled: true,
+			title: 'New label',
 		});
 	});
 
