@@ -48,6 +48,7 @@ import {FactorioIcon} from '../../../core/icons/FactorioIcon';
 import {ButtonGreen} from '../../../ui/ButtonGreen';
 import {Textarea} from '../../../ui/Textarea';
 import {BlueprintEditorDialog} from './BlueprintEditorDialog';
+import type {PlacedUpgradePlanner} from './BlueprintEditorToolbar';
 import {BlueprintToolbelt} from './BlueprintToolbelt';
 import {UpgradePlannerSelectorDialog, type UpgradePlannerChoice} from './UpgradePlannerSelectorDialog';
 
@@ -807,6 +808,8 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 	const [editorDescription, setEditorDescription] = useState('');
 	const [editorIcons, setEditorIcons] = useState<SignalID[]>([]);
 	const [editorIconPickerIndex, setEditorIconPickerIndex] = useState<number>();
+	const [editorPlacedPlanner, setEditorPlacedPlanner] = useState<PlacedUpgradePlanner>();
+	const [editorPlannerDropError, setEditorPlannerDropError] = useState<string>();
 
 	const type = blueprint === undefined ? undefined : new BlueprintWrapper(blueprint).getType();
 	useEffect(() => {
@@ -1029,6 +1032,8 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 		setStripTilesSelected(false);
 		setFlattenBookSelected(false);
 		setSortBookSelected(false);
+		setEditorPlacedPlanner(undefined);
+		setEditorPlannerDropError(undefined);
 	};
 	const openBlueprintEditor = () => {
 		resetBlueprintEditorDraft();
@@ -1129,6 +1134,22 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 			throw new Error('The selected blueprint no longer exists in the root book.');
 		}
 		commitBlueprint(transformedRoot);
+	};
+	const placeDroppedPlanner = (serializedPlanner: string) => {
+		try {
+			const planner = parseUpgradePlanner(serializedPlanner);
+			setEditorPlacedPlanner({
+				choice: {
+					label: planner.label ?? planner.settings.description ?? 'Dropped upgrade planner',
+					planner,
+					source: 'dropped',
+				},
+				direction: 'upgrade',
+			});
+			setEditorPlannerDropError(undefined);
+		} catch {
+			setEditorPlannerDropError('Drop an encoded or JSON upgrade planner.');
+		}
 	};
 
 	return (
@@ -1405,8 +1426,19 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 						);
 					})}
 					label={editorLabel}
+					onApplyPlacedPlanner={(direction) => {
+						if (editorPlacedPlanner === undefined) {
+							throw new Error('No upgrade planner is placed on the editor toolbar.');
+						}
+						applyPlannerFromBlueprintEditor(editorPlacedPlanner.choice, direction);
+					}}
 					onClose={requestCloseBlueprintEditor}
+					onClearPlacedPlanner={() => {
+						setEditorPlacedPlanner(undefined);
+						setEditorPlannerDropError(undefined);
+					}}
 					onDescriptionChange={setEditorDescription}
+					onDropPlanner={placeDroppedPlanner}
 					onEntitiesIncludedChange={(included) => {
 						setStripEntitiesSelected(!included);
 					}}
@@ -1415,7 +1447,10 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 					onModulesIncludedChange={(included) => {
 						setStripModulesSelected(!included);
 					}}
-					onPlannerChoose={applyPlannerFromBlueprintEditor}
+					onPlannerPlace={(choice, direction) => {
+						setEditorPlacedPlanner({choice, direction});
+						setEditorPlannerDropError(undefined);
+					}}
 					onSave={() => {
 						if (editorDraftBlueprint !== undefined) {
 							commitBlueprint(editorDraftBlueprint);
@@ -1428,6 +1463,8 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 					onTrainsIncludedChange={(included) => {
 						setStripTrainsSelected(!included);
 					}}
+					plannerDropError={editorPlannerDropError}
+					placedPlanner={editorPlacedPlanner}
 					rootBlueprint={rootBlueprint ?? blueprint}
 					saveDisabled={editorDraftBlueprint === undefined || !editorDirty}
 					saveLabel={selectedPath === '' ? 'Save blueprint' : 'Save to book'}

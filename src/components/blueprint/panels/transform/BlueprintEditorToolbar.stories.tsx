@@ -7,7 +7,12 @@ const meta = {
 	title: 'Blueprint/Panels/Transform/BlueprintEditorToolbar',
 	component: BlueprintEditorToolbar,
 	args: {
+		dropError: undefined,
+		onApplyPlacedPlanner: fn(),
+		onClearPlacedPlanner: fn(),
+		onDropPlanner: fn(),
 		onOpenUpgradePlannerSelector: fn(),
+		placedPlanner: undefined,
 		selectorDialogId: 'upgrade-planner-selector',
 		selectorOpen: false,
 	},
@@ -43,5 +48,28 @@ export const Expanded: Story = {
 		const canvas = within(canvasElement);
 		const button = canvas.getByRole('button', {name: 'Upgrade items and entities in the blueprint'});
 		await expect(button).toHaveAttribute('aria-expanded', 'true');
+	},
+};
+
+export const Placed: Story = {
+	args: {
+		placedPlanner: {
+			choice: {
+				label: "Alice's belt planner",
+				source: 'book:2',
+			},
+			direction: 'upgrade',
+		},
+	},
+	play: async ({args, canvasElement}) => {
+		const canvas = within(canvasElement);
+		const applyButton = canvas.getByRole('button', {name: "Apply Alice's belt planner as upgrade"});
+		await expect(
+			canvas.getByRole('button', {
+				name: "Change placed upgrade planner, currently Alice's belt planner",
+			}),
+		).toBeVisible();
+		await userEvent.click(applyButton);
+		await expect(args.onApplyPlacedPlanner.mock.calls).toStrictEqual([['upgrade']]);
 	},
 };
