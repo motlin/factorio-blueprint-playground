@@ -32,7 +32,8 @@ import {BlueprintEditorDialog} from './BlueprintEditorDialog';
 import {BlueprintLabelIcons} from './BlueprintLabelIcons';
 import {BlueprintToolbelt} from './BlueprintToolbelt';
 import {SignalPickerDialog} from './SignalPickerDialog';
-import {SignalSlot, UpgradePlannerDialog} from './UpgradePlannerDialog';
+import {SignalSlot} from './UpgradeMappingGrid';
+import {UpgradePlannerDialog} from './UpgradePlannerDialog';
 import {normalizedSignalType, signalIdentity, signalName, signalTitle} from './upgradePlannerSignals';
 import {useBlueprintEditorDraft} from './useBlueprintEditorDraft';
 import type {UpgradePlannerChoice} from './UpgradePlannerSelectorDialog';
@@ -310,6 +311,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 	const [excludedSources, setExcludedSources] = useState<Set<string>>(() => new Set());
 	const [targetOverrides, setTargetOverrides] = useState<Map<string, UpgradeTargetOverride>>(() => new Map());
 	const [manualRules, setManualRules] = useState<UpgradeRule[]>([]);
+	const [manualRulePositions, setManualRulePositions] = useState<Map<string, number>>(() => new Map());
 	const [iconReplacements, setIconReplacements] = useState<IconReplacement[]>([]);
 	const [textReplacementEnabled, setTextReplacementEnabled] = useState(true);
 	const [metadataFind, setMetadataFind] = useState('');
@@ -367,15 +369,23 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 		[manualRules],
 	);
 	const effectiveRules = useMemo(() => {
-		const combinedRules = [
-			...resolvedRules.rules.filter((rule) => !manualSourceKeys.has(signalIdentity(rule.from))),
-			...manualRules,
-		];
+		const positionedRules = manualRules
+			.map((rule) => ({position: manualRulePositions.get(signalIdentity(rule.from)), rule}))
+			.filter((entry): entry is {position: number; rule: UpgradeRule} => entry.position !== undefined)
+			.sort((left, right) => left.position - right.position);
+		const replacedPositions = new Set(positionedRules.map(({position}) => position));
+		const combinedRules = resolvedRules.rules.filter(
+			(rule, index) => !replacedPositions.has(index) && !manualSourceKeys.has(signalIdentity(rule.from)),
+		);
+		for (const {position, rule} of positionedRules) {
+			combinedRules.splice(Math.min(position, combinedRules.length), 0, rule);
+		}
+		combinedRules.push(...manualRules.filter((rule) => !manualRulePositions.has(signalIdentity(rule.from))));
 		return combinedRules.map((rule) => {
 			const override = targetOverrides.get(signalIdentity(rule.from));
 			return override === undefined ? rule : {...rule, ...override};
 		});
-	}, [manualRules, manualSourceKeys, resolvedRules.rules, targetOverrides]);
+	}, [manualRulePositions, manualRules, manualSourceKeys, resolvedRules.rules, targetOverrides]);
 	const sourceOptions = useMemo(() => upgradeSourceOptions(transformTarget), [transformTarget]);
 	const editorIconOptions = useMemo(() => {
 		const options = new Map<string, SignalID>();
@@ -523,6 +533,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 		setExcludedSources(new Set());
 		setTargetOverrides(new Map());
 		setManualRules([]);
+		setManualRulePositions(new Map());
 		setIconReplacements([]);
 		setTextReplacementEnabled(true);
 		setMetadataFind('');
@@ -633,7 +644,33 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 						onChangeManualRule: (previousSource, rule) => {
 							setUpgradeDraftChanged(true);
 							const previousKey = signalIdentity(previousSource);
-							setExcludedSources((current) => new Set(current).add(previousKey));
+							const nextKey = signalIdentity(rule.from);
+							const previousPosition = candidates.findIndex(
+								(candidate) => signalIdentity(candidate.from) === previousKey,
+							);
+							setExcludedSources((current) => {
+								const next = new Set(current);
+								next.delete(nextKey);
+								if (previousKey !== nextKey) {
+									next.add(previousKey);
+								}
+								return next;
+							});
+							setTargetOverrides((current) => {
+								const next = new Map(current);
+								next.delete(previousKey);
+								next.delete(nextKey);
+								return next;
+							});
+							setManualRulePositions((current) => {
+								const next = new Map(current);
+								const position = next.get(previousKey) ?? previousPosition;
+								next.delete(previousKey);
+								if (position >= 0) {
+									next.set(nextKey, position);
+								}
+								return next;
+							});
 							setManualRules((current) => [
 								...current.filter((candidate) => signalIdentity(candidate.from) !== previousKey),
 								rule,
@@ -647,6 +684,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 							setExcludedSources(new Set());
 							setTargetOverrides(new Map());
 							setManualRules([]);
+							setManualRulePositions(new Map());
 						},
 						onPlannerInputChange: (value) => {
 							setUpgradeDraftChanged(true);
@@ -654,11 +692,17 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 							setExcludedSources(new Set());
 							setTargetOverrides(new Map());
 							setManualRules([]);
+							setManualRulePositions(new Map());
 						},
 						onRemoveRule: (source, manual) => {
 							setUpgradeDraftChanged(true);
 							const sourceKey = signalIdentity(source);
 							if (manual) {
+								setManualRulePositions((current) => {
+									const next = new Map(current);
+									next.delete(sourceKey);
+									return next;
+								});
 								setManualRules((current) =>
 									current.filter((candidate) => signalIdentity(candidate.from) !== sourceKey),
 								);

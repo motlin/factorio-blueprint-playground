@@ -1216,7 +1216,7 @@ body {
 	margin: 4px 0 0;
 }
 
-.upgrade-planner-editor__mappings,
+.upgrade-mapping-grid,
 .icon-replacement-editor__mappings {
 	display: flex;
 	flex-direction: column;
@@ -1224,11 +1224,11 @@ body {
 	margin-top: 3px;
 }
 
-.upgrade-planner-editor__mapping-headings {
+.upgrade-mapping-grid__headings {
 	display: grid;
-	grid-template-columns: 48px 28px 48px minmax(56px, auto) 28px;
+	grid-template-columns: 48px 24px 48px 64px 28px;
 	justify-content: center;
-	gap: 10px;
+	gap: 8px;
 	padding: 6px 10px 2px;
 	color: #ffe6c0;
 	font-size: 82%;
@@ -1236,14 +1236,23 @@ body {
 	text-align: center;
 }
 
-.upgrade-planner-editor__mapping,
+.upgrade-mapping-grid__rows {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.upgrade-mapping-grid__row,
 .icon-replacement-editor__mapping,
 .icon-replacement-editor__add {
 	display: grid;
-	grid-template-columns: 48px 28px 48px minmax(56px, auto) 28px;
+	grid-template-columns: 48px 24px 48px 64px 28px;
 	align-items: center;
 	justify-content: center;
-	gap: 10px;
+	gap: 8px;
 	min-height: 54px;
 	padding: 5px 10px;
 	background: #3e3d3e;
@@ -1252,7 +1261,27 @@ body {
 		inset 0 -1px 1px #171717;
 }
 
-.upgrade-planner-editor__remove {
+.upgrade-mapping-grid__count {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	color: #ddd;
+	line-height: 1;
+}
+
+.upgrade-mapping-grid__count strong {
+	color: #fff;
+	font-size: 1rem;
+}
+
+.upgrade-mapping-grid__count small {
+	margin-top: 4px;
+	color: #aaa;
+	font-size: 0.65rem;
+	text-transform: uppercase;
+}
+
+.upgrade-mapping-grid__remove {
 	width: 28px;
 	height: 28px;
 	padding: 0;
@@ -1265,6 +1294,11 @@ body {
 	font: inherit;
 	font-size: 20px;
 	cursor: pointer;
+}
+
+.upgrade-mapping-grid__empty {
+	margin: 8px 10px;
+	color: #ccc;
 }
 
 .upgrade-planner-editor__add {
@@ -1285,8 +1319,8 @@ body {
 
 .upgrade-planner-editor__add:hover,
 .upgrade-planner-editor__add:focus-visible,
-.upgrade-planner-editor__remove:hover,
-.upgrade-planner-editor__remove:focus-visible {
+.upgrade-mapping-grid__remove:hover,
+.upgrade-mapping-grid__remove:focus-visible {
 	filter: brightness(1.15);
 	outline: 2px solid #e39827;
 	outline-offset: -2px;
@@ -1297,7 +1331,6 @@ body {
 	grid-template-columns: 48px 28px 48px minmax(36px, auto) 28px;
 }
 
-.upgrade-planner-editor__mapping > strong,
 .icon-replacement-editor__mapping > strong,
 .icon-replacement-editor__add > strong {
 	padding: 3px 6px;
@@ -1308,18 +1341,11 @@ body {
 	text-align: center;
 }
 
-.upgrade-planner-editor__arrow,
+.upgrade-mapping-grid__arrow,
 .icon-replacement-editor__mapping > span,
 .icon-replacement-editor__add span {
 	font-size: 24px;
 	text-align: center;
-}
-
-.upgrade-planner-editor__empty {
-	margin: 0;
-	padding: 12px;
-	background: #313031;
-	color: #b7b2ad;
 }
 
 .transform-signal-slot,
