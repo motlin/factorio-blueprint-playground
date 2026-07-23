@@ -134,28 +134,39 @@ describe('TransformPanel', () => {
 		render(<TransformPanel blueprint={filterBlueprint} />);
 
 		openBlueprintEditor();
+		const dialog = screen.getByRole('dialog', {name: 'Blueprint Editor'});
 		expect({
 			bookWideReplacements: screen.queryByRole('heading', {name: 'Book-wide replacements'}),
+			bodyClass: dialog.querySelector('.transform-workbench__body')?.className,
 			cleanup: screen.queryByRole('heading', {name: 'Cleanup'}),
 			description: screen.getByRole('textbox', {name: 'Blueprint description'}).textContent,
-			dialog: screen.getByRole('dialog', {name: 'Blueprint Editor'}).getAttribute('aria-modal'),
+			dialog: dialog.getAttribute('aria-modal'),
+			footerElement: dialog.lastElementChild?.tagName,
 			filters: ['Modules', 'Entities', 'Trains', 'Tiles'].map(
 				(name) => screen.getByRole<HTMLInputElement>('checkbox', {name}).checked,
 			),
+			headerElement: dialog.firstElementChild?.tagName,
 			iconSlots: [1, 2, 3, 4].map((index) =>
 				screen.getByRole('button', {name: `Choose icon ${index.toString()}`}).getAttribute('aria-label'),
 			),
 			name: screen.getByRole<HTMLInputElement>('textbox', {name: 'Name'}).value,
 			plannerMappings: screen.queryByRole('group', {name: 'Planner operation'}),
+			preview: screen.queryByRole('heading', {name: 'Preview'}),
+			saveDestination: screen.queryByLabelText('Save destination'),
 		}).toStrictEqual({
 			bookWideReplacements: null,
+			bodyClass: 'transform-workbench__body blueprint-editor__layout',
 			cleanup: null,
 			description: '',
 			dialog: 'true',
+			footerElement: 'FOOTER',
 			filters: [true, true, true, true],
+			headerElement: 'HEADER',
 			iconSlots: ['Choose icon 1', 'Choose icon 2', 'Choose icon 3', 'Choose icon 4'],
 			name: '',
 			plannerMappings: null,
+			preview: null,
+			saveDestination: null,
 		});
 	});
 

@@ -1,5 +1,6 @@
 import type {Meta, StoryObj} from '@storybook/react-vite';
 import {createMemoryHistory, createRootRoute, createRouter, RouterProvider} from '@tanstack/react-router';
+import {expect, userEvent, within} from 'storybook/test';
 
 import type {BlueprintString} from '../../../../parsing/types';
 import {TransformPanel} from './TransformPanel';
@@ -75,6 +76,17 @@ export const Blueprint: Story = {
 				entities: [{entity_number: 1, name: 'transport-belt', position: {x: 0, y: 0}}],
 			},
 		},
+	},
+};
+
+export const BlueprintEditor: Story = {
+	args: Blueprint.args,
+	play: async ({canvasElement}) => {
+		const canvas = within(canvasElement);
+		await userEvent.click(canvas.getByRole('button', {name: 'Open Blueprint Editor'}));
+
+		await expect(canvas.getByRole('dialog', {name: 'Blueprint Editor'})).toHaveAttribute('aria-modal', 'true');
+		await expect(canvas.queryByRole('heading', {name: 'Preview'})).not.toBeInTheDocument();
 	},
 };
 
