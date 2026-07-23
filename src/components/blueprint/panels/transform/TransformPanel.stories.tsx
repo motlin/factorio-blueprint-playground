@@ -104,6 +104,9 @@ export const UpgradePlanner: Story = {
 		).toBeVisible();
 		await expect(canvas.getByRole('group', {name: 'Text replacement'})).toBeVisible();
 		await expect(canvas.getByText('0 affected')).toBeVisible();
+		await expect(canvas.getByRole('button', {name: 'Save planner'})).toBeVisible();
+		await expect(canvas.queryByRole('button', {name: 'Apply upgrades'})).not.toBeInTheDocument();
+		await expect(canvas.queryByRole('button', {name: 'Apply downgrades'})).not.toBeInTheDocument();
 		await expect(canvas.queryByRole('checkbox', {name: 'Preserve case'})).not.toBeInTheDocument();
 		await expect(canvas.queryByText('Live result')).not.toBeInTheDocument();
 		await expect(canvas.queryByRole('heading', {name: 'Preview'})).not.toBeInTheDocument();

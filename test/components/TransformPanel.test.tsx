@@ -51,6 +51,19 @@ async function chooseSignal(user: ReturnType<typeof userEvent.setup>, label: str
 	await user.click(screen.getByRole('button', {name: 'Confirm'}));
 }
 
+async function saveAndApplyPlanner(
+	user: ReturnType<typeof userEvent.setup>,
+	direction: 'upgrade' | 'downgrade' = 'upgrade',
+) {
+	await user.click(screen.getByRole('button', {name: 'Save planner'}));
+	const savedPlanner = screen.getByRole('button', {name: 'Saved Upgrade Planner'});
+	if (direction === 'downgrade') {
+		fireEvent.contextMenu(savedPlanner);
+	} else {
+		await user.click(savedPlanner);
+	}
+}
+
 function storedPlanner(sha: string, planner: UpgradePlanner, label: string): DatabaseBlueprint {
 	return {
 		metadata: {
@@ -131,8 +144,8 @@ describe('TransformPanel', () => {
 			headerElement: dialog.firstElementChild?.tagName,
 			liveResult: screen.queryByText('Live result'),
 			modeButtons: ['Upgrade', 'Downgrade', 'Strip quality'].map((name) => screen.queryByRole('button', {name})),
-			operationButtons: ['Apply upgrades', 'Apply downgrades'].map(
-				(name) => screen.getByRole('button', {name}).textContent,
+			operationButtons: ['Save planner', 'Apply upgrades', 'Apply downgrades'].map(
+				(name) => screen.queryByRole('button', {name})?.textContent ?? null,
 			),
 			preserveCapitalization: screen.queryByRole('checkbox', {name: 'Preserve capitalization'}),
 			sectionOrder: [...configuration.querySelectorAll('.upgrade-planner-dialog__content > section')].map(
@@ -162,7 +175,7 @@ describe('TransformPanel', () => {
 			headerElement: 'HEADER',
 			liveResult: null,
 			modeButtons: [null, null, null],
-			operationButtons: ['Apply upgrades', 'Apply downgrades'],
+			operationButtons: ['Save planner', null, null],
 			preserveCapitalization: null,
 			sectionOrder: ['Upgrade mappings', 'Book-wide replacements'],
 			scrollTabIndex: 0,
@@ -513,6 +526,44 @@ describe('TransformPanel', () => {
 		},
 	);
 
+	test('places a saved planner in the Blueprint Editor before applying it', async () => {
+		const user = userEvent.setup();
+		render(<TransformPanel blueprint={blueprint} />);
+
+		openUpgradePlanner();
+		await user.click(screen.getByRole('button', {name: 'Choose target for Transport belt'}));
+		await user.click(screen.getByRole('button', {name: 'Rare quality'}));
+		await chooseSignal(user, 'Fast transport belt');
+		await user.click(screen.getByRole('button', {name: 'Save planner'}));
+		await user.click(screen.getByRole('button', {name: 'Close upgrade planner selector'}));
+
+		openBlueprintEditor();
+		await user.click(screen.getByRole('button', {name: 'Upgrade items and entities in the blueprint'}));
+		await user.click(screen.getByRole('button', {name: 'Saved Upgrade Planner'}));
+		await user.click(screen.getByRole('button', {name: 'Apply Saved Upgrade Planner as upgrade'}));
+
+		expect(navigate).toHaveBeenCalledExactlyOnceWith({
+			to: '/',
+			search: {
+				pasted: serializeBlueprint({
+					blueprint: {
+						item: 'blueprint',
+						version: 0,
+						entities: [
+							{
+								entity_number: 1,
+								name: 'fast-transport-belt',
+								position: {x: 0, y: 0},
+								quality: 'rare',
+							},
+						],
+					},
+				}),
+				selection: '',
+			},
+		});
+	});
+
 	test('opens the Factorio tools with B and U except while editing text or choosing an icon', async () => {
 		const user = userEvent.setup();
 		render(<TransformPanel blueprint={blueprint} />);
@@ -847,25 +898,25 @@ describe('TransformPanel', () => {
 		});
 	});
 
-	test('keeps export actions outside the planner and applies the visible mapping set', async () => {
+	test('edits and saves one planner definition before applying it forward', async () => {
 		const user = userEvent.setup();
 		render(<TransformPanel blueprint={blueprint} />);
 
 		openUpgradePlanner();
 
 		expect({
-			applyActions: ['Apply upgrades', 'Apply downgrades'].map(
-				(name) => screen.getByRole('button', {name}).textContent,
+			plannerActions: ['Save planner', 'Apply upgrades', 'Apply downgrades'].map(
+				(name) => screen.queryByRole('button', {name})?.textContent ?? null,
 			),
 			exportActions: ['Copy String', 'Copy JSON', 'Download String'].map((name) =>
 				screen.queryByRole('button', {name}),
 			),
 		}).toStrictEqual({
-			applyActions: ['Apply upgrades', 'Apply downgrades'],
+			plannerActions: ['Save planner', null, null],
 			exportActions: [null, null, null],
 		});
 
-		await user.click(screen.getByRole('button', {name: 'Apply upgrades'}));
+		await saveAndApplyPlanner(user);
 		expect(navigate).toHaveBeenCalledExactlyOnceWith({
 			to: '/',
 			search: {
@@ -904,7 +955,7 @@ describe('TransformPanel', () => {
 
 		openUpgradePlanner();
 		expect(screen.queryByRole('button', {name: 'Strip quality'})).toBe(null);
-		await user.click(screen.getByRole('button', {name: 'Apply downgrades'}));
+		await saveAndApplyPlanner(user, 'downgrade');
 
 		expect(navigate).toHaveBeenCalledExactlyOnceWith({
 			to: '/',
@@ -937,7 +988,7 @@ describe('TransformPanel', () => {
 				?.getAttribute('src'),
 		).toBe('https://factorio-icon-cdn.pages.dev/quality/rare.webp');
 
-		await user.click(screen.getByRole('button', {name: 'Apply upgrades'}));
+		await saveAndApplyPlanner(user);
 
 		expect(navigate).toHaveBeenCalledExactlyOnceWith({
 			to: '/',
@@ -984,7 +1035,7 @@ describe('TransformPanel', () => {
 			within(qualityRow).getByRole('combobox', {name: 'Target quality selection'}),
 			'normal',
 		);
-		await user.click(screen.getByRole('button', {name: 'Apply upgrades'}));
+		await saveAndApplyPlanner(user);
 
 		expect(navigate).toHaveBeenCalledExactlyOnceWith({
 			to: '/',
@@ -1041,7 +1092,7 @@ describe('TransformPanel', () => {
 			source: 'Transport belt\nentity:transport-belt\nQuality: > rare',
 		});
 
-		await user.click(screen.getByRole('button', {name: 'Apply upgrades'}));
+		await saveAndApplyPlanner(user);
 		expect(navigate).toHaveBeenCalledExactlyOnceWith({
 			to: '/',
 			search: {
@@ -1288,7 +1339,7 @@ describe('TransformPanel', () => {
 			target: 'Transport belt\nentity:transport-belt\nQuality: = rare',
 		});
 
-		await user.click(screen.getByRole('button', {name: 'Apply upgrades'}));
+		await saveAndApplyPlanner(user);
 		expect(navigate).toHaveBeenCalledExactlyOnceWith({
 			to: '/',
 			search: {
@@ -1548,7 +1599,7 @@ describe('TransformPanel', () => {
 
 		openUpgradePlanner();
 		const scope = screen.getByRole<HTMLSelectElement>('combobox', {name: 'Apply to'}).value;
-		await user.click(screen.getByRole('button', {name: 'Apply upgrades'}));
+		await saveAndApplyPlanner(user);
 
 		expect({
 			dialog: screen.queryByRole('dialog', {name: 'Upgrade Planner'}),
@@ -1661,7 +1712,7 @@ describe('TransformPanel', () => {
 			textReplacement: true,
 		});
 
-		await user.click(screen.getByRole('button', {name: 'Apply upgrades'}));
+		await saveAndApplyPlanner(user);
 
 		expect(navigate).toHaveBeenCalledExactlyOnceWith({
 			to: '/',
@@ -1748,7 +1799,7 @@ describe('TransformPanel', () => {
 			status: screen.getByLabelText('1 match').getAttribute('aria-label'),
 		}).toStrictEqual({scope: 'root', status: '1 match'});
 
-		await user.click(screen.getByRole('button', {name: 'Apply upgrades'}));
+		await saveAndApplyPlanner(user);
 
 		expect(navigate).toHaveBeenCalledExactlyOnceWith({
 			to: '/',
@@ -1954,7 +2005,7 @@ describe('TransformPanel', () => {
 		});
 	});
 
-	test('accepts a pasted upgrade planner inside the planner dialog', async () => {
+	test('saves a pasted planner with a zero-match mapping and applies its matching rule', async () => {
 		const user = userEvent.setup();
 		render(<TransformPanel blueprint={blueprint} />);
 
@@ -1995,13 +2046,18 @@ describe('TransformPanel', () => {
 			emptyMessage: screen.queryByText('No matching entities or modules in this scope.'),
 			unmatchedSource: screen.getByRole('button', {name: 'Choose source, currently Speed module'}).title,
 			unmatchedTarget: screen.getByRole('button', {name: 'Choose target for Speed module'}).title,
+			zeroMatchCount: screen
+				.getByRole('button', {name: 'Choose source, currently Speed module'})
+				.closest('.upgrade-mapping-grid__row')
+				?.querySelector('strong')?.textContent,
 		}).toStrictEqual({
 			emptyMessage: null,
 			unmatchedSource: 'Speed module\nitem:speed-module',
 			unmatchedTarget: 'Speed module 2\nitem:speed-module-2',
+			zeroMatchCount: '0',
 		});
 
-		await user.click(screen.getByRole('button', {name: 'Apply upgrades'}));
+		await saveAndApplyPlanner(user);
 
 		expect(navigate).toHaveBeenCalledExactlyOnceWith({
 			to: '/',
