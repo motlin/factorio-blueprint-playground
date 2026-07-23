@@ -1,15 +1,18 @@
 import {fireEvent, render, screen, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import {Profiler} from 'react';
 import {beforeEach, describe, expect, test, vi} from 'vite-plus/test';
 
 import {TransformPanel} from '../../src/components/blueprint/panels/transform/TransformPanel';
-import {serializeBlueprint} from '../../src/parsing/blueprintParser';
+import {deserializeBlueprint, serializeBlueprint} from '../../src/parsing/blueprintParser';
 import type {BlueprintString, BlueprintStringWithIndex, UpgradePlanner} from '../../src/parsing/types';
 import type {DatabaseBlueprint} from '../../src/storage/db';
 import {stripTiles, stripTrains} from '../../src/transform/strip';
 import {applyUpgradeRules, builtInUpgradeRules} from '../../src/transform/upgradePlanner';
+import {readFixtureFile} from '../fixtures/utils';
 
-const {historyBlueprints, navigate} = vi.hoisted(() => ({
+const {analysisCounts, historyBlueprints, navigate} = vi.hoisted(() => ({
+	analysisCounts: {metadataIcons: 0, upgradeRules: 0},
 	historyBlueprints: [] as DatabaseBlueprint[],
 	navigate: vi.fn<(options: unknown) => void>(),
 }));
@@ -21,6 +24,26 @@ vi.mock('@tanstack/react-router', async (importOriginal) => ({
 	...(await importOriginal()),
 	useNavigate: () => navigate,
 }));
+vi.mock('../../src/transform/metadataSubstitution', async (importOriginal) => {
+	const original = await importOriginal<typeof import('../../src/transform/metadataSubstitution')>();
+	return {
+		...original,
+		analyzeMetadataIcons: (...parameters: Parameters<typeof original.analyzeMetadataIcons>) => {
+			analysisCounts.metadataIcons += 1;
+			return original.analyzeMetadataIcons(...parameters);
+		},
+	};
+});
+vi.mock('../../src/transform/upgradePlanner', async (importOriginal) => {
+	const original = await importOriginal<typeof import('../../src/transform/upgradePlanner')>();
+	return {
+		...original,
+		analyzeUpgradeRules: (...parameters: Parameters<typeof original.analyzeUpgradeRules>) => {
+			analysisCounts.upgradeRules += 1;
+			return original.analyzeUpgradeRules(...parameters);
+		},
+	};
+});
 
 const blueprint: BlueprintString = {
 	blueprint: {
@@ -77,8 +100,29 @@ function storedPlanner(sha: string, planner: UpgradePlanner, label: string): Dat
 	};
 }
 
+function largeNestedBookFixture() {
+	const rootBlueprint = deserializeBlueprint(readFixtureFile('txt/nested-book.txt'));
+	const book = rootBlueprint.blueprint_book;
+	const selectedBlueprint = book?.blueprints[0];
+	const nestedBook = book?.blueprints[1];
+	if (book === undefined || selectedBlueprint?.blueprint === undefined || nestedBook === undefined) {
+		throw new Error('Expected the nested-book fixture to contain a blueprint followed by a nested book.');
+	}
+	selectedBlueprint.blueprint.icons = [{index: 1, signal: {type: 'virtual', name: 'signal-red'}}];
+	book.blueprints = [
+		selectedBlueprint,
+		...Array.from({length: 100}, (_, index) => ({
+			...structuredClone(nestedBook),
+			index: (index + 1) * 100,
+		})),
+	];
+	return {rootBlueprint, selectedBlueprint};
+}
+
 describe('TransformPanel', () => {
 	beforeEach(() => {
+		analysisCounts.metadataIcons = 0;
+		analysisCounts.upgradeRules = 0;
 		historyBlueprints.length = 0;
 		navigate.mockReset();
 	});
@@ -183,6 +227,83 @@ describe('TransformPanel', () => {
 			targetIcon: 'https://factorio-icon-cdn.pages.dev/entity/fast-transport-belt.webp',
 			bookWideReplacements: 'Book-wide replacements',
 			websiteLabel: 'Website extension',
+		});
+	});
+
+	test('bounds renders and analysis while editing mappings and icons in a large nested book', async () => {
+		const user = userEvent.setup();
+		const {rootBlueprint, selectedBlueprint} = largeNestedBookFixture();
+		const commits: string[] = [];
+		render(
+			<Profiler
+				id="transform-panel"
+				onRender={(id, phase) => {
+					commits.push(`${id}:${phase}`);
+				}}
+			>
+				<TransformPanel blueprint={selectedBlueprint} rootBlueprint={rootBlueprint} selectedPath="1" />
+			</Profiler>,
+		);
+		const initialCommitCount = commits.length;
+		let previousCommitCount = commits.length;
+		const commitsSincePreviousInteraction = () => {
+			const count = commits.length - previousCommitCount;
+			previousCommitCount = commits.length;
+			return count;
+		};
+
+		openUpgradePlanner();
+		const openPlannerCommitCount = commitsSincePreviousInteraction();
+		await choosePlanner(user, 'Empty planner');
+		const loadEmptyPlannerCommitCount = commitsSincePreviousInteraction();
+
+		await user.selectOptions(screen.getByRole('combobox', {name: 'Apply to'}), 'root');
+		const rootScopeCommitCount = commitsSincePreviousInteraction();
+		await user.click(screen.getByRole('button', {name: 'Choose source for new mapping'}));
+		await chooseSignal(user, 'Transport belt');
+		await chooseSignal(user, 'Fast transport belt');
+		const firstMappingCommitCount = commitsSincePreviousInteraction();
+
+		await user.click(screen.getByRole('button', {name: 'Choose source for new mapping'}));
+		await chooseSignal(user, 'Fast inserter');
+		await chooseSignal(user, 'Inserter');
+		const secondMappingCommitCount = commitsSincePreviousInteraction();
+
+		await user.click(screen.getByRole('button', {name: /Icon replacements/i}));
+		await user.click(screen.getByRole('button', {name: 'Choose source icon'}));
+		await chooseSignal(user, 'Signal red');
+		await user.click(screen.getByRole('button', {name: 'Choose target icon'}));
+		await chooseSignal(user, 'Signal blue');
+		await user.click(screen.getByRole('button', {name: 'Done'}));
+		const iconChangeCommitCount = commitsSincePreviousInteraction();
+
+		expect({
+			analysisCounts,
+			mappings: screen.getAllByRole('listitem').map((row) => row.getAttribute('aria-label')),
+			renderCommits: {
+				firstMapping: firstMappingCommitCount,
+				iconChange: iconChangeCommitCount,
+				initial: initialCommitCount,
+				loadEmptyPlanner: loadEmptyPlannerCommitCount,
+				openPlanner: openPlannerCommitCount,
+				rootScope: rootScopeCommitCount,
+				secondMapping: secondMappingCommitCount,
+			},
+		}).toStrictEqual({
+			analysisCounts: {
+				metadataIcons: 1,
+				upgradeRules: 6,
+			},
+			mappings: ['Mapping from Transport belt to Fast transport belt', 'Mapping from Fast inserter to Inserter'],
+			renderCommits: {
+				firstMapping: 5,
+				iconChange: 8,
+				initial: 1,
+				loadEmptyPlanner: 4,
+				openPlanner: 1,
+				rootScope: 1,
+				secondMapping: 5,
+			},
 		});
 	});
 

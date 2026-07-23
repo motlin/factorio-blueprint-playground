@@ -26,6 +26,18 @@ interface ReplacementEndpointProps {
 	signal?: SignalID;
 }
 
+const candidateCache = new WeakMap<BlueprintString, MetadataIconCandidate[]>();
+
+function metadataIconCandidates(rootBlueprint: BlueprintString): MetadataIconCandidate[] {
+	const cachedCandidates = candidateCache.get(rootBlueprint);
+	if (cachedCandidates !== undefined) {
+		return cachedCandidates;
+	}
+	const candidates = analyzeMetadataIcons(rootBlueprint);
+	candidateCache.set(rootBlueprint, candidates);
+	return candidates;
+}
+
 function ReplacementEndpoint({label, onClick, signal}: ReplacementEndpointProps) {
 	return (
 		<span className="icon-replacement-editor__endpoint">
@@ -53,7 +65,7 @@ function targetOptions(source: SignalID): SignalID[] {
 
 export function IconReplacementDialog({onChange, onClose, replacements, rootBlueprint}: IconReplacementDialogProps) {
 	const headingId = useId();
-	const candidates = useMemo(() => analyzeMetadataIcons(rootBlueprint), [rootBlueprint]);
+	const candidates = useMemo(() => metadataIconCandidates(rootBlueprint), [rootBlueprint]);
 	const [draftFrom, setDraftFrom] = useState<SignalID>();
 	const [choosingSource, setChoosingSource] = useState(false);
 	const [choosingTarget, setChoosingTarget] = useState(false);

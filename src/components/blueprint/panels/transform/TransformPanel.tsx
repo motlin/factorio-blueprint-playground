@@ -103,7 +103,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 		openBlueprintEditorDraft();
 	};
 	const openUpgradePlanner = () => {
-		if (editorDirty) {
+		if (blueprintEditorOpen && editorDirty) {
 			requestCloseBlueprintEditor();
 			return;
 		}

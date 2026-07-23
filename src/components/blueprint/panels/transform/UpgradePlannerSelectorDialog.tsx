@@ -21,9 +21,29 @@ interface UpgradePlannerSelectorDialogProps {
 	sessionChoice?: UpgradePlannerChoice;
 }
 
+const serializedPlannerCache = new WeakMap<UpgradePlanner, string>();
+const historyPlannerCache = new WeakMap<DatabaseBlueprint, {planner: UpgradePlanner; serialized: string}>();
+
 function serializedPlanner(planner: UpgradePlanner): string {
+	const cachedPlanner = serializedPlannerCache.get(planner);
+	if (cachedPlanner !== undefined) {
+		return cachedPlanner;
+	}
 	const normalizedPlanner = parseUpgradePlanner(JSON.stringify({upgrade_planner: planner}));
-	return serializeBlueprint({upgrade_planner: normalizedPlanner});
+	const serialized = serializeBlueprint({upgrade_planner: normalizedPlanner});
+	serializedPlannerCache.set(planner, serialized);
+	return serialized;
+}
+
+function historyPlanner(blueprint: DatabaseBlueprint) {
+	const cachedPlanner = historyPlannerCache.get(blueprint);
+	if (cachedPlanner !== undefined) {
+		return cachedPlanner;
+	}
+	const planner = parseUpgradePlanner(blueprint.metadata.data);
+	const parsedPlanner = {planner, serialized: serializedPlanner(planner)};
+	historyPlannerCache.set(blueprint, parsedPlanner);
+	return parsedPlanner;
 }
 
 function historyPlannerLabel(blueprint: DatabaseBlueprint, planner: UpgradePlanner): string {
@@ -52,8 +72,7 @@ function createUpgradePlannerChoices(
 	}
 
 	for (const blueprint of historyBlueprints) {
-		const planner = parseUpgradePlanner(blueprint.metadata.data);
-		const serialized = serializedPlanner(planner);
+		const {planner, serialized} = historyPlanner(blueprint);
 		if (!serializedPlanners.has(serialized)) {
 			serializedPlanners.add(serialized);
 			choices.push({
