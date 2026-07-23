@@ -72,6 +72,7 @@ export const Blueprint: Story = {
 			blueprint: {
 				item: 'blueprint',
 				label: 'Belt test',
+				description: '[item=transport-belt] Belt test\nKeeps rich-text strings unchanged.',
 				version: 0,
 				entities: [{entity_number: 1, name: 'transport-belt', position: {x: 0, y: 0}}],
 			},
@@ -88,6 +89,9 @@ export const BlueprintEditor: Story = {
 		await expect(canvas.getByRole('dialog', {name: 'Blueprint Editor'})).toHaveAttribute('aria-modal', 'true');
 		await expect(canvas.getByText('Belt test')).toHaveClass('blueprint-editor__title');
 		await expect(canvas.getByRole('button', {name: 'Edit blueprint title'})).toBeVisible();
+		await expect(canvas.getByRole('textbox', {name: 'Blueprint description'})).toHaveValue(
+			'[item=transport-belt] Belt test\nKeeps rich-text strings unchanged.',
+		);
 		await expect(canvas.queryByRole('heading', {name: 'Preview'})).not.toBeInTheDocument();
 		await userEvent.click(canvas.getByRole('button', {name: 'Upgrade items and entities in the blueprint'}));
 		await expect(canvas.getByRole('dialog', {name: 'Select the upgrade planner to apply'})).toBeVisible();

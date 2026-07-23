@@ -4,6 +4,7 @@ import type {BlueprintString} from '../../../../parsing/types';
 import type {BlueprintFilterCategories} from '../../../../transform/strip';
 import type {UpgradeDirection} from '../../../../transform/upgradePlanner';
 import {ButtonGreen} from '../../../ui/ButtonGreen';
+import {BlueprintDescriptionEditor} from './BlueprintDescriptionEditor';
 import {BlueprintEditorToolbar, type PlacedUpgradePlanner} from './BlueprintEditorToolbar';
 import {BlueprintTitleEditor} from './BlueprintTitleEditor';
 import {UpgradePlannerSelectorDialog, type UpgradePlannerChoice} from './UpgradePlannerSelectorDialog';
@@ -144,19 +145,10 @@ export function BlueprintEditorDialog({
 							<small>Left-click to edit. Right-click to remove.</small>
 						</section>
 
-						<section
-							className="transform-workflow__section blueprint-editor__description"
-							aria-labelledby="blueprint-editor-description-heading"
-						>
-							<h4 id="blueprint-editor-description-heading">Description</h4>
-							<textarea
-								aria-label="Blueprint description"
-								value={description}
-								onChange={(event) => {
-									onDescriptionChange(event.currentTarget.value);
-								}}
-							/>
-						</section>
+						<BlueprintDescriptionEditor
+							description={description}
+							onDescriptionChange={onDescriptionChange}
+						/>
 
 						{showFilters ? (
 							<section
