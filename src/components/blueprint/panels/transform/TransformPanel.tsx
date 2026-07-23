@@ -22,11 +22,9 @@ import {
 	analyzeUpgradeRules,
 	applyUpgradeRules,
 	builtInUpgradeRules,
-	findUpgradePlanners,
 	parseUpgradePlanner,
 	rulesFromUpgradePlanner,
 	type UpgradeDirection,
-	type UpgradePlannerSource,
 	type UpgradeRule,
 } from '../../../../transform/upgradePlanner';
 import {ButtonGreen} from '../../../ui/ButtonGreen';
@@ -84,7 +82,6 @@ interface UpgradeTargetOverride {
 function resolveRules(
 	source: string,
 	plannerInput: string,
-	planners: UpgradePlannerSource[],
 	selectedPlanner: UpgradePlanner | undefined,
 ): ResolvedRules {
 	try {
@@ -100,18 +97,13 @@ function resolveRules(
 				rules: rulesFromUpgradePlanner(parseUpgradePlanner(plannerInput), 'upgrade'),
 			};
 		}
-		if (source.startsWith('history:')) {
+		if (source.startsWith('book:') || source.startsWith('history:')) {
 			if (selectedPlanner === undefined) {
-				throw new Error('The selected upgrade planner is no longer in history.');
+				throw new Error('The loaded upgrade planner is unavailable.');
 			}
 			return {error: undefined, rules: rulesFromUpgradePlanner(selectedPlanner, 'upgrade')};
 		}
-		const path = source.slice('book:'.length);
-		const planner = planners.find((candidate) => candidate.path === path);
-		if (planner === undefined) {
-			throw new Error('The selected upgrade planner is no longer in this book.');
-		}
-		return {error: undefined, rules: rulesFromUpgradePlanner(planner.planner, 'upgrade')};
+		throw new Error(`Unsupported upgrade planner source: ${source}`);
 	} catch (error) {
 		return {error: error instanceof Error ? error.message : String(error), rules: []};
 	}
@@ -302,10 +294,6 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 	const [upgradeDraftChanged, setUpgradeDraftChanged] = useState(false);
 	const [iconReplacementOpen, setIconReplacementOpen] = useState(false);
 	const [upgradeDiscardConfirmationOpen, setUpgradeDiscardConfirmationOpen] = useState(false);
-	const planners = useMemo(
-		() => (rootBlueprint === undefined ? [] : findUpgradePlanners(rootBlueprint)),
-		[rootBlueprint],
-	);
 	const [upgradeSource, setUpgradeSource] = useState(() =>
 		blueprint?.upgrade_planner === undefined ? 'suggested' : `book:${selectedPath}`,
 	);
@@ -314,7 +302,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 			? 'Default Upgrade'
 			: (blueprint.upgrade_planner.label ?? 'Current upgrade planner'),
 	);
-	const [selectedPlanner, setSelectedPlanner] = useState<UpgradePlanner>();
+	const [selectedPlanner, setSelectedPlanner] = useState<UpgradePlanner | undefined>(blueprint?.upgrade_planner);
 	const [plannerInput, setPlannerInput] = useState('');
 	const [upgradeScope, setUpgradeScope] = useState<'selection' | 'root'>(() =>
 		blueprint?.upgrade_planner === undefined ? 'selection' : 'root',
@@ -371,8 +359,8 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 	const type = blueprint === undefined ? undefined : new BlueprintWrapper(blueprint).getType();
 	const transformTarget = upgradeScope === 'root' ? rootBlueprint : blueprint;
 	const resolvedRules = useMemo(
-		() => resolveRules(upgradeSource, plannerInput, planners, selectedPlanner),
-		[upgradeSource, plannerInput, planners, selectedPlanner],
+		() => resolveRules(upgradeSource, plannerInput, selectedPlanner),
+		[upgradeSource, plannerInput, selectedPlanner],
 	);
 	const manualSourceKeys = useMemo(
 		() => new Set(manualRules.map((rule) => signalIdentity(rule.from))),
@@ -529,7 +517,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 				? 'Default Upgrade'
 				: (blueprint.upgrade_planner.label ?? 'Current upgrade planner'),
 		);
-		setSelectedPlanner(undefined);
+		setSelectedPlanner(blueprint.upgrade_planner);
 		setPlannerInput('');
 		setUpgradeScope(blueprint.upgrade_planner === undefined ? 'selection' : 'root');
 		setExcludedSources(new Set());
@@ -651,11 +639,21 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 								rule,
 							]);
 						},
+						onPlannerLoad: (choice) => {
+							setUpgradeDraftChanged(true);
+							setUpgradeSource(choice.source);
+							setUpgradeSourceLabel(choice.label);
+							setSelectedPlanner(choice.planner);
+							setExcludedSources(new Set());
+							setTargetOverrides(new Map());
+							setManualRules([]);
+						},
 						onPlannerInputChange: (value) => {
 							setUpgradeDraftChanged(true);
 							setPlannerInput(value);
 							setExcludedSources(new Set());
 							setTargetOverrides(new Map());
+							setManualRules([]);
 						},
 						onRemoveRule: (source, manual) => {
 							setUpgradeDraftChanged(true);
@@ -667,14 +665,6 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 							} else {
 								setExcludedSources((current) => new Set(current).add(sourceKey));
 							}
-						},
-						onPlannerSourceChange: (choice) => {
-							setUpgradeDraftChanged(true);
-							setUpgradeSource(choice.source);
-							setUpgradeSourceLabel(choice.label);
-							setSelectedPlanner(choice.planner);
-							setExcludedSources(new Set());
-							setTargetOverrides(new Map());
 						},
 						onTargetChange: (source, target, preserveQuality) => {
 							setUpgradeDraftChanged(true);

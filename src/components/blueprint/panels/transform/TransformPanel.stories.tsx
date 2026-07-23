@@ -98,6 +98,11 @@ export const UpgradePlanner: Story = {
 		await expect(canvas.queryByText('Live result')).not.toBeInTheDocument();
 		await expect(canvas.queryByRole('heading', {name: 'Preview'})).not.toBeInTheDocument();
 		await expect(canvas.queryByRole('button', {name: 'Strip quality'})).not.toBeInTheDocument();
+		await userEvent.click(canvas.getByRole('button', {name: /Load planner, currently Default Upgrade/}));
+		await expect(canvas.getByRole('dialog', {name: 'Load an upgrade planner'})).toBeVisible();
+		await expect(canvas.getByRole('button', {name: 'Default Upgrade'})).toBeVisible();
+		await expect(canvas.getByRole('button', {name: 'Empty planner'})).toBeVisible();
+		await expect(canvas.getByRole('button', {name: 'Paste upgrade planner…'})).toBeVisible();
 	},
 };
 

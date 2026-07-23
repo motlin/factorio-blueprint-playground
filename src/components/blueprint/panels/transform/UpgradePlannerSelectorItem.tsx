@@ -13,6 +13,7 @@ interface UpgradePlannerSelectorItemProps {
 	buttonRef: (button: HTMLButtonElement | null) => void;
 	choice: UpgradePlannerChoice;
 	choiceCount: number;
+	directional: boolean;
 	index: number;
 	instructionsId: string;
 	onApply: (direction: UpgradeDirection) => void;
@@ -26,6 +27,7 @@ export function UpgradePlannerSelectorItem({
 	buttonRef,
 	choice,
 	choiceCount,
+	directional,
 	index,
 	instructionsId,
 	onApply,
@@ -46,13 +48,17 @@ export function UpgradePlannerSelectorItem({
 			onClick={() => {
 				onApply('upgrade');
 			}}
-			onContextMenu={(event) => {
-				event.preventDefault();
-				onApply('downgrade');
-			}}
+			onContextMenu={
+				directional
+					? (event) => {
+							event.preventDefault();
+							onApply('downgrade');
+						}
+					: undefined
+			}
 			onFocus={onFocus}
 			onKeyDown={(event) => {
-				if (event.key === 'Enter' && event.shiftKey) {
+				if (directional && event.key === 'Enter' && event.shiftKey) {
 					event.preventDefault();
 					onApply('downgrade');
 				} else if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
