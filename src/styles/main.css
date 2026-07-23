@@ -1600,6 +1600,61 @@ body {
 	outline-offset: -2px;
 }
 
+.blueprint-snap-grid-editor fieldset {
+	display: grid;
+	gap: 9px;
+	margin: 0;
+	padding: 0 12px 12px;
+	border: 0;
+}
+
+.blueprint-snap-grid-editor__legend {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+.blueprint-snap-grid-editor__row {
+	display: grid;
+	grid-template-columns: minmax(110px, 1fr) repeat(2, minmax(110px, auto));
+	align-items: center;
+	gap: 8px;
+}
+
+.blueprint-snap-grid-editor__row > strong {
+	color: #d8d4d0;
+}
+
+.blueprint-snap-grid-editor__row label {
+	display: grid;
+	grid-template-columns: auto 72px;
+	align-items: center;
+	justify-content: end;
+	gap: 7px;
+	color: #b7b2ad;
+}
+
+.blueprint-snap-grid-editor__row input[type='number'] {
+	box-sizing: border-box;
+	width: 72px;
+	padding: 6px 7px;
+}
+
+.blueprint-snap-grid-editor__placement label {
+	display: inline-flex;
+	justify-content: flex-start;
+}
+
+.blueprint-snap-grid-editor fieldset:disabled,
+.blueprint-snap-grid-editor input:disabled {
+	color: #77736f;
+}
+
 .blueprint-editor__layout {
 	display: block;
 }
@@ -1641,6 +1696,19 @@ body {
 
 	.transform-workflow__checks {
 		grid-template-columns: 1fr;
+	}
+
+	.blueprint-snap-grid-editor__row {
+		grid-template-columns: 1fr;
+	}
+
+	.blueprint-snap-grid-editor__row label {
+		grid-template-columns: minmax(80px, auto) 1fr;
+		justify-content: stretch;
+	}
+
+	.blueprint-snap-grid-editor__row input[type='number'] {
+		width: 100%;
 	}
 
 	.transform-picker__header {

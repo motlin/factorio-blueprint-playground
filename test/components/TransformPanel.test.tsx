@@ -822,6 +822,42 @@ describe('TransformPanel', () => {
 		});
 	});
 
+	test('saves grid metadata without changing blueprint entities', async () => {
+		const user = userEvent.setup();
+		const gridBlueprint: BlueprintString = {
+			blueprint: {
+				item: 'blueprint',
+				version: 0,
+				'snap-to-grid': {x: 32, y: 64},
+				'absolute-snapping': true,
+				'position-relative-to-grid': {x: 0, y: -16},
+				entities: [{entity_number: 100, name: 'transport-belt', position: {x: 0, y: 0}}],
+			},
+		};
+		render(<TransformPanel blueprint={gridBlueprint} />);
+
+		openBlueprintEditor();
+		fireEvent.change(screen.getByRole('spinbutton', {name: 'Width'}), {target: {value: '16'}});
+		await user.click(screen.getByRole('radio', {name: 'Relative'}));
+		await user.click(screen.getByRole('button', {name: 'Save blueprint'}));
+
+		expect(navigate).toHaveBeenCalledExactlyOnceWith({
+			to: '/',
+			search: {
+				pasted: serializeBlueprint({
+					blueprint: {
+						item: 'blueprint',
+						version: 0,
+						entities: [{entity_number: 100, name: 'transport-belt', position: {x: 0, y: 0}}],
+						'snap-to-grid': {x: 16, y: 64},
+						'absolute-snapping': false,
+					},
+				}),
+				selection: '',
+			},
+		});
+	});
+
 	test('saves a child blueprint back into its root book and protects dirty drafts', async () => {
 		const user = userEvent.setup();
 		const rootBlueprint: BlueprintString = {

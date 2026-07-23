@@ -263,11 +263,15 @@ export interface Blueprint extends CommonFields {
 	tiles?: Tile[];
 	schedules?: Schedule[];
 	parameters?: Parameter[];
-	snap_to_grid?: {
+	'snap-to-grid'?: {
 		x: number;
 		y: number;
 	};
-	absolute_snapping?: boolean;
+	'absolute-snapping'?: boolean;
+	'position-relative-to-grid'?: {
+		x: number;
+		y: number;
+	};
 }
 
 interface DeconstructionSettings {

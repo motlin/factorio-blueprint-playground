@@ -8,7 +8,13 @@ import {extractNames} from '../../../../parsing/modDetection/nameExtractor';
 import type {BlueprintString, SignalID, UpgradePlanner, UpgradeSourceSignal} from '../../../../parsing/types';
 import {updateNestedBlueprint} from '../../../../transform/applyAtPath';
 import {flattenBook, sortBookByLabel} from '../../../../transform/bookOps';
-import {applyBlueprintEditorMetadata, blueprintEditorMetadata} from '../../../../transform/blueprintEditor';
+import {
+	applyBlueprintEditorMetadata,
+	applyBlueprintSnapGrid,
+	blueprintEditorMetadata,
+	blueprintSnapGrid,
+	type BlueprintSnapGrid,
+} from '../../../../transform/blueprintEditor';
 import {
 	analyzeIconReplacements,
 	analyzeMetadataIcons,
@@ -648,6 +654,9 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 	const [editorLabel, setEditorLabel] = useState('');
 	const [editorDescription, setEditorDescription] = useState('');
 	const [editorIcons, setEditorIcons] = useState<SignalID[]>([]);
+	const [editorSnapGrid, setEditorSnapGrid] = useState<BlueprintSnapGrid | undefined>(() =>
+		blueprint?.blueprint === undefined ? undefined : blueprintSnapGrid(blueprint),
+	);
 	const [editorIconPickerIndex, setEditorIconPickerIndex] = useState<number>();
 	const [editorPlacedPlanner, setEditorPlacedPlanner] = useState<PlacedUpgradePlanner>();
 	const [editorPlannerDropError, setEditorPlannerDropError] = useState<string>();
@@ -660,6 +669,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 		const metadata = blueprintEditorMetadata(blueprint);
 		setEditorLabel(metadata.label);
 		setEditorDescription(metadata.description);
+		setEditorSnapGrid(blueprint.blueprint === undefined ? undefined : blueprintSnapGrid(blueprint));
 		const nextIcons = [...metadata.icons]
 			.sort((left, right) => left.index - right.index)
 			.map((icon) => icon.signal);
@@ -801,6 +811,9 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 					label: editorLabel,
 				});
 			}
+			if (blueprintEditorEnabled && transformed.blueprint !== undefined && editorSnapGrid !== undefined) {
+				transformed = applyBlueprintSnapGrid(transformed, editorSnapGrid);
+			}
 			if (stripTrainsSelected) transformed = stripTrains(transformed);
 			if (stripEntitiesSelected) transformed = stripNonTrainEntities(transformed);
 			if (stripModulesSelected) transformed = stripModules(transformed);
@@ -815,6 +828,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 		editorDescription,
 		editorIcons,
 		editorLabel,
+		editorSnapGrid,
 		flattenBookSelected,
 		rootBlueprint,
 		selectedPath,
@@ -843,6 +857,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 		blueprint.blueprint === undefined && blueprint.blueprint_book === undefined
 			? {description: '', icons: [], label: ''}
 			: blueprintEditorMetadata(blueprint);
+	const originalSnapGrid = blueprint.blueprint === undefined ? undefined : blueprintSnapGrid(blueprint);
 	const editorDirty =
 		editorLabel !== originalEditorMetadata.label ||
 		editorDescription !== originalEditorMetadata.description ||
@@ -852,6 +867,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 					.sort((left, right) => left.index - right.index)
 					.map((icon) => icon.signal),
 			) ||
+		JSON.stringify(editorSnapGrid) !== JSON.stringify(originalSnapGrid) ||
 		stripEntitiesSelected ||
 		stripModulesSelected ||
 		stripTrainsSelected ||
@@ -862,6 +878,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 	const resetBlueprintEditorDraft = () => {
 		setEditorLabel(originalEditorMetadata.label);
 		setEditorDescription(originalEditorMetadata.description);
+		setEditorSnapGrid(originalSnapGrid);
 		setEditorIcons(
 			[...originalEditorMetadata.icons]
 				.sort((left, right) => left.index - right.index)
@@ -1283,6 +1300,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 							commitBlueprint(editorDraftBlueprint);
 						}
 					}}
+					onSnapGridChange={setEditorSnapGrid}
 					onSortBookSelectedChange={setSortBookSelected}
 					onTilesIncludedChange={(included) => {
 						setStripTilesSelected(!included);
@@ -1295,6 +1313,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 					rootBlueprint={rootBlueprint ?? blueprint}
 					saveDisabled={editorDraftBlueprint === undefined || !editorDirty}
 					saveLabel={selectedPath === '' ? 'Save blueprint' : 'Save to book'}
+					snapGrid={editorSnapGrid}
 					sortBookSelected={sortBookSelected}
 					stripEntitiesSelected={stripEntitiesSelected}
 					stripModulesSelected={stripModulesSelected}

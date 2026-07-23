@@ -6,6 +6,24 @@ export interface BlueprintEditorMetadata {
 	label: string;
 }
 
+export interface BlueprintSnapGrid {
+	absolute: boolean;
+	enabled: boolean;
+	height: number;
+	positionX: number;
+	positionY: number;
+	width: number;
+}
+
+const disabledSnapGrid: BlueprintSnapGrid = {
+	absolute: true,
+	enabled: false,
+	height: 1,
+	positionX: 0,
+	positionY: 0,
+	width: 1,
+};
+
 export function blueprintEditorMetadata(root: BlueprintString): BlueprintEditorMetadata {
 	const metadata = root.blueprint ?? root.blueprint_book;
 	if (metadata === undefined) {
@@ -16,6 +34,48 @@ export function blueprintEditorMetadata(root: BlueprintString): BlueprintEditorM
 		icons: metadata.icons ?? [],
 		label: metadata.label ?? '',
 	};
+}
+
+export function blueprintSnapGrid(root: BlueprintString): BlueprintSnapGrid {
+	const blueprint = root.blueprint;
+	if (blueprint === undefined) {
+		throw new Error('Snap-to-grid settings require a blueprint.');
+	}
+	const grid = blueprint['snap-to-grid'];
+	if (grid === undefined) {
+		return {...disabledSnapGrid};
+	}
+	const position = blueprint['position-relative-to-grid'];
+	return {
+		absolute: blueprint['absolute-snapping'] ?? false,
+		enabled: true,
+		height: grid.y,
+		positionX: position?.x ?? 0,
+		positionY: position?.y ?? 0,
+		width: grid.x,
+	};
+}
+
+export function applyBlueprintSnapGrid(root: BlueprintString, settings: BlueprintSnapGrid): BlueprintString {
+	const blueprint = root.blueprint;
+	if (blueprint === undefined) {
+		throw new Error('Snap-to-grid settings require a blueprint.');
+	}
+	const updated = {...blueprint};
+	delete updated['snap-to-grid'];
+	delete updated['absolute-snapping'];
+	delete updated['position-relative-to-grid'];
+	if (settings.enabled) {
+		updated['snap-to-grid'] = {x: settings.width, y: settings.height};
+		updated['absolute-snapping'] = settings.absolute;
+		if (settings.absolute) {
+			updated['position-relative-to-grid'] = {
+				x: settings.positionX,
+				y: settings.positionY,
+			};
+		}
+	}
+	return {...root, blueprint: updated};
 }
 
 export function applyBlueprintEditorMetadata(
