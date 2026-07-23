@@ -83,6 +83,24 @@ export const Blueprint: Story = {
 	},
 };
 
+export const UpgradePlanner: Story = {
+	args: Blueprint.args,
+	play: async ({canvasElement}) => {
+		const canvas = within(canvasElement);
+		await userEvent.click(canvas.getByRole('button', {name: 'Open Upgrade Planner'}));
+
+		await expect(canvas.getByRole('dialog', {name: 'Upgrade Planner'})).toHaveAttribute('aria-modal', 'true');
+		await expect(canvas.getByRole('region', {name: 'Upgrade Planner configuration'})).toBeVisible();
+		await expect(canvas.getByRole('heading', {name: 'Upgrade mappings'})).toBeVisible();
+		await expect(canvas.getByRole('group', {name: 'From and To mappings'})).toBeVisible();
+		await expect(canvas.getByText('Website extension')).toBeVisible();
+		await expect(canvas.getByRole('heading', {name: 'Book-wide replacements'})).toBeVisible();
+		await expect(canvas.queryByText('Live result')).not.toBeInTheDocument();
+		await expect(canvas.queryByRole('heading', {name: 'Preview'})).not.toBeInTheDocument();
+		await expect(canvas.queryByRole('button', {name: 'Strip quality'})).not.toBeInTheDocument();
+	},
+};
+
 export const BlueprintEditor: Story = {
 	args: Blueprint.args,
 	play: async ({canvasElement}) => {

@@ -90,18 +90,36 @@ describe('TransformPanel', () => {
 		});
 
 		openUpgradePlanner();
+		const dialog = screen.getByRole('dialog', {name: 'Upgrade Planner'});
+		const configuration = within(dialog).getByRole('region', {name: 'Upgrade Planner configuration'});
+		const dialogHeading = within(dialog).getByRole('heading', {name: 'Upgrade Planner'});
+		expect(dialog.getAttribute('aria-labelledby')).toBe(dialogHeading.id);
 		expect({
+			bodyClass: configuration.className,
+			bookWidePanel: within(configuration)
+				.getByRole('heading', {name: 'Book-wide replacements'})
+				.closest('section')?.className,
 			changeIn: screen.queryByRole('group', {name: 'Change in'}),
-			dialog: screen.getByRole('dialog', {name: 'Upgrade Planner'}).getAttribute('aria-modal'),
+			closeButton: within(dialog).getByRole('button', {name: 'Close Upgrade Planner'}).getAttribute('aria-label'),
+			configurationPanel: within(configuration)
+				.getByRole('heading', {name: 'Upgrade mappings'})
+				.closest('section')?.className,
+			dialog: dialog.getAttribute('aria-modal'),
 			exportActions: ['Copy String', 'Copy JSON', 'Download String', 'Open in Playground'].map((name) =>
 				screen.queryByRole('button', {name}),
 			),
+			footerElement: dialog.lastElementChild?.tagName,
+			fromToGroup: within(configuration)
+				.getByRole('group', {name: 'From and To mappings'})
+				.getAttribute('aria-label'),
+			headerElement: dialog.firstElementChild?.tagName,
 			liveResult: screen.queryByText('Live result'),
+			modeButtons: ['Upgrade', 'Downgrade', 'Strip quality'].map((name) => screen.queryByRole('button', {name})),
 			operationButtons: ['Apply upgrades', 'Apply downgrades'].map(
 				(name) => screen.getByRole('button', {name}).textContent,
 			),
-			stripQuality: screen.queryByRole('button', {name: 'Strip quality'}),
 			preserveCapitalization: screen.queryByRole('checkbox', {name: 'Preserve capitalization'}),
+			scrollTabIndex: configuration.tabIndex,
 			sourceIcon: screen
 				.getByRole('button', {name: 'Choose source, currently Transport belt'})
 				.querySelector('img')
@@ -111,17 +129,27 @@ describe('TransformPanel', () => {
 				.querySelector('img')
 				?.getAttribute('src'),
 			bookWideReplacements: screen.getByRole('heading', {name: 'Book-wide replacements'}).textContent,
+			websiteLabel: within(configuration).getByText('Website extension').textContent,
 		}).toStrictEqual({
+			bodyClass: 'transform-workbench__body upgrade-planner-dialog__scroll-region',
+			bookWidePanel: 'panel-hole transform-workflow__section transform-workflow__website-replacements',
 			changeIn: null,
+			closeButton: 'Close Upgrade Planner',
+			configurationPanel: 'panel-hole upgrade-planner-dialog__configuration',
 			dialog: 'true',
 			exportActions: [null, null, null, null],
+			footerElement: 'FOOTER',
+			fromToGroup: 'From and To mappings',
+			headerElement: 'HEADER',
 			liveResult: null,
+			modeButtons: [null, null, null],
 			operationButtons: ['Apply upgrades', 'Apply downgrades'],
-			stripQuality: null,
 			preserveCapitalization: null,
+			scrollTabIndex: 0,
 			sourceIcon: 'https://factorio-icon-cdn.pages.dev/entity/transport-belt.webp',
 			targetIcon: 'https://factorio-icon-cdn.pages.dev/entity/fast-transport-belt.webp',
 			bookWideReplacements: 'Book-wide replacements',
+			websiteLabel: 'Website extension',
 		});
 	});
 
