@@ -149,7 +149,7 @@ describe('TransformPanel', () => {
 			iconSlots: [1, 2, 3, 4].map((index) =>
 				screen.getByRole('button', {name: `Choose icon ${index.toString()}`}).getAttribute('aria-label'),
 			),
-			name: screen.getByRole<HTMLInputElement>('textbox', {name: 'Name'}).value,
+			title: dialog.querySelector('.blueprint-editor__title')?.textContent,
 			plannerMappings: screen.queryByRole('group', {name: 'Planner operation'}),
 			preview: screen.queryByRole('heading', {name: 'Preview'}),
 			saveDestination: screen.queryByLabelText('Save destination'),
@@ -163,7 +163,7 @@ describe('TransformPanel', () => {
 			filters: [true, true, true, true],
 			headerElement: 'HEADER',
 			iconSlots: ['Choose icon 1', 'Choose icon 2', 'Choose icon 3', 'Choose icon 4'],
-			name: '',
+			title: 'Untitled blueprint',
 			plannerMappings: null,
 			preview: null,
 			saveDestination: null,
@@ -501,8 +501,9 @@ describe('TransformPanel', () => {
 		render(<TransformPanel blueprint={iconBlueprint} />);
 
 		openBlueprintEditor();
-		await user.clear(screen.getByRole('textbox', {name: 'Name'}));
-		await user.type(screen.getByRole('textbox', {name: 'Name'}), 'Blue starter');
+		await user.click(screen.getByRole('button', {name: 'Edit blueprint title'}));
+		await user.clear(screen.getByRole('textbox', {name: 'Blueprint title'}));
+		await user.type(screen.getByRole('textbox', {name: 'Blueprint title'}), 'Blue starter{Enter}');
 		await user.clear(screen.getByRole('textbox', {name: 'Blueprint description'}));
 		await user.type(screen.getByRole('textbox', {name: 'Blueprint description'}), 'New description');
 		await user.click(screen.getByRole('button', {name: 'Edit icon 1'}));
@@ -545,8 +546,9 @@ describe('TransformPanel', () => {
 		render(<TransformPanel blueprint={selectedBlueprint} rootBlueprint={rootBlueprint} selectedPath="1" />);
 
 		openBlueprintEditor();
-		await user.clear(screen.getByRole('textbox', {name: 'Name'}));
-		await user.type(screen.getByRole('textbox', {name: 'Name'}), 'New label');
+		await user.click(screen.getByRole('button', {name: 'Edit blueprint title'}));
+		await user.clear(screen.getByRole('textbox', {name: 'Blueprint title'}));
+		await user.type(screen.getByRole('textbox', {name: 'Blueprint title'}), 'New label{Enter}');
 		await user.click(screen.getByRole('button', {name: 'Close Blueprint Editor'}));
 
 		expect({

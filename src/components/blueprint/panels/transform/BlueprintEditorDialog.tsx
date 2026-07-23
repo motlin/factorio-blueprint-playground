@@ -2,6 +2,7 @@ import type {ReactNode} from 'react';
 
 import type {BlueprintFilterCategories} from '../../../../transform/strip';
 import {ButtonGreen} from '../../../ui/ButtonGreen';
+import {BlueprintTitleEditor} from './BlueprintTitleEditor';
 
 interface BlueprintEditorDialogProps {
 	book: boolean;
@@ -98,17 +99,7 @@ export function BlueprintEditorDialog({
 
 				<div className="transform-workbench__body blueprint-editor__layout">
 					<div className="panel-hole transform-workflow blueprint-editor__settings">
-						<div className="panel-hole-inner blueprint-editor__name">
-							<label htmlFor="blueprint-editor-name">Name</label>
-							<input
-								id="blueprint-editor-name"
-								type="text"
-								value={label}
-								onChange={(event) => {
-									onLabelChange(event.currentTarget.value);
-								}}
-							/>
-						</div>
+						<BlueprintTitleEditor label={label} onLabelChange={onLabelChange} />
 
 						<section
 							className="transform-workflow__section blueprint-editor__icons"
