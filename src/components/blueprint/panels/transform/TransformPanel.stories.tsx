@@ -74,6 +74,9 @@ export const Blueprint: Story = {
 				label: 'Belt test',
 				description: '[item=transport-belt] Belt test\nKeeps rich-text strings unchanged.',
 				version: 0,
+				'snap-to-grid': {x: 32, y: 64},
+				'absolute-snapping': true,
+				'position-relative-to-grid': {x: 0, y: -16},
 				entities: [{entity_number: 1, name: 'transport-belt', position: {x: 0, y: 0}}],
 			},
 		},
@@ -92,6 +95,12 @@ export const BlueprintEditor: Story = {
 		await expect(canvas.getByRole('textbox', {name: 'Blueprint description'})).toHaveValue(
 			'[item=transport-belt] Belt test\nKeeps rich-text strings unchanged.',
 		);
+		await expect(canvas.getByRole('checkbox', {name: 'Snap to grid'})).toBeChecked();
+		await expect(canvas.getByRole('spinbutton', {name: 'Width'})).toHaveValue(32);
+		await expect(canvas.getByRole('spinbutton', {name: 'Height'})).toHaveValue(64);
+		await expect(canvas.getByRole('spinbutton', {name: 'X'})).toHaveValue(0);
+		await expect(canvas.getByRole('spinbutton', {name: 'Y'})).toHaveValue(-16);
+		await expect(canvas.getByRole('radio', {name: 'Absolute'})).toBeChecked();
 		await expect(canvas.queryByRole('heading', {name: 'Preview'})).not.toBeInTheDocument();
 		await userEvent.click(canvas.getByRole('button', {name: 'Upgrade items and entities in the blueprint'}));
 		await expect(canvas.getByRole('dialog', {name: 'Select the upgrade planner to apply'})).toBeVisible();
