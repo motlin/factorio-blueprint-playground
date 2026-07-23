@@ -4,16 +4,18 @@ import {beforeEach, describe, expect, test, vi} from 'vite-plus/test';
 
 import {TransformPanel} from '../../src/components/blueprint/panels/transform/TransformPanel';
 import {serializeBlueprint} from '../../src/parsing/blueprintParser';
-import type {BlueprintString, BlueprintStringWithIndex} from '../../src/parsing/types';
+import type {BlueprintString, BlueprintStringWithIndex, UpgradePlanner} from '../../src/parsing/types';
+import type {DatabaseBlueprint} from '../../src/storage/db';
 import {stripTiles, stripTrains} from '../../src/transform/strip';
 import {applyUpgradeRules, builtInUpgradeRules} from '../../src/transform/upgradePlanner';
 
-const {navigate} = vi.hoisted(() => ({
+const {historyBlueprints, navigate} = vi.hoisted(() => ({
+	historyBlueprints: [] as DatabaseBlueprint[],
 	navigate: vi.fn<(options: unknown) => void>(),
 }));
 
 vi.mock('dexie-react-hooks', () => ({
-	useLiveQuery: () => [],
+	useLiveQuery: () => historyBlueprints,
 }));
 vi.mock('@tanstack/react-router', async (importOriginal) => ({
 	...(await importOriginal()),
@@ -49,8 +51,22 @@ async function chooseSignal(user: ReturnType<typeof userEvent.setup>, label: str
 	await user.click(screen.getByRole('button', {name: 'Confirm'}));
 }
 
+function storedPlanner(sha: string, planner: UpgradePlanner, label: string): DatabaseBlueprint {
+	return {
+		metadata: {
+			sha,
+			createdOn: 0,
+			lastUpdatedOn: 0,
+			data: serializeBlueprint({upgrade_planner: planner}),
+			fetchMethod: 'data',
+		},
+		gameData: {type: 'upgrade_planner', label, icons: []},
+	};
+}
+
 describe('TransformPanel', () => {
 	beforeEach(() => {
+		historyBlueprints.length = 0;
 		navigate.mockReset();
 	});
 
@@ -1462,6 +1478,170 @@ describe('TransformPanel', () => {
 				}),
 				selection: '2',
 			},
+		});
+	});
+
+	test('loads each planner-library source as an exact editable mapping draft', async () => {
+		const user = userEvent.setup();
+		const bookPlanner: UpgradePlanner = {
+			item: 'upgrade-planner',
+			label: "Alice's library planner",
+			version: 0,
+			settings: {
+				mappers: [
+					{
+						index: 100,
+						from: {type: 'entity', name: 'transport-belt'},
+						to: {type: 'entity', name: 'fast-transport-belt'},
+					},
+					{
+						index: 200,
+						from: {type: 'item', name: 'speed-module'},
+						to: {type: 'item', name: 'speed-module-2'},
+					},
+				],
+			},
+		};
+		const recentPlanner: UpgradePlanner = {
+			item: 'upgrade-planner',
+			label: "Bob's recent planner",
+			version: 0,
+			settings: {
+				mappers: [
+					{
+						index: 100,
+						from: {type: 'entity', name: 'transport-belt'},
+						to: {type: 'entity', name: 'express-transport-belt'},
+					},
+					{
+						index: 200,
+						from: {type: 'entity', name: 'inserter'},
+						to: {type: 'entity', name: 'fast-inserter'},
+					},
+				],
+			},
+		};
+		const selectedBlueprint: BlueprintString = {
+			blueprint: {
+				item: 'blueprint',
+				version: 0,
+				entities: [{entity_number: 100, name: 'transport-belt', position: {x: 0, y: 0}}],
+			},
+		};
+		const rootBlueprint: BlueprintString = {
+			blueprint_book: {
+				item: 'blueprint-book',
+				version: 0,
+				blueprints: [
+					{index: 100, ...selectedBlueprint},
+					{index: 200, upgrade_planner: bookPlanner},
+				],
+			},
+		};
+		historyBlueprints.push(
+			storedPlanner('sha-100', bookPlanner, 'Duplicate book planner'),
+			storedPlanner('sha-200', recentPlanner, "Bob's recent planner"),
+		);
+		render(<TransformPanel blueprint={selectedBlueprint} rootBlueprint={rootBlueprint} selectedPath="1" />);
+
+		openUpgradePlanner();
+		await user.click(screen.getByRole('button', {name: /Load planner, currently Default Upgrade/}));
+		expect(
+			within(screen.getByRole('grid', {name: 'Upgrade planners'}))
+				.getAllByRole('button')
+				.map((button) => button.getAttribute('aria-label')),
+		).toStrictEqual([
+			'Default Upgrade',
+			"Alice's library planner",
+			"Bob's recent planner",
+			'Empty planner',
+			'Paste upgrade planner…',
+		]);
+
+		await user.click(screen.getByRole('button', {name: 'Empty planner'}));
+		await user.click(screen.getByRole('button', {name: '+ Add mapping'}));
+		await chooseSignal(user, 'Transport belt');
+		await chooseSignal(user, 'Express transport belt');
+		expect(screen.getByRole('button', {name: 'Choose target for Transport belt'}).title).toBe(
+			'Express transport belt\nentity:express-transport-belt',
+		);
+
+		await choosePlanner(user, "Alice's library planner");
+		const bookSourceButtons = screen.getAllByRole('button', {name: /Choose source, currently/});
+		expect({
+			loadedSource: {
+				icon: screen
+					.getByRole('button', {name: /Load planner, currently Alice's library planner/})
+					.querySelector('img')
+					?.getAttribute('src'),
+				label: screen.getByRole('button', {
+					name: /Load planner, currently Alice's library planner/,
+				}).textContent,
+			},
+			mappings: bookSourceButtons.map((sourceButton) => ({
+				count: sourceButton.parentElement?.querySelector('strong')?.textContent,
+				from: sourceButton.title,
+				to: sourceButton.parentElement?.querySelector<HTMLButtonElement>('button[aria-label^="Choose target"]')
+					?.title,
+			})),
+		}).toStrictEqual({
+			loadedSource: {
+				icon: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
+				label: "Alice's library planner",
+			},
+			mappings: [
+				{
+					count: '1',
+					from: 'Transport belt\nentity:transport-belt',
+					to: 'Fast transport belt\nentity:fast-transport-belt',
+				},
+				{
+					count: '0',
+					from: 'Speed module\nitem:speed-module',
+					to: 'Speed module 2\nitem:speed-module-2',
+				},
+			],
+		});
+
+		await choosePlanner(user, "Bob's recent planner");
+		expect(
+			screen.getAllByRole('button', {name: /Choose source, currently/}).map((sourceButton) => ({
+				count: sourceButton.parentElement?.querySelector('strong')?.textContent,
+				from: sourceButton.title,
+				to: sourceButton.parentElement?.querySelector<HTMLButtonElement>('button[aria-label^="Choose target"]')
+					?.title,
+			})),
+		).toStrictEqual([
+			{
+				count: '1',
+				from: 'Transport belt\nentity:transport-belt',
+				to: 'Express transport belt\nentity:express-transport-belt',
+			},
+			{
+				count: '0',
+				from: 'Inserter\nentity:inserter',
+				to: 'Fast inserter\nentity:fast-inserter',
+			},
+		]);
+
+		await choosePlanner(user, 'Default Upgrade');
+		expect({
+			label: screen.getByRole('button', {name: /Load planner, currently Default Upgrade/}).textContent,
+			target: screen.getByRole('button', {name: 'Choose target for Transport belt'}).title,
+		}).toStrictEqual({
+			label: 'Default Upgrade',
+			target: 'Fast transport belt\nentity:fast-transport-belt',
+		});
+
+		await choosePlanner(user, 'Paste upgrade planner…');
+		expect({
+			label: screen.getByRole('button', {
+				name: /Load planner, currently Paste upgrade planner/,
+			}).textContent,
+			pasteInput: screen.getByPlaceholderText('Paste an upgrade planner string or JSON').tagName,
+		}).toStrictEqual({
+			label: 'Paste upgrade planner…',
+			pasteInput: 'TEXTAREA',
 		});
 	});
 

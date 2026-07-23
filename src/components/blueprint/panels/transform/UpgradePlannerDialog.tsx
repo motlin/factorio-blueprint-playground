@@ -29,9 +29,9 @@ interface UpgradePlannerMappings {
 	manualRules: readonly UpgradeRule[];
 	onAddManualRule: (rule: UpgradeRule) => void;
 	onChangeManualRule: (previousSource: UpgradeSourceSignal, rule: UpgradeRule) => void;
+	onPlannerLoad: (choice: UpgradePlannerChoice) => void;
 	onPlannerInputChange: (value: string) => void;
 	onRemoveRule: (source: UpgradeSourceSignal, manual: boolean) => void;
-	onPlannerSourceChange: (choice: UpgradePlannerChoice) => void;
 	onTargetChange: (source: SignalID, target: SignalID, preserveQuality: boolean) => void;
 	plannerInput: string;
 	rootBlueprint: BlueprintString;
@@ -127,9 +127,9 @@ function UpgradeMappingsEditor({
 	manualRules,
 	onAddManualRule,
 	onChangeManualRule,
+	onPlannerLoad,
 	onPlannerInputChange,
 	onRemoveRule,
-	onPlannerSourceChange,
 	onTargetChange,
 	plannerInput,
 	rootBlueprint,
@@ -251,7 +251,7 @@ function UpgradeMappingsEditor({
 						setPlannerSelectorOpen(false);
 					}}
 					onChoose={(choice) => {
-						onPlannerSourceChange(choice);
+						onPlannerLoad(choice);
 						setPlannerSelectorOpen(false);
 					}}
 				/>

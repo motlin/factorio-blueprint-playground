@@ -67,11 +67,11 @@ describe('UpgradePlannerSelectorDialog', () => {
 		];
 	});
 
-	test('shows fixture, history, and default planners once in an inventory grid', () => {
+	test('shows every load source once in an inventory grid', () => {
 		render(
 			<UpgradePlannerSelectorDialog
 				dialogId="upgrade-planner-selector"
-				includeEditingChoices={false}
+				includeEditingChoices
 				rootBlueprint={rootBlueprint}
 				selectedSource="suggested"
 				onChoose={vi.fn<(choice: UpgradePlannerChoice, direction: UpgradeDirection) => void>()}
@@ -85,6 +85,7 @@ describe('UpgradePlannerSelectorDialog', () => {
 			throw new Error('Expected selector instructions.');
 		}
 		expect({
+			heading: screen.getByRole('heading', {name: 'Load an upgrade planner'}).textContent,
 			instructions: instructions.textContent,
 			tiles: tiles.map((tile) => ({
 				describedBy: tile.getAttribute('aria-describedby'),
@@ -95,8 +96,8 @@ describe('UpgradePlannerSelectorDialog', () => {
 				title: tile.title,
 			})),
 		}).toStrictEqual({
-			instructions:
-				'Left-click to apply as upgrade. Right-click to apply as downgrade. Enter applies as upgrade; Shift+Enter applies as downgrade.',
+			heading: 'Load an upgrade planner',
+			instructions: 'Choose a planner to copy all of its mappings into the editable draft.',
 			tiles: [
 				{
 					describedBy: instructions.id,
@@ -121,6 +122,22 @@ describe('UpgradePlannerSelectorDialog', () => {
 					pressed: 'false',
 					tabIndex: -1,
 					title: 'Zero-match module planner',
+				},
+				{
+					describedBy: instructions.id,
+					icon: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
+					label: 'Empty planner',
+					pressed: 'false',
+					tabIndex: -1,
+					title: 'Empty planner',
+				},
+				{
+					describedBy: instructions.id,
+					icon: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
+					label: 'Paste upgrade planner…',
+					pressed: 'false',
+					tabIndex: -1,
+					title: 'Paste upgrade planner…',
 				},
 			],
 		});

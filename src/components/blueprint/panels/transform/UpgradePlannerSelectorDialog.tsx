@@ -132,7 +132,9 @@ export function UpgradePlannerSelectorDialog({
 				}}
 			>
 				<header className="transform-dialog__header upgrade-planner-selector__header">
-					<h3 id={headingId}>Select the upgrade planner to apply</h3>
+					<h3 id={headingId}>
+						{includeEditingChoices ? 'Load an upgrade planner' : 'Select the upgrade planner to apply'}
+					</h3>
 					<button
 						type="button"
 						className="transform-dialog__close"
@@ -143,8 +145,14 @@ export function UpgradePlannerSelectorDialog({
 					</button>
 				</header>
 				<p id={instructionsId} className="upgrade-planner-selector__hint">
-					<span>Left-click</span> to apply as upgrade. <span>Right-click</span> to apply as downgrade. Enter
-					applies as upgrade; Shift+Enter applies as downgrade.
+					{includeEditingChoices ? (
+						<>Choose a planner to copy all of its mappings into the editable draft.</>
+					) : (
+						<>
+							<span>Left-click</span> to apply as upgrade. <span>Right-click</span> to apply as downgrade.
+							Enter applies as upgrade; Shift+Enter applies as downgrade.
+						</>
+					)}
 				</p>
 				<div className="upgrade-planner-selector__grid" role="grid" aria-label="Upgrade planners">
 					{choices.map((choice, index) => (
@@ -156,6 +164,7 @@ export function UpgradePlannerSelectorDialog({
 							}}
 							choice={choice}
 							choiceCount={choices.length}
+							directional={!includeEditingChoices}
 							index={index}
 							instructionsId={instructionsId}
 							onApply={(direction) => {
