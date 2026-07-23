@@ -28,7 +28,6 @@ import {
 	blueprintFilterCategories,
 	stripModules,
 	stripNonTrainEntities,
-	stripQuality,
 	stripTiles,
 	stripTrains,
 } from '../../../../transform/strip';
@@ -47,7 +46,6 @@ import {
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
 import {ButtonGreen} from '../../../ui/ButtonGreen';
 import {Textarea} from '../../../ui/Textarea';
-import {BlueprintExportButtons} from '../../export/ExportActions';
 
 interface TransformPanelProps {
 	blueprint?: BlueprintString;
@@ -78,23 +76,19 @@ interface SignalSlotProps {
 
 interface UpgradeMappingsEditorProps {
 	candidates: UpgradeCandidate[];
-	direction: UpgradeDirection;
 	error: string | undefined;
 	excludedSources: ReadonlySet<string>;
 	manualRules: readonly UpgradeRule[];
 	onAddManualRule: (rule: UpgradeRule) => void;
-	onDirectionChange: (direction: UpgradeDirection) => void;
+	onChangeManualRule: (previousSource: UpgradeSourceSignal, rule: UpgradeRule) => void;
 	onPlannerInputChange: (value: string) => void;
-	onRemoveManualRule: (source: UpgradeSourceSignal) => void;
-	onSourceChange: (value: string) => void;
-	onStripQualityChange: (selected: boolean) => void;
+	onRemoveRule: (source: UpgradeSourceSignal, manual: boolean) => void;
+	onPlannerSourceChange: (value: string) => void;
 	onTargetChange: (source: SignalID, target: SignalID, preserveQuality: boolean) => void;
-	onToggleCandidate: (source: SignalID, checked: boolean) => void;
 	plannerInput: string;
 	planners: UpgradePlannerSource[];
 	source: string;
 	sourceOptions: SignalID[];
-	stripQualitySelected: boolean;
 }
 
 interface IconReplacementDialogProps {
@@ -113,6 +107,11 @@ type PickerSignal = SignalID & {comparator?: QualityComparator};
 interface UpgradeTargetOverride {
 	preserveQuality: boolean;
 	to: SignalID;
+}
+
+interface MappingSourceDraft {
+	candidate?: UpgradeCandidate;
+	source: UpgradeSourceSignal;
 }
 
 function normalizedSignalType(signal: SignalID): string {
@@ -205,11 +204,12 @@ function upgradeTargetOptions(source: SignalID, currentTarget: SignalID): Signal
 
 function upgradeSourceOptions(target: BlueprintString | undefined): SignalID[] {
 	const options = new Map<string, SignalID>();
-	for (const {from, to} of gameData.nextUpgrades) {
-		options.set(`entity:${from}`, {type: 'entity', name: from});
-		options.set(`entity:${to}`, {type: 'entity', name: to});
-	}
-	if (target !== undefined) {
+	if (target === undefined) {
+		for (const {from, to} of gameData.nextUpgrades) {
+			options.set(`entity:${from}`, {type: 'entity', name: from});
+			options.set(`entity:${to}`, {type: 'entity', name: to});
+		}
+	} else {
 		for (const [name, details] of extractNames(target).names) {
 			if (details.kinds.has('entity')) {
 				options.set(`entity:${name}`, {type: 'entity', name});
@@ -224,6 +224,15 @@ function upgradeSourceOptions(target: BlueprintString | undefined): SignalID[] {
 			normalizedSignalType(left).localeCompare(normalizedSignalType(right)) ||
 			left.name.localeCompare(right.name),
 	);
+}
+
+function reverseUpgradeRule(rule: UpgradeRule): UpgradeRule {
+	const {comparator: _comparator, ...target} = rule.from;
+	return {
+		from: rule.to,
+		preserveQuality: rule.preserveQuality,
+		to: target,
+	};
 }
 
 function SignalSlot({label, onClick, onContextMenu, signal}: SignalSlotProps) {
@@ -401,78 +410,46 @@ function SignalPickerDialog({initialQuality, onChoose, onClose, options, quality
 
 function UpgradeMappingsEditor({
 	candidates,
-	direction,
 	error,
 	excludedSources,
 	manualRules,
 	onAddManualRule,
-	onDirectionChange,
+	onChangeManualRule,
 	onPlannerInputChange,
-	onRemoveManualRule,
-	onSourceChange,
-	onStripQualityChange,
+	onRemoveRule,
+	onPlannerSourceChange,
 	onTargetChange,
-	onToggleCandidate,
 	plannerInput,
 	planners,
 	source,
 	sourceOptions,
-	stripQualitySelected,
 }: UpgradeMappingsEditorProps) {
 	const [targetPickerCandidate, setTargetPickerCandidate] = useState<UpgradeCandidate>();
-	const [manualSourcePickerOpen, setManualSourcePickerOpen] = useState(false);
-	const [pendingManualSource, setPendingManualSource] = useState<UpgradeSourceSignal>();
+	const [sourcePickerCandidate, setSourcePickerCandidate] = useState<UpgradeCandidate | null>();
+	const [mappingSourceDraft, setMappingSourceDraft] = useState<MappingSourceDraft>();
 	const manualSourceKeys = new Set(manualRules.map((rule) => signalIdentity(rule.from)));
+	const visibleCandidates = candidates.filter((candidate) => !excludedSources.has(signalIdentity(candidate.from)));
 
 	return (
 		<>
 			<div className="panel-hole upgrade-planner-editor">
-				<div className="upgrade-planner-editor__modes" role="group" aria-label="Planner operation">
-					<button
-						type="button"
-						aria-pressed={direction === 'upgrade'}
-						onClick={() => {
-							onDirectionChange('upgrade');
-						}}
-					>
-						<span aria-hidden="true">↑</span> Upgrade
-					</button>
-					<button
-						type="button"
-						aria-pressed={direction === 'downgrade'}
-						onClick={() => {
-							onDirectionChange('downgrade');
-						}}
-					>
-						<span aria-hidden="true">↓</span> Downgrade
-					</button>
-					<button
-						type="button"
-						aria-pressed={stripQualitySelected}
-						onClick={() => {
-							onStripQualityChange(!stripQualitySelected);
-						}}
-					>
-						<span aria-hidden="true">◇</span> Strip quality
-					</button>
-				</div>
 				<div className="panel-hole-inner upgrade-planner-editor__source">
-					<label htmlFor="upgrade-source">Planner</label>
+					<label htmlFor="upgrade-source">Load planner</label>
 					<select
 						id="upgrade-source"
 						value={source}
 						onChange={(event) => {
-							onSourceChange(event.currentTarget.value);
+							onPlannerSourceChange(event.currentTarget.value);
 						}}
 					>
-						<option value="suggested">Built-in suggestions</option>
-						<option value="custom">Custom mappings</option>
+						<option value="suggested">Default upgrade planner</option>
+						<option value="custom">Empty planner</option>
 						{planners.map((planner) => (
 							<option key={planner.path} value={`book:${planner.path}`}>
 								{planner.label}
 							</option>
 						))}
-						<option value="pasted">Pasted upgrade planner</option>
+						<option value="pasted">Paste upgrade planner…</option>
 					</select>
 				</div>
 				{source === 'pasted' ? (
@@ -491,34 +468,28 @@ function UpgradeMappingsEditor({
 					</p>
 				)}
 				<div className="upgrade-planner-editor__mappings">
-					{candidates.length === 0 && error === undefined ? (
+					{visibleCandidates.length === 0 && error === undefined ? (
 						<p className="upgrade-planner-editor__empty">No matching entities or modules in this scope.</p>
 					) : (
 						<>
 							<div className="upgrade-planner-editor__mapping-headings" aria-hidden="true">
-								<span />
 								<span>From</span>
 								<span />
 								<span>To</span>
 								<span>Matches</span>
 								<span />
 							</div>
-							{candidates.map((candidate) => {
+							{visibleCandidates.map((candidate) => {
 								const sourceKey = signalIdentity(candidate.from);
-								const checked = !excludedSources.has(sourceKey);
+								const manual = manualSourceKeys.has(sourceKey);
 								return (
 									<div key={sourceKey} className="upgrade-planner-editor__mapping">
-										<input
-											type="checkbox"
-											aria-label={`Replace ${candidate.from.name} with ${candidate.to.name}`}
-											checked={checked}
-											onChange={(event) => {
-												onToggleCandidate(candidate.from, event.currentTarget.checked);
-											}}
-										/>
 										<SignalSlot
-											label={`Source ${signalName(candidate.from)}`}
+											label={`Choose source, currently ${signalName(candidate.from)}`}
 											signal={candidate.from}
+											onClick={() => {
+												setSourcePickerCandidate(candidate);
+											}}
 										/>
 										<span className="upgrade-planner-editor__arrow" aria-hidden="true">
 											→
@@ -531,20 +502,16 @@ function UpgradeMappingsEditor({
 											}}
 										/>
 										<strong>{candidate.count}</strong>
-										{manualSourceKeys.has(sourceKey) ? (
-											<button
-												type="button"
-												className="upgrade-planner-editor__remove"
-												aria-label={`Remove mapping from ${signalName(candidate.from)}`}
-												onClick={() => {
-													onRemoveManualRule(candidate.from);
-												}}
-											>
-												×
-											</button>
-										) : (
-											<span />
-										)}
+										<button
+											type="button"
+											className="upgrade-planner-editor__remove"
+											aria-label={`Remove mapping from ${signalName(candidate.from)}`}
+											onClick={() => {
+												onRemoveRule(candidate.from, manual);
+											}}
+										>
+											×
+										</button>
 									</div>
 								);
 							})}
@@ -555,7 +522,7 @@ function UpgradeMappingsEditor({
 					type="button"
 					className="upgrade-planner-editor__add"
 					onClick={() => {
-						setManualSourcePickerOpen(true);
+						setSourcePickerCandidate(null);
 					}}
 				>
 					+ Add mapping
@@ -580,33 +547,43 @@ function UpgradeMappingsEditor({
 					}}
 				/>
 			)}
-			{manualSourcePickerOpen ? (
+			{sourcePickerCandidate === undefined ? null : (
 				<SignalPickerDialog
 					title="Choose mapping source"
-					options={sourceOptions}
+					options={[
+						...new Map(
+							[
+								...sourceOptions,
+								...(sourcePickerCandidate === null ? [] : [sourcePickerCandidate.from]),
+							].map((signal) => [signalIdentity(signal), signal]),
+						).values(),
+					]}
 					qualityMode="source"
 					onClose={() => {
-						setManualSourcePickerOpen(false);
+						setSourcePickerCandidate(undefined);
 					}}
 					onChoose={(sourceSignal) => {
-						setPendingManualSource(sourceSignal);
-						setManualSourcePickerOpen(false);
+						setMappingSourceDraft({candidate: sourcePickerCandidate ?? undefined, source: sourceSignal});
+						setSourcePickerCandidate(undefined);
 					}}
 				/>
-			) : null}
-			{pendingManualSource === undefined ? null : (
+			)}
+			{mappingSourceDraft === undefined ? null : (
 				<SignalPickerDialog
-					title={`Choose target for ${signalName(pendingManualSource)}`}
-					options={sourceOptions.filter(
-						(option) => normalizedSignalType(option) === normalizedSignalType(pendingManualSource),
-					)}
+					title={`Choose target for ${signalName(mappingSourceDraft.source)}`}
+					options={upgradeTargetOptions(mappingSourceDraft.source, mappingSourceDraft.source)}
 					qualityMode="target"
 					onClose={() => {
-						setPendingManualSource(undefined);
+						setMappingSourceDraft(undefined);
 					}}
 					onChoose={(target, preserveQuality = false) => {
-						onAddManualRule({from: pendingManualSource, preserveQuality, to: target});
-						setPendingManualSource(undefined);
+						const rule = {from: mappingSourceDraft.source, preserveQuality, to: target};
+						if (mappingSourceDraft.candidate === undefined) {
+							onAddManualRule(rule);
+						} else {
+							onChangeManualRule(mappingSourceDraft.candidate.from, rule);
+						}
+						setMappingSourceDraft(undefined);
 					}}
 				/>
 			)}
@@ -761,7 +738,6 @@ function IconReplacementDialog({candidates, onChange, onClose, replacements}: Ic
 
 export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPath = ''}: TransformPanelProps) {
 	const navigate = useNavigate();
-	const [stripQualitySelected, setStripQualitySelected] = useState(false);
 	const [stripEntitiesSelected, setStripEntitiesSelected] = useState(false);
 	const [stripModulesSelected, setStripModulesSelected] = useState(false);
 	const [stripTrainsSelected, setStripTrainsSelected] = useState(false);
@@ -772,12 +748,13 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 	const [blueprintEditorOpen, setBlueprintEditorOpen] = useState(false);
 	const [upgradeEnabled, setUpgradeEnabled] = useState(false);
 	const [upgradePlannerOpen, setUpgradePlannerOpen] = useState(false);
+	const [upgradeDraftChanged, setUpgradeDraftChanged] = useState(false);
 	const [iconReplacementOpen, setIconReplacementOpen] = useState(false);
+	const [discardConfirmation, setDiscardConfirmation] = useState<'blueprint' | 'upgrade'>();
 	const planners = useMemo(
 		() => (rootBlueprint === undefined ? [] : findUpgradePlanners(rootBlueprint)),
 		[rootBlueprint],
 	);
-	const [upgradeDirection, setUpgradeDirection] = useState<UpgradeDirection>('upgrade');
 	const [upgradeSource, setUpgradeSource] = useState(() =>
 		blueprint?.upgrade_planner === undefined ? 'suggested' : `book:${selectedPath}`,
 	);
@@ -825,6 +802,20 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 			}
 			if (event.code === 'KeyB' && type !== 'upgrade-planner') {
 				event.preventDefault();
+				if (blueprint?.blueprint !== undefined || blueprint?.blueprint_book !== undefined) {
+					const metadata = blueprintEditorMetadata(blueprint);
+					setEditorLabel(metadata.label);
+					setEditorDescription(metadata.description);
+					setEditorIcons(
+						[...metadata.icons].sort((left, right) => left.index - right.index).map((icon) => icon.signal),
+					);
+				}
+				setStripEntitiesSelected(false);
+				setStripModulesSelected(false);
+				setStripTrainsSelected(false);
+				setStripTilesSelected(false);
+				setFlattenBookSelected(false);
+				setSortBookSelected(false);
 				setUpgradePlannerOpen(false);
 				setBlueprintEditorEnabled(true);
 				setBlueprintEditorOpen(true);
@@ -832,6 +823,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 				event.preventDefault();
 				setBlueprintEditorOpen(false);
 				setUpgradeEnabled(true);
+				setUpgradeDraftChanged(false);
 				setUpgradePlannerOpen(true);
 			}
 		};
@@ -839,11 +831,11 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 		return () => {
 			window.removeEventListener('keydown', openTool);
 		};
-	}, [type]);
+	}, [blueprint, type]);
 	const transformTarget = upgradeScope === 'root' ? rootBlueprint : blueprint;
 	const resolvedRules = useMemo(
-		() => resolveRules(upgradeSource, upgradeDirection, plannerInput, planners),
-		[upgradeSource, upgradeDirection, plannerInput, planners],
+		() => resolveRules(upgradeSource, 'upgrade', plannerInput, planners),
+		[upgradeSource, plannerInput, planners],
 	);
 	const manualSourceKeys = useMemo(
 		() => new Set(manualRules.map((rule) => signalIdentity(rule.from))),
@@ -877,17 +869,29 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 		if (transformTarget === undefined) {
 			return [];
 		}
-		const matches = analyzeUpgradeRules(transformTarget, effectiveRules);
-		const counts = new Map(matches.map((candidate) => [signalIdentity(candidate.from), candidate.count]));
+		const forwardMatches = analyzeUpgradeRules(transformTarget, effectiveRules);
+		const reverseRules = effectiveRules.map(reverseUpgradeRule);
+		const reverseMatches = analyzeUpgradeRules(transformTarget, reverseRules);
+		const forwardCounts = new Map(
+			forwardMatches.map((candidate) => [signalIdentity(candidate.from), candidate.count]),
+		);
+		const reverseCounts = new Map(
+			reverseMatches.map((candidate) => [signalIdentity(candidate.to), candidate.count]),
+		);
 		if (upgradeSource === 'suggested') {
 			return effectiveRules.flatMap((rule) => {
-				const count = counts.get(signalIdentity(rule.from));
-				return count === undefined && !manualSourceKeys.has(signalIdentity(rule.from))
-					? []
-					: [{...rule, count: count ?? 0}];
+				const sourceKey = signalIdentity(rule.from);
+				const count = (forwardCounts.get(sourceKey) ?? 0) + (reverseCounts.get(sourceKey) ?? 0);
+				return count === 0 && !manualSourceKeys.has(sourceKey) ? [] : [{...rule, count}];
 			});
 		}
-		return effectiveRules.map((rule) => ({...rule, count: counts.get(signalIdentity(rule.from)) ?? 0}));
+		return effectiveRules.map((rule) => {
+			const sourceKey = signalIdentity(rule.from);
+			return {
+				...rule,
+				count: (forwardCounts.get(sourceKey) ?? 0) + (reverseCounts.get(sourceKey) ?? 0),
+			};
+		});
 	}, [transformTarget, effectiveRules, manualSourceKeys, upgradeSource]);
 	const selectedCandidates = useMemo(
 		() => candidates.filter((candidate) => !excludedSources.has(signalIdentity(candidate.from))),
@@ -900,39 +904,58 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 	);
 	const metadataReplacementCount = useMemo(
 		() =>
-			transformTarget === undefined || metadataFind === ''
+			rootBlueprint === undefined || metadataFind === ''
 				? 0
-				: analyzeMetadataSubstitution(transformTarget, metadataSubstitution),
-		[transformTarget, metadataFind, metadataSubstitution],
+				: analyzeMetadataSubstitution(rootBlueprint, metadataSubstitution),
+		[rootBlueprint, metadataFind, metadataSubstitution],
 	);
 	const metadataIconCandidates = useMemo(
-		() => (transformTarget === undefined ? [] : analyzeMetadataIcons(transformTarget)),
-		[transformTarget],
+		() => (rootBlueprint === undefined ? [] : analyzeMetadataIcons(rootBlueprint)),
+		[rootBlueprint],
 	);
 	const iconReplacementCount = useMemo(
 		() =>
-			transformTarget === undefined || iconReplacements.length === 0
+			rootBlueprint === undefined || iconReplacements.length === 0
 				? 0
-				: analyzeIconReplacements(transformTarget, iconReplacements),
-		[transformTarget, iconReplacements],
+				: analyzeIconReplacements(rootBlueprint, iconReplacements),
+		[rootBlueprint, iconReplacements],
 	);
-	const transformedBlueprint = useMemo(() => {
+	const plannerDraftBlueprint = useMemo(() => {
 		if (rootBlueprint === undefined || resolvedRules.error !== undefined) {
 			return undefined;
 		}
-		const rules = upgradeEnabled
-			? selectedCandidates.map(({from, preserveQuality, to}) => ({from, preserveQuality, to}))
-			: [];
-		const transformGlobal = (target: BlueprintString) => {
-			let transformed = target;
-			if (rules.length > 0) transformed = applyUpgradeRules(transformed, rules);
-			if (iconReplacements.length > 0) transformed = applyIconReplacements(transformed, iconReplacements);
-			if (textReplacementEnabled && metadataFind !== '') {
-				transformed = applyMetadataSubstitution(transformed, metadataSubstitution);
-			}
-			if (stripQualitySelected) transformed = stripQuality(transformed);
-			return transformed;
-		};
+		const rules = selectedCandidates.map(({from, preserveQuality, to}) => ({from, preserveQuality, to}));
+		const applyEntityRules = (target: BlueprintString) => applyUpgradeRules(target, rules);
+		const upgradedRoot =
+			upgradeScope === 'root'
+				? applyEntityRules(rootBlueprint)
+				: updateNestedBlueprint(rootBlueprint, selectedPath, applyEntityRules);
+		if (upgradedRoot === null) {
+			return undefined;
+		}
+		let transformedRoot = upgradedRoot;
+		if (iconReplacements.length > 0) {
+			transformedRoot = applyIconReplacements(transformedRoot, iconReplacements);
+		}
+		if (textReplacementEnabled && metadataFind !== '') {
+			transformedRoot = applyMetadataSubstitution(transformedRoot, metadataSubstitution);
+		}
+		return transformedRoot;
+	}, [
+		iconReplacements,
+		metadataFind,
+		metadataSubstitution,
+		resolvedRules.error,
+		rootBlueprint,
+		selectedCandidates,
+		selectedPath,
+		textReplacementEnabled,
+		upgradeScope,
+	]);
+	const editorDraftBlueprint = useMemo(() => {
+		if (rootBlueprint === undefined) {
+			return undefined;
+		}
 		const transformEditor = (target: BlueprintString) => {
 			let transformed = target;
 			if (
@@ -953,35 +976,20 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 			if (sortBookSelected) transformed = sortBookByLabel(transformed);
 			return transformed;
 		};
-		const globallyTransformed =
-			upgradeScope === 'root'
-				? transformGlobal(rootBlueprint)
-				: (updateNestedBlueprint(rootBlueprint, selectedPath, transformGlobal) ?? undefined);
-		return globallyTransformed === undefined
-			? undefined
-			: (updateNestedBlueprint(globallyTransformed, selectedPath, transformEditor) ?? undefined);
+		return updateNestedBlueprint(rootBlueprint, selectedPath, transformEditor) ?? undefined;
 	}, [
 		blueprintEditorEnabled,
 		editorDescription,
 		editorIcons,
 		editorLabel,
 		flattenBookSelected,
-		iconReplacements,
-		metadataFind,
-		metadataSubstitution,
-		resolvedRules.error,
 		rootBlueprint,
-		selectedCandidates,
 		selectedPath,
 		sortBookSelected,
-		stripQualitySelected,
 		stripEntitiesSelected,
 		stripModulesSelected,
 		stripTilesSelected,
 		stripTrainsSelected,
-		textReplacementEnabled,
-		upgradeEnabled,
-		upgradeScope,
 	]);
 	if (blueprint === undefined || type === 'deconstruction-planner') {
 		return null;
@@ -992,21 +1000,113 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 	const plannerReplacementCount = activeUpgradeCount + activeIconCount + activeTextCount;
 	const canChooseRootScope = rootBlueprint?.blueprint_book !== undefined && selectedPath !== '';
 	const hasSelectedBookOperation = flattenBookSelected || sortBookSelected;
-	const openInPlayground = () => {
-		if (transformedBlueprint === undefined) {
-			throw new Error('Cannot open a transformation while its configuration is invalid');
+	const rootLabel =
+		rootBlueprint === undefined
+			? 'blueprint'
+			: (new BlueprintWrapper(rootBlueprint).getLabel() ?? 'Blueprint book');
+	const selectedLabel = new BlueprintWrapper(blueprint).getLabel() ?? 'Untitled blueprint';
+	const editorBreadcrumb = selectedPath === '' ? selectedLabel : `${rootLabel} › ${selectedLabel}`;
+	const originalEditorMetadata =
+		blueprint.blueprint === undefined && blueprint.blueprint_book === undefined
+			? {description: '', icons: [], label: ''}
+			: blueprintEditorMetadata(blueprint);
+	const editorDirty =
+		editorLabel !== originalEditorMetadata.label ||
+		editorDescription !== originalEditorMetadata.description ||
+		JSON.stringify(editorIcons) !==
+			JSON.stringify(
+				[...originalEditorMetadata.icons]
+					.sort((left, right) => left.index - right.index)
+					.map((icon) => icon.signal),
+			) ||
+		stripEntitiesSelected ||
+		stripModulesSelected ||
+		stripTrainsSelected ||
+		stripTilesSelected ||
+		flattenBookSelected ||
+		sortBookSelected;
+	const plannerDirty = upgradeDraftChanged;
+	const resetBlueprintEditorDraft = () => {
+		setEditorLabel(originalEditorMetadata.label);
+		setEditorDescription(originalEditorMetadata.description);
+		setEditorIcons(
+			[...originalEditorMetadata.icons]
+				.sort((left, right) => left.index - right.index)
+				.map((icon) => icon.signal),
+		);
+		setStripEntitiesSelected(false);
+		setStripModulesSelected(false);
+		setStripTrainsSelected(false);
+		setStripTilesSelected(false);
+		setFlattenBookSelected(false);
+		setSortBookSelected(false);
+	};
+	const openBlueprintEditor = () => {
+		resetBlueprintEditorDraft();
+		setUpgradePlannerOpen(false);
+		setBlueprintEditorEnabled(true);
+		setBlueprintEditorOpen(true);
+	};
+	const requestCloseBlueprintEditor = () => {
+		if (editorDirty) {
+			setDiscardConfirmation('blueprint');
+		} else {
+			setBlueprintEditorOpen(false);
 		}
-
+	};
+	const requestCloseUpgradePlanner = () => {
+		if (plannerDirty) {
+			setDiscardConfirmation('upgrade');
+		} else {
+			setUpgradePlannerOpen(false);
+		}
+	};
+	const resetUpgradePlannerDraft = () => {
+		setUpgradeSource(blueprint.upgrade_planner === undefined ? 'suggested' : `book:${selectedPath}`);
+		setPlannerInput('');
+		setUpgradeScope(blueprint.upgrade_planner === undefined ? 'selection' : 'root');
+		setExcludedSources(new Set());
+		setTargetOverrides(new Map());
+		setManualRules([]);
+		setIconReplacements([]);
+		setTextReplacementEnabled(true);
+		setMetadataFind('');
+		setMetadataReplace('');
+		setUpgradeDraftChanged(false);
+	};
+	const commitBlueprint = (committedBlueprint: BlueprintString) => {
 		setBlueprintEditorOpen(false);
 		setIconReplacementOpen(false);
 		setUpgradePlannerOpen(false);
 		void navigate({
 			to: '/',
 			search: {
-				pasted: serializeBlueprint(transformedBlueprint),
+				pasted: serializeBlueprint(committedBlueprint),
 				selection: selectedPath,
 			},
 		});
+	};
+	const applyPlanner = (direction: UpgradeDirection) => {
+		if (rootBlueprint === undefined || resolvedRules.error !== undefined) {
+			throw new Error('Cannot apply an invalid upgrade planner.');
+		}
+		const forwardRules = selectedCandidates.map(({from, preserveQuality, to}) => ({from, preserveQuality, to}));
+		const rules = direction === 'upgrade' ? forwardRules : forwardRules.map(reverseUpgradeRule);
+		const applyEntityRules = (target: BlueprintString) => applyUpgradeRules(target, rules);
+		const upgradedRoot =
+			upgradeScope === 'root'
+				? applyEntityRules(rootBlueprint)
+				: updateNestedBlueprint(rootBlueprint, selectedPath, applyEntityRules);
+		if (upgradedRoot === null) {
+			throw new Error('The selected blueprint no longer exists in the root book.');
+		}
+		let committed = upgradedRoot;
+		if (iconReplacements.length > 0) committed = applyIconReplacements(committed, iconReplacements);
+		if (textReplacementEnabled && metadataFind !== '') {
+			committed = applyMetadataSubstitution(committed, metadataSubstitution);
+		}
+		resetUpgradePlannerDraft();
+		commitBlueprint(committed);
 	};
 
 	return (
@@ -1020,9 +1120,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 						aria-expanded={blueprintEditorOpen}
 						title="Blueprint editor (Alt+B)"
 						onClick={() => {
-							setUpgradePlannerOpen(false);
-							setBlueprintEditorEnabled(true);
-							setBlueprintEditorOpen(true);
+							openBlueprintEditor();
 						}}
 					>
 						<span className="transform-toolbelt__icon">
@@ -1042,6 +1140,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 					onClick={() => {
 						setBlueprintEditorOpen(false);
 						setUpgradeEnabled(true);
+						setUpgradeDraftChanged(false);
 						setUpgradePlannerOpen(true);
 					}}
 				>
@@ -1061,33 +1160,35 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 						role="dialog"
 						aria-modal="true"
 						aria-label="Upgrade Planner"
+						onKeyDown={(event) => {
+							if (event.key === 'Escape') {
+								requestCloseUpgradePlanner();
+							}
+						}}
 					>
 						<header className="transform-dialog__header transform-workbench__header">
 							<div className="transform-workbench__title">
 								<FactorioIcon icon={{type: 'item', name: 'upgrade-planner'}} size="large" />
 								<div>
 									<h3>Upgrade Planner</h3>
-									<span>Changes update the result immediately</span>
+									<span>{editorBreadcrumb}</span>
 								</div>
 							</div>
 							<div
 								className="transform-workbench__status"
 								aria-label={`${plannerReplacementCount.toString()} ${
-									plannerReplacementCount === 1 ? 'replacement ready' : 'replacements ready'
-								}${stripQualitySelected ? ', strip quality selected' : ''}`}
+									plannerReplacementCount === 1 ? 'match' : 'matches'
+								}`}
 							>
 								<strong>{plannerReplacementCount}</strong>
-								<span>
-									{plannerReplacementCount === 1 ? 'replacement ready' : 'replacements ready'}
-									{stripQualitySelected ? ' · strip quality' : ''}
-								</span>
+								<span>{plannerReplacementCount === 1 ? 'match' : 'matches'}</span>
 							</div>
 							<button
 								type="button"
 								className="transform-dialog__close"
 								aria-label="Close Upgrade Planner"
 								onClick={() => {
-									setUpgradePlannerOpen(false);
+									requestCloseUpgradePlanner();
 								}}
 							>
 								×
@@ -1097,11 +1198,12 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 						<div className="transform-workbench__body">
 							<div className="panel-hole transform-workflow">
 								<div className="panel-hole-inner transform-workflow__scope">
-									<strong>Change</strong>
+									<strong>Apply mappings to</strong>
 									<select
 										aria-label="Apply to"
 										value={upgradeScope}
 										onChange={(event) => {
+											setUpgradeDraftChanged(true);
 											setUpgradeScope(
 												event.currentTarget.value === 'root' ? 'root' : 'selection',
 											);
@@ -1119,11 +1221,11 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 
 								<UpgradeMappingsEditor
 									candidates={candidates}
-									direction={upgradeDirection}
 									error={resolvedRules.error}
 									excludedSources={excludedSources}
 									manualRules={manualRules}
 									onAddManualRule={(rule) => {
+										setUpgradeDraftChanged(true);
 										setManualRules((current) => [
 											...current.filter(
 												(candidate) =>
@@ -1132,48 +1234,52 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 											rule,
 										]);
 									}}
-									onDirectionChange={(direction) => {
-										setUpgradeDirection(direction);
-										setExcludedSources(new Set());
-										setTargetOverrides(new Map());
+									onChangeManualRule={(previousSource, rule) => {
+										setUpgradeDraftChanged(true);
+										const previousKey = signalIdentity(previousSource);
+										setExcludedSources((current) => new Set(current).add(previousKey));
+										setManualRules((current) => [
+											...current.filter(
+												(candidate) => signalIdentity(candidate.from) !== previousKey,
+											),
+											rule,
+										]);
 									}}
 									onPlannerInputChange={(value) => {
+										setUpgradeDraftChanged(true);
 										setPlannerInput(value);
 										setExcludedSources(new Set());
 										setTargetOverrides(new Map());
 									}}
-									onRemoveManualRule={(source) => {
-										setManualRules((current) =>
-											current.filter(
-												(candidate) =>
-													signalIdentity(candidate.from) !== signalIdentity(source),
-											),
-										);
+									onRemoveRule={(source, manual) => {
+										setUpgradeDraftChanged(true);
+										const sourceKey = signalIdentity(source);
+										if (manual) {
+											setManualRules((current) =>
+												current.filter(
+													(candidate) => signalIdentity(candidate.from) !== sourceKey,
+												),
+											);
+										} else {
+											setExcludedSources((current) => new Set(current).add(sourceKey));
+										}
 									}}
-									onSourceChange={(value) => {
+									onPlannerSourceChange={(value) => {
+										setUpgradeDraftChanged(true);
 										setUpgradeSource(value);
 										setExcludedSources(new Set());
 										setTargetOverrides(new Map());
 									}}
-									onStripQualityChange={setStripQualitySelected}
 									onTargetChange={(source, target, preserveQuality) => {
+										setUpgradeDraftChanged(true);
 										setTargetOverrides((current) =>
 											new Map(current).set(signalIdentity(source), {preserveQuality, to: target}),
 										);
-									}}
-									onToggleCandidate={(source, checked) => {
-										setExcludedSources((current) => {
-											const next = new Set(current);
-											if (checked) next.delete(signalIdentity(source));
-											else next.add(signalIdentity(source));
-											return next;
-										});
 									}}
 									plannerInput={plannerInput}
 									planners={planners}
 									source={upgradeSource}
 									sourceOptions={sourceOptions}
-									stripQualitySelected={stripQualitySelected}
 								/>
 
 								<section
@@ -1181,6 +1287,9 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 									aria-labelledby="transform-website-replacements-heading"
 								>
 									<h4 id="transform-website-replacements-heading">Book-wide replacements</h4>
+									<p className="transform-workflow__scope-note">
+										Applies to titles, descriptions, and label icons throughout the entire book.
+									</p>
 									<div className="transform-workflow__operations">
 										<button
 											type="button"
@@ -1211,6 +1320,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 												type="checkbox"
 												checked={textReplacementEnabled}
 												onChange={(event) => {
+													setUpgradeDraftChanged(true);
 													setTextReplacementEnabled(event.currentTarget.checked);
 												}}
 											/>{' '}
@@ -1223,6 +1333,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 												type="text"
 												value={metadataFind}
 												onChange={(event) => {
+													setUpgradeDraftChanged(true);
 													setMetadataFind(event.currentTarget.value);
 												}}
 											/>
@@ -1233,6 +1344,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 												type="text"
 												value={metadataReplace}
 												onChange={(event) => {
+													setUpgradeDraftChanged(true);
 													setMetadataReplace(event.currentTarget.value);
 												}}
 											/>
@@ -1242,21 +1354,31 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 							</div>
 						</div>
 
-						<footer className="transform-workbench__footer">
-							{transformedBlueprint === undefined ? (
-								<span className="transform-workbench__invalid">Fix the planner error to export.</span>
-							) : (
-								<BlueprintExportButtons blueprint={transformedBlueprint} path={selectedPath} />
-							)}
-							<ButtonGreen
-								disabled={transformedBlueprint === undefined}
-								onClick={(event) => {
-									event.preventDefault();
-									openInPlayground();
-								}}
-							>
-								Open in Playground
-							</ButtonGreen>
+						<footer className="transform-workbench__footer transform-workbench__footer--actions">
+							<button type="button" className="transform-button" onClick={requestCloseUpgradePlanner}>
+								Cancel
+							</button>
+							<div className="transform-workbench__apply-actions">
+								<button
+									type="button"
+									className="transform-button"
+									disabled={plannerDraftBlueprint === undefined}
+									onClick={() => {
+										applyPlanner('downgrade');
+									}}
+								>
+									Apply downgrades
+								</button>
+								<ButtonGreen
+									disabled={plannerDraftBlueprint === undefined}
+									onClick={(event) => {
+										event.preventDefault();
+										applyPlanner('upgrade');
+									}}
+								>
+									Apply upgrades
+								</ButtonGreen>
+							</div>
 						</footer>
 					</section>
 				</div>
@@ -1264,17 +1386,25 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 			{blueprintEditorOpen ? (
 				<div className="transform-dialog-backdrop transform-workbench-backdrop">
 					<section
-						className="transform-dialog transform-workbench"
+						className="transform-dialog transform-workbench transform-workbench--blueprint"
 						role="dialog"
 						aria-modal="true"
 						aria-label="Blueprint Editor"
+						onKeyDown={(event) => {
+							if (event.key === 'Escape') {
+								requestCloseBlueprintEditor();
+							}
+						}}
 					>
 						<header className="transform-dialog__header transform-workbench__header">
 							<div className="transform-workbench__title">
-								<FactorioIcon icon={{type: 'item', name: 'blueprint'}} size="large" />
 								<div>
-									<h3>Blueprint Editor</h3>
-									<span>Changes update the result immediately</span>
+									<h3>
+										{type === 'blueprint-book'
+											? 'Blueprint book in the blueprint library'
+											: 'Blueprint in the blueprint library'}
+									</h3>
+									<span>{editorBreadcrumb}</span>
 								</div>
 							</div>
 							<button
@@ -1282,15 +1412,15 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 								className="transform-dialog__close"
 								aria-label="Close Blueprint Editor"
 								onClick={() => {
-									setBlueprintEditorOpen(false);
+									requestCloseBlueprintEditor();
 								}}
 							>
 								×
 							</button>
 						</header>
 
-						<div className="transform-workbench__body">
-							<div className="panel-hole transform-workflow">
+						<div className="transform-workbench__body blueprint-editor__layout">
+							<div className="panel-hole transform-workflow blueprint-editor__settings">
 								<div className="panel-hole-inner blueprint-editor__name">
 									<label htmlFor="blueprint-editor-name">Name</label>
 									<input
@@ -1442,27 +1572,93 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 									</section>
 								) : null}
 							</div>
+							<aside className="panel-hole blueprint-editor__preview" aria-label="Save destination">
+								<h4>Preview</h4>
+								<div className="blueprint-editor__preview-card">
+									<FactorioIcon icon={{type: 'item', name: 'blueprint'}} size="large" />
+									<strong>{editorLabel === '' ? 'Untitled blueprint' : editorLabel}</strong>
+									<div className="blueprint-editor__preview-icons">
+										{editorIcons.map((signal, index) => (
+											<FactorioIcon
+												key={`${signalIdentity(signal)}:${index.toString()}`}
+												icon={signal}
+												size="large"
+											/>
+										))}
+									</div>
+								</div>
+								<p>
+									{selectedPath === ''
+										? 'Save updates the loaded blueprint.'
+										: `Save writes this blueprint back into ${rootLabel}.`}
+								</p>
+								<strong className="blueprint-editor__output-label">
+									Output: {selectedPath === '' ? selectedLabel : `Entire ${rootLabel}`}
+								</strong>
+							</aside>
 						</div>
 
-						<footer className="transform-workbench__footer">
-							{transformedBlueprint === undefined ? (
-								<span className="transform-workbench__invalid">Fix the editor error to export.</span>
-							) : (
-								<BlueprintExportButtons blueprint={transformedBlueprint} path={selectedPath} />
-							)}
+						<footer className="transform-workbench__footer transform-workbench__footer--actions">
+							<button type="button" className="transform-button" onClick={requestCloseBlueprintEditor}>
+								Cancel
+							</button>
 							<ButtonGreen
-								disabled={transformedBlueprint === undefined}
+								disabled={editorDraftBlueprint === undefined || !editorDirty}
 								onClick={(event) => {
 									event.preventDefault();
-									openInPlayground();
+									if (editorDraftBlueprint !== undefined) {
+										commitBlueprint(editorDraftBlueprint);
+									}
 								}}
 							>
-								Open in Playground
+								{selectedPath === '' ? 'Save blueprint' : 'Save to book'}
 							</ButtonGreen>
 						</footer>
 					</section>
 				</div>
 			) : null}
+			{discardConfirmation === undefined ? null : (
+				<div className="transform-dialog-backdrop transform-dialog-backdrop--confirmation">
+					<section
+						className="transform-dialog transform-dialog--confirmation"
+						role="alertdialog"
+						aria-modal="true"
+						aria-labelledby="discard-transform-heading"
+					>
+						<header className="transform-dialog__header">
+							<h3 id="discard-transform-heading">Discard unsaved changes?</h3>
+						</header>
+						<p>Your changes have not been written back to the loaded blueprint or book.</p>
+						<div className="transform-dialog__actions">
+							<button
+								type="button"
+								className="transform-button"
+								onClick={() => {
+									setDiscardConfirmation(undefined);
+								}}
+							>
+								Keep editing
+							</button>
+							<button
+								type="button"
+								className="transform-button transform-button--danger"
+								onClick={() => {
+									if (discardConfirmation === 'blueprint') {
+										resetBlueprintEditorDraft();
+										setBlueprintEditorOpen(false);
+									} else {
+										resetUpgradePlannerDraft();
+										setUpgradePlannerOpen(false);
+									}
+									setDiscardConfirmation(undefined);
+								}}
+							>
+								Discard changes
+							</button>
+						</div>
+					</section>
+				</div>
+			)}
 			{editorIconPickerIndex === undefined ? null : (
 				<SignalPickerDialog
 					title={`Choose label icon ${(editorIconPickerIndex + 1).toString()}`}
@@ -1483,7 +1679,10 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 			{iconReplacementOpen ? (
 				<IconReplacementDialog
 					candidates={metadataIconCandidates}
-					onChange={setIconReplacements}
+					onChange={(replacements) => {
+						setUpgradeDraftChanged(true);
+						setIconReplacements(replacements);
+					}}
 					onClose={() => {
 						setIconReplacementOpen(false);
 					}}
