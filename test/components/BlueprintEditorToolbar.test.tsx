@@ -2,12 +2,21 @@ import {fireEvent, render, screen} from '@testing-library/react';
 import {expect, test, vi} from 'vite-plus/test';
 
 import {BlueprintEditorToolbar} from '../../src/components/blueprint/panels/transform/BlueprintEditorToolbar';
+import type {UpgradeDirection} from '../../src/transform/upgradePlanner';
 
 test('renders the supported Factorio editor action with accessible states and a visible tooltip', () => {
+	const onApplyPlacedPlanner = vi.fn<(direction: UpgradeDirection) => void>();
+	const onClearPlacedPlanner = vi.fn<() => void>();
+	const onDropPlanner = vi.fn<(serializedPlanner: string) => void>();
 	const onOpenUpgradePlannerSelector = vi.fn<() => void>();
 	const {rerender} = render(
 		<BlueprintEditorToolbar
+			dropError={undefined}
+			onApplyPlacedPlanner={onApplyPlacedPlanner}
+			onClearPlacedPlanner={onClearPlacedPlanner}
+			onDropPlanner={onDropPlanner}
 			onOpenUpgradePlannerSelector={onOpenUpgradePlannerSelector}
+			placedPlanner={undefined}
 			selectorDialogId="upgrade-planner-selector"
 			selectorOpen={false}
 		/>,
@@ -39,13 +48,18 @@ test('renders the supported Factorio editor action with accessible states and a 
 		hasPopup: 'dialog',
 		icon: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
 		onOpenUpgradePlannerSelectorCalls: [[]],
-		toolbarButtons: ['Upgrade items and entities in the blueprint'],
+		toolbarButtons: ['Upgrade items and entities in the blueprint', 'Choose upgrade planner for toolbar slot'],
 		tooltip: {id: tooltip.id, text: 'Upgrade items and entities in the blueprint.'},
 	});
 
 	rerender(
 		<BlueprintEditorToolbar
+			dropError={undefined}
+			onApplyPlacedPlanner={onApplyPlacedPlanner}
+			onClearPlacedPlanner={onClearPlacedPlanner}
+			onDropPlanner={onDropPlanner}
 			onOpenUpgradePlannerSelector={onOpenUpgradePlannerSelector}
+			placedPlanner={undefined}
 			selectorDialogId="upgrade-planner-selector"
 			selectorOpen={true}
 		/>,

@@ -201,7 +201,7 @@ describe('TransformPanel', () => {
 			expanded: 'false',
 			icon: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
 			inTitleRow: true,
-			toolbarActions: ['Upgrade items and entities in the blueprint'],
+			toolbarActions: ['Upgrade items and entities in the blueprint', 'Choose upgrade planner for toolbar slot'],
 		});
 
 		await user.click(upgradeButton);
@@ -236,6 +236,25 @@ describe('TransformPanel', () => {
 		}).toStrictEqual({description: 'Draft description', disabled: false, expanded: 'true', selector: 'true'});
 
 		await user.click(screen.getByRole('button', {name: /Default Upgrade/}));
+		const placedUpgradeButton = screen.getByRole('button', {name: 'Apply Default Upgrade as upgrade'});
+		expect({
+			description: screen.getByRole<HTMLTextAreaElement>('textbox', {name: 'Blueprint description'}).value,
+			navigation: navigate.mock.calls,
+			placedPlanner: screen
+				.getByRole('button', {name: 'Change placed upgrade planner, currently Default Upgrade'})
+				.querySelector('img')
+				?.getAttribute('src'),
+			removePlanner: screen.getByRole('button', {name: 'Remove Default Upgrade from toolbar slot'}).textContent,
+			selector: screen.queryByRole('dialog', {name: 'Select the upgrade planner to apply'}),
+		}).toStrictEqual({
+			description: 'Draft description',
+			navigation: [],
+			placedPlanner: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
+			removePlanner: '×',
+			selector: null,
+		});
+
+		await user.click(placedUpgradeButton);
 		expect(navigate).toHaveBeenCalledExactlyOnceWith({
 			to: '/',
 			search: {
@@ -249,6 +268,92 @@ describe('TransformPanel', () => {
 				}),
 				selection: '',
 			},
+		});
+	});
+
+	test('accepts serialized planner drops, rejects invalid drops, and clears the placed planner', async () => {
+		const user = userEvent.setup();
+		const droppedPlanner: BlueprintString = {
+			upgrade_planner: {
+				item: 'upgrade-planner',
+				label: "Alice's dropped planner",
+				version: 0,
+				settings: {
+					mappers: [
+						{
+							index: 100,
+							from: {type: 'entity', name: 'transport-belt'},
+							to: {type: 'entity', name: 'express-transport-belt'},
+						},
+					],
+				},
+			},
+		};
+		render(<TransformPanel blueprint={blueprint} />);
+
+		openBlueprintEditor();
+		const emptySlot = screen.getByRole('button', {name: 'Choose upgrade planner for toolbar slot'});
+		emptySlot.focus();
+		await user.keyboard('{Enter}');
+		expect(
+			screen.getByRole('dialog', {name: 'Select the upgrade planner to apply'}).getAttribute('aria-modal'),
+		).toBe('true');
+		await user.click(screen.getByRole('button', {name: 'Close upgrade planner selector'}));
+
+		fireEvent.drop(emptySlot, {
+			dataTransfer: {
+				getData: () => 'not an upgrade planner',
+			},
+		});
+		expect({
+			error: screen.getByRole('alert').textContent,
+			slot: screen.getByRole('button', {name: 'Choose upgrade planner for toolbar slot'}).textContent,
+		}).toStrictEqual({
+			error: 'Drop an encoded or JSON upgrade planner.',
+			slot: '+',
+		});
+
+		fireEvent.drop(emptySlot, {
+			dataTransfer: {
+				getData: () => serializeBlueprint(droppedPlanner),
+			},
+		});
+		const placedSlot = screen.getByRole('button', {
+			name: "Change placed upgrade planner, currently Alice's dropped planner",
+		});
+		expect({
+			apply: screen
+				.getByRole('button', {name: "Apply Alice's dropped planner as upgrade"})
+				.getAttribute('aria-controls'),
+			error: screen.queryByRole('alert'),
+			icon: placedSlot.querySelector('img')?.getAttribute('src'),
+			navigation: navigate.mock.calls,
+		}).toStrictEqual({
+			apply: null,
+			error: null,
+			icon: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
+			navigation: [],
+		});
+
+		const removeButton = screen.getByRole('button', {
+			name: "Remove Alice's dropped planner from toolbar slot",
+		});
+		removeButton.focus();
+		await user.keyboard('{Enter}');
+		expect({
+			apply: screen
+				.getByRole('button', {
+					name: 'Upgrade items and entities in the blueprint',
+				})
+				.getAttribute('aria-expanded'),
+			remove: screen.queryByRole('button', {
+				name: "Remove Alice's dropped planner from toolbar slot",
+			}),
+			slot: screen.getByRole('button', {name: 'Choose upgrade planner for toolbar slot'}).textContent,
+		}).toStrictEqual({
+			apply: 'false',
+			remove: null,
+			slot: '+',
 		});
 	});
 
@@ -293,6 +398,11 @@ describe('TransformPanel', () => {
 				planner.focus();
 				await user.keyboard('{Shift>}{Enter}{/Shift}');
 			}
+			await user.click(
+				screen.getByRole('button', {
+					name: `Apply Default Upgrade as ${direction}`,
+				}),
+			);
 
 			expect({
 				blueprintEditor: screen.queryByRole('dialog', {name: 'Blueprint Editor'}),

@@ -4,7 +4,7 @@ import type {BlueprintString} from '../../../../parsing/types';
 import type {BlueprintFilterCategories} from '../../../../transform/strip';
 import type {UpgradeDirection} from '../../../../transform/upgradePlanner';
 import {ButtonGreen} from '../../../ui/ButtonGreen';
-import {BlueprintEditorToolbar} from './BlueprintEditorToolbar';
+import {BlueprintEditorToolbar, type PlacedUpgradePlanner} from './BlueprintEditorToolbar';
 import {BlueprintTitleEditor} from './BlueprintTitleEditor';
 import {UpgradePlannerSelectorDialog, type UpgradePlannerChoice} from './UpgradePlannerSelectorDialog';
 
@@ -17,17 +17,22 @@ interface BlueprintEditorDialogProps {
 	flattenBookSelected: boolean;
 	icons: readonly ReactNode[];
 	label: string;
+	onApplyPlacedPlanner: (direction: UpgradeDirection) => void;
 	onClose: () => void;
+	onClearPlacedPlanner: () => void;
 	onDescriptionChange: (description: string) => void;
+	onDropPlanner: (serializedPlanner: string) => void;
 	onEntitiesIncludedChange: (included: boolean) => void;
 	onFlattenBookSelectedChange: (selected: boolean) => void;
 	onLabelChange: (label: string) => void;
 	onModulesIncludedChange: (included: boolean) => void;
-	onPlannerChoose: (choice: UpgradePlannerChoice, direction: UpgradeDirection) => void;
+	onPlannerPlace: (choice: UpgradePlannerChoice, direction: UpgradeDirection) => void;
 	onSave: () => void;
 	onSortBookSelectedChange: (selected: boolean) => void;
 	onTilesIncludedChange: (included: boolean) => void;
 	onTrainsIncludedChange: (included: boolean) => void;
+	plannerDropError: string | undefined;
+	placedPlanner: PlacedUpgradePlanner | undefined;
 	rootBlueprint: BlueprintString;
 	saveDisabled: boolean;
 	saveLabel: string;
@@ -47,17 +52,22 @@ export function BlueprintEditorDialog({
 	flattenBookSelected,
 	icons,
 	label,
+	onApplyPlacedPlanner,
 	onClose,
+	onClearPlacedPlanner,
 	onDescriptionChange,
+	onDropPlanner,
 	onEntitiesIncludedChange,
 	onFlattenBookSelectedChange,
 	onLabelChange,
 	onModulesIncludedChange,
-	onPlannerChoose,
+	onPlannerPlace,
 	onSave,
 	onSortBookSelectedChange,
 	onTilesIncludedChange,
 	onTrainsIncludedChange,
+	plannerDropError,
+	placedPlanner,
 	rootBlueprint,
 	saveDisabled,
 	saveLabel,
@@ -112,9 +122,14 @@ export function BlueprintEditorDialog({
 						<div className="panel-hole-inner blueprint-editor__title-row">
 							<BlueprintTitleEditor label={label} onLabelChange={onLabelChange} />
 							<BlueprintEditorToolbar
+								dropError={plannerDropError}
+								onApplyPlacedPlanner={onApplyPlacedPlanner}
+								onClearPlacedPlanner={onClearPlacedPlanner}
+								onDropPlanner={onDropPlanner}
 								onOpenUpgradePlannerSelector={() => {
 									setUpgradePlannerSelectorOpen(true);
 								}}
+								placedPlanner={placedPlanner}
 								selectorDialogId={upgradePlannerSelectorId}
 								selectorOpen={upgradePlannerSelectorOpen}
 							/>
@@ -257,13 +272,13 @@ export function BlueprintEditorDialog({
 					dialogId={upgradePlannerSelectorId}
 					includeEditingChoices={false}
 					rootBlueprint={rootBlueprint}
-					selectedSource="suggested"
+					selectedSource={placedPlanner?.choice.source ?? ''}
 					onClose={() => {
 						setUpgradePlannerSelectorOpen(false);
 					}}
 					onChoose={(choice, direction) => {
 						setUpgradePlannerSelectorOpen(false);
-						onPlannerChoose(choice, direction);
+						onPlannerPlace(choice, direction);
 					}}
 				/>
 			) : null}
