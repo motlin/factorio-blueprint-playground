@@ -645,7 +645,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 							setUpgradeDraftChanged(true);
 							const previousKey = signalIdentity(previousSource);
 							const nextKey = signalIdentity(rule.from);
-							const previousPosition = candidates.findIndex(
+							const previousPosition = effectiveRules.findIndex(
 								(candidate) => signalIdentity(candidate.from) === previousKey,
 							);
 							setExcludedSources((current) => {

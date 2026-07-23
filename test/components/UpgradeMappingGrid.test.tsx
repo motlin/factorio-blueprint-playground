@@ -1,3 +1,4 @@
+import type {ComponentProps} from 'react';
 import {render, screen, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {describe, expect, test, vi} from 'vite-plus/test';
@@ -30,7 +31,9 @@ interface RenderGridOptions {
 	manualRules?: readonly UpgradeRule[];
 	onRemove?: (candidate: UpgradeCandidate, manual: boolean) => void;
 	onSourceChoose?: (candidate: UpgradeCandidate) => void;
+	onSourceQualityChange?: ComponentProps<typeof UpgradeMappingGrid>['onSourceQualityChange'];
 	onTargetChoose?: (candidate: UpgradeCandidate) => void;
+	onTargetQualityChange?: ComponentProps<typeof UpgradeMappingGrid>['onTargetQualityChange'];
 }
 
 function renderGrid({
@@ -39,7 +42,9 @@ function renderGrid({
 	manualRules = [moduleMapping],
 	onRemove = vi.fn<(candidate: UpgradeCandidate, manual: boolean) => void>(),
 	onSourceChoose = vi.fn<(candidate: UpgradeCandidate) => void>(),
+	onSourceQualityChange = vi.fn<ComponentProps<typeof UpgradeMappingGrid>['onSourceQualityChange']>(),
 	onTargetChoose = vi.fn<(candidate: UpgradeCandidate) => void>(),
+	onTargetQualityChange = vi.fn<ComponentProps<typeof UpgradeMappingGrid>['onTargetQualityChange']>(),
 }: RenderGridOptions = {}) {
 	return render(
 		<UpgradeMappingGrid
@@ -48,7 +53,9 @@ function renderGrid({
 			manualRules={manualRules}
 			onRemove={onRemove}
 			onSourceChoose={onSourceChoose}
+			onSourceQualityChange={onSourceQualityChange}
 			onTargetChoose={onTargetChoose}
+			onTargetQualityChange={onTargetQualityChange}
 			showEmptyState
 		/>,
 	);
@@ -107,7 +114,9 @@ describe('UpgradeMappingGrid', () => {
 				manualRules={[moduleMapping]}
 				onRemove={vi.fn<(candidate: UpgradeCandidate, manual: boolean) => void>()}
 				onSourceChoose={vi.fn<(candidate: UpgradeCandidate) => void>()}
+				onSourceQualityChange={vi.fn<ComponentProps<typeof UpgradeMappingGrid>['onSourceQualityChange']>()}
 				onTargetChoose={vi.fn<(candidate: UpgradeCandidate) => void>()}
+				onTargetQualityChange={vi.fn<ComponentProps<typeof UpgradeMappingGrid>['onTargetQualityChange']>()}
 				showEmptyState
 			/>,
 		);
@@ -126,21 +135,48 @@ describe('UpgradeMappingGrid', () => {
 		const user = userEvent.setup();
 		const onRemove = vi.fn<(candidate: UpgradeCandidate, manual: boolean) => void>();
 		const onSourceChoose = vi.fn<(candidate: UpgradeCandidate) => void>();
+		const onSourceQualityChange = vi.fn<ComponentProps<typeof UpgradeMappingGrid>['onSourceQualityChange']>();
 		const onTargetChoose = vi.fn<(candidate: UpgradeCandidate) => void>();
-		renderGrid({onRemove, onSourceChoose, onTargetChoose});
+		const onTargetQualityChange = vi.fn<ComponentProps<typeof UpgradeMappingGrid>['onTargetQualityChange']>();
+		renderGrid({
+			onRemove,
+			onSourceChoose,
+			onSourceQualityChange,
+			onTargetChoose,
+			onTargetQualityChange,
+		});
 
 		await user.click(screen.getByRole('button', {name: 'Choose source, currently Speed module'}));
 		await user.click(screen.getByRole('button', {name: 'Choose target for Transport belt'}));
 		await user.click(screen.getByRole('button', {name: 'Remove mapping from Speed module'}));
+		const beltRow = screen.getByRole('listitem', {name: 'Mapping from Transport belt to Fast transport belt'});
+		const inserterRow = screen.getByRole('listitem', {name: 'Mapping from Inserter to Fast inserter'});
+		await user.selectOptions(within(beltRow).getByRole('combobox', {name: 'Source quality selection'}), 'normal');
+		await user.selectOptions(within(inserterRow).getByRole('combobox', {name: 'Quality comparison'}), '≥');
+		await user.selectOptions(within(beltRow).getByRole('combobox', {name: 'Target quality selection'}), 'epic');
+		await user.selectOptions(
+			within(inserterRow).getByRole('combobox', {name: 'Target quality selection'}),
+			'preserve',
+		);
 
 		expect({
 			remove: onRemove.mock.calls,
 			source: onSourceChoose.mock.calls,
+			sourceQuality: onSourceQualityChange.mock.calls,
 			target: onTargetChoose.mock.calls,
+			targetQuality: onTargetQualityChange.mock.calls,
 		}).toStrictEqual({
 			remove: [[moduleMapping, true]],
 			source: [[moduleMapping]],
+			sourceQuality: [
+				[beltMapping, {type: 'entity', name: 'transport-belt', quality: 'normal', comparator: '='}],
+				[inserterMapping, {type: 'entity', name: 'inserter', quality: 'rare', comparator: '≥'}],
+			],
 			target: [[beltMapping]],
+			targetQuality: [
+				[beltMapping, {type: 'entity', name: 'fast-transport-belt', quality: 'epic'}, false],
+				[inserterMapping, {type: 'entity', name: 'fast-inserter'}, true],
+			],
 		});
 	});
 });

@@ -163,8 +163,18 @@ function UpgradeMappingsEditor({
 					onSourceChoose={(candidate) => {
 						setSourcePickerCandidate(candidate);
 					}}
+					onSourceQualityChange={(candidate, nextSource) => {
+						onChangeManualRule(candidate.from, {
+							from: nextSource,
+							preserveQuality: candidate.preserveQuality,
+							to: candidate.to,
+						});
+					}}
 					onTargetChoose={(candidate) => {
 						setTargetPickerCandidate(candidate);
+					}}
+					onTargetQualityChange={(candidate, target, preserveQuality) => {
+						onTargetChange(candidate.from, target, preserveQuality);
 					}}
 				/>
 				<AddUpgradeMappingRow

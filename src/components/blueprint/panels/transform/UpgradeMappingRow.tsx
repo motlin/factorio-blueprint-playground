@@ -1,6 +1,8 @@
-import type {SignalID} from '../../../../parsing/types';
+import type {SignalID, UpgradeSourceSignal} from '../../../../parsing/types';
 import type {UpgradeCandidate} from '../../../../transform/upgradePlanner';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
+import {signalWithUpgradeQuality} from './upgradeQuality';
+import {UpgradeQualityControls} from './UpgradeQualityControls';
 import {signalName, signalTitle} from './upgradePlannerSignals';
 
 interface SignalSlotProps {
@@ -15,7 +17,9 @@ interface UpgradeMappingRowProps {
 	manual: boolean;
 	onRemove: (candidate: UpgradeCandidate, manual: boolean) => void;
 	onSourceChoose: (candidate: UpgradeCandidate) => void;
+	onSourceQualityChange: (candidate: UpgradeCandidate, source: UpgradeSourceSignal) => void;
 	onTargetChoose: (candidate: UpgradeCandidate) => void;
+	onTargetQualityChange: (candidate: UpgradeCandidate, target: SignalID, preserveQuality: boolean) => void;
 	sourceKey: string;
 }
 
@@ -47,7 +51,9 @@ export function UpgradeMappingRow({
 	manual,
 	onRemove,
 	onSourceChoose,
+	onSourceQualityChange,
 	onTargetChoose,
+	onTargetQualityChange,
 	sourceKey,
 }: UpgradeMappingRowProps) {
 	const sourceName = signalName(candidate.from);
@@ -69,23 +75,68 @@ export function UpgradeMappingRow({
 				}
 			}}
 		>
-			<SignalSlot
-				label={`Choose source, currently ${sourceName}`}
-				signal={candidate.from}
-				onClick={() => {
-					onSourceChoose(candidate);
-				}}
-			/>
+			<div className="upgrade-mapping-grid__endpoint">
+				<SignalSlot
+					label={`Choose source, currently ${sourceName}`}
+					signal={candidate.from}
+					onClick={() => {
+						onSourceChoose(candidate);
+					}}
+				/>
+				<UpgradeQualityControls
+					layout="mapping"
+					mode="source"
+					qualityComparator={candidate.from.comparator ?? '='}
+					qualitySelection={candidate.from.quality ?? 'any'}
+					onComparatorChange={(comparator) => {
+						onSourceQualityChange(
+							candidate,
+							signalWithUpgradeQuality(
+								candidate.from,
+								'source',
+								candidate.from.quality ?? 'normal',
+								comparator,
+							),
+						);
+					}}
+					onQualityChange={(quality) => {
+						onSourceQualityChange(
+							candidate,
+							signalWithUpgradeQuality(
+								candidate.from,
+								'source',
+								quality,
+								candidate.from.comparator ?? '=',
+							),
+						);
+					}}
+				/>
+			</div>
 			<span className="upgrade-mapping-grid__arrow" aria-hidden="true">
 				→
 			</span>
-			<SignalSlot
-				label={`Choose target for ${sourceName}`}
-				signal={candidate.to}
-				onClick={() => {
-					onTargetChoose(candidate);
-				}}
-			/>
+			<div className="upgrade-mapping-grid__endpoint">
+				<SignalSlot
+					label={`Choose target for ${sourceName}`}
+					signal={candidate.to}
+					onClick={() => {
+						onTargetChoose(candidate);
+					}}
+				/>
+				<UpgradeQualityControls
+					layout="mapping"
+					mode="target"
+					qualityComparator="="
+					qualitySelection={candidate.preserveQuality ? 'preserve' : (candidate.to.quality ?? 'normal')}
+					onQualityChange={(quality) => {
+						onTargetQualityChange(
+							candidate,
+							signalWithUpgradeQuality(candidate.to, 'target', quality, '='),
+							quality === 'preserve',
+						);
+					}}
+				/>
+			</div>
 			<span
 				className="upgrade-mapping-grid__count"
 				title={`${candidate.count.toString()} ${candidate.count === 1 ? 'match' : 'matches'}`}

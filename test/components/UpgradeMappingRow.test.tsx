@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import {describe, expect, test, vi} from 'vite-plus/test';
 
 import {UpgradeMappingRow} from '../../src/components/blueprint/panels/transform/UpgradeMappingRow';
+import type {SignalID, UpgradeSourceSignal} from '../../src/parsing/types';
 import type {UpgradeCandidate} from '../../src/transform/upgradePlanner';
 
 const beltMapping: UpgradeCandidate = {
@@ -17,7 +18,10 @@ describe('UpgradeMappingRow', () => {
 		const user = userEvent.setup();
 		const onRemove = vi.fn<(candidate: UpgradeCandidate, manual: boolean) => void>();
 		const onSourceChoose = vi.fn<(candidate: UpgradeCandidate) => void>();
+		const onSourceQualityChange = vi.fn<(candidate: UpgradeCandidate, source: UpgradeSourceSignal) => void>();
 		const onTargetChoose = vi.fn<(candidate: UpgradeCandidate) => void>();
+		const onTargetQualityChange =
+			vi.fn<(candidate: UpgradeCandidate, target: SignalID, preserveQuality: boolean) => void>();
 		render(
 			<ol>
 				<UpgradeMappingRow
@@ -25,7 +29,9 @@ describe('UpgradeMappingRow', () => {
 					manual
 					onRemove={onRemove}
 					onSourceChoose={onSourceChoose}
+					onSourceQualityChange={onSourceQualityChange}
 					onTargetChoose={onTargetChoose}
+					onTargetQualityChange={onTargetQualityChange}
 					sourceKey="entity:transport-belt:normal:="
 				/>
 			</ol>,
