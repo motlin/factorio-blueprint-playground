@@ -78,7 +78,7 @@ test('groups only caller-supplied game signals and confirms a selected icon', as
 	});
 
 	await user.click(screen.getByRole('button', {name: 'Confirm'}));
-	expect(onChoose.mock.calls).toStrictEqual([[{type: 'entity', name: 'transport-belt'}, false]]);
+	expect(onChoose.mock.calls).toStrictEqual([[{type: 'entity', name: 'transport-belt'}]]);
 });
 
 test('preserves initial selection and quality while supporting keyboard grid navigation', async () => {
@@ -107,7 +107,7 @@ test('preserves initial selection and quality while supporting keyboard grid nav
 
 	await user.click(screen.getByRole('button', {name: 'Choose Test entity 10'}));
 	await user.click(screen.getByRole('button', {name: 'Confirm'}));
-	expect(onChoose.mock.calls).toStrictEqual([[{type: 'entity', name: 'test-entity-10', quality: 'rare'}, false]]);
+	expect(onChoose.mock.calls).toStrictEqual([[{type: 'entity', name: 'test-entity-10', quality: 'rare'}]]);
 });
 
 test('keeps an empty constrained picker usable without offering an excluded initial signal', () => {
@@ -146,9 +146,6 @@ test('shows source quality controls with the Factorio comparators and quality ic
 
 	const qualityBar = screen.getByRole('group', {name: 'Source quality'});
 	expect({
-		comparators: within(qualityBar)
-			.getAllByRole('option')
-			.map((option) => ({label: option.textContent, value: option.getAttribute('value')})),
 		qualityButtons: within(qualityBar)
 			.getAllByRole('button')
 			.map((button) => button.getAttribute('aria-label') ?? button.textContent),
@@ -156,16 +153,9 @@ test('shows source quality controls with the Factorio comparators and quality ic
 			.getAllByTestId('icon')
 			.map((icon) => icon.getAttribute('src')),
 	}).toStrictEqual({
-		comparators: [
-			{label: '=', value: '='},
-			{label: '≠', value: '≠'},
-			{label: '<', value: '<'},
-			{label: '≤', value: '≤'},
-			{label: '>', value: '>'},
-			{label: '≥', value: '≥'},
-		],
 		qualityButtons: [
 			'Any quality',
+			'Quality comparison: =',
 			'Normal quality',
 			'Uncommon quality',
 			'Rare quality',
@@ -204,12 +194,11 @@ test.each([
 	);
 
 	await user.click(screen.getByRole('button', {name: 'Rare quality'}));
-	await user.selectOptions(screen.getByRole('combobox', {name: 'Quality comparison'}), comparator);
+	await user.click(screen.getByRole('button', {name: 'Quality comparison: ='}));
+	await user.click(screen.getByRole('menuitemradio', {name: comparator}));
 	await user.click(screen.getByRole('button', {name: 'Confirm'}));
 
-	expect(onChoose.mock.calls).toStrictEqual([
-		[{type: 'entity', name: 'test-entity', quality: 'rare', comparator}, false],
-	]);
+	expect(onChoose.mock.calls).toStrictEqual([[{type: 'entity', name: 'test-entity', quality: 'rare', comparator}]]);
 });
 
 test('does not serialize the source no-quality sentinel or a stale comparator', async () => {
@@ -230,7 +219,7 @@ test('does not serialize the source no-quality sentinel or a stale comparator', 
 	await user.click(screen.getByRole('button', {name: 'Any quality'}));
 	await user.click(screen.getByRole('button', {name: 'Confirm'}));
 
-	expect(onChoose.mock.calls).toStrictEqual([[{type: 'entity', name: 'test-entity'}, false]]);
+	expect(onChoose.mock.calls).toStrictEqual([[{type: 'entity', name: 'test-entity'}]]);
 });
 
 test('serializes normal as an explicit source quality', async () => {
@@ -251,7 +240,7 @@ test('serializes normal as an explicit source quality', async () => {
 	await user.click(screen.getByRole('button', {name: 'Confirm'}));
 
 	expect(onChoose.mock.calls).toStrictEqual([
-		[{type: 'entity', name: 'test-entity', quality: 'normal', comparator: '='}, false],
+		[{type: 'entity', name: 'test-entity', quality: 'normal', comparator: '='}],
 	]);
 });
 
@@ -278,19 +267,17 @@ test.each([
 	await user.click(screen.getByRole('button', {name: `${quality[0].toUpperCase()}${quality.slice(1)} quality`}));
 	await user.click(screen.getByRole('button', {name: 'Confirm'}));
 
-	expect(onChoose.mock.calls).toStrictEqual([[expectedSignal, false]]);
+	expect(onChoose.mock.calls).toStrictEqual([[expectedSignal]]);
 });
 
-test('does not serialize the target preserve-quality sentinel', async () => {
+test('defaults a target to exact normal quality and has no source-preserving choice', async () => {
 	const user = userEvent.setup();
 	const onChoose = vi.fn<SignalPickerDialogProps['onChoose']>();
-	const initialSignal = {...qualitySignal, quality: 'epic'} as const;
 	render(
 		<SignalPickerDialog
 			title="Choose target signal"
-			options={[initialSignal]}
-			initialSignal={initialSignal}
-			initialQuality="preserve"
+			options={[qualitySignal]}
+			initialSignal={qualitySignal}
 			qualityMode="target"
 			onChoose={onChoose}
 			onClose={vi.fn<() => void>()}
@@ -300,16 +287,16 @@ test('does not serialize the target preserve-quality sentinel', async () => {
 	const targetQualityBar = screen.getByRole('group', {name: 'Target quality'});
 	expect({
 		comparator: within(targetQualityBar).queryByRole('combobox'),
-		preserveSelected: within(targetQualityBar)
-			.getByRole('button', {name: 'Set as source'})
-			.getAttribute('aria-pressed'),
+		qualityButtons: within(targetQualityBar)
+			.getAllByRole('button')
+			.map((button) => button.getAttribute('aria-label')),
 	}).toStrictEqual({
 		comparator: null,
-		preserveSelected: 'true',
+		qualityButtons: ['Normal quality', 'Uncommon quality', 'Rare quality', 'Epic quality', 'Legendary quality'],
 	});
 
 	await user.click(screen.getByRole('button', {name: 'Confirm'}));
-	expect(onChoose.mock.calls).toStrictEqual([[{type: 'entity', name: 'test-entity'}, true]]);
+	expect(onChoose.mock.calls).toStrictEqual([[{type: 'entity', name: 'test-entity', quality: 'normal'}]]);
 });
 
 test('confirms the selected signal with Enter and the visible green check', async () => {
@@ -328,7 +315,7 @@ test('confirms the selected signal with Enter and the visible green check', asyn
 	const search = screen.getByRole('searchbox', {name: 'Search'});
 	search.focus();
 	fireEvent.keyDown(search, {key: 'Enter'});
-	expect(enterChoose.mock.calls).toStrictEqual([[{type: 'entity', name: 'test-entity'}, false]]);
+	expect(enterChoose.mock.calls).toStrictEqual([[{type: 'entity', name: 'test-entity'}]]);
 
 	unmount();
 	const checkChoose = vi.fn<SignalPickerDialogProps['onChoose']>();
@@ -345,7 +332,7 @@ test('confirms the selected signal with Enter and the visible green check', asyn
 	const confirm = screen.getByRole('button', {name: 'Confirm'});
 	expect(confirm.querySelector('[aria-hidden="true"]')?.textContent).toBe('✓');
 	await user.click(confirm);
-	expect(checkChoose.mock.calls).toStrictEqual([[{type: 'entity', name: 'test-entity'}, false]]);
+	expect(checkChoose.mock.calls).toStrictEqual([[{type: 'entity', name: 'test-entity'}]]);
 });
 
 test.each(['Escape', 'Q', 'close button'] as const)('dismisses with %s without choosing a signal', async (path) => {

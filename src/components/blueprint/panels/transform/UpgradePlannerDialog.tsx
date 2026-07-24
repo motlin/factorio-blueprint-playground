@@ -1,40 +1,33 @@
 import {useId, useState} from 'react';
 
 import type {BlueprintString, SignalID, UpgradeSourceSignal} from '../../../../parsing/types';
-import type {UpgradeCandidate, UpgradeRule} from '../../../../transform/upgradePlanner';
+import type {UpgradeRule} from '../../../../transform/upgradePlanner';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
 import {ButtonGreen} from '../../../ui/ButtonGreen';
 import {Textarea} from '../../../ui/Textarea';
-import {AddUpgradeMappingRow} from './AddUpgradeMappingRow';
 import {BookWideReplacements, type BookWideReplacementsProps} from './BookWideReplacements';
 import {SignalPickerDialog} from './SignalPickerDialog';
-import {UpgradeMappingGrid} from './UpgradeMappingGrid';
+import {UpgradeMappingGrid, type PositionedUpgradeCandidate} from './UpgradeMappingGrid';
 import {
 	isUpgradeSourceOption,
 	isUpgradeTargetSelectionAllowed,
 	signalIdentity,
-	signalName,
 	signalPrototypeIdentity,
 	upgradeTargetOptions,
 } from './upgradePlannerSignals';
 import {UpgradePlannerSelectorDialog, type UpgradePlannerChoice} from './UpgradePlannerSelectorDialog';
 
-interface MappingSourceDraft {
-	candidate: UpgradeCandidate;
-	source: UpgradeSourceSignal;
-}
-
 interface UpgradePlannerMappings {
-	candidates: UpgradeCandidate[];
+	candidates: PositionedUpgradeCandidate[];
 	error: string | undefined;
 	excludedSources: ReadonlySet<string>;
 	manualRules: readonly UpgradeRule[];
-	onAddManualRule: (rule: UpgradeRule) => void;
+	onAddManualRule: (rule: UpgradeRule, slotIndex: number) => void;
 	onChangeManualRule: (previousSource: UpgradeSourceSignal, rule: UpgradeRule) => void;
 	onPlannerLoad: (choice: UpgradePlannerChoice) => void;
 	onPlannerInputChange: (value: string) => void;
 	onRemoveRule: (source: UpgradeSourceSignal, manual: boolean) => void;
-	onTargetChange: (source: SignalID, target: SignalID, preserveQuality: boolean) => void;
+	onTargetChange: (source: SignalID, target: SignalID) => void;
 	plannerInput: string;
 	rootBlueprint: BlueprintString;
 	source: string;
@@ -76,10 +69,10 @@ function UpgradeMappingsEditor({
 }: UpgradePlannerMappings) {
 	const plannerSelectorId = useId();
 	const [plannerSelectorOpen, setPlannerSelectorOpen] = useState(false);
-	const [targetPickerCandidate, setTargetPickerCandidate] = useState<UpgradeCandidate>();
-	const [sourcePickerCandidate, setSourcePickerCandidate] = useState<UpgradeCandidate>();
-	const [mappingSourceDraft, setMappingSourceDraft] = useState<MappingSourceDraft>();
+	const [targetPickerCandidate, setTargetPickerCandidate] = useState<PositionedUpgradeCandidate>();
+	const [sourcePickerCandidate, setSourcePickerCandidate] = useState<PositionedUpgradeCandidate>();
 	const [addMappingSource, setAddMappingSource] = useState<UpgradeSourceSignal>();
+	const [addMappingSlotIndex, setAddMappingSlotIndex] = useState<number>();
 	const [addSourcePickerOpen, setAddSourcePickerOpen] = useState(false);
 	const [addTargetPickerOpen, setAddTargetPickerOpen] = useState(false);
 	const visibleCandidates = candidates.filter((candidate) => !excludedSources.has(signalIdentity(candidate.from)));
@@ -89,7 +82,7 @@ function UpgradeMappingsEditor({
 	const availableAddSources = sourceOptions.filter(
 		(signal) => isUpgradeSourceOption(signal) && !occupiedSourcePrototypes.has(signalPrototypeIdentity(signal)),
 	);
-	const availableEditSources = (candidate: UpgradeCandidate): SignalID[] => {
+	const availableEditSources = (candidate: PositionedUpgradeCandidate): SignalID[] => {
 		const occupiedByOtherMapping = new Set(
 			visibleCandidates
 				.filter((visibleCandidate) => visibleCandidate !== candidate)
@@ -144,42 +137,34 @@ function UpgradeMappingsEditor({
 				)}
 				<UpgradeMappingGrid
 					candidates={candidates}
+					draftSlotIndex={addMappingSlotIndex}
+					draftSource={addMappingSource}
 					excludedSources={excludedSources}
 					manualRules={manualRules}
-					showEmptyState={error === undefined}
+					onDraftRemove={() => {
+						setAddMappingSource(undefined);
+						setAddMappingSlotIndex(undefined);
+						setAddSourcePickerOpen(false);
+						setAddTargetPickerOpen(false);
+					}}
+					onDraftSourceChoose={(slotIndex) => {
+						setAddMappingSlotIndex(slotIndex);
+						setAddSourcePickerOpen(true);
+						setAddTargetPickerOpen(false);
+					}}
+					onDraftTargetChoose={() => {
+						if (addMappingSource !== undefined) {
+							setAddTargetPickerOpen(true);
+						}
+					}}
 					onRemove={(candidate, manual) => {
 						onRemoveRule(candidate.from, manual);
 					}}
 					onSourceChoose={(candidate) => {
 						setSourcePickerCandidate(candidate);
 					}}
-					onSourceQualityChange={(candidate, nextSource) => {
-						onChangeManualRule(candidate.from, {
-							from: nextSource,
-							preserveQuality: candidate.preserveQuality,
-							to: candidate.to,
-						});
-					}}
 					onTargetChoose={(candidate) => {
 						setTargetPickerCandidate(candidate);
-					}}
-					onTargetQualityChange={(candidate, target, preserveQuality) => {
-						onTargetChange(candidate.from, target, preserveQuality);
-					}}
-				/>
-				<AddUpgradeMappingRow
-					source={addMappingSource}
-					onRemove={() => {
-						setAddMappingSource(undefined);
-						setAddSourcePickerOpen(false);
-						setAddTargetPickerOpen(false);
-					}}
-					onSourceChoose={() => {
-						setAddSourcePickerOpen(true);
-						setAddTargetPickerOpen(false);
-					}}
-					onTargetChoose={() => {
-						setAddTargetPickerOpen(true);
 					}}
 				/>
 			</div>
@@ -195,6 +180,7 @@ function UpgradeMappingsEditor({
 					onChoose={(choice) => {
 						onPlannerLoad(choice);
 						setAddMappingSource(undefined);
+						setAddMappingSlotIndex(undefined);
 						setAddSourcePickerOpen(false);
 						setAddTargetPickerOpen(false);
 						setPlannerSelectorOpen(false);
@@ -204,22 +190,16 @@ function UpgradeMappingsEditor({
 			{targetPickerCandidate === undefined ? null : (
 				<SignalPickerDialog
 					initialSignal={targetPickerCandidate.to}
-					initialQuality={
-						targetPickerCandidate.preserveQuality
-							? 'preserve'
-							: (targetPickerCandidate.to.quality ?? 'normal')
-					}
-					title={`Choose target for ${signalName(targetPickerCandidate.from)}`}
+					initialQuality={targetPickerCandidate.to.quality ?? 'normal'}
+					title="Select upgrade"
 					options={upgradeTargetOptions(targetPickerCandidate.from, targetPickerCandidate.to)}
 					qualityMode="target"
-					isSelectionAllowed={(target, preserveQuality) =>
-						isUpgradeTargetSelectionAllowed(targetPickerCandidate.from, target, preserveQuality)
-					}
+					isSelectionAllowed={(target) => isUpgradeTargetSelectionAllowed(targetPickerCandidate.from, target)}
 					onClose={() => {
 						setTargetPickerCandidate(undefined);
 					}}
-					onChoose={(target, preserveQuality = false) => {
-						onTargetChange(targetPickerCandidate.from, target, preserveQuality);
+					onChoose={(target) => {
+						onTargetChange(targetPickerCandidate.from, target);
 						setTargetPickerCandidate(undefined);
 					}}
 				/>
@@ -227,41 +207,26 @@ function UpgradeMappingsEditor({
 			{sourcePickerCandidate === undefined ? null : (
 				<SignalPickerDialog
 					initialSignal={sourcePickerCandidate.from}
-					title="Choose mapping source"
+					title="Set the filter"
 					options={availableEditSources(sourcePickerCandidate)}
 					qualityMode="source"
 					onClose={() => {
 						setSourcePickerCandidate(undefined);
 					}}
 					onChoose={(sourceSignal) => {
-						setMappingSourceDraft({candidate: sourcePickerCandidate, source: sourceSignal});
+						onChangeManualRule(sourcePickerCandidate.from, {
+							from: sourceSignal,
+							preserveQuality: false,
+							to: sourcePickerCandidate.to,
+						});
 						setSourcePickerCandidate(undefined);
-					}}
-				/>
-			)}
-			{mappingSourceDraft === undefined ? null : (
-				<SignalPickerDialog
-					initialSignal={mappingSourceDraft.source}
-					title={`Choose target for ${signalName(mappingSourceDraft.source)}`}
-					options={upgradeTargetOptions(mappingSourceDraft.source, mappingSourceDraft.source)}
-					qualityMode="target"
-					isSelectionAllowed={(target, preserveQuality) =>
-						isUpgradeTargetSelectionAllowed(mappingSourceDraft.source, target, preserveQuality)
-					}
-					onClose={() => {
-						setMappingSourceDraft(undefined);
-					}}
-					onChoose={(target, preserveQuality = false) => {
-						const rule = {from: mappingSourceDraft.source, preserveQuality, to: target};
-						onChangeManualRule(mappingSourceDraft.candidate.from, rule);
-						setMappingSourceDraft(undefined);
 					}}
 				/>
 			)}
 			{addSourcePickerOpen ? (
 				<SignalPickerDialog
 					initialSignal={addMappingSource}
-					title="Choose source for new mapping"
+					title="Set the filter"
 					options={
 						addMappingSource === undefined
 							? availableAddSources
@@ -277,6 +242,9 @@ function UpgradeMappingsEditor({
 					qualityMode="source"
 					onClose={() => {
 						setAddSourcePickerOpen(false);
+						if (addMappingSource === undefined) {
+							setAddMappingSlotIndex(undefined);
+						}
 					}}
 					onChoose={(sourceSignal) => {
 						if (occupiedSourcePrototypes.has(signalPrototypeIdentity(sourceSignal))) {
@@ -285,24 +253,28 @@ function UpgradeMappingsEditor({
 						}
 						setAddMappingSource(sourceSignal);
 						setAddSourcePickerOpen(false);
-						setAddTargetPickerOpen(true);
 					}}
 				/>
 			) : null}
 			{addTargetPickerOpen && addMappingSource !== undefined ? (
 				<SignalPickerDialog
-					title={`Choose target for ${signalName(addMappingSource)}`}
+					title="Select upgrade"
 					options={upgradeTargetOptions(addMappingSource, addMappingSource)}
 					qualityMode="target"
-					isSelectionAllowed={(target, preserveQuality) =>
-						isUpgradeTargetSelectionAllowed(addMappingSource, target, preserveQuality)
-					}
+					isSelectionAllowed={(target) => isUpgradeTargetSelectionAllowed(addMappingSource, target)}
 					onClose={() => {
 						setAddTargetPickerOpen(false);
 					}}
-					onChoose={(target, preserveQuality = false) => {
-						onAddManualRule({from: addMappingSource, preserveQuality, to: target});
+					onChoose={(target) => {
+						if (addMappingSlotIndex === undefined) {
+							throw new Error('A mapping slot must be selected before choosing a target.');
+						}
+						onAddManualRule(
+							{from: addMappingSource, preserveQuality: false, to: target},
+							addMappingSlotIndex,
+						);
 						setAddMappingSource(undefined);
+						setAddMappingSlotIndex(undefined);
 						setAddTargetPickerOpen(false);
 					}}
 				/>

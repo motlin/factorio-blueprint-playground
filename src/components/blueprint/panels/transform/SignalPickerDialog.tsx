@@ -40,8 +40,8 @@ const pickerCategories: readonly PickerCategory[] = [
 export interface SignalPickerDialogProps {
 	initialQuality?: UpgradeQualitySelection;
 	initialSignal?: PickerSignal;
-	isSelectionAllowed?: (signal: PickerSignal, preserveQuality: boolean) => boolean;
-	onChoose: (signal: PickerSignal, preserveQuality?: boolean) => void;
+	isSelectionAllowed?: (signal: PickerSignal) => boolean;
+	onChoose: (signal: PickerSignal) => void;
 	onClose: () => void;
 	options: SignalID[];
 	qualityMode?: QualityMode;
@@ -58,8 +58,8 @@ function normalizedSignalType(signal: SignalID): SignalType {
 	return signal.type;
 }
 
-function signalIdentity(signal: PickerSignal): string {
-	return [normalizedSignalType(signal), signal.name, signal.quality ?? 'normal', signal.comparator ?? '='].join(':');
+function signalPrototypeIdentity(signal: SignalID): string {
+	return [normalizedSignalType(signal), signal.name].join(':');
 }
 
 function signalName(signal: SignalID): string {
@@ -108,7 +108,7 @@ export function SignalPickerDialog({
 	const [search, setSearch] = useState('');
 	const [selectedSignal, setSelectedSignal] = useState<PickerSignal | undefined>(
 		initialSignal === undefined ||
-			!options.some((signal) => signalIdentity(signal) === signalIdentity(initialSignal))
+			!options.some((signal) => signalPrototypeIdentity(signal) === signalPrototypeIdentity(initialSignal))
 			? undefined
 			: initialSignal,
 	);
@@ -117,7 +117,7 @@ export function SignalPickerDialog({
 			(qualityMode === 'source'
 				? (initialSignal?.quality ?? 'any')
 				: qualityMode === 'target'
-					? 'preserve'
+					? (initialSignal?.quality ?? 'normal')
 					: 'normal'),
 	);
 	const [qualityComparator, setQualityComparator] = useState<QualityComparator>(initialSignal?.comparator ?? '=');
@@ -132,25 +132,25 @@ export function SignalPickerDialog({
 			activeCategory.id === categoryForSignal(signal).id &&
 			(normalizedSearch === '' || signalName(signal).toLowerCase().includes(normalizedSearch)),
 	);
-	const selectedIdentity = selectedSignal === undefined ? undefined : signalIdentity(selectedSignal);
-	const selectedOptionIndex = filteredOptions.findIndex((signal) => signalIdentity(signal) === selectedIdentity);
+	const selectedIdentity = selectedSignal === undefined ? undefined : signalPrototypeIdentity(selectedSignal);
+	const selectedOptionIndex = filteredOptions.findIndex(
+		(signal) => signalPrototypeIdentity(signal) === selectedIdentity,
+	);
 	const tabbableOptionIndex = selectedOptionIndex < 0 ? 0 : selectedOptionIndex;
-	const preserveQuality = qualitySelection === 'preserve';
 	const confirmedSignal =
 		selectedSignal === undefined
 			? undefined
 			: qualityMode === undefined
 				? selectedSignal
 				: signalWithUpgradeQuality(selectedSignal, qualityMode, qualitySelection, qualityComparator);
-	const selectionAllowed =
-		confirmedSignal !== undefined && (isSelectionAllowed?.(confirmedSignal, preserveQuality) ?? true);
+	const selectionAllowed = confirmedSignal !== undefined && (isSelectionAllowed?.(confirmedSignal) ?? true);
 
 	const confirmSelection = useCallback(() => {
 		if (confirmedSignal === undefined || !selectionAllowed) {
 			return;
 		}
-		onChoose(confirmedSignal, preserveQuality);
-	}, [confirmedSignal, onChoose, preserveQuality, selectionAllowed]);
+		onChoose(confirmedSignal);
+	}, [confirmedSignal, onChoose, selectionAllowed]);
 	const dialogReference = useDialogFocus<HTMLElement>({
 		closeOnQ: true,
 		initialFocusSelector: 'input[type="search"]',
@@ -241,13 +241,13 @@ export function SignalPickerDialog({
 						{filteredOptions.map((signal, index) => (
 							<button
 								type="button"
-								key={signalIdentity(signal)}
+								key={signalPrototypeIdentity(signal)}
 								ref={(button) => {
 									optionButtons.current[index] = button;
 								}}
 								className="transform-picker__option"
 								aria-label={`Choose ${signalName(signal)}`}
-								aria-pressed={signalIdentity(signal) === selectedIdentity}
+								aria-pressed={signalPrototypeIdentity(signal) === selectedIdentity}
 								tabIndex={index === tabbableOptionIndex ? 0 : -1}
 								title={signalTitle(signal)}
 								onClick={() => {
@@ -270,7 +270,6 @@ export function SignalPickerDialog({
 						<span />
 					) : (
 						<UpgradeQualityControls
-							layout="picker"
 							mode={qualityMode}
 							qualityComparator={qualityComparator}
 							qualitySelection={qualitySelection}

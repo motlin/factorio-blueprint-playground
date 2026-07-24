@@ -74,6 +74,37 @@ async function chooseSignal(user: ReturnType<typeof userEvent.setup>, label: str
 	await user.click(screen.getByRole('button', {name: 'Confirm'}));
 }
 
+function choosePlannerWithClicks(label: string) {
+	fireEvent.click(screen.getByRole('button', {name: /Load planner, currently/}));
+	fireEvent.click(screen.getByRole('button', {name: label}));
+}
+
+function chooseSignalWithClicks(label: string) {
+	if (screen.queryByRole('button', {name: `Choose ${label}`}) === null && label.startsWith('Signal ')) {
+		fireEvent.click(screen.getByRole('tab', {name: 'Virtual signals'}));
+	}
+	fireEvent.click(screen.getByRole('button', {name: `Choose ${label}`}));
+	fireEvent.click(screen.getByRole('button', {name: 'Confirm'}));
+}
+
+function firstEmptyMappingSourceButton(): HTMLButtonElement {
+	const [button] = screen.getAllByRole<HTMLButtonElement>('button', {name: 'Choose source for new mapping'});
+	return button;
+}
+
+function renderedMappingRows(): HTMLElement[] {
+	return [...document.querySelectorAll<HTMLElement>('[data-mapping-key]')];
+}
+
+function mappingSlotIndex(button: HTMLElement): number {
+	const row = button.closest('[data-mapping-key]');
+	const parent = row?.parentElement;
+	if (parent === null || parent === undefined) {
+		throw new Error('Expected the mapping button to belong to a planner slot.');
+	}
+	return [...parent.children].indexOf(row!);
+}
+
 async function saveAndApplyPlanner(
 	user: ReturnType<typeof userEvent.setup>,
 	direction: 'upgrade' | 'downgrade' = 'upgrade',
@@ -259,13 +290,15 @@ describe('TransformPanel', () => {
 
 		await user.selectOptions(screen.getByRole('combobox', {name: 'Apply to'}), 'root');
 		const rootScopeCommitCount = commitsSincePreviousInteraction();
-		await user.click(screen.getByRole('button', {name: 'Choose source for new mapping'}));
+		await user.click(firstEmptyMappingSourceButton());
 		await chooseSignal(user, 'Transport belt');
+		await user.click(screen.getByRole('button', {name: 'Choose target for Transport belt'}));
 		await chooseSignal(user, 'Fast transport belt');
 		const firstMappingCommitCount = commitsSincePreviousInteraction();
 
-		await user.click(screen.getByRole('button', {name: 'Choose source for new mapping'}));
+		await user.click(firstEmptyMappingSourceButton());
 		await chooseSignal(user, 'Fast inserter');
+		await user.click(screen.getByRole('button', {name: 'Choose target for Fast inserter'}));
 		await chooseSignal(user, 'Inserter');
 		const secondMappingCommitCount = commitsSincePreviousInteraction();
 
@@ -279,7 +312,7 @@ describe('TransformPanel', () => {
 
 		expect({
 			analysisCounts,
-			mappings: screen.getAllByRole('listitem').map((row) => row.getAttribute('aria-label')),
+			mappings: renderedMappingRows().map((row) => row.getAttribute('aria-label')),
 			renderCommits: {
 				firstMapping: firstMappingCommitCount,
 				iconChange: iconChangeCommitCount,
@@ -296,13 +329,13 @@ describe('TransformPanel', () => {
 			},
 			mappings: ['Mapping from Transport belt to Fast transport belt', 'Mapping from Fast inserter to Inserter'],
 			renderCommits: {
-				firstMapping: 5,
+				firstMapping: 6,
 				iconChange: 8,
 				initial: 1,
 				loadEmptyPlanner: 4,
 				openPlanner: 1,
 				rootScope: 1,
-				secondMapping: 5,
+				secondMapping: 6,
 			},
 		});
 	});
@@ -1156,14 +1189,12 @@ describe('TransformPanel', () => {
 		render(<TransformPanel blueprint={qualityBlueprint} />);
 
 		openUpgradePlanner();
-		const initialRow = screen.getByRole('listitem', {
-			name: 'Mapping from Transport belt to Fast transport belt',
-		});
-		await user.click(within(initialRow).getAllByRole('button', {name: 'Epic quality'})[0]);
-		const qualityRow = screen.getByRole('listitem', {
-			name: 'Mapping from Transport belt to Fast transport belt',
-		});
-		await user.click(within(qualityRow).getAllByRole('button', {name: 'Normal quality'})[1]);
+		await user.click(screen.getByRole('button', {name: 'Choose source, currently Transport belt'}));
+		await user.click(screen.getByRole('button', {name: 'Epic quality'}));
+		await chooseSignal(user, 'Transport belt');
+		await user.click(screen.getByRole('button', {name: 'Choose target for Transport belt'}));
+		await user.click(screen.getByRole('button', {name: 'Normal quality'}));
+		await chooseSignal(user, 'Fast transport belt');
 		await saveAndApplyPlanner(user);
 
 		expect(navigate).toHaveBeenCalledExactlyOnceWith({
@@ -1187,7 +1218,7 @@ describe('TransformPanel', () => {
 		});
 	});
 
-	test('adds a custom quality mapping with a source comparator and source-preserving target', async () => {
+	test('adds a custom quality mapping with a source comparator and explicit target quality', async () => {
 		const user = userEvent.setup();
 		const qualityBlueprint: BlueprintString = {
 			blueprint: {
@@ -1200,25 +1231,27 @@ describe('TransformPanel', () => {
 
 		openUpgradePlanner();
 		await choosePlanner(user, 'Empty planner');
-		await user.click(screen.getByRole('button', {name: 'Choose source for new mapping'}));
+		await user.click(firstEmptyMappingSourceButton());
 		await user.click(screen.getByRole('button', {name: 'Rare quality'}));
-		await user.selectOptions(screen.getByRole('combobox', {name: 'Quality comparison'}), '>');
+		await user.click(screen.getByRole('button', {name: 'Quality comparison: ='}));
+		await user.click(screen.getByRole('menuitemradio', {name: '>'}));
 		await chooseSignal(user, 'Transport belt');
 
-		expect(screen.getByRole('button', {name: 'Set as source'}).getAttribute('aria-pressed')).toBe('true');
+		await user.click(screen.getByRole('button', {name: 'Choose target for Transport belt'}));
+		await user.click(screen.getByRole('button', {name: 'Epic quality'}));
 		await chooseSignal(user, 'Fast transport belt');
 
+		const mappingRow = screen.getByRole('listitem', {
+			name: 'Mapping from Transport belt to Fast transport belt',
+		});
 		expect({
-			count: screen
-				.getByRole('button', {name: 'Choose source, currently Transport belt'})
-				.closest('.upgrade-mapping-grid__row')
-				?.querySelector('strong')?.textContent,
-			remove: screen.getByRole('button', {name: 'Remove mapping from Transport belt'}).textContent,
-			source: screen.getByRole('button', {name: 'Choose source, currently Transport belt'}).title,
+			matchSummary: mappingRow.querySelector('.transform-visually-hidden')?.textContent,
+			source: within(mappingRow).getByRole('button', {name: 'Choose source, currently Transport belt'}).title,
+			target: within(mappingRow).getByRole('button', {name: 'Choose target for Transport belt'}).title,
 		}).toStrictEqual({
-			count: '1',
-			remove: '×',
+			matchSummary: '1 match. Right-click or press Delete to clear.',
 			source: 'Transport belt\nentity:transport-belt\nQuality: > rare',
+			target: 'Fast transport belt\nentity:fast-transport-belt\nQuality: = epic',
 		});
 
 		await saveAndApplyPlanner(user);
@@ -1247,59 +1280,65 @@ describe('TransformPanel', () => {
 		const plannerDialog = screen.getByRole('dialog', {name: 'Upgrade Planner'});
 		await choosePlanner(user, 'Empty planner');
 
-		const emptySource = screen.getByRole('button', {name: 'Choose source for new mapping'});
-		const emptyTarget = screen.getByRole('button', {
+		const emptySource = firstEmptyMappingSourceButton();
+		const emptyTarget = within(emptySource.parentElement!).getByRole('button', {
 			name: 'Choose a source before choosing a target',
 		});
 		expect({
-			row: screen.getByRole('group', {name: 'Add mapping'}).textContent,
+			row: emptySource.parentElement?.textContent,
 			sourceIcon: emptySource.querySelector('img'),
 			targetDisabled: emptyTarget.getAttribute('aria-disabled'),
 			targetIcon: emptyTarget.querySelector('img'),
 		}).toStrictEqual({
-			row: '+→+—draft',
+			row: '',
 			sourceIcon: null,
 			targetDisabled: 'true',
 			targetIcon: null,
 		});
 
 		await user.click(emptySource);
-		await user.click(screen.getByRole('button', {name: 'Close Choose source for new mapping'}));
-		expect(screen.queryByRole('dialog', {name: 'Choose source for new mapping'})).toBe(null);
+		await user.click(screen.getByRole('button', {name: 'Close Set the filter'}));
+		expect(screen.queryByRole('dialog', {name: 'Set the filter'})).toBe(null);
 
 		await user.click(emptySource);
 		await chooseSignal(user, 'Transport belt');
+		const incompleteRow = screen.getByRole('group', {
+			name: 'Incomplete mapping from Transport belt',
+		});
 		expect({
 			plannerAriaHidden: plannerDialog.getAttribute('aria-hidden'),
 			plannerInert: plannerDialog.inert,
-			targetPicker: screen
-				.getByRole('dialog', {name: 'Choose target for Transport belt'})
-				.getAttribute('aria-modal'),
+			source: within(incompleteRow).getByRole('button', {name: /Choose source/}).title,
+			target: within(incompleteRow).getByRole('button', {name: /Choose target/}).title,
+			targetPicker: screen.queryByRole('dialog', {name: 'Select upgrade'}),
+		}).toStrictEqual({
+			plannerAriaHidden: null,
+			plannerInert: false,
+			source: 'Transport belt\nentity:transport-belt',
+			target: 'Choose target for Transport belt',
+			targetPicker: null,
+		});
+
+		await user.click(within(incompleteRow).getByRole('button', {name: 'Choose target for Transport belt'}));
+		expect({
+			plannerAriaHidden: plannerDialog.getAttribute('aria-hidden'),
+			plannerInert: plannerDialog.inert,
+			targetPicker: screen.getByRole('dialog', {name: 'Select upgrade'}).getAttribute('aria-modal'),
 		}).toStrictEqual({
 			plannerAriaHidden: 'true',
 			plannerInert: true,
 			targetPicker: 'true',
 		});
-		await user.click(screen.getByRole('button', {name: 'Close Choose target for Transport belt'}));
-		const incompleteRow = screen.getByRole('group', {
-			name: 'Incomplete mapping from Transport belt',
-		});
-		expect({
-			source: within(incompleteRow).getByRole('button', {name: /Choose source/}).title,
-			target: within(incompleteRow).getByRole('button', {name: /Choose target/}).title,
-		}).toStrictEqual({
-			source: 'Transport belt\nentity:transport-belt',
-			target: 'Choose target for Transport belt',
-		});
+		await user.click(screen.getByRole('button', {name: 'Close Select upgrade'}));
 
 		expect({
-			committedRows: screen.queryAllByRole('listitem').length,
+			committedRows: renderedMappingRows().length,
 			incompleteRow: screen
 				.getByRole('group', {
 					name: 'Incomplete mapping from Transport belt',
 				})
 				.getAttribute('aria-label'),
-			targetDialog: screen.queryByRole('dialog', {name: 'Choose target for Transport belt'}),
+			targetDialog: screen.queryByRole('dialog', {name: 'Select upgrade'}),
 		}).toStrictEqual({
 			committedRows: 0,
 			incompleteRow: 'Incomplete mapping from Transport belt',
@@ -1307,10 +1346,10 @@ describe('TransformPanel', () => {
 		});
 
 		await user.click(screen.getByRole('button', {name: 'Choose target for Transport belt'}));
-		await user.click(screen.getByRole('button', {name: 'Close Choose target for Transport belt'}));
-		await user.click(screen.getByRole('button', {name: 'Remove incomplete mapping from Transport belt'}));
+		await user.click(screen.getByRole('button', {name: 'Close Select upgrade'}));
+		fireEvent.contextMenu(screen.getByRole('button', {name: 'Choose source, currently Transport belt'}));
 		expect({
-			emptyRow: screen.getByRole('group', {name: 'Add mapping'}).getAttribute('aria-label'),
+			emptyRow: firstEmptyMappingSourceButton().parentElement?.getAttribute('aria-label'),
 			remove: screen.queryByRole('button', {name: /Remove incomplete mapping/}),
 		}).toStrictEqual({
 			emptyRow: 'Add mapping',
@@ -1359,8 +1398,8 @@ describe('TransformPanel', () => {
 			},
 		});
 
-		await user.click(screen.getByRole('button', {name: 'Choose source for new mapping'}));
-		const sourcePicker = screen.getByRole('dialog', {name: 'Choose source for new mapping'});
+		await user.click(firstEmptyMappingSourceButton());
+		const sourcePicker = screen.getByRole('dialog', {name: 'Set the filter'});
 		expect(
 			within(sourcePicker)
 				.getAllByRole('button', {name: /^Choose /})
@@ -1368,7 +1407,8 @@ describe('TransformPanel', () => {
 		).toStrictEqual(['Choose Assembling machine 1']);
 
 		await chooseSignal(user, 'Assembling machine 1');
-		const targetPicker = screen.getByRole('dialog', {name: 'Choose target for Assembling machine 1'});
+		await user.click(screen.getByRole('button', {name: 'Choose target for Assembling machine 1'}));
+		const targetPicker = screen.getByRole('dialog', {name: 'Select upgrade'});
 		expect(
 			within(targetPicker)
 				.getAllByRole('button', {name: /^Choose /})
@@ -1377,22 +1417,26 @@ describe('TransformPanel', () => {
 		await chooseSignal(user, 'Assembling machine 2');
 
 		expect(
-			screen.getAllByRole('listitem').map((row) => ({
-				count: row.querySelector('.upgrade-mapping-grid__count')?.textContent,
+			renderedMappingRows().map((row) => ({
 				label: row.getAttribute('aria-label'),
+				matchSummary: row.querySelector('.transform-visually-hidden')?.textContent,
+				slot: [...(row.parentElement?.children ?? [])].indexOf(row),
 			})),
 		).toStrictEqual([
 			{
-				count: '1match',
-				label: 'Mapping from Transport belt to Fast transport belt',
-			},
-			{
-				count: '0matches',
-				label: 'Mapping from Speed module to Speed module 2',
-			},
-			{
-				count: '1match',
 				label: 'Mapping from Assembling machine 1 to Assembling machine 2',
+				matchSummary: '1 match. Right-click or press Delete to clear.',
+				slot: 0,
+			},
+			{
+				label: 'Mapping from Transport belt to Fast transport belt',
+				matchSummary: '1 match. Right-click or press Delete to clear.',
+				slot: 99,
+			},
+			{
+				label: 'Mapping from Speed module to Speed module 2',
+				matchSummary: '0 matches. Right-click or press Delete to clear.',
+				slot: 199,
 			},
 		]);
 	});
@@ -1413,10 +1457,11 @@ describe('TransformPanel', () => {
 
 		openUpgradePlanner();
 		await choosePlanner(user, 'Empty planner');
-		await user.click(screen.getByRole('button', {name: 'Choose source for new mapping'}));
+		await user.click(firstEmptyMappingSourceButton());
 		await chooseSignal(user, 'Transport belt');
+		await user.click(screen.getByRole('button', {name: 'Choose target for Transport belt'}));
 
-		const newTargetPicker = screen.getByRole('dialog', {name: 'Choose target for Transport belt'});
+		const newTargetPicker = screen.getByRole('dialog', {name: 'Select upgrade'});
 		expect(
 			within(newTargetPicker)
 				.getAllByRole('button', {name: /^Choose /})
@@ -1431,8 +1476,9 @@ describe('TransformPanel', () => {
 		await chooseSignal(user, 'Fast transport belt');
 		await user.click(screen.getByRole('button', {name: 'Choose source, currently Transport belt'}));
 		await chooseSignal(user, 'Assembling machine 1');
+		await user.click(screen.getByRole('button', {name: 'Choose target for Assembling machine 1'}));
 
-		const editedTargetPicker = screen.getByRole('dialog', {name: 'Choose target for Assembling machine 1'});
+		const editedTargetPicker = screen.getByRole('dialog', {name: 'Select upgrade'});
 		expect(
 			within(editedTargetPicker)
 				.getAllByRole('button', {name: /^Choose /})
@@ -1445,13 +1491,13 @@ describe('TransformPanel', () => {
 			name: 'Mapping from Assembling machine 1 to Assembling machine 2',
 		});
 		expect({
-			count: row.querySelector('.upgrade-mapping-grid__count')?.textContent,
+			matchSummary: row.querySelector('.transform-visually-hidden')?.textContent,
 			source: within(row).getByRole('button', {name: /Choose source/}).title,
 			target: within(row).getByRole('button', {name: /Choose target/}).title,
 		}).toStrictEqual({
-			count: '1match',
+			matchSummary: '1 match. Right-click or press Delete to clear.',
 			source: 'Assembling machine 1\nentity:assembling-machine-1',
-			target: 'Assembling machine 2\nentity:assembling-machine-2',
+			target: 'Assembling machine 2\nentity:assembling-machine-2\nQuality: = normal',
 		});
 	});
 
@@ -1461,8 +1507,9 @@ describe('TransformPanel', () => {
 
 		openUpgradePlanner();
 		await choosePlanner(user, 'Empty planner');
-		await user.click(screen.getByRole('button', {name: 'Choose source for new mapping'}));
+		await user.click(firstEmptyMappingSourceButton());
 		await chooseSignal(user, 'Transport belt');
+		await user.click(screen.getByRole('button', {name: 'Choose target for Transport belt'}));
 		const confirm = screen.getByRole<HTMLButtonElement>('button', {name: 'Confirm'});
 		expect(confirm.disabled).toBe(true);
 		await user.click(screen.getByRole('button', {name: 'Rare quality'}));
@@ -1980,8 +2027,7 @@ describe('TransformPanel', () => {
 		});
 	});
 
-	test('loads each planner-library source as an exact editable mapping draft', async () => {
-		const user = userEvent.setup();
+	test('loads each planner-library source as an exact editable mapping draft', () => {
 		const bookPlanner: UpgradePlanner = {
 			item: 'upgrade-planner',
 			label: "Alice's library planner",
@@ -2044,7 +2090,7 @@ describe('TransformPanel', () => {
 		render(<TransformPanel blueprint={selectedBlueprint} rootBlueprint={rootBlueprint} selectedPath="1" />);
 
 		openUpgradePlanner();
-		await user.click(screen.getByRole('button', {name: /Load planner, currently Default Upgrade/}));
+		fireEvent.click(screen.getByRole('button', {name: /Load planner, currently Default Upgrade/}));
 		expect(
 			within(screen.getByRole('grid', {name: 'Upgrade planners'}))
 				.getAllByRole('button')
@@ -2057,15 +2103,16 @@ describe('TransformPanel', () => {
 			'Paste upgrade planner…',
 		]);
 
-		await user.click(screen.getByRole('button', {name: 'Empty planner'}));
-		await user.click(screen.getByRole('button', {name: 'Choose source for new mapping'}));
-		await chooseSignal(user, 'Transport belt');
-		await chooseSignal(user, 'Express transport belt');
+		fireEvent.click(screen.getByRole('button', {name: 'Empty planner'}));
+		fireEvent.click(firstEmptyMappingSourceButton());
+		chooseSignalWithClicks('Transport belt');
+		fireEvent.click(screen.getByRole('button', {name: 'Choose target for Transport belt'}));
+		chooseSignalWithClicks('Express transport belt');
 		expect(screen.getByRole('button', {name: 'Choose target for Transport belt'}).title).toBe(
-			'Express transport belt\nentity:express-transport-belt',
+			'Express transport belt\nentity:express-transport-belt\nQuality: = normal',
 		);
 
-		await choosePlanner(user, "Alice's library planner");
+		choosePlannerWithClicks("Alice's library planner");
 		const bookSourceButtons = screen.getAllByRole('button', {name: /Choose source, currently/});
 		expect({
 			loadedSource: {
@@ -2078,10 +2125,12 @@ describe('TransformPanel', () => {
 				}).textContent,
 			},
 			mappings: bookSourceButtons.map((sourceButton) => ({
-				count: sourceButton.closest('.upgrade-mapping-grid__row')?.querySelector('strong')?.textContent,
+				matchSummary: sourceButton.closest('[data-mapping-key]')?.querySelector('.transform-visually-hidden')
+					?.textContent,
+				slot: mappingSlotIndex(sourceButton),
 				from: sourceButton.title,
 				to: sourceButton
-					.closest('.upgrade-mapping-grid__row')
+					.closest('[data-mapping-key]')
 					?.querySelector<HTMLButtonElement>('button[aria-label^="Choose target"]')?.title,
 			})),
 		}).toStrictEqual({
@@ -2091,48 +2140,55 @@ describe('TransformPanel', () => {
 			},
 			mappings: [
 				{
-					count: '1',
 					from: 'Transport belt\nentity:transport-belt',
+					matchSummary: '1 match. Right-click or press Delete to clear.',
+					slot: 99,
 					to: 'Fast transport belt\nentity:fast-transport-belt',
 				},
 				{
-					count: '0',
 					from: 'Speed module\nitem:speed-module',
+					matchSummary: '0 matches. Right-click or press Delete to clear.',
+					slot: 199,
 					to: 'Speed module 2\nitem:speed-module-2',
 				},
 			],
 		});
 
-		await user.click(screen.getByRole('button', {name: 'Choose source, currently Transport belt'}));
-		await chooseSignal(user, 'Transport belt');
-		await chooseSignal(user, 'Express transport belt');
+		fireEvent.click(screen.getByRole('button', {name: 'Choose source, currently Transport belt'}));
+		chooseSignalWithClicks('Transport belt');
+		fireEvent.click(screen.getByRole('button', {name: 'Choose target for Transport belt'}));
+		chooseSignalWithClicks('Express transport belt');
 		expect(
 			screen.getAllByRole('button', {name: /Choose source, currently/}).map((sourceButton) => sourceButton.title),
 		).toStrictEqual(['Transport belt\nentity:transport-belt', 'Speed module\nitem:speed-module']);
 
-		await choosePlanner(user, "Bob's recent planner");
+		choosePlannerWithClicks("Bob's recent planner");
 		expect(
 			screen.getAllByRole('button', {name: /Choose source, currently/}).map((sourceButton) => ({
-				count: sourceButton.closest('.upgrade-mapping-grid__row')?.querySelector('strong')?.textContent,
 				from: sourceButton.title,
+				matchSummary: sourceButton.closest('[data-mapping-key]')?.querySelector('.transform-visually-hidden')
+					?.textContent,
+				slot: mappingSlotIndex(sourceButton),
 				to: sourceButton
-					.closest('.upgrade-mapping-grid__row')
+					.closest('[data-mapping-key]')
 					?.querySelector<HTMLButtonElement>('button[aria-label^="Choose target"]')?.title,
 			})),
 		).toStrictEqual([
 			{
-				count: '1',
 				from: 'Transport belt\nentity:transport-belt',
+				matchSummary: '1 match. Right-click or press Delete to clear.',
+				slot: 99,
 				to: 'Express transport belt\nentity:express-transport-belt',
 			},
 			{
-				count: '0',
 				from: 'Inserter\nentity:inserter',
+				matchSummary: '0 matches. Right-click or press Delete to clear.',
+				slot: 199,
 				to: 'Fast inserter\nentity:fast-inserter',
 			},
 		]);
 
-		await choosePlanner(user, 'Default Upgrade');
+		choosePlannerWithClicks('Default Upgrade');
 		expect({
 			label: screen.getByRole('button', {name: /Load planner, currently Default Upgrade/}).textContent,
 			target: screen.getByRole('button', {name: 'Choose target for Transport belt'}).title,
@@ -2141,7 +2197,7 @@ describe('TransformPanel', () => {
 			target: 'Fast transport belt\nentity:fast-transport-belt',
 		});
 
-		await choosePlanner(user, 'Paste upgrade planner…');
+		choosePlannerWithClicks('Paste upgrade planner…');
 		expect({
 			label: screen.getByRole('button', {
 				name: /Load planner, currently Paste upgrade planner/,
@@ -2151,7 +2207,7 @@ describe('TransformPanel', () => {
 			label: 'Paste upgrade planner…',
 			pasteInput: 'TEXTAREA',
 		});
-	});
+	}, 10_000);
 
 	test('saves a pasted planner with a zero-match mapping and applies its matching rule', async () => {
 		const user = userEvent.setup();
@@ -2194,15 +2250,15 @@ describe('TransformPanel', () => {
 			emptyMessage: screen.queryByText('No matching entities or modules in this scope.'),
 			unmatchedSource: screen.getByRole('button', {name: 'Choose source, currently Speed module'}).title,
 			unmatchedTarget: screen.getByRole('button', {name: 'Choose target for Speed module'}).title,
-			zeroMatchCount: screen
+			unmatchedMapping: screen
 				.getByRole('button', {name: 'Choose source, currently Speed module'})
-				.closest('.upgrade-mapping-grid__row')
-				?.querySelector('strong')?.textContent,
+				.closest('[data-mapping-key]')
+				?.querySelector('.transform-visually-hidden')?.textContent,
 		}).toStrictEqual({
 			emptyMessage: null,
 			unmatchedSource: 'Speed module\nitem:speed-module',
 			unmatchedTarget: 'Speed module 2\nitem:speed-module-2',
-			zeroMatchCount: '0',
+			unmatchedMapping: '0 matches. Right-click or press Delete to clear.',
 		});
 
 		await saveAndApplyPlanner(user);

@@ -14,7 +14,7 @@ export function AddUpgradeMappingRow({onRemove, onSourceChoose, onTargetChoose, 
 
 	return (
 		<div
-			className="upgrade-mapping-grid__row upgrade-mapping-grid__row--incomplete"
+			className="upgrade-mapping-grid__pair upgrade-mapping-grid__pair--empty"
 			role="group"
 			aria-label={sourceName === undefined ? 'Add mapping' : `Incomplete mapping from ${sourceName}`}
 			onKeyDown={(event) => {
@@ -32,10 +32,8 @@ export function AddUpgradeMappingRow({onRemove, onSourceChoose, onTargetChoose, 
 				}
 				signal={source}
 				onClick={onSourceChoose}
+				onContextMenu={source === undefined ? undefined : onRemove}
 			/>
-			<span className="upgrade-mapping-grid__arrow" aria-hidden="true">
-				→
-			</span>
 			<SignalSlot
 				label={
 					sourceName === undefined
@@ -43,27 +41,8 @@ export function AddUpgradeMappingRow({onRemove, onSourceChoose, onTargetChoose, 
 						: `Choose target for ${sourceName}`
 				}
 				onClick={source === undefined ? undefined : onTargetChoose}
+				onContextMenu={source === undefined ? undefined : onRemove}
 			/>
-			<span className="upgrade-mapping-grid__count upgrade-mapping-grid__count--draft">
-				<strong>—</strong>
-				<small>draft</small>
-			</span>
-			{sourceName === undefined ? (
-				<span className="upgrade-mapping-grid__remove-placeholder" />
-			) : (
-				<button
-					type="button"
-					className="upgrade-mapping-grid__remove"
-					aria-label={`Remove incomplete mapping from ${sourceName}`}
-					aria-keyshortcuts="Delete Backspace"
-					title={`Remove incomplete mapping from ${sourceName}`}
-					onClick={() => {
-						onRemove();
-					}}
-				>
-					×
-				</button>
-			)}
 		</div>
 	);
 }

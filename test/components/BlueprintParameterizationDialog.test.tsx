@@ -126,7 +126,8 @@ test('edits signal, quality, dependencies, and row membership before confirming'
 	const picker = screen.getByRole('dialog', {name: 'Choose value for Cable'});
 	await user.click(within(picker).getByRole('button', {name: 'Choose Copper cable'}));
 	await user.click(within(picker).getByRole('button', {name: 'Rare quality'}));
-	await user.selectOptions(within(picker).getByRole('combobox', {name: 'Quality comparison'}), '≥');
+	await user.click(within(picker).getByRole('button', {name: 'Quality comparison: ='}));
+	await user.click(within(picker).getByRole('menuitemradio', {name: '≥'}));
 	await user.click(within(picker).getByRole('button', {name: 'Confirm'}));
 
 	await user.selectOptions(screen.getByRole('combobox', {name: 'Parameter 2 dependency mode'}), 'product-of');

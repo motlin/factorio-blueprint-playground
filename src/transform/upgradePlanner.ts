@@ -126,7 +126,7 @@ function mappingToRule(mapping: UpgradeMapping): UpgradeRule {
 	if (requiredSignalType(mapping.from) !== requiredSignalType(mapping.to)) {
 		throw new Error(`Upgrade planner mapping ${mapping.index.toString()} cannot change signal types.`);
 	}
-	return {from: mapping.from, preserveQuality: mapping.to.quality === undefined, to: mapping.to};
+	return {from: mapping.from, preserveQuality: false, to: mapping.to};
 }
 
 function validateRules(rules: readonly UpgradeRule[]): UpgradeRule[] {

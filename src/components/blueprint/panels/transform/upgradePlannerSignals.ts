@@ -55,13 +55,13 @@ export function isUpgradeSourceOption(signal: SignalID): boolean {
 	return normalizedSignalType(signal) === 'entity' || upgradeModuleFamily(signal) !== undefined;
 }
 
-export function isUpgradeTargetSelectionAllowed(
-	source: UpgradeSourceSignal,
-	target: SignalID,
-	preserveQuality: boolean,
-): boolean {
-	const samePrototype = normalizedSignalType(source) === normalizedSignalType(target) && source.name === target.name;
-	return !samePrototype || (!preserveQuality && target.quality !== undefined);
+export function isUpgradeTargetSelectionAllowed(source: UpgradeSourceSignal, target: SignalID): boolean {
+	return (
+		target.quality !== undefined &&
+		upgradeTargetOptions(source, target).some(
+			(option) => normalizedSignalType(option) === normalizedSignalType(target) && option.name === target.name,
+		)
+	);
 }
 
 export function upgradeTargetOptions(source: UpgradeSourceSignal, currentTarget: SignalID): SignalID[] {
@@ -97,9 +97,9 @@ export function upgradeTargetOptions(source: UpgradeSourceSignal, currentTarget:
 	const moduleFamily = upgradeModuleFamily(source);
 	if (moduleFamily !== undefined) {
 		return [`${moduleFamily}-module`, `${moduleFamily}-module-2`, `${moduleFamily}-module-3`].map((name) => ({
-			...currentTarget,
+			type: currentTarget.type ?? source.type,
 			name,
 		}));
 	}
-	return [...visited].map((name) => ({...currentTarget, name}));
+	return [...visited].map((name) => ({type: currentTarget.type ?? source.type, name}));
 }

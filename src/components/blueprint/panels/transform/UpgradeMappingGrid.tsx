@@ -1,67 +1,115 @@
-import type {SignalID, UpgradeSourceSignal} from '../../../../parsing/types';
+import type {UpgradeSourceSignal} from '../../../../parsing/types';
 import type {UpgradeCandidate, UpgradeRule} from '../../../../transform/upgradePlanner';
+import {AddUpgradeMappingRow} from './AddUpgradeMappingRow';
 import {UpgradeMappingRow} from './UpgradeMappingRow';
 import {signalIdentity} from './upgradePlannerSignals';
 
+export interface PositionedUpgradeCandidate extends UpgradeCandidate {
+	slotIndex: number;
+}
+
 interface UpgradeMappingGridProps {
-	candidates: readonly UpgradeCandidate[];
+	candidates: readonly PositionedUpgradeCandidate[];
+	draftSlotIndex?: number;
+	draftSource?: UpgradeSourceSignal;
 	excludedSources: ReadonlySet<string>;
 	manualRules: readonly UpgradeRule[];
-	onRemove: (candidate: UpgradeCandidate, manual: boolean) => void;
-	onSourceChoose: (candidate: UpgradeCandidate) => void;
-	onSourceQualityChange: (candidate: UpgradeCandidate, source: UpgradeSourceSignal) => void;
-	onTargetChoose: (candidate: UpgradeCandidate) => void;
-	onTargetQualityChange: (candidate: UpgradeCandidate, target: SignalID, preserveQuality: boolean) => void;
-	showEmptyState: boolean;
+	onDraftRemove: () => void;
+	onDraftSourceChoose: (slotIndex: number) => void;
+	onDraftTargetChoose: () => void;
+	onRemove: (candidate: PositionedUpgradeCandidate, manual: boolean) => void;
+	onSourceChoose: (candidate: PositionedUpgradeCandidate) => void;
+	onTargetChoose: (candidate: PositionedUpgradeCandidate) => void;
+}
+
+const mappingsPerRow = 4;
+const minimumMappingSlots = 16;
+
+function paddedSlotCount(candidates: readonly PositionedUpgradeCandidate[], draftSlotIndex?: number): number {
+	const highestOccupiedSlot = Math.max(
+		-1,
+		draftSlotIndex ?? -1,
+		...candidates.map((candidate) => candidate.slotIndex),
+	);
+	const occupiedSize = highestOccupiedSlot + 1;
+	const nextPaddedRow = Math.ceil(occupiedSize / mappingsPerRow) * mappingsPerRow + mappingsPerRow;
+	return Math.max(minimumMappingSlots, nextPaddedRow);
 }
 
 export function UpgradeMappingGrid({
 	candidates,
+	draftSlotIndex,
+	draftSource,
 	excludedSources,
 	manualRules,
+	onDraftRemove,
+	onDraftSourceChoose,
+	onDraftTargetChoose,
 	onRemove,
 	onSourceChoose,
-	onSourceQualityChange,
 	onTargetChoose,
-	onTargetQualityChange,
-	showEmptyState,
 }: UpgradeMappingGridProps) {
 	const manualSourceKeys = new Set(manualRules.map((rule) => signalIdentity(rule.from)));
 	const visibleCandidates = candidates.filter((candidate) => !excludedSources.has(signalIdentity(candidate.from)));
+	const candidatesBySlot = new Map<number, PositionedUpgradeCandidate>();
+	for (const candidate of visibleCandidates) {
+		if (candidatesBySlot.has(candidate.slotIndex)) {
+			throw new Error(`More than one upgrade mapping occupies slot ${candidate.slotIndex.toString()}.`);
+		}
+		candidatesBySlot.set(candidate.slotIndex, candidate);
+	}
+	const slotCount = paddedSlotCount(visibleCandidates, draftSlotIndex);
 
 	return (
 		<div className="upgrade-mapping-grid" role="group" aria-label="From and To mappings">
-			{visibleCandidates.length === 0 && showEmptyState ? (
-				<p className="upgrade-mapping-grid__empty">No matching entities or modules in this scope.</p>
-			) : (
-				<>
-					<div className="upgrade-mapping-grid__headings">
-						<span>From</span>
-						<span />
-						<span>To</span>
-						<span>Matches</span>
-						<span />
-					</div>
-					<ol className="upgrade-mapping-grid__rows">
-						{visibleCandidates.map((candidate) => {
+			<div className="upgrade-mapping-grid__table">
+				<div className="upgrade-mapping-grid__headings">
+					{Array.from({length: mappingsPerRow}, (_, index) => (
+						<div key={index}>
+							<span>From</span>
+							<span>To</span>
+						</div>
+					))}
+				</div>
+				<ol className="upgrade-mapping-grid__slots">
+					{Array.from({length: slotCount}, (_, slotIndex) => {
+						const candidate = candidatesBySlot.get(slotIndex);
+						if (candidate !== undefined) {
 							const sourceKey = signalIdentity(candidate.from);
 							return (
 								<UpgradeMappingRow
 									key={sourceKey}
 									candidate={candidate}
 									manual={manualSourceKeys.has(sourceKey)}
-									onRemove={onRemove}
-									onSourceChoose={onSourceChoose}
-									onSourceQualityChange={onSourceQualityChange}
-									onTargetChoose={onTargetChoose}
-									onTargetQualityChange={onTargetQualityChange}
+									onRemove={(_, manual) => {
+										onRemove(candidate, manual);
+									}}
+									onSourceChoose={() => {
+										onSourceChoose(candidate);
+									}}
+									onTargetChoose={() => {
+										onTargetChoose(candidate);
+									}}
 									sourceKey={sourceKey}
 								/>
 							);
-						})}
-					</ol>
-				</>
-			)}
+						}
+						const isDraft = slotIndex === draftSlotIndex;
+						return (
+							<li key={`empty-${slotIndex.toString()}`} className="upgrade-mapping-grid__empty-slot">
+								<AddUpgradeMappingRow
+									source={isDraft ? draftSource : undefined}
+									onRemove={onDraftRemove}
+									onSourceChoose={() => {
+										onDraftSourceChoose(slotIndex);
+									}}
+									onTargetChoose={onDraftTargetChoose}
+								/>
+							</li>
+						);
+					})}
+				</ol>
+			</div>
 		</div>
 	);
 }

@@ -1,27 +1,23 @@
-import {render, screen} from '@testing-library/react';
+import {fireEvent, render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {describe, expect, test, vi} from 'vite-plus/test';
 
 import {UpgradeMappingRow} from '../../src/components/blueprint/panels/transform/UpgradeMappingRow';
-import type {SignalID, UpgradeSourceSignal} from '../../src/parsing/types';
 import type {UpgradeCandidate} from '../../src/transform/upgradePlanner';
 
 const beltMapping: UpgradeCandidate = {
 	count: 4,
-	from: {type: 'entity', name: 'transport-belt'},
-	preserveQuality: true,
-	to: {type: 'entity', name: 'fast-transport-belt'},
+	from: {type: 'entity', name: 'transport-belt', quality: 'rare', comparator: '≤'},
+	preserveQuality: false,
+	to: {type: 'entity', name: 'fast-transport-belt', quality: 'normal'},
 };
 
 describe('UpgradeMappingRow', () => {
-	test('exposes exact labels and supports every operation from the keyboard', async () => {
+	test('uses compact slots and supports choosing or clearing a mapping', async () => {
 		const user = userEvent.setup();
 		const onRemove = vi.fn<(candidate: UpgradeCandidate, manual: boolean) => void>();
 		const onSourceChoose = vi.fn<(candidate: UpgradeCandidate) => void>();
-		const onSourceQualityChange = vi.fn<(candidate: UpgradeCandidate, source: UpgradeSourceSignal) => void>();
 		const onTargetChoose = vi.fn<(candidate: UpgradeCandidate) => void>();
-		const onTargetQualityChange =
-			vi.fn<(candidate: UpgradeCandidate, target: SignalID, preserveQuality: boolean) => void>();
 		render(
 			<ol>
 				<UpgradeMappingRow
@@ -29,10 +25,8 @@ describe('UpgradeMappingRow', () => {
 					manual
 					onRemove={onRemove}
 					onSourceChoose={onSourceChoose}
-					onSourceQualityChange={onSourceQualityChange}
 					onTargetChoose={onTargetChoose}
-					onTargetQualityChange={onTargetQualityChange}
-					sourceKey="entity:transport-belt:normal:="
+					sourceKey="entity:transport-belt:rare:≤"
 				/>
 			</ol>,
 		);
@@ -40,23 +34,21 @@ describe('UpgradeMappingRow', () => {
 		const row = screen.getByRole('listitem', {name: 'Mapping from Transport belt to Fast transport belt'});
 		const source = screen.getByRole('button', {name: 'Choose source, currently Transport belt'});
 		const target = screen.getByRole('button', {name: 'Choose target for Transport belt'});
-		const remove = screen.getByRole('button', {name: 'Remove mapping from Transport belt'});
-		source.focus();
-		await user.keyboard('{Enter}');
+		await user.click(source);
+		await user.click(target);
+		fireEvent.contextMenu(target);
 		target.focus();
-		await user.keyboard('{Enter}{Delete}');
-		remove.focus();
-		await user.keyboard('{Enter}');
+		await user.keyboard('{Delete}');
 
 		expect({
 			attributes: {
 				key: row.getAttribute('data-mapping-key'),
-				removeShortcut: remove.getAttribute('aria-keyshortcuts'),
-				removeTitle: remove.title,
 				rowTitle: row.title,
+				sourceClass: source.className,
 				sourceTitle: source.title,
 				targetTitle: target.title,
 			},
+			comparator: source.querySelector('.transform-signal-slot__comparator')?.textContent,
 			operations: {
 				remove: onRemove.mock.calls,
 				source: onSourceChoose.mock.calls,
@@ -64,13 +56,13 @@ describe('UpgradeMappingRow', () => {
 			},
 		}).toStrictEqual({
 			attributes: {
-				key: 'entity:transport-belt:normal:=',
-				removeShortcut: 'Delete Backspace',
-				removeTitle: 'Remove mapping from Transport belt',
+				key: 'entity:transport-belt:rare:≤',
 				rowTitle: 'Transport belt → Fast transport belt',
-				sourceTitle: 'Transport belt\nentity:transport-belt',
-				targetTitle: 'Fast transport belt\nentity:fast-transport-belt',
+				sourceClass: 'transform-signal-slot transform-signal-slot--condition',
+				sourceTitle: 'Transport belt\nentity:transport-belt\nQuality: ≤ rare',
+				targetTitle: 'Fast transport belt\nentity:fast-transport-belt\nQuality: = normal',
 			},
+			comparator: '≤',
 			operations: {
 				remove: [
 					[beltMapping, true],

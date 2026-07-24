@@ -30,24 +30,26 @@ describe('signalWithUpgradeQuality', () => {
 		},
 	);
 
-	test.each([
-		['source', 'any'],
-		['target', 'preserve'],
-	] as const)('omits the %s sentinel from planner mapping JSON', (mode, qualitySelection) => {
+	test('omits a source quality condition when any quality is selected', () => {
 		expect(
-			signalWithUpgradeQuality({...signal, comparator: '>', quality: 'epic'}, mode, qualitySelection, '>'),
+			signalWithUpgradeQuality({...signal, comparator: '>', quality: 'epic'}, 'source', 'any', '>'),
 		).toStrictEqual(signal);
+	});
+
+	test('requires an explicit target quality', () => {
+		expect(() => signalWithUpgradeQuality(signal, 'target', 'any', '=')).toThrow(
+			'Target quality selection must be explicit.',
+		);
 	});
 });
 
 describe('UpgradeQualityControls', () => {
-	test('edits a mapping source quality and comparator', async () => {
+	test('offers the Factorio source quality condition and comparator menu', async () => {
 		const user = userEvent.setup();
 		const onComparatorChange = vi.fn<(comparator: QualityComparator) => void>();
 		const onQualityChange = vi.fn<(selection: UpgradeQualitySelection) => void>();
 		render(
 			<UpgradeQualityControls
-				layout="mapping"
 				mode="source"
 				onComparatorChange={onComparatorChange}
 				onQualityChange={onQualityChange}
@@ -57,45 +59,44 @@ describe('UpgradeQualityControls', () => {
 		);
 
 		await user.click(screen.getByRole('button', {name: 'Epic quality'}));
-		await user.selectOptions(screen.getByRole('combobox', {name: 'Quality comparison'}), '≤');
+		await user.click(screen.getByRole('button', {name: 'Quality comparison: >'}));
+		await user.click(screen.getByRole('menuitemradio', {name: '≤'}));
 
-		const comparatorSelect = screen.getByRole<HTMLSelectElement>('combobox', {name: 'Quality comparison'});
 		expect({
 			buttons: screen.getAllByRole('button').map((button) => ({
+				expanded: button.getAttribute('aria-expanded'),
 				label: button.getAttribute('aria-label'),
 				pressed: button.getAttribute('aria-pressed'),
 				title: button.title,
 			})),
 			comparatorChanges: onComparatorChange.mock.calls,
-			comparatorLabel: comparatorSelect.labels[0].firstElementChild?.textContent,
-			comparatorLabelElement: comparatorSelect.labels[0].tagName,
+			menu: screen.queryByRole('menu', {name: 'Quality comparison'}),
 			qualityChanges: onQualityChange.mock.calls,
 		}).toStrictEqual({
 			buttons: [
-				{label: 'Any quality', pressed: 'false', title: 'Any quality'},
-				{label: 'Normal quality', pressed: 'false', title: 'Normal quality'},
-				{label: 'Uncommon quality', pressed: 'false', title: 'Uncommon quality'},
-				{label: 'Rare quality', pressed: 'true', title: 'Rare quality'},
-				{label: 'Epic quality', pressed: 'false', title: 'Epic quality'},
-				{label: 'Legendary quality', pressed: 'false', title: 'Legendary quality'},
+				{expanded: null, label: 'Any quality', pressed: 'false', title: 'Any quality'},
+				{expanded: 'false', label: 'Quality comparison: >', pressed: null, title: 'Quality comparison: >'},
+				{expanded: null, label: 'Normal quality', pressed: 'false', title: 'Normal quality'},
+				{expanded: null, label: 'Uncommon quality', pressed: 'false', title: 'Uncommon quality'},
+				{expanded: null, label: 'Rare quality', pressed: 'true', title: 'Rare quality'},
+				{expanded: null, label: 'Epic quality', pressed: 'false', title: 'Epic quality'},
+				{expanded: null, label: 'Legendary quality', pressed: 'false', title: 'Legendary quality'},
 			],
 			comparatorChanges: [['≤']],
-			comparatorLabel: 'Quality comparison',
-			comparatorLabelElement: 'LABEL',
+			menu: null,
 			qualityChanges: [['epic']],
 		});
 	});
 
-	test('offers preserve source and explicit qualities for a mapping target', async () => {
+	test('offers only exact qualities for a target', async () => {
 		const user = userEvent.setup();
 		const onQualityChange = vi.fn<(selection: UpgradeQualitySelection) => void>();
 		render(
 			<UpgradeQualityControls
-				layout="mapping"
 				mode="target"
 				onQualityChange={onQualityChange}
 				qualityComparator="="
-				qualitySelection="preserve"
+				qualitySelection="normal"
 			/>,
 		);
 
@@ -107,18 +108,15 @@ describe('UpgradeQualityControls', () => {
 				pressed: button.getAttribute('aria-pressed'),
 				title: button.title,
 			})),
-			comparator: screen.queryByRole('combobox', {name: 'Quality comparison'}),
 			qualityChanges: onQualityChange.mock.calls,
 		}).toStrictEqual({
 			buttons: [
-				{label: 'Set as source', pressed: 'true', title: 'Set as source'},
-				{label: 'Normal quality', pressed: 'false', title: 'Normal quality'},
+				{label: 'Normal quality', pressed: 'true', title: 'Normal quality'},
 				{label: 'Uncommon quality', pressed: 'false', title: 'Uncommon quality'},
 				{label: 'Rare quality', pressed: 'false', title: 'Rare quality'},
 				{label: 'Epic quality', pressed: 'false', title: 'Epic quality'},
 				{label: 'Legendary quality', pressed: 'false', title: 'Legendary quality'},
 			],
-			comparator: null,
 			qualityChanges: [['legendary']],
 		});
 	});

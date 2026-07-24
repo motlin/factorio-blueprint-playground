@@ -1,4 +1,4 @@
-import {render, screen} from '@testing-library/react';
+import {fireEvent, render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {describe, expect, test, vi} from 'vite-plus/test';
 
@@ -35,7 +35,7 @@ describe('AddUpgradeMappingRow', () => {
 				operations: onTargetChoose.mock.calls,
 			},
 		}).toStrictEqual({
-			emptyRowText: '+→+—draft',
+			emptyRowText: '',
 			remove: null,
 			source: [[]],
 			target: {
@@ -56,13 +56,11 @@ describe('AddUpgradeMappingRow', () => {
 		const sourceOnlyRow = screen.getByRole('group', {name: 'Incomplete mapping from Transport belt'});
 		const source = screen.getByRole('button', {name: 'Choose source, currently Transport belt'});
 		const target = screen.getByRole('button', {name: 'Choose target for Transport belt'});
-		const remove = screen.getByRole('button', {
-			name: 'Remove incomplete mapping from Transport belt',
-		});
 		await user.click(source);
+		fireEvent.contextMenu(source);
 		target.focus();
 		await user.keyboard('{Enter}{Delete}');
-		await user.click(remove);
+		fireEvent.contextMenu(target);
 
 		expect({
 			operations: {
@@ -72,21 +70,19 @@ describe('AddUpgradeMappingRow', () => {
 			},
 			row: {
 				label: sourceOnlyRow.getAttribute('aria-label'),
-				removeShortcut: remove.getAttribute('aria-keyshortcuts'),
-				removeTitle: remove.title,
+				className: sourceOnlyRow.className,
 				sourceTitle: source.title,
 				targetTitle: target.title,
 			},
 		}).toStrictEqual({
 			operations: {
-				remove: [[], []],
+				remove: [[], [], []],
 				source: [[], []],
 				target: [[]],
 			},
 			row: {
 				label: 'Incomplete mapping from Transport belt',
-				removeShortcut: 'Delete Backspace',
-				removeTitle: 'Remove incomplete mapping from Transport belt',
+				className: 'upgrade-mapping-grid__pair upgrade-mapping-grid__pair--empty',
 				sourceTitle: 'Transport belt\nentity:transport-belt',
 				targetTitle: 'Choose target for Transport belt',
 			},

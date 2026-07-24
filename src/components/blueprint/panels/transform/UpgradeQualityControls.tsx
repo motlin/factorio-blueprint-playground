@@ -1,3 +1,5 @@
+import {useState} from 'react';
+
 import type {QualityComparator} from '../../../../parsing/types';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
 import {
@@ -9,7 +11,6 @@ import {
 import {signalName} from './upgradePlannerSignals';
 
 interface UpgradeQualityControlsProps {
-	layout: 'mapping' | 'picker';
 	mode: UpgradeQualityMode;
 	onComparatorChange?: (comparator: QualityComparator) => void;
 	onQualityChange: (selection: UpgradeQualitySelection) => void;
@@ -17,40 +18,75 @@ interface UpgradeQualityControlsProps {
 	qualitySelection: UpgradeQualitySelection;
 }
 
-function isUpgradeQualityComparator(value: string): value is QualityComparator {
-	return upgradeQualityComparators.some((comparator) => comparator === value);
+function AnyQualityIcon() {
+	return (
+		<span className="upgrade-quality-controls__any-icon" aria-hidden="true">
+			{upgradeQualities.slice(1).map((quality) => (
+				<img key={quality} src={`https://factorio-icon-cdn.pages.dev/quality/${quality}.webp`} alt="" />
+			))}
+		</span>
+	);
 }
 
-function QualityComparatorSelect({
-	disabled,
+function QualityComparatorControl({
 	onComparatorChange,
+	onQualityChange,
 	qualityComparator,
+	qualitySelection,
 }: {
-	disabled: boolean;
 	onComparatorChange: (comparator: QualityComparator) => void;
+	onQualityChange: (selection: UpgradeQualitySelection) => void;
 	qualityComparator: QualityComparator;
+	qualitySelection: UpgradeQualitySelection;
 }) {
+	const [menuOpen, setMenuOpen] = useState(false);
+
 	return (
-		<label>
-			<span className="transform-visually-hidden">Quality comparison</span>
-			<select
-				aria-label="Quality comparison"
-				value={qualityComparator}
-				disabled={disabled}
-				onChange={(event) => {
-					if (!isUpgradeQualityComparator(event.currentTarget.value)) {
-						throw new Error(`Unknown quality comparator: ${event.currentTarget.value}`);
-					}
-					onComparatorChange(event.currentTarget.value);
+		<div className="upgrade-quality-controls__condition">
+			<button
+				type="button"
+				className="upgrade-quality-controls__any"
+				aria-label="Any quality"
+				aria-pressed={qualitySelection === 'any'}
+				title="Any quality"
+				onClick={() => {
+					onQualityChange('any');
 				}}
 			>
-				{upgradeQualityComparators.map((comparator) => (
-					<option key={comparator} value={comparator}>
-						{comparator}
-					</option>
-				))}
-			</select>
-		</label>
+				<AnyQualityIcon />
+			</button>
+			<button
+				type="button"
+				className="upgrade-quality-controls__comparator-toggle"
+				aria-label={`Quality comparison: ${qualityComparator}`}
+				aria-expanded={menuOpen}
+				aria-haspopup="menu"
+				title={`Quality comparison: ${qualityComparator}`}
+				onClick={() => {
+					setMenuOpen((current) => !current);
+				}}
+			>
+				<span aria-hidden="true">▾</span>
+			</button>
+			{menuOpen ? (
+				<div className="upgrade-quality-controls__comparator-menu" role="menu" aria-label="Quality comparison">
+					{upgradeQualityComparators.map((comparator) => (
+						<button
+							type="button"
+							key={comparator}
+							role="menuitemradio"
+							aria-checked={qualityComparator === comparator}
+							onClick={() => {
+								onComparatorChange(comparator);
+								setMenuOpen(false);
+							}}
+						>
+							{comparator}
+						</button>
+					))}
+				</div>
+			) : null}
+		</div>
 	);
 }
 
@@ -82,15 +118,12 @@ function QualityButtons({
 }
 
 export function UpgradeQualityControls({
-	layout,
 	mode,
 	onComparatorChange,
 	onQualityChange,
 	qualityComparator,
 	qualitySelection,
 }: UpgradeQualityControlsProps) {
-	const sentinel = mode === 'source' ? 'any' : 'preserve';
-	const sentinelLabel = mode === 'source' ? 'Any quality' : 'Set as source';
 	const modeLabel = signalName({name: mode});
 	const comparatorChanged = (comparator: QualityComparator) => {
 		if (onComparatorChange === undefined) {
@@ -99,58 +132,18 @@ export function UpgradeQualityControls({
 		onComparatorChange(comparator);
 	};
 
-	if (layout === 'mapping') {
-		return (
-			<div
-				className="upgrade-quality-controls upgrade-quality-controls--mapping"
-				role="group"
-				aria-label={`${modeLabel} quality`}
-			>
-				<button
-					type="button"
-					className="upgrade-quality-controls__sentinel"
-					aria-label={sentinelLabel}
-					aria-pressed={qualitySelection === sentinel}
-					title={sentinelLabel}
-					onClick={() => {
-						onQualityChange(sentinel);
-					}}
-				>
-					{sentinelLabel}
-				</button>
-				{mode === 'source' ? (
-					<QualityComparatorSelect
-						disabled={qualitySelection === 'any'}
-						onComparatorChange={comparatorChanged}
-						qualityComparator={qualityComparator}
-					/>
-				) : null}
-				<QualityButtons onQualityChange={onQualityChange} qualitySelection={qualitySelection} />
-			</div>
-		);
-	}
-
 	return (
 		<div
 			className="upgrade-quality-controls upgrade-quality-controls--picker"
 			role="group"
 			aria-label={`${modeLabel} quality`}
 		>
-			<button
-				type="button"
-				aria-label={sentinelLabel}
-				aria-pressed={qualitySelection === sentinel}
-				onClick={() => {
-					onQualityChange(sentinel);
-				}}
-			>
-				{sentinelLabel}
-			</button>
 			{mode === 'source' ? (
-				<QualityComparatorSelect
-					disabled={qualitySelection === 'any'}
+				<QualityComparatorControl
 					onComparatorChange={comparatorChanged}
+					onQualityChange={onQualityChange}
 					qualityComparator={qualityComparator}
+					qualitySelection={qualitySelection}
 				/>
 			) : null}
 			<QualityButtons onQualityChange={onQualityChange} qualitySelection={qualitySelection} />

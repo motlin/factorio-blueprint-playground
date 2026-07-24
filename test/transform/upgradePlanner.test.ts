@@ -194,7 +194,7 @@ describe('upgrade planner transforms', () => {
 			candidates: [
 				{
 					from: {type: 'item', name: 'speed-module'},
-					preserveQuality: true,
+					preserveQuality: false,
 					to: {type: 'item', name: 'speed-module-2'},
 					count: 2,
 				},
@@ -232,7 +232,7 @@ describe('upgrade planner transforms', () => {
 		expect(rulesFromUpgradePlanner(configuredPlanner, 'downgrade')).toStrictEqual([
 			{
 				from: {type: 'item', name: 'speed-module-2'},
-				preserveQuality: true,
+				preserveQuality: false,
 				to: {type: 'item', name: 'speed-module'},
 			},
 			{
@@ -319,7 +319,7 @@ describe('upgrade planner transforms', () => {
 			rules: [
 				{
 					from: {type: 'entity', name: 'transport-belt'},
-					preserveQuality: true,
+					preserveQuality: false,
 					to: {type: 'entity', name: 'fast-transport-belt'},
 				},
 			],
@@ -351,9 +351,9 @@ describe('upgrade planner transforms', () => {
 
 	test.each([
 		{
-			description: 'preserves the source quality',
-			from: {type: 'entity', name: 'transport-belt'},
-			preserveQuality: true,
+			description: 'defaults an omitted target quality to normal',
+			from: {type: 'entity', name: 'transport-belt', quality: 'rare'},
+			preserveQuality: false,
 			to: {type: 'entity', name: 'fast-transport-belt'},
 			expected: {
 				blueprint: {
@@ -363,7 +363,6 @@ describe('upgrade planner transforms', () => {
 						{
 							entity_number: 100,
 							name: 'fast-transport-belt',
-							quality: 'rare',
 							position: {x: 0, y: 0},
 						},
 					],
@@ -498,7 +497,7 @@ describe('upgrade planner transforms', () => {
 			rules: [
 				{
 					from: {type: 'entity', name: 'transport-belt', quality: 'rare', comparator: '>'},
-					preserveQuality: true,
+					preserveQuality: false,
 					to: {type: 'entity', name: 'fast-transport-belt'},
 				},
 			],

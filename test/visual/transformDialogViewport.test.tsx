@@ -27,6 +27,7 @@ function renderPlannerHtml(): string {
 						count: 1,
 						from: {type: 'entity', name: 'transport-belt'},
 						preserveQuality: true,
+						slotIndex: 0,
 						to: {type: 'entity', name: 'fast-transport-belt'},
 					},
 				],

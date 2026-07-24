@@ -1,15 +1,13 @@
-import type {SignalID, UpgradeSourceSignal} from '../../../../parsing/types';
+import type {UpgradeSourceSignal} from '../../../../parsing/types';
 import type {UpgradeCandidate} from '../../../../transform/upgradePlanner';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
-import {signalWithUpgradeQuality} from './upgradeQuality';
-import {UpgradeQualityControls} from './UpgradeQualityControls';
 import {signalName, signalTitle} from './upgradePlannerSignals';
 
 interface SignalSlotProps {
 	label: string;
 	onClick?: () => void;
 	onContextMenu?: () => void;
-	signal?: SignalID;
+	signal?: UpgradeSourceSignal;
 }
 
 interface UpgradeMappingRowProps {
@@ -17,9 +15,7 @@ interface UpgradeMappingRowProps {
 	manual: boolean;
 	onRemove: (candidate: UpgradeCandidate, manual: boolean) => void;
 	onSourceChoose: (candidate: UpgradeCandidate) => void;
-	onSourceQualityChange: (candidate: UpgradeCandidate, source: UpgradeSourceSignal) => void;
 	onTargetChoose: (candidate: UpgradeCandidate) => void;
-	onTargetQualityChange: (candidate: UpgradeCandidate, target: SignalID, preserveQuality: boolean) => void;
 	sourceKey: string;
 }
 
@@ -27,7 +23,9 @@ export function SignalSlot({label, onClick, onContextMenu, signal}: SignalSlotPr
 	return (
 		<button
 			type="button"
-			className={`transform-signal-slot${signal === undefined ? ' transform-signal-slot--empty' : ''}`}
+			className={`transform-signal-slot${signal === undefined ? ' transform-signal-slot--empty' : ''}${
+				signal?.comparator === undefined ? '' : ' transform-signal-slot--condition'
+			}`}
 			aria-label={label}
 			aria-disabled={onClick === undefined}
 			title={signal === undefined ? label : signalTitle(signal)}
@@ -41,7 +39,12 @@ export function SignalSlot({label, onClick, onContextMenu, signal}: SignalSlotPr
 				}
 			}}
 		>
-			{signal === undefined ? <span aria-hidden="true">+</span> : <FactorioIcon icon={signal} size="large" />}
+			{signal === undefined ? null : <FactorioIcon icon={signal} size="large" />}
+			{signal?.comparator === undefined ? null : (
+				<span className="transform-signal-slot__comparator" aria-hidden="true">
+					{signal.comparator}
+				</span>
+			)}
 		</button>
 	);
 }
@@ -51,9 +54,7 @@ export function UpgradeMappingRow({
 	manual,
 	onRemove,
 	onSourceChoose,
-	onSourceQualityChange,
 	onTargetChoose,
-	onTargetQualityChange,
 	sourceKey,
 }: UpgradeMappingRowProps) {
 	const sourceName = signalName(candidate.from);
@@ -64,7 +65,7 @@ export function UpgradeMappingRow({
 
 	return (
 		<li
-			className="upgrade-mapping-grid__row"
+			className="upgrade-mapping-grid__pair"
 			data-mapping-key={sourceKey}
 			aria-label={`Mapping from ${sourceName} to ${targetName}`}
 			title={`${sourceName} → ${targetName}`}
@@ -75,85 +76,26 @@ export function UpgradeMappingRow({
 				}
 			}}
 		>
-			<div className="upgrade-mapping-grid__endpoint">
-				<SignalSlot
-					label={`Choose source, currently ${sourceName}`}
-					signal={candidate.from}
-					onClick={() => {
-						onSourceChoose(candidate);
-					}}
-				/>
-				<UpgradeQualityControls
-					layout="mapping"
-					mode="source"
-					qualityComparator={candidate.from.comparator ?? '='}
-					qualitySelection={candidate.from.quality ?? 'any'}
-					onComparatorChange={(comparator) => {
-						onSourceQualityChange(
-							candidate,
-							signalWithUpgradeQuality(
-								candidate.from,
-								'source',
-								candidate.from.quality ?? 'normal',
-								comparator,
-							),
-						);
-					}}
-					onQualityChange={(quality) => {
-						onSourceQualityChange(
-							candidate,
-							signalWithUpgradeQuality(
-								candidate.from,
-								'source',
-								quality,
-								candidate.from.comparator ?? '=',
-							),
-						);
-					}}
-				/>
-			</div>
-			<span className="upgrade-mapping-grid__arrow" aria-hidden="true">
-				→
+			<SignalSlot
+				label={`Choose source, currently ${sourceName}`}
+				signal={candidate.from}
+				onClick={() => {
+					onSourceChoose(candidate);
+				}}
+				onContextMenu={remove}
+			/>
+			<SignalSlot
+				label={`Choose target for ${sourceName}`}
+				signal={candidate.to}
+				onClick={() => {
+					onTargetChoose(candidate);
+				}}
+				onContextMenu={remove}
+			/>
+			<span className="transform-visually-hidden">
+				{candidate.count.toString()} {candidate.count === 1 ? 'match' : 'matches'}. Right-click or press Delete
+				to clear.
 			</span>
-			<div className="upgrade-mapping-grid__endpoint">
-				<SignalSlot
-					label={`Choose target for ${sourceName}`}
-					signal={candidate.to}
-					onClick={() => {
-						onTargetChoose(candidate);
-					}}
-				/>
-				<UpgradeQualityControls
-					layout="mapping"
-					mode="target"
-					qualityComparator="="
-					qualitySelection={candidate.preserveQuality ? 'preserve' : (candidate.to.quality ?? 'normal')}
-					onQualityChange={(quality) => {
-						onTargetQualityChange(
-							candidate,
-							signalWithUpgradeQuality(candidate.to, 'target', quality, '='),
-							quality === 'preserve',
-						);
-					}}
-				/>
-			</div>
-			<span
-				className="upgrade-mapping-grid__count"
-				title={`${candidate.count.toString()} ${candidate.count === 1 ? 'match' : 'matches'}`}
-			>
-				<strong>{candidate.count}</strong>
-				<small>{candidate.count === 1 ? 'match' : 'matches'}</small>
-			</span>
-			<button
-				type="button"
-				className="upgrade-mapping-grid__remove"
-				aria-label={`Remove mapping from ${sourceName}`}
-				aria-keyshortcuts="Delete Backspace"
-				title={`Remove mapping from ${sourceName}`}
-				onClick={remove}
-			>
-				×
-			</button>
 		</li>
 	);
 }

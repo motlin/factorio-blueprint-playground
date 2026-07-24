@@ -42,7 +42,7 @@ export const CategorizedSignals: Story = {
 
 export const QualityTarget: Story = {
 	args: {
-		title: 'Choose target for Transport belt',
+		title: 'Select upgrade',
 		initialQuality: 'rare',
 		initialSignal: {type: 'entity', name: 'fast-transport-belt'},
 		options: [
@@ -57,7 +57,7 @@ export const QualityTarget: Story = {
 
 export const QualitySource: Story = {
 	args: {
-		title: 'Choose mapping source',
+		title: 'Set the filter',
 		initialSignal: qualitySourceSignal,
 		options: [
 			qualitySourceSignal,
