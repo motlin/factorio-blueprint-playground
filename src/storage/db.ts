@@ -1,15 +1,12 @@
 import Dexie, {type Table, type Transaction} from 'dexie';
 import {logger} from '../lib/sentry.ts';
 import {parseVersion3} from '../parsing/blueprintParser.ts';
+import type {SignalID} from '../parsing/types.ts';
 
 export type DatabaseBlueprintType = 'blueprint' | 'blueprint_book' | 'upgrade_planner' | 'deconstruction_planner';
 type BlueprintFetchMethod = 'url' | 'json' | 'data';
 
-export interface DatabaseBlueprintIcon {
-	// Defaults to 'item' if not specified
-	type?: string;
-	name: string;
-}
+export type DatabaseBlueprintIcon = SignalID;
 
 export interface BlueprintGameData {
 	type: DatabaseBlueprintType;

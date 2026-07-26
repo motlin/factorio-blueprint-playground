@@ -1,5 +1,5 @@
 import {BookOpen, ChevronRight, Clock3, FolderOpen, Library} from 'lucide-react';
-import {useEffect, useId, useMemo, useRef, useState} from 'react';
+import {useEffect, useId, useMemo, useRef} from 'react';
 
 import type {ImportHistoryRecord, LibraryRecord} from '../../storage/db';
 import {LIBRARY_ROOT_ID} from '../../storage/db';
@@ -10,6 +10,8 @@ import {
 	FactorioScrollFrame,
 	FactorioTitleBar,
 } from '../ui/FactorioUi';
+import {BlueprintRecordViews, type BlueprintRecordViewsHandle} from './BlueprintRecordViews';
+import {blueprintRecordLabel} from './blueprintRecordModel';
 
 export type BlueprintLibraryShelf = 'library' | 'history';
 
@@ -33,10 +35,7 @@ const RECORD_TYPE_LABELS: Record<LibraryRecord['gameData']['type'], string> = {
 };
 
 function recordLabel(record: LibraryRecord): string {
-	const label = record.gameData.label?.trim();
-	return label === undefined || label === ''
-		? `Untitled ${RECORD_TYPE_LABELS[record.gameData.type].toLowerCase()}`
-		: label;
+	return blueprintRecordLabel(record);
 }
 
 function historyLabel(record: ImportHistoryRecord): string {
@@ -88,26 +87,18 @@ function resolveBookLocation(records: readonly LibraryRecord[], activeBookId: st
 export function BlueprintLibrary({historyRecords, libraryRecords, location, onLocationChange}: BlueprintLibraryProps) {
 	const headingId = useId();
 	const tabReferences = useRef<Array<HTMLButtonElement | null>>([]);
-	const recordReferences = useRef(new Map<string, HTMLButtonElement>());
+	const recordViewsReference = useRef<BlueprintRecordViewsHandle>(null);
 	const previousBookId = useRef(location.book);
 	const recordsHeadingReference = useRef<HTMLHeadingElement>(null);
-	const [activeRecordIndex, setActiveRecordIndex] = useState(0);
 	const bookLocation = useMemo(
 		() => resolveBookLocation(libraryRecords, location.book),
 		[libraryRecords, location.book],
 	);
 	const currentParentId = bookLocation.book?.id ?? LIBRARY_ROOT_ID;
 	const currentRecords = useMemo(
-		() =>
-			bookLocation.valid
-				? libraryRecords.filter((record) => record.parentId === currentParentId).sort(compareLibraryPosition)
-				: [],
+		() => (bookLocation.valid ? libraryRecords.filter((record) => record.parentId === currentParentId) : []),
 		[bookLocation.valid, currentParentId, libraryRecords],
 	);
-
-	useEffect(() => {
-		setActiveRecordIndex(0);
-	}, [currentParentId, location.shelf]);
 
 	useEffect(() => {
 		const priorBookId = previousBookId.current;
@@ -118,7 +109,7 @@ export function BlueprintLibrary({historyRecords, libraryRecords, location, onLo
 
 		const priorBook = libraryRecords.find((record) => record.id === priorBookId);
 		if (priorBook?.parentId === currentParentId) {
-			recordReferences.current.get(priorBook.id)?.focus();
+			recordViewsReference.current?.focusRecord(priorBook.id);
 			return;
 		}
 		recordsHeadingReference.current?.focus();
@@ -146,35 +137,6 @@ export function BlueprintLibrary({historyRecords, libraryRecords, location, onLo
 		event.preventDefault();
 		tabReferences.current[nextIndex]?.focus();
 		changeShelf(shelves[nextIndex]);
-	};
-
-	const handleRecordKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, recordIndex: number): void => {
-		const currentRecord = currentRecords[recordIndex];
-		let nextIndex: number | undefined;
-		if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
-			nextIndex = (recordIndex - 1 + currentRecords.length) % currentRecords.length;
-		} else if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
-			nextIndex = (recordIndex + 1) % currentRecords.length;
-		} else if (event.key === 'Home') {
-			nextIndex = 0;
-		} else if (event.key === 'End') {
-			nextIndex = currentRecords.length - 1;
-		} else if ((event.key === 'Enter' || event.key === ' ') && currentRecord.gameData.type === 'blueprint_book') {
-			event.preventDefault();
-			onLocationChange({shelf: 'library', book: currentRecord.id});
-		} else if (event.key === 'Escape' && bookLocation.book !== undefined) {
-			event.preventDefault();
-			onLocationChange({
-				shelf: 'library',
-				book: bookLocation.book.parentId === LIBRARY_ROOT_ID ? undefined : bookLocation.book.parentId,
-			});
-		}
-		if (nextIndex === undefined) {
-			return;
-		}
-		event.preventDefault();
-		setActiveRecordIndex(nextIndex);
-		recordReferences.current.get(currentRecords[nextIndex].id)?.focus();
 	};
 
 	return (
@@ -274,52 +236,29 @@ export function BlueprintLibrary({historyRecords, libraryRecords, location, onLo
 								<span>Saved blueprints and planners will appear here.</span>
 							</div>
 						) : (
-							<FactorioScrollFrame aria-label="Blueprint records" className="blueprint-library__records">
-								<ul>
-									{currentRecords.map((record, index) => {
-										const isBook = record.gameData.type === 'blueprint_book';
-										const label = recordLabel(record);
-										return (
-											<li key={record.id}>
-												<button
-													ref={(button) => {
-														if (button === null) {
-															recordReferences.current.delete(record.id);
-														} else {
-															recordReferences.current.set(record.id, button);
-														}
-													}}
-													type="button"
-													className="blueprint-library__record"
-													aria-label={isBook ? `Open book ${label}` : label}
-													aria-disabled={!isBook}
-													tabIndex={index === activeRecordIndex ? 0 : -1}
-													onClick={() => {
-														if (isBook) {
-															onLocationChange({shelf: 'library', book: record.id});
-														}
-													}}
-													onFocus={() => {
-														setActiveRecordIndex(index);
-													}}
-													onKeyDown={(event) => {
-														handleRecordKeyDown(event, index);
-													}}
-												>
-													<span className="blueprint-library__record-icon" aria-hidden="true">
-														{isBook ? <FolderOpen /> : <BookOpen />}
-													</span>
-													<span>
-														<strong>{label}</strong>
-														<small>{RECORD_TYPE_LABELS[record.gameData.type]}</small>
-													</span>
-													{isBook ? <ChevronRight aria-hidden="true" /> : null}
-												</button>
-											</li>
-										);
-									})}
-								</ul>
-							</FactorioScrollFrame>
+							<BlueprintRecordViews
+								ref={recordViewsReference}
+								aria-label="Blueprint records"
+								records={currentRecords}
+								compareRecords={compareLibraryPosition}
+								isRecordActionable={(record) => record.gameData.type === 'blueprint_book'}
+								onActivate={(record) => {
+									onLocationChange({shelf: 'library', book: record.id});
+								}}
+								onEscape={
+									bookLocation.book === undefined
+										? undefined
+										: () => {
+												onLocationChange({
+													shelf: 'library',
+													book:
+														bookLocation.book?.parentId === LIBRARY_ROOT_ID
+															? undefined
+															: bookLocation.book?.parentId,
+												});
+											}
+								}
+							/>
 						)
 					) : (
 						<div className="blueprint-library__empty" role="status">

@@ -35,7 +35,11 @@ function getGameData(blueprint: BlueprintString): BlueprintGameData {
 		label: info.label,
 		description: info.description,
 		gameVersion: info.version.toString(),
-		icons: (info.icons ?? []).map((icon) => ({type: icon.signal.type, name: icon.signal.name})),
+		icons: (info.icons ?? []).map((icon) => ({
+			type: icon.signal.type,
+			name: icon.signal.name,
+			...(icon.signal.quality === undefined ? {} : {quality: icon.signal.quality}),
+		})),
 	};
 }
 
