@@ -3,6 +3,7 @@ import {useMemo, useRef, useState} from 'react';
 import {serializeBlueprint} from '../../../../parsing/blueprintParser';
 import type {
 	BlueprintString,
+	Icon,
 	SignalID,
 	UpgradeMapping,
 	UpgradePlanner,
@@ -47,8 +48,15 @@ interface UpgradeMappingDraft {
 	from?: UpgradeSourceSignal;
 	mappingId: string;
 	preserveQuality: boolean;
+	serializedMapping?: UpgradeMapping;
 	slotIndex: number;
 	to?: SignalID;
+}
+
+interface UpgradePlannerRecordMetadata {
+	description: string;
+	icons: Icon[];
+	label: string;
 }
 
 interface UpgradePlannerDraftApplication {
@@ -77,20 +85,24 @@ function reverseUpgradeRule(rule: UpgradeRule): UpgradeRule {
 
 function plannerFromMappings(
 	mappings: readonly UpgradeMappingDraft[],
-	label: string,
+	metadata: UpgradePlannerRecordMetadata,
 	template: UpgradePlanner | undefined,
 ): UpgradePlanner {
-	return {
+	const planner: UpgradePlanner = {
 		...structuredClone(template),
 		item: 'upgrade-planner',
-		label,
 		version: template?.version ?? 0,
 		settings: {
 			...structuredClone(template?.settings),
 			mappers: [...mappings]
 				.sort((left, right) => left.slotIndex - right.slotIndex)
-				.map(({from, slotIndex, to}): UpgradeMapping => {
-					const mapping: UpgradeMapping = {index: slotIndex + 1};
+				.map(({from, serializedMapping, slotIndex, to}): UpgradeMapping => {
+					const mapping: UpgradeMapping = {
+						...structuredClone(serializedMapping),
+						index: slotIndex + 1,
+					};
+					delete mapping.from;
+					delete mapping.to;
 					if (from !== undefined) {
 						mapping.from = {...from};
 					}
@@ -101,6 +113,53 @@ function plannerFromMappings(
 				}),
 		},
 	};
+	delete planner.label;
+	delete planner.settings.description;
+	delete planner.settings.icons;
+	if (metadata.label !== '') {
+		planner.label = metadata.label;
+	}
+	if (metadata.description !== '') {
+		planner.settings.description = metadata.description;
+	}
+	if (metadata.icons.length > 0) {
+		planner.settings.icons = metadata.icons.map((icon, index) => ({
+			...structuredClone(icon),
+			index: index + 1,
+			signal: {...icon.signal},
+		}));
+	}
+	return planner;
+}
+
+function recordMetadata(planner: UpgradePlanner | undefined, fallbackLabel: string): UpgradePlannerRecordMetadata {
+	return {
+		description: planner?.settings.description ?? '',
+		icons: [...(planner?.settings.icons ?? [])]
+			.sort((left, right) => left.index - right.index)
+			.map((icon) => structuredClone(icon)),
+		label: planner?.label ?? fallbackLabel,
+	};
+}
+
+function reconcilePreviewIcons(current: readonly Icon[], signals: readonly SignalID[]): Icon[] {
+	if (signals.length === current.length) {
+		return signals.map((signal, index) => ({
+			...structuredClone(current[index]),
+			index: index + 1,
+			signal: {...signal},
+		}));
+	}
+	const available = [...current];
+	return signals.map((signal, index) => {
+		const matchingIndex = available.findIndex((icon) => JSON.stringify(icon.signal) === JSON.stringify(signal));
+		const template = matchingIndex < 0 ? undefined : available.splice(matchingIndex, 1)[0];
+		return {
+			...structuredClone(template),
+			index: index + 1,
+			signal: {...signal},
+		};
+	});
 }
 
 function applySession(
@@ -166,11 +225,13 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 				: (planner?.settings.mappers ?? []);
 		return [...serializedMappings]
 			.sort((left, right) => left.index - right.index)
-			.map(({from, index, to}) => {
+			.map((serializedMapping) => {
+				const {from, index, to} = serializedMapping;
 				nextMappingIdentity.current += 1;
 				const mapping: UpgradeMappingDraft = {
 					mappingId: `upgrade-mapping-${nextMappingIdentity.current.toString()}`,
 					preserveQuality: includeDefaultMappings,
+					serializedMapping: structuredClone(serializedMapping),
 					slotIndex: Math.max(0, index - 1),
 				};
 				if (from !== undefined) {
@@ -196,6 +257,12 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 			: (blueprint.upgrade_planner.label ?? 'Current upgrade planner'),
 	);
 	const [selectedPlanner, setSelectedPlanner] = useState<UpgradePlanner | undefined>(blueprint?.upgrade_planner);
+	const [recordMetadataDraft, setRecordMetadataDraft] = useState(() =>
+		recordMetadata(
+			blueprint?.upgrade_planner,
+			blueprint?.upgrade_planner === undefined ? 'Default Upgrade' : 'Current upgrade planner',
+		),
+	);
 	const [plannerInput, setPlannerInput] = useState('');
 	const [plannerError, setPlannerError] = useState<string>();
 	const [mappingDrafts, setMappingDrafts] = useState<UpgradeMappingDraft[]>(() =>
@@ -290,6 +357,12 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 			initialPlanner?.label ?? (initialPlanner === undefined ? 'Default Upgrade' : 'Current upgrade planner'),
 		);
 		setSelectedPlanner(initialPlanner);
+		setRecordMetadataDraft(
+			recordMetadata(
+				initialPlanner,
+				initialPlanner === undefined ? 'Default Upgrade' : 'Current upgrade planner',
+			),
+		);
 		setPlannerInput('');
 		setPlannerError(undefined);
 		setMappingDrafts(mappingsFromPlanner(initialPlanner, initialPlanner === undefined));
@@ -302,18 +375,18 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 		setApplicationDraftChanged(false);
 		setSavedLibraryRecord(undefined);
 	};
-	const plannerForLibrary = (label: string): UpgradePlanner => {
+	const plannerForLibrary = (): UpgradePlanner => {
 		if (rootBlueprint === undefined || error !== undefined) {
 			throw new Error('Cannot save an invalid upgrade planner.');
 		}
-		const normalizedLabel = label.trim();
+		const normalizedLabel = recordMetadataDraft.label.trim();
 		if (normalizedLabel === '') {
 			throw new Error('A library planner name is required.');
 		}
-		return plannerFromMappings(mappingDrafts, normalizedLabel, selectedPlanner);
+		return plannerFromMappings(mappingDrafts, {...recordMetadataDraft, label: normalizedLabel}, selectedPlanner);
 	};
-	const libraryRecordContent = (label: string): LibraryRecordContent => {
-		const planner = plannerForLibrary(label);
+	const libraryRecordContent = (): LibraryRecordContent => {
+		const planner = plannerForLibrary();
 		return {
 			data: serializeBlueprint({upgrade_planner: planner}),
 			gameData: {
@@ -399,6 +472,7 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 				try {
 					const planner = parseUpgradePlanner(value);
 					setSelectedPlanner(planner);
+					setRecordMetadataDraft(recordMetadata(planner, 'Pasted Upgrade Planner'));
 					setMappingDrafts(mappingsFromPlanner(planner));
 					setPlannerError(undefined);
 				} catch (parseError) {
@@ -409,10 +483,11 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 			},
 			onPlannerLoad: (choice: UpgradePlannerChoice) => {
 				setPlannerDraftChanged(true);
-				setSavedLibraryRecord(undefined);
+				setSavedLibraryRecord(choice.libraryRecord);
 				setSource(choice.source);
 				setSourceLabel(choice.label);
 				setSelectedPlanner(choice.planner);
+				setRecordMetadataDraft(recordMetadata(choice.planner, choice.label));
 				setPlannerInput('');
 				setMappingDrafts(mappingsFromPlanner(choice.planner, choice.source === 'suggested'));
 				setPlannerError(choice.source === 'pasted' ? 'Paste an upgrade planner string or JSON.' : undefined);
@@ -529,19 +604,43 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 			setSource(`library:${record.id}`);
 			setSourceLabel(record.gameData.label ?? planner.label ?? 'Saved upgrade planner');
 			setSelectedPlanner(planner);
+			setRecordMetadataDraft(
+				recordMetadata(planner, record.gameData.label ?? planner.label ?? 'Saved upgrade planner'),
+			);
 			setPlannerInput('');
 			setPlannerError(undefined);
 			setMappingDrafts(mappingsFromPlanner(planner));
 			setPlannerDraftChanged(false);
 			setSavedLibraryRecord(record);
 		},
-		saveDisabled: rootBlueprint === undefined || error !== undefined,
+		recordMetadata: {
+			description: recordMetadataDraft.description,
+			icons: recordMetadataDraft.icons.map(({signal}) => signal),
+			label: recordMetadataDraft.label,
+			onDescriptionChange: (description: string) => {
+				setPlannerDraftChanged(true);
+				setRecordMetadataDraft((current) => ({...current, description}));
+			},
+			onIconsChange: (icons: SignalID[]) => {
+				setPlannerDraftChanged(true);
+				setRecordMetadataDraft((current) => ({
+					...current,
+					icons: reconcilePreviewIcons(current.icons, icons),
+				}));
+			},
+			onLabelChange: (label: string) => {
+				setPlannerDraftChanged(true);
+				setRecordMetadataDraft((current) => ({...current, label}));
+			},
+		},
+		saveDisabled: rootBlueprint === undefined || error !== undefined || recordMetadataDraft.label.trim() === '',
 		savedLibraryRecord,
 		savedPlannerChoice:
 			savedLibraryRecord === undefined
 				? undefined
 				: {
 						label: savedLibraryRecord.gameData.label ?? 'Saved upgrade planner',
+						libraryRecord: savedLibraryRecord,
 						planner: parseUpgradePlanner(savedLibraryRecord.data),
 						source: `library:${savedLibraryRecord.id}`,
 					},

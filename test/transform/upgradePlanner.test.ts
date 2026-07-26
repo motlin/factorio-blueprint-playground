@@ -326,6 +326,34 @@ describe('upgrade planner transforms', () => {
 		});
 	});
 
+	test('parses and reserializes unsupported planner metadata without stripping it', () => {
+		const planner = parseUpgradePlanner(`{
+			upgrade_planner: {
+				item: 'upgrade-planner',
+				label: 'Opaque planner',
+				version: 0,
+				planner_extension: {owner: 'Alice'},
+				settings: {
+					description: 'Description',
+					settings_extension: 42,
+					icons: [{
+						index: 1,
+						signal: {type: 'virtual', name: 'signal-blue', signal_extension: true},
+						icon_extension: 'kept',
+					}],
+					mappers: [{
+						index: 100,
+						from: {type: 'entity', name: 'transport-belt', source_extension: 'kept'},
+						to: {type: 'entity', name: 'fast-transport-belt', target_extension: 'kept'},
+						mapper_extension: ['kept'],
+					}],
+				},
+			},
+		}`);
+
+		expect(parseUpgradePlanner(serializeBlueprint({upgrade_planner: planner}))).toStrictEqual(planner);
+	});
+
 	test.each([
 		{comparator: '=', matchingEntityNumbers: [300]},
 		{comparator: '≠', matchingEntityNumbers: [100, 200, 400, 500]},

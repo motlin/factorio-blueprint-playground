@@ -1,8 +1,10 @@
 import type {UpgradePlanner} from '../../../../parsing/types';
+import type {LibraryRecord} from '../../../../storage/db';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
 
 export interface UpgradePlannerChoice {
 	label: string;
+	libraryRecord?: LibraryRecord;
 	planner?: UpgradePlanner;
 	source: string;
 }

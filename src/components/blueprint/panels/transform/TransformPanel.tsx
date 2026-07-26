@@ -182,12 +182,12 @@ export function TransformPanel({
 		}
 		commitBlueprint(transformedRoot);
 	};
-	const savePlannerAsNewLibraryRecord = async (label: string) => {
+	const savePlannerAsNewLibraryRecord = async () => {
 		setPlannerSavePending(true);
 		try {
 			const siblings = await db.listLibraryChildren(LIBRARY_ROOT_ID);
 			const record = await db.saveLibraryCopy({
-				...upgradeDraft.libraryRecordContent(label),
+				...upgradeDraft.libraryRecordContent(),
 				destination: {
 					parentId: LIBRARY_ROOT_ID,
 					position: siblings.reduce((next, record) => Math.max(next, record.position + 1), 0),
@@ -200,7 +200,7 @@ export function TransformPanel({
 			setPlannerSavePending(false);
 		}
 	};
-	const updateExistingPlannerLibraryRecord = async (label: string) => {
+	const updateExistingPlannerLibraryRecord = async () => {
 		if (upgradeDraft.libraryRecordId === undefined) {
 			throw new Error('No existing Blueprint Library planner is loaded.');
 		}
@@ -208,7 +208,7 @@ export function TransformPanel({
 		try {
 			const record = await db.updateLibraryRecord({
 				id: upgradeDraft.libraryRecordId,
-				content: upgradeDraft.libraryRecordContent(label),
+				content: upgradeDraft.libraryRecordContent(),
 			});
 			upgradeDraft.onLibraryRecordSaved(record);
 			setPlannerSaveMode('updated');
@@ -262,32 +262,37 @@ export function TransformPanel({
 					onClose={upgradeDraft.requestClosePlanner}
 					onScopeChange={upgradeDraft.onScopeChange}
 					replacements={upgradeDraft.replacements}
+					recordMetadata={upgradeDraft.recordMetadata}
 					saveDisabled={upgradeDraft.saveDisabled}
 					savePrompt={{
-						initialLabel:
-							upgradeDraft.mappings.source === 'custom'
-								? 'Empty Planner'
-								: upgradeDraft.mappings.source === 'pasted'
-									? 'Pasted Upgrade Planner'
-									: upgradeDraft.mappings.sourceLabel,
+						existingRecordName:
+							upgradeDraft.savedLibraryRecord === undefined
+								? undefined
+								: (upgradeDraft.savedLibraryRecord.gameData.label ?? upgradeDraft.mappings.sourceLabel),
+						label: upgradeDraft.recordMetadata.label.trim(),
 						onCancel: () => {
 							setPlannerSavePromptOpen(false);
 						},
 						onOpen: () => {
 							setPlannerSavePromptOpen(true);
 						},
-						onSaveAsNew: (label) => {
-							void savePlannerAsNewLibraryRecord(label);
+						onSaveAsNew: () => {
+							void savePlannerAsNewLibraryRecord();
 						},
 						onUpdateExisting:
 							upgradeDraft.libraryRecordId === undefined
 								? undefined
-								: (label) => {
-										void updateExistingPlannerLibraryRecord(label);
+								: () => {
+										void updateExistingPlannerLibraryRecord();
 									},
 						open: plannerSavePromptOpen,
 						pending: plannerSavePending,
 					}}
+					savedRecordName={
+						upgradeDraft.savedLibraryRecord === undefined
+							? undefined
+							: (upgradeDraft.savedLibraryRecord.gameData.label ?? upgradeDraft.mappings.sourceLabel)
+					}
 					savedLibraryMessage={
 						upgradeDraft.savedLibraryRecord === undefined || plannerSaveMode === undefined
 							? undefined

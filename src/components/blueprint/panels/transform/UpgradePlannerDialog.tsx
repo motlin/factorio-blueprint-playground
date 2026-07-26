@@ -7,12 +7,17 @@ import {ButtonGreen} from '../../../ui/ButtonGreen';
 import {FactorioButton, FactorioButtonKind} from '../../../ui/FactorioUi';
 import {Textarea} from '../../../ui/Textarea';
 import {BookWideReplacements, type BookWideReplacementsProps} from './BookWideReplacements';
+import {BlueprintDescriptionEditor} from './BlueprintDescriptionEditor';
+import {BlueprintLabelIcons} from './BlueprintLabelIcons';
+import {BlueprintTitleEditor} from './BlueprintTitleEditor';
 import {SignalPickerDialog} from './SignalPickerDialog';
 import {UpgradeMappingGrid, type PositionedUpgradeMapping} from './UpgradeMappingGrid';
 import {
 	isUpgradeTargetSelectionAllowed,
+	pickerSignals,
 	signalIdentity,
 	signalPrototypeIdentity,
+	signalTitle,
 	upgradeTargetOptions,
 } from './upgradePlannerSignals';
 import {UpgradePlannerSelectorDialog, type UpgradePlannerChoice} from './UpgradePlannerSelectorDialog';
@@ -78,26 +83,39 @@ interface UpgradePlannerDialogProps {
 	onClose: () => void;
 	onScopeChange: (scope: 'selection' | 'root') => void;
 	replacements: BookWideReplacementsProps;
+	recordMetadata: UpgradePlannerRecordMetadataProps;
 	saveDisabled: boolean;
 	savePrompt: UpgradePlannerSavePromptProps;
+	savedRecordName?: string;
 	savedLibraryMessage?: string;
 	scope: 'selection' | 'root';
 	selectionScopeDisabled: boolean;
 	selectionScopeLabel: string;
 }
 
+interface UpgradePlannerRecordMetadataProps {
+	description: string;
+	icons: readonly SignalID[];
+	label: string;
+	onDescriptionChange: (description: string) => void;
+	onIconsChange: (icons: SignalID[]) => void;
+	onLabelChange: (label: string) => void;
+}
+
 interface UpgradePlannerSavePromptProps {
-	initialLabel: string;
+	existingRecordName?: string;
+	label: string;
 	onCancel: () => void;
 	onOpen: () => void;
-	onSaveAsNew: (label: string) => void;
-	onUpdateExisting?: (label: string) => void;
+	onSaveAsNew: () => void;
+	onUpdateExisting?: () => void;
 	open: boolean;
 	pending: boolean;
 }
 
 function UpgradePlannerSavePrompt({
-	initialLabel,
+	existingRecordName,
+	label,
 	onCancel,
 	onSaveAsNew,
 	onUpdateExisting,
@@ -105,10 +123,8 @@ function UpgradePlannerSavePrompt({
 	pending,
 }: UpgradePlannerSavePromptProps) {
 	const headingId = useId();
-	const [label, setLabel] = useState(initialLabel);
-	const normalizedLabel = label.trim();
 	const dialogReference = useDialogFocus<HTMLElement>({
-		initialFocusSelector: 'input[aria-label="Planner name"]',
+		initialFocusSelector: '.factorio-button--green',
 		onClose: () => {
 			if (!pending) {
 				onCancel();
@@ -132,22 +148,18 @@ function UpgradePlannerSavePrompt({
 				<header className="factorio-title-bar transform-dialog__header">
 					<h3 id={headingId}>Save to Blueprint Library</h3>
 				</header>
-				<label>
-					<strong>Planner name</strong>
-					<input
-						aria-label="Planner name"
-						disabled={pending}
-						value={label}
-						onChange={(event) => {
-							setLabel(event.currentTarget.value);
-						}}
-					/>
-				</label>
 				<p>
-					Save as new creates a planner on <strong>Blueprint Library › Root shelf</strong>.
-					{onUpdateExisting === undefined
-						? null
-						: ' Update existing keeps the loaded record in its current library destination.'}
+					{existingRecordName === undefined ? (
+						<>
+							Save <strong>“{label}”</strong> to <strong>Blueprint Library › Root shelf</strong>.
+						</>
+					) : (
+						<>
+							Update the saved record <strong>“{existingRecordName}”</strong> in its current Blueprint
+							Library location, or save <strong>“{label}”</strong> as a copy on{' '}
+							<strong>Blueprint Library › Root shelf</strong>.
+						</>
+					)}
 				</p>
 				<div className="transform-dialog__actions">
 					<FactorioButton className="transform-button" disabled={pending} onClick={onCancel}>
@@ -156,21 +168,21 @@ function UpgradePlannerSavePrompt({
 					{onUpdateExisting === undefined ? null : (
 						<FactorioButton
 							className="transform-button"
-							disabled={pending || normalizedLabel === ''}
+							disabled={pending}
 							onClick={() => {
-								onUpdateExisting(normalizedLabel);
+								onUpdateExisting();
 							}}
 						>
-							Update Existing Library Record
+							Update Planner
 						</FactorioButton>
 					)}
 					<ButtonGreen
-						disabled={pending || normalizedLabel === ''}
+						disabled={pending}
 						onClick={() => {
-							onSaveAsNew(normalizedLabel);
+							onSaveAsNew();
 						}}
 					>
-						Save as New Library Record
+						{onUpdateExisting === undefined ? 'Save Planner' : 'Save a Copy'}
 					</ButtonGreen>
 				</div>
 			</section>
@@ -338,8 +350,10 @@ export function UpgradePlannerDialog({
 	onClose,
 	onScopeChange,
 	replacements,
+	recordMetadata,
 	saveDisabled,
 	savePrompt,
+	savedRecordName,
 	savedLibraryMessage,
 	scope,
 	selectionScopeDisabled,
@@ -347,6 +361,16 @@ export function UpgradePlannerDialog({
 }: UpgradePlannerDialogProps) {
 	const dialogHeadingId = useId();
 	const configurationHeadingId = useId();
+	const recordHeadingId = useId();
+	const [previewIconPickerIndex, setPreviewIconPickerIndex] = useState<number>();
+	const previewIconOptions = [
+		...new Map(
+			[...pickerSignals, ...mappings.sourceOptions, ...recordMetadata.icons].map((signal) => [
+				signalIdentity(signal),
+				signal,
+			]),
+		).values(),
+	];
 	const dialogReference = useDialogFocus<HTMLElement>({
 		initialFocusSelector: '.upgrade-planner-dialog__scroll-region',
 		onClose,
@@ -396,6 +420,52 @@ export function UpgradePlannerDialog({
 					tabIndex={0}
 				>
 					<div className="upgrade-planner-dialog__content transform-workflow">
+						<section
+							className="panel-hole upgrade-planner-dialog__record"
+							aria-labelledby={recordHeadingId}
+						>
+							<header className="factorio-title-bar upgrade-planner-dialog__panel-heading">
+								<h4 id={recordHeadingId}>Planner record</h4>
+								<span className="upgrade-planner-dialog__record-state">
+									{savedRecordName === undefined
+										? 'Not saved to Blueprint Library'
+										: `Saved record: ${savedRecordName}`}
+								</span>
+							</header>
+							<div className="panel-hole-inner blueprint-editor__title-row">
+								<BlueprintTitleEditor
+									editLabel="Edit planner name"
+									emptyLabel="Planner name required"
+									inputLabel="Planner name"
+									label={recordMetadata.label}
+									onLabelChange={recordMetadata.onLabelChange}
+								/>
+							</div>
+							<section
+								className="transform-workflow__section blueprint-editor__icons upgrade-planner-dialog__preview-icons"
+								aria-labelledby="upgrade-planner-preview-icons-heading"
+							>
+								<h4 id="upgrade-planner-preview-icons-heading">Preview icons</h4>
+								<div>
+									<BlueprintLabelIcons
+										icons={recordMetadata.icons}
+										labelPrefix="preview icon"
+										onChange={recordMetadata.onIconsChange}
+										onChoose={setPreviewIconPickerIndex}
+										signalTitle={signalTitle}
+									/>
+								</div>
+								<small>
+									These icons identify the saved planner record; changing them does not apply the
+									planner.
+								</small>
+							</section>
+							<BlueprintDescriptionEditor
+								accessibleLabel="Planner description"
+								description={recordMetadata.description}
+								onDescriptionChange={recordMetadata.onDescriptionChange}
+							/>
+						</section>
 						<section
 							className="panel-hole upgrade-planner-dialog__configuration"
 							aria-labelledby={configurationHeadingId}
@@ -451,7 +521,7 @@ export function UpgradePlannerDialog({
 								savePrompt.onOpen();
 							}}
 						>
-							Save to Blueprint Library
+							Save Planner
 						</FactorioButton>
 						<FactorioButton
 							className="transform-button"
@@ -474,6 +544,23 @@ export function UpgradePlannerDialog({
 				</footer>
 			</section>
 			{savePrompt.open ? <UpgradePlannerSavePrompt {...savePrompt} /> : null}
+			{previewIconPickerIndex === undefined ? null : (
+				<SignalPickerDialog
+					confirmationMode="required"
+					initialSignal={recordMetadata.icons[previewIconPickerIndex]}
+					title={`Choose planner preview icon ${(previewIconPickerIndex + 1).toString()}`}
+					options={previewIconOptions}
+					onClose={() => {
+						setPreviewIconPickerIndex(undefined);
+					}}
+					onChoose={(signal) => {
+						const next = [...recordMetadata.icons];
+						next[Math.min(previewIconPickerIndex, next.length)] = signal;
+						recordMetadata.onIconsChange(next);
+						setPreviewIconPickerIndex(undefined);
+					}}
+				/>
+			)}
 		</div>
 	);
 }

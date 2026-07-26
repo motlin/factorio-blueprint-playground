@@ -1426,9 +1426,22 @@ body {
 	gap: 10px;
 }
 
-.upgrade-planner-dialog__configuration {
+.upgrade-planner-dialog__configuration,
+.upgrade-planner-dialog__record {
 	min-width: 0;
 	padding: var(--transform-frame-gap);
+}
+
+.upgrade-planner-dialog__record > .blueprint-editor__title-row {
+	margin-top: var(--transform-frame-gap);
+}
+
+.upgrade-planner-dialog__record-state {
+	max-width: 50%;
+}
+
+.upgrade-planner-dialog__preview-icons > div {
+	padding-top: 2px;
 }
 
 .upgrade-planner-dialog__panel-heading {

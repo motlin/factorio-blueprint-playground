@@ -4,6 +4,7 @@ import {FactorioInventorySlot} from '../../../ui/FactorioUi';
 
 interface BlueprintLabelIconsProps {
 	icons: readonly SignalID[];
+	labelPrefix?: string;
 	onChange: (icons: SignalID[]) => void;
 	onChoose: (index: number) => void;
 	signalTitle: (signal: SignalID) => string;
@@ -16,10 +17,16 @@ const labelIconIndexes = [0, 1, 2, 3] as const;
  * `SignalPickerDialog`. They retain no independent quality-control state; the
  * confirmed SignalID, including its quality badge, replaces one local slot.
  */
-export function BlueprintLabelIcons({icons, onChange, onChoose, signalTitle}: BlueprintLabelIconsProps) {
+export function BlueprintLabelIcons({
+	icons,
+	labelPrefix = 'icon',
+	onChange,
+	onChoose,
+	signalTitle,
+}: BlueprintLabelIconsProps) {
 	return labelIconIndexes.map((index) => {
 		const icon = icons.at(index);
-		const label = `${icon === undefined ? 'Choose' : 'Edit'} icon ${(index + 1).toString()}`;
+		const label = `${icon === undefined ? 'Choose' : 'Edit'} ${labelPrefix} ${(index + 1).toString()}`;
 		return (
 			<FactorioInventorySlot
 				key={index}

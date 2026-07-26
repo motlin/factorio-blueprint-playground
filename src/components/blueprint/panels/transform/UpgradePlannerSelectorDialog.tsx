@@ -145,6 +145,7 @@ function createUpgradePlannerChoices(
 		const planner = libraryPlanner(record);
 		choices.push({
 			label: libraryPlannerLabel(record, planner),
+			libraryRecord: record,
 			planner,
 			source: `library:${record.id}`,
 		});

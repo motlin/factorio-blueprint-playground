@@ -63,9 +63,17 @@ function renderPlannerHtml(): string {
 				onTextReplacementEnabledChange: noop,
 				textReplacementEnabled: false,
 			}}
+			recordMetadata={{
+				description: '',
+				icons: [],
+				label: 'Default Upgrade',
+				onDescriptionChange: noop,
+				onIconsChange: noop,
+				onLabelChange: noop,
+			}}
 			saveDisabled={false}
 			savePrompt={{
-				initialLabel: 'Default Upgrade',
+				label: 'Default Upgrade',
 				onCancel: noop,
 				onOpen: noop,
 				onSaveAsNew: noop,

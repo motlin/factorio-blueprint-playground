@@ -258,7 +258,7 @@ describe('TransformPanel', () => {
 			liveResult: screen.queryByText('Live result'),
 			modeButtons: ['Upgrade', 'Downgrade', 'Strip quality'].map((name) => screen.queryByRole('button', {name})),
 			operationButtons: [
-				'Save to Blueprint Library',
+				'Save Planner',
 				'Apply Upgrade to Current Blueprint',
 				'Apply Downgrade to Current Blueprint',
 			].map((name) => screen.queryByRole('button', {name})?.textContent ?? null),
@@ -291,12 +291,12 @@ describe('TransformPanel', () => {
 			liveResult: null,
 			modeButtons: [null, null, null],
 			operationButtons: [
-				'Save to Blueprint Library',
+				'Save Planner',
 				'Apply Upgrade to Current Blueprint',
 				'Apply Downgrade to Current Blueprint',
 			],
 			preserveCapitalization: null,
-			sectionOrder: ['Upgrade mappings', 'Book-wide replacements'],
+			sectionOrder: ['Planner record', 'Upgrade mappings', 'Book-wide replacements'],
 			scrollTabIndex: 0,
 			sourceIcon: 'https://factorio-icon-cdn.pages.dev/entity/transport-belt.webp',
 			targetIcon: 'https://factorio-icon-cdn.pages.dev/entity/fast-transport-belt.webp',
@@ -750,17 +750,26 @@ describe('TransformPanel', () => {
 		await user.click(screen.getByRole('button', {name: 'Choose target for Transport belt'}));
 		await user.click(screen.getByRole('button', {name: 'Rare quality'}));
 		await chooseSignal(user, 'Fast transport belt');
-		await user.click(screen.getByRole('button', {name: 'Save to Blueprint Library'}));
+		await user.click(screen.getByRole('button', {name: 'Edit planner name'}));
+		const plannerName = screen.getByRole('textbox', {name: 'Planner name'});
+		await user.clear(plannerName);
+		await user.type(plannerName, 'Rare belt upgrades{Enter}');
+		await user.type(screen.getByRole('textbox', {name: 'Planner description'}), 'Rare belt line');
+		await user.click(screen.getByRole('button', {name: 'Choose preview icon 1'}));
+		await chooseSignal(user, 'Signal red');
+		await user.click(screen.getByRole('button', {name: 'Save Planner'}));
 		const savePrompt = screen.getByRole('dialog', {name: 'Save to Blueprint Library'});
-		const nameInput = within(savePrompt).getByRole('textbox', {name: 'Planner name'});
-		await user.clear(nameInput);
-		await user.type(nameInput, 'Rare belt upgrades');
-		await user.click(within(savePrompt).getByRole('button', {name: 'Save as New Library Record'}));
+		expect(savePrompt.textContent).toContain('Save “Rare belt upgrades” to Blueprint Library › Root shelf.');
+		await user.click(within(savePrompt).getByRole('button', {name: 'Save Planner'}));
 
+		const savedInput = vi.mocked(db.saveLibraryCopy).mock.calls[0][0];
 		expect({
-			destination: vi.mocked(db.saveLibraryCopy).mock.calls[0][0].destination,
+			destination: savedInput.destination,
 			navigation: navigate.mock.calls,
-			recordLabel: vi.mocked(db.saveLibraryCopy).mock.calls[0][0].gameData.label,
+			planner: parseUpgradePlanner(savedInput.data),
+			recordDescription: savedInput.gameData.description,
+			recordIcons: savedInput.gameData.icons,
+			recordLabel: savedInput.gameData.label,
 			savedRecord: screen.getByRole('status').textContent,
 			source: screen.getByRole('button', {
 				name: 'Load planner, currently Rare belt upgrades',
@@ -768,6 +777,18 @@ describe('TransformPanel', () => {
 		}).toStrictEqual({
 			destination: {parentId: LIBRARY_ROOT_ID, position: 0},
 			navigation: [],
+			planner: {
+				item: 'upgrade-planner',
+				label: 'Rare belt upgrades',
+				version: 0,
+				settings: {
+					description: 'Rare belt line',
+					icons: [{index: 1, signal: {type: 'virtual', name: 'signal-red'}}],
+					mappers: expect.any(Array),
+				},
+			},
+			recordDescription: 'Rare belt line',
+			recordIcons: [{type: 'virtual', name: 'signal-red'}],
 			recordLabel: 'Rare belt upgrades',
 			savedRecord: 'Saved “Rare belt upgrades” in Blueprint Library › Root shelf.',
 			source: 'Rare belt upgrades',
@@ -824,10 +845,13 @@ describe('TransformPanel', () => {
 		await choosePlanner(user, 'Library belts');
 		await user.click(screen.getByRole('button', {name: 'Choose target for Transport belt'}));
 		await chooseSignal(user, 'Express transport belt');
-		await user.click(screen.getByRole('button', {name: 'Save to Blueprint Library'}));
+		expect(screen.getByText('Saved record: Library belts').textContent).toBe('Saved record: Library belts');
+		await user.click(screen.getByRole('button', {name: 'Edit planner name'}));
+		const canceledName = screen.getByRole('textbox', {name: 'Planner name'});
+		await user.clear(canceledName);
+		await user.type(canceledName, 'Canceled name{Enter}');
+		await user.click(screen.getByRole('button', {name: 'Save Planner'}));
 		const canceledPrompt = screen.getByRole('dialog', {name: 'Save to Blueprint Library'});
-		await user.clear(within(canceledPrompt).getByRole('textbox', {name: 'Planner name'}));
-		await user.type(within(canceledPrompt).getByRole('textbox', {name: 'Planner name'}), 'Canceled name');
 		await user.click(within(canceledPrompt).getByRole('button', {name: 'Cancel Save'}));
 
 		expect({
@@ -844,12 +868,16 @@ describe('TransformPanel', () => {
 			updateCalls: [],
 		});
 
-		await user.click(screen.getByRole('button', {name: 'Save to Blueprint Library'}));
+		await user.click(screen.getByRole('button', {name: 'Edit planner name'}));
+		const updatedName = screen.getByRole('textbox', {name: 'Planner name'});
+		await user.clear(updatedName);
+		await user.type(updatedName, 'Express belt upgrades{Enter}');
+		await user.click(screen.getByRole('button', {name: 'Save Planner'}));
 		const updatePrompt = screen.getByRole('dialog', {name: 'Save to Blueprint Library'});
-		const nameInput = within(updatePrompt).getByRole('textbox', {name: 'Planner name'});
-		await user.clear(nameInput);
-		await user.type(nameInput, 'Express belt upgrades');
-		await user.click(within(updatePrompt).getByRole('button', {name: 'Update Existing Library Record'}));
+		expect(updatePrompt.textContent).toContain(
+			'Update the saved record “Library belts” in its current Blueprint Library location',
+		);
+		await user.click(within(updatePrompt).getByRole('button', {name: 'Update Planner'}));
 		await screen.findByText('Updated “Express belt upgrades” in its Blueprint Library destination.');
 
 		const updateInput = vi.mocked(db.updateLibraryRecord).mock.calls[0][0];
@@ -877,6 +905,154 @@ describe('TransformPanel', () => {
 				},
 			},
 			source: 'Express belt upgrades',
+		});
+	});
+
+	test('saves a copy of a loaded planner with a new stable record ID and leaves the source record unchanged', async () => {
+		const user = userEvent.setup();
+		const planner: UpgradePlanner = {
+			item: 'upgrade-planner',
+			label: 'Original planner',
+			version: 0,
+			settings: {
+				description: 'Original description',
+				mappers: [
+					{
+						index: 7,
+						from: {type: 'entity', name: 'stone-furnace'},
+						to: {type: 'entity', name: 'steel-furnace'},
+					},
+				],
+			},
+		};
+		const original = storedPlanner('original-planner-id', planner, 'Original planner', 0);
+		libraryRecords.push(original);
+		render(<TransformPanel blueprint={blueprint} />);
+
+		openUpgradePlanner();
+		await choosePlanner(user, 'Original planner');
+		await user.click(screen.getByRole('button', {name: 'Edit planner name'}));
+		const name = screen.getByRole('textbox', {name: 'Planner name'});
+		await user.clear(name);
+		await user.type(name, 'Copied planner{Enter}');
+		await user.click(screen.getByRole('button', {name: 'Save Planner'}));
+		const prompt = screen.getByRole('dialog', {name: 'Save to Blueprint Library'});
+		await user.click(within(prompt).getByRole('button', {name: 'Save a Copy'}));
+
+		expect({
+			copiedRecord: libraryRecords[1],
+			originalRecord: libraryRecords[0],
+			saveInput: vi.mocked(db.saveLibraryCopy).mock.calls[0][0],
+			updateCalls: vi.mocked(db.updateLibraryRecord).mock.calls,
+		}).toStrictEqual({
+			copiedRecord: {
+				...original,
+				id: 'saved-planner-1',
+				createdOn: 1,
+				updatedOn: 1,
+				data: expect.any(String),
+				gameData: {
+					...original.gameData,
+					label: 'Copied planner',
+					description: 'Original description',
+					gameVersion: '0',
+				},
+				position: 1,
+				selection: undefined,
+			},
+			originalRecord: original,
+			saveInput: {
+				data: expect.any(String),
+				destination: {parentId: LIBRARY_ROOT_ID, position: 1},
+				gameData: {
+					type: 'upgrade_planner',
+					label: 'Copied planner',
+					description: 'Original description',
+					gameVersion: '0',
+					icons: [],
+				},
+			},
+			updateCalls: [],
+		});
+		expect(parseUpgradePlanner(libraryRecords[1].data).label).toBe('Copied planner');
+	});
+
+	test('reloads saved planner record metadata from the Blueprint Library', async () => {
+		const user = userEvent.setup();
+		const planner: UpgradePlanner = {
+			item: 'upgrade-planner',
+			label: 'Reloaded planner',
+			version: 0,
+			settings: {
+				description: 'Reloaded description',
+				icons: [{index: 1, signal: {type: 'virtual', name: 'signal-green'}}],
+				mappers: [],
+			},
+		};
+		libraryRecords.push(storedPlanner('reloaded-planner-id', planner, 'Reloaded planner', 0));
+		render(<TransformPanel blueprint={blueprint} />);
+
+		openUpgradePlanner();
+		await choosePlanner(user, 'Reloaded planner');
+
+		expect({
+			description: screen.getByRole<HTMLInputElement>('textbox', {name: 'Planner description'}).value,
+			iconTitle: screen.getByRole('button', {name: 'Edit preview icon 1'}).title,
+			name: screen.getByText('Reloaded planner', {selector: '.blueprint-editor__title'}).textContent,
+			state: screen.getByText('Saved record: Reloaded planner').textContent,
+		}).toStrictEqual({
+			description: 'Reloaded description',
+			iconTitle: 'Signal green\nvirtual:signal-green',
+			name: 'Reloaded planner',
+			state: 'Saved record: Reloaded planner',
+		});
+	});
+
+	test('preserves unused mappings and unsupported serialized fields when planner metadata is updated', async () => {
+		const user = userEvent.setup();
+		const planner = parseUpgradePlanner(`{
+			upgrade_planner: {
+				item: 'upgrade-planner',
+				label: 'Opaque planner',
+				version: 0,
+				planner_extension: {owner: 'Alice'},
+				settings: {
+					description: 'Opaque description',
+					settings_extension: 42,
+					icons: [{
+						index: 1,
+						signal: {type: 'virtual', name: 'signal-blue', signal_extension: true},
+						icon_extension: 'kept',
+					}],
+					mappers: [{
+						index: 91,
+						from: {type: 'entity', name: 'stone-furnace', source_extension: 'kept'},
+						to: {type: 'entity', name: 'steel-furnace', target_extension: 'kept'},
+						mapper_extension: ['kept'],
+					}],
+				},
+			},
+		}`);
+		libraryRecords.push(storedPlanner('opaque-planner-id', planner, 'Opaque planner', 0));
+		render(<TransformPanel blueprint={blueprint} />);
+
+		openUpgradePlanner();
+		await choosePlanner(user, 'Opaque planner');
+		expect(screen.getByLabelText('0 matches').getAttribute('aria-label')).toBe('0 matches');
+		await user.click(screen.getByRole('button', {name: 'Edit planner name'}));
+		const name = screen.getByRole('textbox', {name: 'Planner name'});
+		await user.clear(name);
+		await user.type(name, 'Renamed opaque planner{Enter}');
+		await user.click(screen.getByRole('button', {name: 'Save Planner'}));
+		await user.click(
+			within(screen.getByRole('dialog', {name: 'Save to Blueprint Library'})).getByRole('button', {
+				name: 'Update Planner',
+			}),
+		);
+
+		expect(parseUpgradePlanner(vi.mocked(db.updateLibraryRecord).mock.calls[0][0].content.data)).toStrictEqual({
+			...planner,
+			label: 'Renamed opaque planner',
 		});
 	});
 
@@ -1337,7 +1513,7 @@ describe('TransformPanel', () => {
 
 		expect({
 			plannerActions: [
-				'Save to Blueprint Library',
+				'Save Planner',
 				'Apply Upgrade to Current Blueprint',
 				'Apply Downgrade to Current Blueprint',
 			].map((name) => screen.queryByRole('button', {name})?.textContent ?? null),
@@ -1346,7 +1522,7 @@ describe('TransformPanel', () => {
 			),
 		}).toStrictEqual({
 			plannerActions: [
-				'Save to Blueprint Library',
+				'Save Planner',
 				'Apply Upgrade to Current Blueprint',
 				'Apply Downgrade to Current Blueprint',
 			],

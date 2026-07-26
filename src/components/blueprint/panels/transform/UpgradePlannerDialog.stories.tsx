@@ -64,9 +64,17 @@ const meta = {
 			onTextReplacementEnabledChange: fn(),
 			textReplacementEnabled: true,
 		},
+		recordMetadata: {
+			description: 'Upgrade the starter belt line.',
+			icons: [{type: 'entity', name: 'fast-transport-belt'}],
+			label: 'Starter belt upgrades',
+			onDescriptionChange: fn(),
+			onIconsChange: fn(),
+			onLabelChange: fn(),
+		},
 		saveDisabled: false,
 		savePrompt: {
-			initialLabel: 'Default Upgrade',
+			label: 'Starter belt upgrades',
 			onCancel: fn(),
 			onOpen: fn(),
 			onSaveAsNew: fn(),
