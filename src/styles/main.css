@@ -1368,6 +1368,13 @@ body {
 	background: #3d3c3d;
 }
 
+.transform-toolbelt__control .factorio-toolbar-tooltip {
+	top: auto;
+	right: 50%;
+	bottom: calc(100% + 7px);
+	transform: translateX(50%);
+}
+
 .transform-workbench-backdrop {
 	align-items: center;
 	background: rgb(0 0 0 / 58%);

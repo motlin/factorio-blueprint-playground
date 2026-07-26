@@ -17,6 +17,7 @@ import {
 	upgradeTargetOptions,
 } from './upgradePlannerSignals';
 import {UpgradePlannerSelectorDialog, type UpgradePlannerChoice} from './UpgradePlannerSelectorDialog';
+import {useDialogFocus} from './useDialogFocus';
 
 /**
  * Factorio 2.1.12 Upgrade Planner editor source contract:
@@ -109,6 +110,14 @@ function UpgradePlannerSavePrompt({
 	const headingId = useId();
 	const [label, setLabel] = useState(initialLabel);
 	const normalizedLabel = label.trim();
+	const dialogReference = useDialogFocus<HTMLElement>({
+		initialFocusSelector: 'input[aria-label="Planner name"]',
+		onClose: () => {
+			if (!pending) {
+				onCancel();
+			}
+		},
+	});
 
 	if (!open) {
 		return null;
@@ -117,16 +126,11 @@ function UpgradePlannerSavePrompt({
 	return (
 		<div className="transform-dialog-backdrop transform-dialog-backdrop--confirmation">
 			<section
+				ref={dialogReference}
 				className="factorio-frame factorio-frame--shallow transform-dialog transform-dialog--confirmation upgrade-planner-save"
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby={headingId}
-				onKeyDown={(event) => {
-					event.stopPropagation();
-					if (event.key === 'Escape' && !pending) {
-						onCancel();
-					}
-				}}
 			>
 				<header className="factorio-title-bar transform-dialog__header">
 					<h3 id={headingId}>Save to Blueprint Library</h3>
@@ -134,7 +138,6 @@ function UpgradePlannerSavePrompt({
 				<label>
 					<strong>Planner name</strong>
 					<input
-						autoFocus
 						aria-label="Planner name"
 						disabled={pending}
 						value={label}
@@ -429,21 +432,21 @@ export function UpgradePlannerDialog({
 }: UpgradePlannerDialogProps) {
 	const dialogHeadingId = useId();
 	const configurationHeadingId = useId();
+	const dialogReference = useDialogFocus<HTMLElement>({
+		initialFocusSelector: '.upgrade-planner-dialog__scroll-region',
+		onClose,
+	});
 
 	return (
 		<div className="transform-dialog-backdrop transform-workbench-backdrop upgrade-planner-dialog__backdrop">
 			<section
+				ref={dialogReference}
 				className="factorio-frame factorio-frame--shallow transform-dialog transform-workbench transform-workbench--planner upgrade-planner-dialog"
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby={dialogHeadingId}
 				aria-hidden={savePrompt.open || undefined}
 				inert={savePrompt.open}
-				onKeyDown={(event) => {
-					if (event.key === 'Escape') {
-						onClose();
-					}
-				}}
 			>
 				<header className="factorio-title-bar transform-dialog__header transform-workbench__header">
 					<div className="transform-workbench__title">

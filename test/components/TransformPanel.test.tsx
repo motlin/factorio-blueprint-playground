@@ -1,4 +1,4 @@
-import {fireEvent, render, screen, within} from '@testing-library/react';
+import {fireEvent, render, screen, waitFor, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {Profiler} from 'react';
 import {beforeEach, describe, expect, test, vi} from 'vite-plus/test';
@@ -293,6 +293,20 @@ describe('TransformPanel', () => {
 			targetIcon: 'https://factorio-icon-cdn.pages.dev/entity/fast-transport-belt.webp',
 			bookWideReplacements: 'Book-wide replacements',
 			websiteLabel: 'Website extension',
+		});
+	});
+
+	test('returns focus to the Upgrade Planner tool after its dialog closes', async () => {
+		const user = userEvent.setup();
+		render(<TransformPanel blueprint={blueprint} />);
+		const tool = screen.getByRole('button', {name: 'Open Upgrade Planner'});
+
+		await user.click(tool);
+		expect(document.activeElement).toBe(screen.getByRole('region', {name: 'Upgrade Planner configuration'}));
+
+		await user.click(screen.getByRole('button', {name: 'Close Upgrade Planner'}));
+		await waitFor(() => {
+			expect(document.activeElement).toBe(tool);
 		});
 	});
 
