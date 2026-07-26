@@ -8,6 +8,12 @@ export type UpgradeQualityMode = 'source' | 'target';
 export type UpgradeQualitySelection = 'any' | ExplicitQuality;
 export type UpgradeQualitySignal = SignalID & {comparator?: QualityComparator};
 
+/**
+ * Blueprint boundary for the canonical picker contract in
+ * `SignalPickerDialog`: `any` is UI state for an absent source
+ * `QualityCondition`, never a serialized SignalID quality. Exact target quality
+ * carries no comparator; source comparator and quality are serialized together.
+ */
 export function signalWithUpgradeQuality(
 	signal: UpgradeQualitySignal,
 	mode: UpgradeQualityMode,

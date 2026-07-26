@@ -19,6 +19,11 @@ interface UpgradeMappingRowProps {
 	sourceKey: string;
 }
 
+/**
+ * Shared planner endpoint presentation for the canonical picker contract.
+ * Source and target slots invoke `SignalPickerDialog`; they render its confirmed
+ * signal/quality condition and never own a separate quality selector.
+ */
 export function SignalSlot({label, onClick, onContextMenu, signal}: SignalSlotProps) {
 	return (
 		<button

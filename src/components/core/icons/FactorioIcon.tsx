@@ -17,6 +17,11 @@ interface FactorioIconProps {
 	size: 'small' | 'large';
 }
 
+/**
+ * Shared signal presentation for the canonical picker contract. This component
+ * renders the prototype and its quality badge only; picker slots own
+ * selected/disabled state and `SignalPickerDialog` owns quality selection.
+ */
 function getQualityNode(icon: SignalID) {
 	if (!icon.quality) {
 		return null;

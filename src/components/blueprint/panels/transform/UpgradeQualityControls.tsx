@@ -117,6 +117,15 @@ function QualityButtons({
 	});
 }
 
+/**
+ * Quality footer profile for `SignalPickerDialog`.
+ *
+ * Source mode represents Factorio's `QualityConditionGui`: Any plus an ordered
+ * comparator menu and the shared quality selector. Target mode, also used by
+ * local blueprint icons, represents `QualityGui`: one exact quality. A generated
+ * quality count may switch the selector from buttons to a dropdown, but must not
+ * introduce another quality state or picker.
+ */
 export function UpgradeQualityControls({
 	mode,
 	onComparatorChange,

@@ -8,6 +8,68 @@ import {signalWithUpgradeQuality, type UpgradeQualitySelection, type UpgradeQual
 import {UpgradeQualityControls} from './UpgradeQualityControls';
 import {useDialogFocus} from './useDialogFocus';
 
+/**
+ * Factorio 2.1.12 signal and quality picker contract:
+ *
+ * Catalog and layout
+ *
+ * - The caller supplies the eligible prototype stream. Hidden prototypes and
+ *   parameters are excluded by default. Only source iterators with an explicit
+ *   include policy admit them; installed prototype filters own any additional
+ *   visibility rules. Planner target callers must restrict that stream to
+ *   compatible upgrades instead of exposing every signal as selectable.
+ * - Categories follow registered item-group order, with prototypes in subgroup
+ *   and prototype order. A search-empty category remains in place but disabled;
+ *   a category with no eligible prototypes is absent. With zero or one used
+ *   category, the tab strip is omitted.
+ * - Search matches the displayed localised prototype name. An exact match may
+ *   activate its category, no matches produce a visible empty result, and the
+ *   selected value remains staged while the grid is rebuilt.
+ * - The slot grid uses the source `selectSlotRowCount`; subgroup boundaries pad
+ *   to the next row and the tallest category establishes a stable scroll-frame
+ *   height. For this web surface, the ten-column grid and 400 px signal-table
+ *   density evidenced by `SignalsTable` are the baseline, and keyboard row
+ *   movement must use the same column count.
+ *
+ * Quality profiles
+ *
+ * - Local blueprint icons and planner To use exact-quality selection
+ *   (`QualityGui`); planner From uses a filter condition
+ *   (`QualityConditionGui`). These are footer profiles of this picker, not
+ *   separate dialogs or a second quality mechanism.
+ * - An exact selector lists visible, non-hidden qualities in registered order.
+ *   It uses icon buttons below the configured visible-quality threshold and a
+ *   dropdown at or above it; both representations edit the same single value.
+ * - A source filter is a multi-quality condition: the comparator menu contains
+ *   Any first, then `>`, `<`, `=`, `≥`, `≤`, and `≠`, followed by the same exact
+ *   quality selector for the comparison threshold. Choosing a comparator from
+ *   Any restores normal as the threshold.
+ * - Any quality is the empty-quality sentinel. It appears as the any-quality
+ *   icon but serializes by omitting quality and comparator fields. It is valid
+ *   for From filters; a To selection is an exact quality. A signal that cannot
+ *   carry quality locks the exact selector to normal.
+ *
+ * Transaction and focus
+ *
+ * - Clicking a slot stages signal and quality together. The green check or Enter
+ *   confirms only a valid staged value; closing, Escape, or unmodified Q cancels
+ *   without invoking `onChoose`. Q remains text input while search has focus.
+ * - Closing either way returns focus to the slot or button that opened the
+ *   topmost picker. Parent dialogs stay inert until that picker is gone.
+ * - Confirming a planner From value closes only Set the filter and leaves the
+ *   partial row visible. Select upgrade opens only after an explicit To-slot
+ *   activation; confirmation must never chain-open it.
+ *
+ * Ownership map: this component owns categories, search, grid, staging, and the
+ * confirm/cancel boundary; `UpgradeQualityControls` owns the two footer profiles;
+ * `upgradeQuality` owns sentinel-to-blueprint conversion; `FactorioIcon`,
+ * `BlueprintLabelIcons`, and planner signal slots only render/invoke this picker.
+ *
+ * Evidence: SelectListGui, FilterSelectGui, IDWithQualityIDSelectListGui,
+ * QualityGui, QualitySelector, QualityConditionGui, and SignalsTable at Factorio
+ * 2.1.12; BE-6 and the July 23 Set the filter, comparator-menu, and restricted
+ * Select upgrade captures.
+ */
 const gridColumnCount = 10;
 
 type PickerSignal = UpgradeQualitySignal;
