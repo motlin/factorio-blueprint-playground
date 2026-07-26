@@ -17,6 +17,40 @@ import {
 } from './upgradePlannerSignals';
 import {UpgradePlannerSelectorDialog, type UpgradePlannerChoice} from './UpgradePlannerSelectorDialog';
 
+/**
+ * Factorio 2.1.12 Upgrade Planner editor source contract:
+ *
+ * Record editing
+ *
+ * - An upgrade item or library record owns one ordered mapper set. Every mapper
+ *   is one fixed From/To slot pair; upgrade, downgrade, quality, modules, and
+ *   fuels are not separate action lists or separate planner sections.
+ * - Opening a planner edits a draft of that record's label data and mapper
+ *   definition. Picker confirmations, endpoint clearing, and pair reordering
+ *   update that draft; they do not transform a blueprint.
+ * - `UpgradeMappingGrid` owns ordered placement, `UpgradeMappingRow` owns a
+ *   populated pair, `AddUpgradeMappingRow` owns empty or incomplete pairs,
+ *   `upgradePlannerSignals` owns endpoint eligibility and compatibility, and
+ *   `useUpgradePlannerDraft` is the sole authoritative draft and commit boundary.
+ *   This dialog only composes those parts and opens their pickers.
+ *
+ * Blueprint application
+ *
+ * - Applying a saved planner is a separate explicit operation. Upgrade reads the
+ *   same records From to To; downgrade reads them in reverse. Direction never
+ *   changes the editor shape or creates another mapper set.
+ * - A mapper remains part of the planner when the current blueprint has no
+ *   matches. Counts may describe a proposed application, but must not add,
+ *   remove, reorder, or otherwise become the source of editor rows.
+ * - Saving a planner definition and applying it to a selected blueprint/root are
+ *   distinct commands. The application selector may follow a save in this
+ *   product, but saving alone must not apply the planner.
+ *
+ * Evidence: UpgradeItemGui, UpgradeFilterSelectListGui,
+ * UpgradeDestinationSelectListGui, UpgradeRecord, UpgradeItem, UpgradeData, and
+ * its mapper value types at Factorio 2.1.12; UP-1 and the July 23 planner-grid,
+ * source-filter, quality-condition, and restricted-target captures.
+ */
 interface UpgradePlannerMappings {
 	candidates: PositionedUpgradeCandidate[];
 	error: string | undefined;

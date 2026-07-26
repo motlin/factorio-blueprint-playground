@@ -1,6 +1,48 @@
 import gameData from '../../../../generated/game-data.json';
 import type {SignalID, UpgradeSourceSignal} from '../../../../parsing/types';
 
+/**
+ * Factorio 2.1.12 mapper endpoint eligibility contract:
+ *
+ * Empty and quality rules
+ *
+ * - Clearing either endpoint is always allowed. A newly confirmed From must have
+ *   an eligible entity/item prototype; an empty prototype with only a quality
+ *   condition is invalid. From uses an optional quality condition (Any or a
+ *   comparator plus threshold), while To uses one exact quality.
+ * - With no opposite endpoint, show all eligible sources or destinations. With
+ *   one present, filter the other picker against it immediately. Unknown
+ *   prototypes are not user choices.
+ * - Source and destination must have the same entity-versus-item kind. An entity
+ *   pair must be replace-compatible: fast-replace group, build position,
+ *   collision geometry/mask, belt kind, and rolling-stock geometry all matter.
+ *   An item pair must be module-to-module, module-to-empty-module-slot in either
+ *   direction, or fuel-to-fuel.
+ * - The same entity prototype is selectable when quality changes are available
+ *   or when its module slots can be configured. This permits quality-only and
+ *   module-plan records; an exact self-map may remain a no-op when applied.
+ *
+ * Module options
+ *
+ * - A module From may add an optional entity filter, limited to entities that
+ *   support modules; no filter means all eligible entities.
+ * - A module-item To may add a limit from 1 through the game-wide module-slot
+ *   maximum. Zero/omitted means unlimited, and the last compatible limit survives
+ *   toggling or a compatible target change.
+ * - An entity To with module capacity may enable an explicit slot plan. Disabled
+ *   means leave modules unchanged; enabled means a vector sized to that entity
+ *   and quality, preserving empty positions. Module choices obey the target's
+ *   allowed effects, and the slot plan itself is reorderable. Compatible values
+ *   are retained and resized when the target changes.
+ *
+ * These predicates constrain both picker visibility and final confirmation.
+ * `UpgradePlannerDialog` must not approximate them with blueprint occurrence or
+ * a website-maintained next-upgrade list.
+ *
+ * Evidence: UpgradeItemGui, UpgradeFilterSelectListGui,
+ * UpgradeDestinationSelectListGui, UpgradeData, UpgradeFilter,
+ * UpgradeDestination, UpgradeIDBase, and UpgradeMapping at Factorio 2.1.12.
+ */
 export const pickerSignals: readonly SignalID[] = gameData.pickerSignals.map(({name, type}) => {
 	switch (type) {
 		case 'achievement':

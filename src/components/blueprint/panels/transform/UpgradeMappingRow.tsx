@@ -20,9 +20,21 @@ interface UpgradeMappingRowProps {
 }
 
 /**
- * Shared planner endpoint presentation for the canonical picker contract.
- * Source and target slots invoke `SignalPickerDialog`; they render its confirmed
- * signal/quality condition and never own a separate quality selector.
+ * Planner endpoint presentation and interaction contract:
+ *
+ * - From and To are independently editable slots in one mapper. From invokes the
+ *   source-filter profile and renders its quality comparator; To invokes the
+ *   exact destination profile. Neither slot owns a second quality selector.
+ * - Clearing one endpoint leaves the other endpoint and the mapper index intact.
+ *   Clearing the final endpoint turns the pair into a hole. Delete/context
+ *   actions must identify whether they clear an endpoint or the complete pair;
+ *   they must not silently discard an incomplete partner.
+ * - The pair, rather than either endpoint, is the drag/reorder unit. Source
+ *   quality conditions, optional module entity filter, target module limit, and
+ *   target module-slot plan travel with it.
+ *
+ * Endpoint validity is owned by `upgradePlannerSignals`, and confirmed mutations
+ * are owned by `useUpgradePlannerDraft`.
  */
 export function SignalSlot({label, onClick, onContextMenu, signal}: SignalSlotProps) {
 	return (
