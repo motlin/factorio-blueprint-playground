@@ -22,6 +22,20 @@ interface UpgradePlannerSelectorItemProps {
 	selected: boolean;
 }
 
+/**
+ * Planner application activation is the command boundary: primary/left click
+ * applies upgrade direction, secondary/right click applies downgrade direction,
+ * and the selector then closes. Default, library-record, and transient inventory
+ * choices share those semantics. Enter and Shift+Enter are browser accessibility
+ * equivalents, not another confirmation stage.
+ *
+ * A tile renders the record's own icon, label, and description according to the
+ * shared library view mode. The current generic planner icon and label-only tile
+ * represent the compact transitional view. In draft-loading mode, primary
+ * activation copies a source into the editor and right-click has no direction.
+ *
+ * Evidence: SelectUpgradePlannerGui and BE-3 at Factorio 2.1.12.
+ */
 export function UpgradePlannerSelectorItem({
 	active,
 	buttonRef,

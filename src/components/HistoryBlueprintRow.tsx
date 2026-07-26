@@ -43,6 +43,13 @@ interface HistoryBlueprintRowProps {
 	onToggleSelection: (sha: string) => void;
 }
 
+/**
+ * One row is one library record preview. Type, label, description, and up to four
+ * icons describe the record; source and timestamps describe only how this browser
+ * obtained it. Opening a book restores its selected child path, while editing
+ * record metadata or contents must preserve that root/book identity. Checkbox
+ * selection is a browser bulk action and is not Factorio's grabbed-record cursor.
+ */
 export function HistoryBlueprintRow({blueprint, isSelected, onToggleSelection}: HistoryBlueprintRowProps) {
 	const handleKeyDown = (event: React.KeyboardEvent) => {
 		if (event.key === 'Enter' || event.key === ' ') {

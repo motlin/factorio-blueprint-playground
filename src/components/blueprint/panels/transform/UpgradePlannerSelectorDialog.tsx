@@ -90,6 +90,33 @@ function createUpgradePlannerChoices(
 	return choices;
 }
 
+/**
+ * Factorio 2.1.12 `SelectUpgradePlannerGui` source contract:
+ *
+ * - The application selector presents, in order, Default Upgrade (only for an
+ *   empty search), every Upgrade record found recursively across library shelves
+ *   and books, then every Upgrade Planner item found recursively in controller
+ *   inventories. Search matches the stored label or description for both record
+ *   and inventory sources.
+ * - Browser book planners (`book:*`) and IndexedDB planners (`history:*`) are the
+ *   nested and shelf-root records of one private library. A session/dropped
+ *   planner is the inventory-like transient source. `Default Upgrade` is the
+ *   built-in no-record choice. URL provenance must not define whether an
+ *   otherwise saved planner belongs to the library.
+ * - Equal serialized contents do not make two records the same: shelf/book
+ *   location is record identity. The current content-based de-duplication and
+ *   absence of search/view controls are transitional projections.
+ * - Application mode is BE-3: choosing Default Upgrade, a library planner, or an
+ *   inventory planner dispatches upgrade/downgrade immediately and closes. It is
+ *   not a save-confirmation dialog and must never make a saved planner wait for a
+ *   second confirmation.
+ * - Editing mode is a browser-specific "copy into draft" chooser. Empty/Paste
+ *   choices and non-directional activation belong only to that separate mode;
+ *   they are not sources or semantics of `SelectUpgradePlannerGui`.
+ *
+ * `BlueprintsList` supplies the same List/Grid/Slots preference as the library.
+ * `UpgradePlannerSelectorItem` owns the directional click contract.
+ */
 export function UpgradePlannerSelectorDialog({
 	dialogId,
 	includeEditingChoices,

@@ -36,6 +36,34 @@ export interface DatabaseBlueprint {
 	gameData: BlueprintGameData;
 }
 
+/**
+ * Factorio 2.1.12 Blueprint Library persistence contract:
+ *
+ * - A library record is exactly one blueprint, blueprint book, deconstruction
+ *   planner, or upgrade planner. A shelf is an ordered, slotted root holder, and
+ *   a book recursively holds the same record types; a book child is not a
+ *   separate kind of history entry.
+ * - Every record owns its label, description, and zero through four preview
+ *   icons. Editing those fields changes that record in place while preserving its
+ *   type, shelf/book location, and contents. The empty-label fallback is
+ *   presentation, not persisted label text.
+ * - Factorio can synchronize lightweight record previews separately from large
+ *   blueprint entity/tile contents. The browser has no remote shelf transfer, so
+ *   one local row may hold both, but `gameData` remains a searchable preview
+ *   projection of the serialized `metadata.data`, not a second authoritative
+ *   record.
+ * - `createdOn`, `lastUpdatedOn`, `fetchMethod`, and `selection` are browser
+ *   provenance/navigation metadata. `selection` points into an opened root book;
+ *   it does not flatten that child into another saved record.
+ *
+ * `blueprints` is therefore the browser's private library shelf shared by History
+ * and planner selection. The current content SHA is a storage key, not the
+ * long-lived record/location identity that in-place editing and slot ordering
+ * ultimately require.
+ *
+ * Evidence: BlueprintLibrary, BlueprintShelf, BlueprintRecordType, and the
+ * blueprint-library synchronization design at Factorio 2.1.12.
+ */
 export async function generateSha(data: string): Promise<string> {
 	const encoder = new TextEncoder();
 	const dataBuffer = encoder.encode(data);
