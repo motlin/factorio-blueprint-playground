@@ -22,23 +22,21 @@ function renderPlannerHtml(): string {
 			breadcrumb="Root blueprint"
 			canChooseRootScope={false}
 			mappings={{
-				candidates: [
+				mappings: [
 					{
 						count: 1,
 						from: {type: 'entity', name: 'transport-belt'},
-						preserveQuality: true,
+						mappingId: 'mapping-belt',
 						slotIndex: 0,
 						to: {type: 'entity', name: 'fast-transport-belt'},
 					},
 				],
 				error: undefined,
-				excludedSources: new Set(),
-				manualRules: [],
-				onAddManualRule: noop,
-				onChangeManualRule: noop,
+				onClearEndpoint: noop,
+				onMove: noop,
 				onPlannerLoad: noop,
 				onPlannerInputChange: noop,
-				onRemoveRule: noop,
+				onSourceChange: noop,
 				onTargetChange: noop,
 				plannerInput: '',
 				rootBlueprint,

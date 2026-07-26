@@ -99,11 +99,8 @@ export function isUpgradeSourceOption(signal: SignalID): boolean {
 }
 
 export function isUpgradeTargetSelectionAllowed(source: UpgradeSourceSignal, target: SignalID): boolean {
-	return (
-		target.quality !== undefined &&
-		upgradeTargetOptions(source, target).some(
-			(option) => normalizedSignalType(option) === normalizedSignalType(target) && option.name === target.name,
-		)
+	return upgradeTargetOptions(source, target).some(
+		(option) => normalizedSignalType(option) === normalizedSignalType(target) && option.name === target.name,
 	);
 }
 

@@ -1,83 +1,59 @@
-import type {UpgradeSourceSignal} from '../../../../parsing/types';
-import type {UpgradeCandidate, UpgradeRule} from '../../../../transform/upgradePlanner';
+import type {SignalID, UpgradeSourceSignal} from '../../../../parsing/types';
 import {AddUpgradeMappingRow} from './AddUpgradeMappingRow';
 import {UpgradeMappingRow} from './UpgradeMappingRow';
-import {signalIdentity} from './upgradePlannerSignals';
 
-export interface PositionedUpgradeCandidate extends UpgradeCandidate {
+export interface PositionedUpgradeMapping {
+	count: number;
+	from?: UpgradeSourceSignal;
+	mappingId: string;
 	slotIndex: number;
+	to?: SignalID;
 }
 
 interface UpgradeMappingGridProps {
-	candidates: readonly PositionedUpgradeCandidate[];
-	draftSlotIndex?: number;
-	draftSource?: UpgradeSourceSignal;
-	excludedSources: ReadonlySet<string>;
-	manualRules: readonly UpgradeRule[];
-	onDraftRemove: () => void;
-	onDraftSourceChoose: (slotIndex: number) => void;
-	onDraftTargetChoose: () => void;
-	onRemove: (candidate: PositionedUpgradeCandidate, manual: boolean) => void;
-	onSourceChoose: (candidate: PositionedUpgradeCandidate) => void;
-	onTargetChoose: (candidate: PositionedUpgradeCandidate) => void;
+	mappings: readonly PositionedUpgradeMapping[];
+	onChooseSource: (mappingId: string | undefined, slotIndex: number) => void;
+	onChooseTarget: (mappingId: string | undefined, slotIndex: number) => void;
+	onClearEndpoint: (mappingId: string, endpoint: 'from' | 'to') => void;
+	onMove: (mappingId: string, targetSlotIndex: number) => void;
 }
 
 const mappingsPerRow = 4;
 const minimumMappingSlots = 16;
 
-/**
- * Ordered mapper-grid contract from Factorio 2.1.12 `UpgradeItemGui` and
- * `UpgradeData`:
- *
- * - The table repeats four fixed From/To pairs per visual row and shows at least
- *   four rows (16 pairs). It pads to a full row plus one spare row, up to 1,000
- *   mapper indexes; it does not collapse into a variable-width action list.
- * - A mapper index is record state. Empty indexes between populated or incomplete
- *   pairs remain holes, while empty trailing indexes may be trimmed. Serialized
- *   indexes and pasted zero-match mappings therefore survive display and save.
- * - A drag moves or swaps the complete From/To pair, including quality and
- *   module settings, with another populated or empty index. An accessible
- *   keyboard move command must call the same authoritative pair-swap operation.
- *   Rendering must never reorder by signal identity, match count, or completeness.
- *
- * `useUpgradePlannerDraft` supplies the ordered slots; this component only pads
- * and renders them. The current candidate projection is transitional and must not
- * be treated as the persistent model.
- */
-function paddedSlotCount(candidates: readonly PositionedUpgradeCandidate[], draftSlotIndex?: number): number {
-	const highestOccupiedSlot = Math.max(
-		-1,
-		draftSlotIndex ?? -1,
-		...candidates.map((candidate) => candidate.slotIndex),
-	);
+function paddedSlotCount(mappings: readonly PositionedUpgradeMapping[]): number {
+	const highestOccupiedSlot = Math.max(-1, ...mappings.map((mapping) => mapping.slotIndex));
 	const occupiedSize = highestOccupiedSlot + 1;
 	const nextPaddedRow = Math.ceil(occupiedSize / mappingsPerRow) * mappingsPerRow + mappingsPerRow;
 	return Math.max(minimumMappingSlots, nextPaddedRow);
 }
 
+/**
+ * Factorio's mapper definition is one ordered grid of fixed From/To pairs. The
+ * rows supplied here are planner records, never a filtered match report.
+ */
 export function UpgradeMappingGrid({
-	candidates,
-	draftSlotIndex,
-	draftSource,
-	excludedSources,
-	manualRules,
-	onDraftRemove,
-	onDraftSourceChoose,
-	onDraftTargetChoose,
-	onRemove,
-	onSourceChoose,
-	onTargetChoose,
+	mappings,
+	onChooseSource,
+	onChooseTarget,
+	onClearEndpoint,
+	onMove,
 }: UpgradeMappingGridProps) {
-	const manualSourceKeys = new Set(manualRules.map((rule) => signalIdentity(rule.from)));
-	const visibleCandidates = candidates.filter((candidate) => !excludedSources.has(signalIdentity(candidate.from)));
-	const candidatesBySlot = new Map<number, PositionedUpgradeCandidate>();
-	for (const candidate of visibleCandidates) {
-		if (candidatesBySlot.has(candidate.slotIndex)) {
-			throw new Error(`More than one upgrade mapping occupies slot ${candidate.slotIndex.toString()}.`);
+	const mappingsBySlot = new Map<number, PositionedUpgradeMapping>();
+	for (const mapping of mappings) {
+		if (mappingsBySlot.has(mapping.slotIndex)) {
+			throw new Error(`More than one upgrade mapping occupies slot ${mapping.slotIndex.toString()}.`);
 		}
-		candidatesBySlot.set(candidate.slotIndex, candidate);
+		mappingsBySlot.set(mapping.slotIndex, mapping);
 	}
-	const slotCount = paddedSlotCount(visibleCandidates, draftSlotIndex);
+	const slotCount = paddedSlotCount(mappings);
+	const dropMapping = (event: React.DragEvent, targetSlotIndex: number) => {
+		event.preventDefault();
+		const mappingId = event.dataTransfer.getData('text/plain');
+		if (mappingId !== '') {
+			onMove(mappingId, targetSlotIndex);
+		}
+	};
 
 	return (
 		<div className="upgrade-mapping-grid" role="group" aria-label="From and To mappings">
@@ -92,37 +68,57 @@ export function UpgradeMappingGrid({
 				</div>
 				<ol className="upgrade-mapping-grid__slots">
 					{Array.from({length: slotCount}, (_, slotIndex) => {
-						const candidate = candidatesBySlot.get(slotIndex);
-						if (candidate !== undefined) {
-							const sourceKey = signalIdentity(candidate.from);
+						const mapping = mappingsBySlot.get(slotIndex);
+						if (mapping !== undefined) {
 							return (
 								<UpgradeMappingRow
-									key={sourceKey}
-									candidate={candidate}
-									manual={manualSourceKeys.has(sourceKey)}
-									onRemove={(_, manual) => {
-										onRemove(candidate, manual);
+									key={mapping.mappingId}
+									{...mapping}
+									onChooseSource={() => {
+										onChooseSource(mapping.mappingId, slotIndex);
 									}}
-									onSourceChoose={() => {
-										onSourceChoose(candidate);
+									onChooseTarget={() => {
+										onChooseTarget(mapping.mappingId, slotIndex);
 									}}
-									onTargetChoose={() => {
-										onTargetChoose(candidate);
+									onClearSource={() => {
+										onClearEndpoint(mapping.mappingId, 'from');
 									}}
-									sourceKey={sourceKey}
+									onClearTarget={() => {
+										onClearEndpoint(mapping.mappingId, 'to');
+									}}
+									onDragStart={(event) => {
+										event.dataTransfer.setData('text/plain', mapping.mappingId);
+										event.dataTransfer.effectAllowed = 'move';
+									}}
+									onDrop={(event) => {
+										dropMapping(event, slotIndex);
+									}}
+									onMoveEarlier={
+										slotIndex === 0
+											? undefined
+											: () => {
+													onMove(mapping.mappingId, slotIndex - 1);
+												}
+									}
+									onMoveLater={() => {
+										onMove(mapping.mappingId, slotIndex + 1);
+									}}
 								/>
 							);
 						}
-						const isDraft = slotIndex === draftSlotIndex;
 						return (
 							<li key={`empty-${slotIndex.toString()}`} className="upgrade-mapping-grid__empty-slot">
 								<AddUpgradeMappingRow
-									source={isDraft ? draftSource : undefined}
-									onRemove={onDraftRemove}
-									onSourceChoose={() => {
-										onDraftSourceChoose(slotIndex);
+									slotIndex={slotIndex}
+									onDrop={(event) => {
+										dropMapping(event, slotIndex);
 									}}
-									onTargetChoose={onDraftTargetChoose}
+									onSourceChoose={() => {
+										onChooseSource(undefined, slotIndex);
+									}}
+									onTargetChoose={() => {
+										onChooseTarget(undefined, slotIndex);
+									}}
 								/>
 							</li>
 						);

@@ -8,30 +8,26 @@ const meta = {
 	title: 'Blueprint/Panels/Transform/UpgradeMappingGrid',
 	component: UpgradeMappingGrid,
 	args: {
-		candidates: [
+		mappings: [
 			{
 				count: 4,
 				from: {type: 'entity', name: 'transport-belt'},
-				preserveQuality: true,
+				mappingId: 'mapping-belt',
 				slotIndex: 0,
 				to: {type: 'entity', name: 'fast-transport-belt'},
 			},
 			{
-				count: 2,
+				count: 0,
 				from: {type: 'entity', name: 'underground-belt'},
-				preserveQuality: true,
+				mappingId: 'mapping-underground-belt',
 				slotIndex: 4,
 				to: {type: 'entity', name: 'fast-underground-belt'},
 			},
 		],
-		excludedSources: new Set(),
-		manualRules: [],
-		onDraftRemove: fn(),
-		onDraftSourceChoose: fn(),
-		onDraftTargetChoose: fn(),
-		onRemove: fn(),
-		onSourceChoose: fn(),
-		onTargetChoose: fn(),
+		onChooseSource: fn(),
+		onChooseTarget: fn(),
+		onClearEndpoint: fn(),
+		onMove: fn(),
 	},
 	parameters: transformStoryParameters,
 	tags: ['autodocs'],
@@ -44,6 +40,6 @@ export const OrderedMappings: Story = {
 	play: async ({args, canvasElement}) => {
 		const canvas = within(canvasElement);
 		await userEvent.click(canvas.getByRole('button', {name: 'Choose source, currently Transport belt'}));
-		await expect(args.onSourceChoose).toHaveBeenLastCalledWith(args.candidates[0]);
+		await expect(args.onChooseSource).toHaveBeenLastCalledWith('mapping-belt', 0);
 	},
 };

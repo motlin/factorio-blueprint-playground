@@ -1,84 +1,50 @@
 import type {ComponentProps} from 'react';
-import {fireEvent, render, screen} from '@testing-library/react';
+import {fireEvent, render, screen, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {describe, expect, test, vi} from 'vite-plus/test';
 
 import {
 	UpgradeMappingGrid,
-	type PositionedUpgradeCandidate,
+	type PositionedUpgradeMapping,
 } from '../../src/components/blueprint/panels/transform/UpgradeMappingGrid';
-import type {UpgradeRule} from '../../src/transform/upgradePlanner';
 
-const beltMapping: PositionedUpgradeCandidate = {
-	count: 4,
-	from: {type: 'entity', name: 'transport-belt'},
-	preserveQuality: true,
-	slotIndex: 0,
-	to: {type: 'entity', name: 'fast-transport-belt'},
-};
-const moduleMapping: PositionedUpgradeCandidate = {
-	count: 0,
-	from: {type: 'item', name: 'speed-module'},
-	preserveQuality: true,
-	slotIndex: 5,
-	to: {type: 'item', name: 'speed-module-2'},
-};
-const inserterMapping: PositionedUpgradeCandidate = {
-	count: 1,
-	from: {type: 'entity', name: 'inserter', quality: 'rare'},
-	preserveQuality: false,
-	slotIndex: 2,
-	to: {type: 'entity', name: 'fast-inserter', quality: 'epic'},
-};
+const mappings: PositionedUpgradeMapping[] = [
+	{
+		count: 4,
+		from: {type: 'entity', name: 'transport-belt'},
+		mappingId: 'mapping-belt',
+		slotIndex: 0,
+		to: {type: 'entity', name: 'fast-transport-belt'},
+	},
+	{
+		count: 0,
+		from: {type: 'item', name: 'speed-module'},
+		mappingId: 'mapping-module',
+		slotIndex: 5,
+		to: {type: 'item', name: 'speed-module-2'},
+	},
+	{
+		count: 0,
+		mappingId: 'mapping-target-only',
+		slotIndex: 2,
+		to: {type: 'entity', name: 'fast-inserter', quality: 'rare'},
+	},
+];
 
-const emptyCallback = vi.fn<() => void>();
-
-interface RenderGridOptions {
-	candidates?: readonly PositionedUpgradeCandidate[];
-	draftSlotIndex?: number;
-	draftSource?: ComponentProps<typeof UpgradeMappingGrid>['draftSource'];
-	excludedSources?: ReadonlySet<string>;
-	manualRules?: readonly UpgradeRule[];
-	onDraftRemove?: () => void;
-	onDraftSourceChoose?: (slotIndex: number) => void;
-	onDraftTargetChoose?: () => void;
-	onRemove?: ComponentProps<typeof UpgradeMappingGrid>['onRemove'];
-	onSourceChoose?: ComponentProps<typeof UpgradeMappingGrid>['onSourceChoose'];
-	onTargetChoose?: ComponentProps<typeof UpgradeMappingGrid>['onTargetChoose'];
-}
-
-function renderGrid({
-	candidates = [beltMapping, moduleMapping, inserterMapping],
-	draftSlotIndex,
-	draftSource,
-	excludedSources = new Set<string>(),
-	manualRules = [moduleMapping],
-	onDraftRemove = emptyCallback,
-	onDraftSourceChoose = vi.fn<(slotIndex: number) => void>(),
-	onDraftTargetChoose = emptyCallback,
-	onRemove = vi.fn<ComponentProps<typeof UpgradeMappingGrid>['onRemove']>(),
-	onSourceChoose = vi.fn<ComponentProps<typeof UpgradeMappingGrid>['onSourceChoose']>(),
-	onTargetChoose = vi.fn<ComponentProps<typeof UpgradeMappingGrid>['onTargetChoose']>(),
-}: RenderGridOptions = {}) {
-	return render(
-		<UpgradeMappingGrid
-			candidates={candidates}
-			draftSlotIndex={draftSlotIndex}
-			draftSource={draftSource}
-			excludedSources={excludedSources}
-			manualRules={manualRules}
-			onDraftRemove={onDraftRemove}
-			onDraftSourceChoose={onDraftSourceChoose}
-			onDraftTargetChoose={onDraftTargetChoose}
-			onRemove={onRemove}
-			onSourceChoose={onSourceChoose}
-			onTargetChoose={onTargetChoose}
-		/>,
-	);
+function renderGrid(overrides: Partial<ComponentProps<typeof UpgradeMappingGrid>> = {}) {
+	const properties: ComponentProps<typeof UpgradeMappingGrid> = {
+		mappings,
+		onChooseSource: vi.fn<ComponentProps<typeof UpgradeMappingGrid>['onChooseSource']>(),
+		onChooseTarget: vi.fn<ComponentProps<typeof UpgradeMappingGrid>['onChooseTarget']>(),
+		onClearEndpoint: vi.fn<ComponentProps<typeof UpgradeMappingGrid>['onClearEndpoint']>(),
+		onMove: vi.fn<ComponentProps<typeof UpgradeMappingGrid>['onMove']>(),
+		...overrides,
+	};
+	return {properties, ...render(<UpgradeMappingGrid {...properties} />)};
 }
 
 describe('UpgradeMappingGrid', () => {
-	test('renders the Factorio four-pair by four-row minimum grid and preserves slot positions', () => {
+	test('renders persistent complete, incomplete, and zero-match rows at stable slots', () => {
 		renderGrid();
 
 		const mappingRows = [...document.querySelectorAll<HTMLElement>('[data-mapping-key]')];
@@ -86,74 +52,61 @@ describe('UpgradeMappingGrid', () => {
 			headings: screen.getAllByText(/^(From|To)$/).map((heading) => heading.textContent),
 			mappings: mappingRows.map((row) => ({
 				key: row.getAttribute('data-mapping-key'),
+				label: row.getAttribute('aria-label'),
 				slot: [...(row.parentElement?.children ?? [])].indexOf(row),
-				title: row.title,
 			})),
 			slotCount: screen.getAllByRole('listitem').length,
+			zeroMatchSummary: within(mappingRows[2]).getByText(/0 matches/).textContent,
 		}).toStrictEqual({
 			headings: ['From', 'To', 'From', 'To', 'From', 'To', 'From', 'To'],
 			mappings: [
-				{
-					key: 'entity:transport-belt:normal:=',
-					slot: 0,
-					title: 'Transport belt → Fast transport belt',
-				},
-				{
-					key: 'entity:inserter:rare:=',
-					slot: 2,
-					title: 'Inserter → Fast inserter',
-				},
-				{
-					key: 'item:speed-module:normal:=',
-					slot: 5,
-					title: 'Speed module → Speed module 2',
-				},
+				{key: 'mapping-belt', label: 'Mapping from Transport belt to Fast transport belt', slot: 0},
+				{key: 'mapping-target-only', label: 'Incomplete mapping to Fast inserter', slot: 2},
+				{key: 'mapping-module', label: 'Mapping from Speed module to Speed module 2', slot: 5},
 			],
 			slotCount: 16,
+			zeroMatchSummary:
+				'0 matches. Drag this pair or use its move buttons to reorder it. Focus an endpoint and press Delete to clear that endpoint.',
 		});
 	});
 
-	test('reports source, target, removal, and empty-slot actions exactly', async () => {
+	test('routes row creation, endpoint clearing, drag reorder, and keyboard reorder by stable identity', async () => {
 		const user = userEvent.setup();
-		const onDraftRemove = vi.fn<() => void>();
-		const onDraftSourceChoose = vi.fn<(slotIndex: number) => void>();
-		const onDraftTargetChoose = vi.fn<() => void>();
-		const onRemove = vi.fn<ComponentProps<typeof UpgradeMappingGrid>['onRemove']>();
-		const onSourceChoose = vi.fn<ComponentProps<typeof UpgradeMappingGrid>['onSourceChoose']>();
-		const onTargetChoose = vi.fn<ComponentProps<typeof UpgradeMappingGrid>['onTargetChoose']>();
-		renderGrid({
-			draftSlotIndex: 4,
-			draftSource: {type: 'entity', name: 'assembling-machine-2', quality: 'rare', comparator: '≤'},
-			onDraftRemove,
-			onDraftSourceChoose,
-			onDraftTargetChoose,
-			onRemove,
-			onSourceChoose,
-			onTargetChoose,
-		});
+		const onChooseSource = vi.fn<ComponentProps<typeof UpgradeMappingGrid>['onChooseSource']>();
+		const onChooseTarget = vi.fn<ComponentProps<typeof UpgradeMappingGrid>['onChooseTarget']>();
+		const onClearEndpoint = vi.fn<ComponentProps<typeof UpgradeMappingGrid>['onClearEndpoint']>();
+		const onMove = vi.fn<ComponentProps<typeof UpgradeMappingGrid>['onMove']>();
+		renderGrid({onChooseSource, onChooseTarget, onClearEndpoint, onMove});
 
-		await user.click(screen.getByRole('button', {name: 'Choose source, currently Speed module'}));
-		await user.click(screen.getByRole('button', {name: 'Choose target for Transport belt'}));
-		const draftSource = screen.getByRole('button', {name: 'Choose source, currently Assembling machine 2'});
-		await user.click(draftSource);
-		await user.click(screen.getByRole('button', {name: 'Choose target for Assembling machine 2'}));
-		fireEvent.contextMenu(draftSource);
-		fireEvent.contextMenu(screen.getByRole('button', {name: 'Choose target for Speed module'}));
+		await user.click(screen.getAllByRole('button', {name: 'Choose source for new mapping'})[0]);
+		await user.click(screen.getAllByRole('button', {name: 'Choose target for new mapping'})[0]);
+		fireEvent.contextMenu(screen.getByRole('button', {name: 'Choose source, currently Speed module'}));
+		await user.click(screen.getByRole('button', {name: 'Move mapping in slot 3 earlier'}));
+
+		const dataTransfer = {
+			getData: vi.fn<(format: string) => string>(() => 'mapping-module'),
+			setData: vi.fn<(format: string, data: string) => void>(),
+			effectAllowed: 'none',
+		};
+		const moduleRow = screen.getByRole('listitem', {name: 'Mapping from Speed module to Speed module 2'});
+		fireEvent.dragStart(moduleRow, {dataTransfer});
+		fireEvent.drop(screen.getByRole('group', {name: 'Empty mapping slot 5'}), {dataTransfer});
 
 		expect({
-			draftRemove: onDraftRemove.mock.calls,
-			draftSource: onDraftSourceChoose.mock.calls,
-			draftTarget: onDraftTargetChoose.mock.calls,
-			remove: onRemove.mock.calls,
-			source: onSourceChoose.mock.calls,
-			target: onTargetChoose.mock.calls,
+			chooseSource: onChooseSource.mock.calls,
+			chooseTarget: onChooseTarget.mock.calls,
+			clearEndpoint: onClearEndpoint.mock.calls,
+			dragPayload: dataTransfer.setData.mock.calls,
+			move: onMove.mock.calls,
 		}).toStrictEqual({
-			draftRemove: [[]],
-			draftSource: [[4]],
-			draftTarget: [[]],
-			remove: [[moduleMapping, true]],
-			source: [[moduleMapping]],
-			target: [[beltMapping]],
+			chooseSource: [[undefined, 1]],
+			chooseTarget: [[undefined, 1]],
+			clearEndpoint: [['mapping-module', 'from']],
+			dragPayload: [['text/plain', 'mapping-module']],
+			move: [
+				['mapping-target-only', 1],
+				['mapping-module', 4],
+			],
 		});
 	});
 });

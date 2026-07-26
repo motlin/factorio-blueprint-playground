@@ -2135,10 +2135,55 @@ body {
 }
 
 .upgrade-mapping-grid__pair {
+	position: relative;
 	display: grid;
 	grid-template-columns: repeat(2, 40px);
 	gap: 0;
 	list-style: none;
+}
+
+.upgrade-mapping-grid__pair[draggable='true'] {
+	cursor: grab;
+}
+
+.upgrade-mapping-grid__pair[draggable='true']:active {
+	cursor: grabbing;
+}
+
+.upgrade-mapping-grid__pair--incomplete {
+	box-shadow: inset 0 0 0 1px #d89424;
+}
+
+.upgrade-mapping-grid__reorder {
+	position: absolute;
+	z-index: 3;
+	top: 1px;
+	right: 1px;
+	display: flex;
+	gap: 1px;
+	opacity: 0;
+	transition: opacity 100ms linear;
+}
+
+.upgrade-mapping-grid__pair:hover .upgrade-mapping-grid__reorder,
+.upgrade-mapping-grid__pair:focus-within .upgrade-mapping-grid__reorder {
+	opacity: 1;
+}
+
+.upgrade-mapping-grid__reorder button {
+	width: 16px;
+	height: 16px;
+	padding: 0;
+	border: 1px solid #111;
+	background: #575657;
+	box-shadow: inset 0 1px #858385;
+	color: #fff;
+	font-size: 11px;
+	line-height: 12px;
+}
+
+.upgrade-mapping-grid__reorder button:disabled {
+	opacity: 0.35;
 }
 
 .upgrade-mapping-grid__empty-slot {

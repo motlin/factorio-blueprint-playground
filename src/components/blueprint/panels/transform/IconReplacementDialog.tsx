@@ -42,7 +42,7 @@ function metadataIconCandidates(rootBlueprint: BlueprintString): MetadataIconCan
 function ReplacementEndpoint({label, onClick, signal}: ReplacementEndpointProps) {
 	return (
 		<span className="icon-replacement-editor__endpoint">
-			<SignalSlot label={label} onClick={onClick} signal={signal} />
+			<SignalSlot label={label} onChoose={onClick} signal={signal} />
 			{signal === undefined ? null : (
 				<span className="icon-replacement-editor__name" aria-hidden="true">
 					{signalName(signal)}

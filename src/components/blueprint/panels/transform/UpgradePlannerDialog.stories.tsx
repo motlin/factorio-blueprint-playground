@@ -23,23 +23,21 @@ const meta = {
 		breadcrumb: "Alice's blueprint",
 		canChooseRootScope: false,
 		mappings: {
-			candidates: [
+			mappings: [
 				{
 					count: 1,
 					from: {type: 'entity', name: 'transport-belt'},
-					preserveQuality: true,
+					mappingId: 'mapping-belt',
 					slotIndex: 0,
 					to: {type: 'entity', name: 'fast-transport-belt'},
 				},
 			],
 			error: undefined,
-			excludedSources: new Set(),
-			manualRules: [],
-			onAddManualRule: fn(),
-			onChangeManualRule: fn(),
+			onClearEndpoint: fn(),
+			onMove: fn(),
 			onPlannerLoad: fn(),
 			onPlannerInputChange: fn(),
-			onRemoveRule: fn(),
+			onSourceChange: fn(),
 			onTargetChange: fn(),
 			plannerInput: '',
 			rootBlueprint,

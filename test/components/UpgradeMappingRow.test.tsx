@@ -3,75 +3,119 @@ import userEvent from '@testing-library/user-event';
 import {describe, expect, test, vi} from 'vite-plus/test';
 
 import {UpgradeMappingRow} from '../../src/components/blueprint/panels/transform/UpgradeMappingRow';
-import type {UpgradeCandidate} from '../../src/transform/upgradePlanner';
-
-const beltMapping: UpgradeCandidate = {
-	count: 4,
-	from: {type: 'entity', name: 'transport-belt', quality: 'rare', comparator: '≤'},
-	preserveQuality: false,
-	to: {type: 'entity', name: 'fast-transport-belt', quality: 'normal'},
-};
 
 describe('UpgradeMappingRow', () => {
-	test('uses compact slots and supports choosing or clearing a mapping', async () => {
+	test('edits and clears endpoints independently while exposing keyboard reorder operations', async () => {
 		const user = userEvent.setup();
-		const onRemove = vi.fn<(candidate: UpgradeCandidate, manual: boolean) => void>();
-		const onSourceChoose = vi.fn<(candidate: UpgradeCandidate) => void>();
-		const onTargetChoose = vi.fn<(candidate: UpgradeCandidate) => void>();
+		const onChooseSource = vi.fn<() => void>();
+		const onChooseTarget = vi.fn<() => void>();
+		const onClearSource = vi.fn<() => void>();
+		const onClearTarget = vi.fn<() => void>();
+		const onMoveEarlier = vi.fn<() => void>();
+		const onMoveLater = vi.fn<() => void>();
 		render(
 			<ol>
 				<UpgradeMappingRow
-					candidate={beltMapping}
-					manual
-					onRemove={onRemove}
-					onSourceChoose={onSourceChoose}
-					onTargetChoose={onTargetChoose}
-					sourceKey="entity:transport-belt:rare:≤"
+					count={0}
+					from={{type: 'entity', name: 'transport-belt', quality: 'rare', comparator: '≤'}}
+					mappingId="mapping-belt"
+					slotIndex={2}
+					to={{type: 'entity', name: 'fast-transport-belt', quality: 'normal'}}
+					onChooseSource={onChooseSource}
+					onChooseTarget={onChooseTarget}
+					onClearSource={onClearSource}
+					onClearTarget={onClearTarget}
+					onDragStart={vi.fn<(event: React.DragEvent<HTMLLIElement>) => void>()}
+					onDrop={vi.fn<(event: React.DragEvent<HTMLLIElement>) => void>()}
+					onMoveEarlier={onMoveEarlier}
+					onMoveLater={onMoveLater}
 				/>
 			</ol>,
 		);
 
 		const row = screen.getByRole('listitem', {name: 'Mapping from Transport belt to Fast transport belt'});
-		const source = screen.getByRole('button', {name: 'Choose source, currently Transport belt'});
-		const target = screen.getByRole('button', {name: 'Choose target for Transport belt'});
+		const source = within(row).getByRole('button', {name: 'Choose source, currently Transport belt'});
+		const target = within(row).getByRole('button', {name: 'Choose target for Transport belt'});
 		await user.click(source);
 		await user.click(target);
-		fireEvent.contextMenu(target);
+		fireEvent.contextMenu(source);
 		target.focus();
 		await user.keyboard('{Delete}');
+		await user.click(within(row).getByRole('button', {name: 'Move mapping in slot 3 earlier'}));
+		await user.click(within(row).getByRole('button', {name: 'Move mapping in slot 3 later'}));
 
 		expect({
 			attributes: {
+				draggable: row.getAttribute('draggable'),
 				key: row.getAttribute('data-mapping-key'),
-				rowTitle: row.title,
-				sourceClass: source.className,
 				sourceTitle: source.title,
 				targetTitle: target.title,
 			},
 			comparator: source.querySelector('.transform-signal-slot__comparator')?.textContent,
-			qualityControlAdjacentToEndpoints: within(row).queryByRole('combobox', {name: /quality/i}),
 			operations: {
-				remove: onRemove.mock.calls,
-				source: onSourceChoose.mock.calls,
-				target: onTargetChoose.mock.calls,
+				chooseSource: onChooseSource.mock.calls,
+				chooseTarget: onChooseTarget.mock.calls,
+				clearSource: onClearSource.mock.calls,
+				clearTarget: onClearTarget.mock.calls,
+				moveEarlier: onMoveEarlier.mock.calls,
+				moveLater: onMoveLater.mock.calls,
 			},
 		}).toStrictEqual({
 			attributes: {
-				key: 'entity:transport-belt:rare:≤',
-				rowTitle: 'Transport belt → Fast transport belt',
-				sourceClass: 'factorio-inventory-slot transform-signal-slot transform-signal-slot--condition',
+				draggable: 'true',
+				key: 'mapping-belt',
 				sourceTitle: 'Transport belt\nentity:transport-belt\nQuality: ≤ rare',
 				targetTitle: 'Fast transport belt\nentity:fast-transport-belt\nQuality: = normal',
 			},
 			comparator: '≤',
-			qualityControlAdjacentToEndpoints: null,
 			operations: {
-				remove: [
-					[beltMapping, true],
-					[beltMapping, true],
-				],
-				source: [[beltMapping]],
-				target: [[beltMapping]],
+				chooseSource: [[]],
+				chooseTarget: [[]],
+				clearSource: [[]],
+				clearTarget: [[]],
+				moveEarlier: [[]],
+				moveLater: [[]],
+			},
+		});
+	});
+
+	test('keeps a target-only mapper clearable and independently source-editable', async () => {
+		const user = userEvent.setup();
+		const onChooseSource = vi.fn<() => void>();
+		const onClearTarget = vi.fn<() => void>();
+		render(
+			<ol>
+				<UpgradeMappingRow
+					count={0}
+					mappingId="mapping-target-only"
+					slotIndex={0}
+					to={{type: 'entity', name: 'fast-inserter', quality: 'rare'}}
+					onChooseSource={onChooseSource}
+					onChooseTarget={vi.fn<() => void>()}
+					onClearSource={vi.fn<() => void>()}
+					onClearTarget={onClearTarget}
+					onDragStart={vi.fn<(event: React.DragEvent<HTMLLIElement>) => void>()}
+					onDrop={vi.fn<(event: React.DragEvent<HTMLLIElement>) => void>()}
+					onMoveLater={vi.fn<() => void>()}
+				/>
+			</ol>,
+		);
+
+		const row = screen.getByRole('listitem', {name: 'Incomplete mapping to Fast inserter'});
+		await user.click(within(row).getByRole('button', {name: 'Choose source for mapping'}));
+		fireEvent.contextMenu(within(row).getByRole('button', {name: 'Choose target, currently Fast inserter'}));
+
+		expect({
+			className: row.className,
+			operations: {
+				chooseSource: onChooseSource.mock.calls,
+				clearTarget: onClearTarget.mock.calls,
+			},
+		}).toStrictEqual({
+			className: 'upgrade-mapping-grid__pair upgrade-mapping-grid__pair--incomplete',
+			operations: {
+				chooseSource: [[]],
+				clearTarget: [[]],
 			},
 		});
 	});

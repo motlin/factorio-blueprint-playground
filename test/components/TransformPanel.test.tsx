@@ -54,6 +54,8 @@ const blueprint: BlueprintString = {
 	},
 };
 let nextLibraryRecordNumber = 1;
+const mappingInstructions =
+	'Drag this pair or use its move buttons to reorder it. Focus an endpoint and press Delete to clear that endpoint.';
 
 function openUpgradePlanner() {
 	fireEvent.click(screen.getByRole('button', {name: 'Open Upgrade Planner'}));
@@ -381,7 +383,7 @@ describe('TransformPanel', () => {
 		}).toStrictEqual({
 			analysisCounts: {
 				metadataIcons: 1,
-				upgradeRules: 6,
+				upgradeRules: 8,
 			},
 			mappings: ['Mapping from Transport belt to Fast transport belt', 'Mapping from Fast inserter to Inserter'],
 			renderCommits: {
@@ -1519,7 +1521,7 @@ describe('TransformPanel', () => {
 			source: within(mappingRow).getByRole('button', {name: 'Choose source, currently Transport belt'}).title,
 			target: within(mappingRow).getByRole('button', {name: 'Choose target for Transport belt'}).title,
 		}).toStrictEqual({
-			matchSummary: '1 match. Right-click or press Delete to clear.',
+			matchSummary: `1 match. ${mappingInstructions}`,
 			source: 'Transport belt\nentity:transport-belt\nQuality: > rare',
 			target: 'Fast transport belt\nentity:fast-transport-belt\nQuality: = epic',
 		});
@@ -1573,7 +1575,7 @@ describe('TransformPanel', () => {
 
 		const emptySource = firstEmptyMappingSourceButton();
 		const emptyTarget = within(emptySource.parentElement!).getByRole('button', {
-			name: 'Choose a source before choosing a target',
+			name: 'Choose target for new mapping',
 		});
 		expect({
 			row: emptySource.parentElement?.textContent,
@@ -1583,7 +1585,7 @@ describe('TransformPanel', () => {
 		}).toStrictEqual({
 			row: '',
 			sourceIcon: null,
-			targetDisabled: 'true',
+			targetDisabled: 'false',
 			targetIcon: null,
 		});
 
@@ -1593,7 +1595,7 @@ describe('TransformPanel', () => {
 
 		await user.click(emptySource);
 		await chooseSignal(user, 'Transport belt');
-		const incompleteRow = screen.getByRole('group', {
+		const incompleteRow = screen.getByRole('listitem', {
 			name: 'Incomplete mapping from Transport belt',
 		});
 		expect({
@@ -1625,13 +1627,13 @@ describe('TransformPanel', () => {
 		expect({
 			committedRows: renderedMappingRows().length,
 			incompleteRow: screen
-				.getByRole('group', {
+				.getByRole('listitem', {
 					name: 'Incomplete mapping from Transport belt',
 				})
 				.getAttribute('aria-label'),
 			targetDialog: screen.queryByRole('dialog', {name: 'Select upgrade'}),
 		}).toStrictEqual({
-			committedRows: 0,
+			committedRows: 1,
 			incompleteRow: 'Incomplete mapping from Transport belt',
 			targetDialog: null,
 		});
@@ -1643,12 +1645,12 @@ describe('TransformPanel', () => {
 			emptyRow: firstEmptyMappingSourceButton().parentElement?.getAttribute('aria-label'),
 			remove: screen.queryByRole('button', {name: /Remove incomplete mapping/}),
 		}).toStrictEqual({
-			emptyRow: 'Add mapping',
+			emptyRow: 'Empty mapping slot 1',
 			remove: null,
 		});
 	});
 
-	test('filters occupied sources and appends a manual rule without losing zero-match mappings', async () => {
+	test('offers the source catalog independently of blueprint matches and preserves zero-match mappings', async () => {
 		const user = userEvent.setup();
 		const mixedBlueprint: BlueprintString = {
 			blueprint: {
@@ -1695,7 +1697,40 @@ describe('TransformPanel', () => {
 			within(sourcePicker)
 				.getAllByRole('button', {name: /^Choose /})
 				.map((button) => button.getAttribute('aria-label')),
-		).toStrictEqual(['Choose Assembling machine 1']);
+		).toStrictEqual([
+			'Choose Assembling machine 1',
+			'Choose Assembling machine 2',
+			'Choose Assembling machine 3',
+			'Choose Bulk inserter',
+			'Choose Express splitter',
+			'Choose Express transport belt',
+			'Choose Express underground belt',
+			'Choose Fast inserter',
+			'Choose Fast splitter',
+			'Choose Fast transport belt',
+			'Choose Fast underground belt',
+			'Choose Inserter',
+			'Choose Splitter',
+			'Choose Steel furnace',
+			'Choose Stone furnace',
+			'Choose Transport belt',
+			'Choose Turbo splitter',
+			'Choose Turbo transport belt',
+			'Choose Turbo underground belt',
+			'Choose Underground belt',
+			'Choose Efficiency module',
+			'Choose Efficiency module 2',
+			'Choose Efficiency module 3',
+			'Choose Productivity module',
+			'Choose Productivity module 2',
+			'Choose Productivity module 3',
+			'Choose Quality module',
+			'Choose Quality module 2',
+			'Choose Quality module 3',
+			'Choose Speed module',
+			'Choose Speed module 2',
+			'Choose Speed module 3',
+		]);
 
 		await chooseSignal(user, 'Assembling machine 1');
 		await user.click(screen.getByRole('button', {name: 'Choose target for Assembling machine 1'}));
@@ -1716,17 +1751,17 @@ describe('TransformPanel', () => {
 		).toStrictEqual([
 			{
 				label: 'Mapping from Assembling machine 1 to Assembling machine 2',
-				matchSummary: '1 match. Right-click or press Delete to clear.',
+				matchSummary: `1 match. ${mappingInstructions}`,
 				slot: 0,
 			},
 			{
 				label: 'Mapping from Transport belt to Fast transport belt',
-				matchSummary: '1 match. Right-click or press Delete to clear.',
+				matchSummary: `1 match. ${mappingInstructions}`,
 				slot: 99,
 			},
 			{
 				label: 'Mapping from Speed module to Speed module 2',
-				matchSummary: '0 matches. Right-click or press Delete to clear.',
+				matchSummary: `0 matches. ${mappingInstructions}`,
 				slot: 199,
 			},
 		]);
@@ -1765,9 +1800,22 @@ describe('TransformPanel', () => {
 		]);
 
 		await chooseSignal(user, 'Fast transport belt');
+		const mappingKeyBeforeSourceEdit = screen
+			.getByRole('listitem', {name: 'Mapping from Transport belt to Fast transport belt'})
+			.getAttribute('data-mapping-key');
 		await user.click(screen.getByRole('button', {name: 'Choose source, currently Transport belt'}));
 		await chooseSignal(user, 'Assembling machine 1');
-		await user.click(screen.getByRole('button', {name: 'Choose target for Assembling machine 1'}));
+		const clearedTarget = screen.getByRole('button', {name: 'Choose target for Assembling machine 1'});
+		expect({
+			icon: clearedTarget.querySelector('img'),
+			mappingKey: clearedTarget.closest('[data-mapping-key]')?.getAttribute('data-mapping-key'),
+			title: clearedTarget.title,
+		}).toStrictEqual({
+			icon: null,
+			mappingKey: mappingKeyBeforeSourceEdit,
+			title: 'Choose target for Assembling machine 1',
+		});
+		await user.click(clearedTarget);
 
 		const editedTargetPicker = screen.getByRole('dialog', {name: 'Select upgrade'});
 		expect(
@@ -1786,7 +1834,7 @@ describe('TransformPanel', () => {
 			source: within(row).getByRole('button', {name: /Choose source/}).title,
 			target: within(row).getByRole('button', {name: /Choose target/}).title,
 		}).toStrictEqual({
-			matchSummary: '1 match. Right-click or press Delete to clear.',
+			matchSummary: `1 match. ${mappingInstructions}`,
 			source: 'Assembling machine 1\nentity:assembling-machine-1',
 			target: 'Assembling machine 2\nentity:assembling-machine-2\nQuality: = normal',
 		});
@@ -2432,13 +2480,13 @@ describe('TransformPanel', () => {
 			mappings: [
 				{
 					from: 'Transport belt\nentity:transport-belt',
-					matchSummary: '1 match. Right-click or press Delete to clear.',
+					matchSummary: `1 match. ${mappingInstructions}`,
 					slot: 99,
 					to: 'Fast transport belt\nentity:fast-transport-belt',
 				},
 				{
 					from: 'Speed module\nitem:speed-module',
-					matchSummary: '0 matches. Right-click or press Delete to clear.',
+					matchSummary: `0 matches. ${mappingInstructions}`,
 					slot: 199,
 					to: 'Speed module 2\nitem:speed-module-2',
 				},
@@ -2467,13 +2515,13 @@ describe('TransformPanel', () => {
 		).toStrictEqual([
 			{
 				from: 'Transport belt\nentity:transport-belt',
-				matchSummary: '1 match. Right-click or press Delete to clear.',
+				matchSummary: `1 match. ${mappingInstructions}`,
 				slot: 99,
 				to: 'Express transport belt\nentity:express-transport-belt',
 			},
 			{
 				from: 'Inserter\nentity:inserter',
-				matchSummary: '0 matches. Right-click or press Delete to clear.',
+				matchSummary: `0 matches. ${mappingInstructions}`,
 				slot: 199,
 				to: 'Fast inserter\nentity:fast-inserter',
 			},
@@ -2549,7 +2597,7 @@ describe('TransformPanel', () => {
 			emptyMessage: null,
 			unmatchedSource: 'Speed module\nitem:speed-module',
 			unmatchedTarget: 'Speed module 2\nitem:speed-module-2',
-			unmatchedMapping: '0 matches. Right-click or press Delete to clear.',
+			unmatchedMapping: `0 matches. ${mappingInstructions}`,
 		});
 
 		await applyPlanner(user);
