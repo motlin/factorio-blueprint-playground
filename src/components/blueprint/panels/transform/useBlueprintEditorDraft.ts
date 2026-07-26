@@ -20,6 +20,39 @@ interface UseBlueprintEditorDraftOptions {
 	blueprint?: BlueprintString;
 	rootBlueprint?: BlueprintString;
 	selectedPath: string;
+	sourceMode: BlueprintEditorSourceMode;
+}
+
+export enum BlueprintEditorSourceMode {
+	CapturedDraft = 'captured-draft',
+	ExistingRecord = 'existing-record',
+}
+
+export interface BlueprintEditorCommitAction {
+	caption: string;
+	scopeDescription: string;
+}
+
+function blueprintEditorCommitAction(
+	selectedPath: string,
+	sourceMode: BlueprintEditorSourceMode,
+): BlueprintEditorCommitAction {
+	if (selectedPath !== '') {
+		return {
+			caption: 'Save to Book',
+			scopeDescription: 'Commits this selection into its containing root book.',
+		};
+	}
+	if (sourceMode === BlueprintEditorSourceMode.CapturedDraft) {
+		return {
+			caption: 'Create Blueprint',
+			scopeDescription: 'Creates this newly captured draft as the committed root blueprint.',
+		};
+	}
+	return {
+		caption: 'Save Blueprint',
+		scopeDescription: 'Commits changes to the existing blueprint record.',
+	};
 }
 
 function sourceMetadata(blueprint: BlueprintString | undefined) {
@@ -35,16 +68,24 @@ function sourceMetadata(blueprint: BlueprintString | undefined) {
  * - Opening creates a session-local copy of title, description, icons, snapping,
  *   parameters, components, and conditional filters.
  * - Child confirmations change that copy. They do not mutate the loaded source.
- * - A clean close ends the session. A dirty close enters confirmation; keeping
- *   returns to the same draft, while discarding resets it before closing.
+ * - A clean close ends the session. X and Escape share the same close request; a
+ *   dirty request enters confirmation, keeping returns to the same draft, and
+ *   discarding resets it before closing.
  * - The draft selected entry is reinserted at `selectedPath`, preserving its
- *   containing root book. Only `BlueprintEditorActions` crosses the commit
- *   boundary.
+ *   containing root book. The returned commit function is the only path across
+ *   the editor boundary.
  *
- * This maps the temporary setup parameters and nested library-record identity in
- * BlueprintSetupGui and BlueprintToBeSetup to browser state.
+ * `sourceMode` is explicit session/record identity. A captured draft is not
+ * inferred from its editable label: empty labels are valid on existing records.
+ * This maps BlueprintToBeSetup::isNewBlueprintItem and BlueprintViewMode to
+ * browser state.
  */
-export function useBlueprintEditorDraft({blueprint, rootBlueprint, selectedPath}: UseBlueprintEditorDraftOptions) {
+export function useBlueprintEditorDraft({
+	blueprint,
+	rootBlueprint,
+	selectedPath,
+	sourceMode,
+}: UseBlueprintEditorDraftOptions) {
 	const metadata = useMemo(() => sourceMetadata(blueprint), [blueprint]);
 	const sourceIcons = useMemo(
 		() => [...metadata.icons].sort((left, right) => left.index - right.index).map((icon) => icon.signal),
@@ -130,6 +171,10 @@ export function useBlueprintEditorDraft({blueprint, rootBlueprint, selectedPath}
 			stripTrainsSelected,
 		],
 	);
+	const editorCommitAction = useMemo(
+		() => blueprintEditorCommitAction(selectedPath, sourceMode),
+		[selectedPath, sourceMode],
+	);
 
 	const editorDraft = useMemo(() => {
 		if (blueprint === undefined || rootBlueprint === undefined) {
@@ -206,12 +251,25 @@ export function useBlueprintEditorDraft({blueprint, rootBlueprint, selectedPath}
 		setCloseConfirmationOpen(false);
 		setBlueprintEditorOpen(false);
 	}, []);
+	const commitBlueprintEditorDraft = useCallback(() => {
+		if (editorDraft.rootBlueprint === undefined) {
+			throw new Error('Cannot commit an invalid blueprint draft.');
+		}
+		setCloseConfirmationOpen(false);
+		setBlueprintEditorOpen(false);
+		return editorDraft.rootBlueprint;
+	}, [editorDraft.rootBlueprint]);
 
 	return {
 		blueprintEditorOpen,
 		closeConfirmationOpen,
 		closeBlueprintEditor,
+		commitBlueprintEditorDraft,
 		discardBlueprintEditorDraft,
+		editorCommitAction,
+		editorCommitDisabled:
+			editorDraft.rootBlueprint === undefined ||
+			(sourceMode === BlueprintEditorSourceMode.ExistingRecord && !editorDirty),
 		editorDescription,
 		editorDirty,
 		editorDraft,

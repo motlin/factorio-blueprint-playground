@@ -1,124 +1,115 @@
-import {useNavigate} from '@tanstack/react-router';
-import {useMemo} from 'react';
+import {useId} from 'react';
+import {createPortal} from 'react-dom';
 
-import {serializeBlueprint} from '../../../../parsing/blueprintParser';
-import type {BlueprintString} from '../../../../parsing/types';
-import {updateNestedBlueprint} from '../../../../transform/applyAtPath';
 import {ButtonGreen} from '../../../ui/ButtonGreen';
 import {FactorioButton, FactorioButtonKind} from '../../../ui/FactorioUi';
+import type {BlueprintEditorCommitAction} from './useBlueprintEditorDraft';
+import {useDialogFocus} from './useDialogFocus';
 
 interface BlueprintEditorActionsProps {
 	closeConfirmationOpen: boolean;
-	dirty: boolean;
-	draftBlueprint?: BlueprintString;
+	commitAction: BlueprintEditorCommitAction;
+	commitDisabled: boolean;
 	onClose: () => void;
+	onCommit: () => void;
 	onDiscard: () => void;
 	onKeepEditing: () => void;
-	onSaved: (savedRoot: BlueprintString) => void;
-	rootBlueprint: BlueprintString;
-	selectedPath: string;
 }
 
 /**
- * Commit contract from Factorio 2.1.12's setup and record-preview editors:
+ * Factorio 2.1.12 `BlueprintSetupGui` commit contract:
  *
- * - The footer exposes one green commit action, not an intermediate Apply step.
- * - An explicit `NewBlueprint` versus `ExistingBlueprint` view mode owns
- *   Create-versus-Commit wording. Transform sessions edit loaded data, so their
- *   existing-root action is `Save blueprint`; a nested library entry is
- *   `Save to book`.
- * - Dirty close offers keep, discard, or that same commit action. Saving a nested
- *   selection writes it back into the root book before navigation/export state is
- *   replaced.
+ * - `getConfirmCaption` supplies one green context-aware action.
+ * - Both the footer action and dirty-close Commit invoke the same callback, so
+ *   draft validation, root reinsertion, and serialization cannot diverge.
+ * - Export and navigation are consumers of the committed root. They do not live
+ *   in this editor action component.
  *
- * Evidence: BlueprintSetupGui, BlueprintRecordPreviewEdit, and
- * BlueprintToBeSetup.
+ * Evidence: `confirm`, `confirmClose`, and `getConfirmCaption`.
  */
 export function BlueprintEditorActions({
 	closeConfirmationOpen,
-	dirty,
-	draftBlueprint,
+	commitAction,
+	commitDisabled,
 	onClose,
+	onCommit,
 	onDiscard,
 	onKeepEditing,
-	onSaved,
-	rootBlueprint,
-	selectedPath,
 }: BlueprintEditorActionsProps) {
-	const navigate = useNavigate();
-	const savedRoot = useMemo(
-		() =>
-			draftBlueprint === undefined
-				? null
-				: updateNestedBlueprint(rootBlueprint, selectedPath, () => draftBlueprint),
-		[draftBlueprint, rootBlueprint, selectedPath],
-	);
-	const saveDisabled = !dirty || savedRoot === null;
-	const saveLabel = selectedPath === '' ? 'Save blueprint' : 'Save to book';
-	const scopeHelp =
-		selectedPath === ''
-			? 'Saves changes to the loaded blueprint. Export and Open in Playground use the saved blueprint.'
-			: 'Saves this entry into the loaded book. Export and Open in Playground use the entire saved book.';
-	const saveBlueprint = () => {
-		if (savedRoot === null) {
-			throw new Error('Cannot save an invalid blueprint draft.');
-		}
-		void navigate({
-			to: '/',
-			search: {
-				pasted: serializeBlueprint(savedRoot),
-				selection: selectedPath,
-			},
-		});
-		onSaved(savedRoot);
-	};
+	const confirmationHeadingId = useId();
+	const confirmationReference = useDialogFocus<HTMLElement>({
+		initialFocusSelector: '[data-dialog-initial-focus="true"]',
+		onClose: onKeepEditing,
+	});
 
 	return (
 		<>
 			<footer className="transform-workbench__footer transform-workbench__footer--actions blueprint-editor-actions">
-				<FactorioButton className="transform-button" onClick={onClose}>
-					Cancel
+				<FactorioButton
+					className="transform-button"
+					onClick={() => {
+						onClose();
+					}}
+				>
+					Close
 				</FactorioButton>
-				<p className="blueprint-editor-actions__scope">{scopeHelp}</p>
-				<ButtonGreen disabled={saveDisabled} onClick={saveBlueprint}>
-					{saveLabel}
+				<p className="blueprint-editor-actions__scope">{commitAction.scopeDescription}</p>
+				<ButtonGreen
+					disabled={commitDisabled}
+					onClick={() => {
+						onCommit();
+					}}
+				>
+					{commitAction.caption}
 				</ButtonGreen>
 			</footer>
-			{closeConfirmationOpen ? (
-				<div className="transform-dialog-backdrop transform-dialog-backdrop--confirmation">
-					<section
-						className="factorio-frame factorio-frame--shallow transform-dialog transform-dialog--confirmation"
-						role="alertdialog"
-						aria-modal="true"
-						aria-labelledby="discard-blueprint-heading"
-					>
-						<header className="factorio-title-bar transform-dialog__header">
-							<h3 id="discard-blueprint-heading">Discard unsaved changes?</h3>
-						</header>
-						<p>Your changes have not been written back to the loaded blueprint or book.</p>
-						<div className="transform-dialog__actions">
-							<FactorioButton
-								className="transform-button"
-								onClick={() => {
-									onKeepEditing();
-								}}
+			{closeConfirmationOpen
+				? createPortal(
+						<div className="transform-dialog-backdrop transform-dialog-backdrop--confirmation">
+							<section
+								ref={confirmationReference}
+								className="factorio-frame factorio-frame--shallow transform-dialog transform-dialog--confirmation"
+								role="alertdialog"
+								aria-modal="true"
+								aria-labelledby={confirmationHeadingId}
 							>
-								Keep editing
-							</FactorioButton>
-							<FactorioButton
-								kind={FactorioButtonKind.Delete}
-								className="transform-button"
-								onClick={() => {
-									onDiscard();
-								}}
-							>
-								Discard changes
-							</FactorioButton>
-							<ButtonGreen onClick={saveBlueprint}>{saveLabel}</ButtonGreen>
-						</div>
-					</section>
-				</div>
-			) : null}
+								<header className="factorio-title-bar transform-dialog__header">
+									<h3 id={confirmationHeadingId}>There are uncommitted changes</h3>
+								</header>
+								<p>Commit the draft, discard it, or return to editing.</p>
+								<div className="transform-dialog__actions">
+									<FactorioButton
+										data-dialog-initial-focus="true"
+										className="transform-button"
+										onClick={() => {
+											onKeepEditing();
+										}}
+									>
+										Keep Editing
+									</FactorioButton>
+									<FactorioButton
+										kind={FactorioButtonKind.Delete}
+										className="transform-button"
+										onClick={() => {
+											onDiscard();
+										}}
+									>
+										Discard
+									</FactorioButton>
+									<ButtonGreen
+										disabled={commitDisabled}
+										onClick={() => {
+											onCommit();
+										}}
+									>
+										Commit
+									</ButtonGreen>
+								</div>
+							</section>
+						</div>,
+						document.body,
+					)
+				: null}
 		</>
 	);
 }

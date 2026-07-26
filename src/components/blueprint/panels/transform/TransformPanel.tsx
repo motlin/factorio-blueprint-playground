@@ -23,17 +23,25 @@ import {IconReplacementDialog} from './IconReplacementDialog';
 import {SignalPickerDialog} from './SignalPickerDialog';
 import {UpgradePlannerDialog} from './UpgradePlannerDialog';
 import {pickerSignals, signalIdentity, signalTitle} from './upgradePlannerSignals';
-import {useBlueprintEditorDraft} from './useBlueprintEditorDraft';
+import {BlueprintEditorSourceMode, useBlueprintEditorDraft} from './useBlueprintEditorDraft';
 import type {UpgradePlannerChoice} from './UpgradePlannerSelectorDialog';
 import {useUpgradePlannerDraft} from './useUpgradePlannerDraft';
 
 interface TransformPanelProps {
 	blueprint?: BlueprintString;
+	blueprintEditorSourceMode?: BlueprintEditorSourceMode;
+	onBlueprintCommit?: (committedRoot: BlueprintString) => void;
 	rootBlueprint?: BlueprintString;
 	selectedPath?: string;
 }
 
-export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPath = ''}: TransformPanelProps) {
+export function TransformPanel({
+	blueprint,
+	blueprintEditorSourceMode = BlueprintEditorSourceMode.ExistingRecord,
+	onBlueprintCommit,
+	rootBlueprint = blueprint,
+	selectedPath = '',
+}: TransformPanelProps) {
 	const navigate = useNavigate();
 	const upgradeDraft = useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath});
 	const [plannerSavePromptOpen, setPlannerSavePromptOpen] = useState(false);
@@ -43,7 +51,10 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 		blueprintEditorOpen,
 		closeConfirmationOpen: blueprintCloseConfirmationOpen,
 		closeBlueprintEditor,
+		commitBlueprintEditorDraft,
 		discardBlueprintEditorDraft,
+		editorCommitAction,
+		editorCommitDisabled,
 		editorDescription,
 		editorDirty,
 		editorDraft,
@@ -79,7 +90,12 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 		stripModulesSelected,
 		stripTilesSelected,
 		stripTrainsSelected,
-	} = useBlueprintEditorDraft({blueprint, rootBlueprint, selectedPath});
+	} = useBlueprintEditorDraft({
+		blueprint,
+		rootBlueprint,
+		selectedPath,
+		sourceMode: blueprintEditorSourceMode,
+	});
 
 	const type = blueprint === undefined ? undefined : new BlueprintWrapper(blueprint).getType();
 	const editorIconOptions = useMemo(() => {
@@ -125,6 +141,16 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 				selection: selectedPath,
 			},
 		});
+	};
+	const commitBlueprintEditor = () => {
+		const committedRoot = commitBlueprintEditorDraft();
+		upgradeDraft.closeIconReplacement();
+		upgradeDraft.closePlanner();
+		if (onBlueprintCommit === undefined) {
+			commitBlueprint(committedRoot);
+			return;
+		}
+		onBlueprintCommit(committedRoot);
 	};
 	const applyPlannerChoice = (
 		choice: UpgradePlannerChoice,
@@ -276,9 +302,9 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 					book={type === 'blueprint-book'}
 					bookOperationSelected={hasSelectedBookOperation}
 					breadcrumb={editorBreadcrumb}
+					commitAction={editorCommitAction}
+					commitDisabled={editorCommitDisabled}
 					description={editorDescription}
-					dirty={editorDirty}
-					draftBlueprint={editorDraft.selectedBlueprint}
 					closeConfirmationOpen={blueprintCloseConfirmationOpen}
 					filters={editorFilters}
 					flattenBookSelected={flattenBookSelected}
@@ -302,6 +328,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 						setEditorPlacedPlanner(undefined);
 						setEditorPlannerDropError(undefined);
 					}}
+					onCommit={commitBlueprintEditor}
 					onComponentRemovedChange={(component: BlueprintComponentIdentity, removed) => {
 						setRemovedEditorComponents((current) => {
 							const next = new Set(current);
@@ -331,11 +358,6 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 						setEditorPlacedPlanner({choice, direction});
 						setEditorPlannerDropError(undefined);
 					}}
-					onSaved={() => {
-						closeBlueprintEditor();
-						upgradeDraft.closeIconReplacement();
-						upgradeDraft.closePlanner();
-					}}
 					onSnapGridChange={setEditorSnapGrid}
 					onSortBookSelectedChange={setSortBookSelected}
 					onTilesIncludedChange={(included) => {
@@ -349,7 +371,6 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 					placedPlanner={editorPlacedPlanner}
 					rootBlueprint={rootBlueprint ?? blueprint}
 					removedComponents={removedEditorComponents}
-					selectedPath={selectedPath}
 					sessionPlanner={upgradeDraft.savedPlannerChoice}
 					signalOptions={editorIconOptions}
 					snapGrid={editorSnapGrid}

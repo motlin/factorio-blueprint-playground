@@ -35,7 +35,7 @@ function setDialogInert(dialog: HTMLElement, inert: boolean) {
 
 function updateDialogLayers() {
 	const topmostDialog = dialogStack.at(-1);
-	const dialogs = document.querySelectorAll<HTMLElement>('[role="dialog"]');
+	const dialogs = document.querySelectorAll<HTMLElement>('[role="dialog"], [role="alertdialog"]');
 
 	for (const dialog of dialogs) {
 		if (!originalDialogStates.has(dialog)) {

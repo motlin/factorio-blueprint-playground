@@ -4,6 +4,7 @@ import {Profiler} from 'react';
 import {beforeEach, describe, expect, test, vi} from 'vite-plus/test';
 
 import {TransformPanel} from '../../src/components/blueprint/panels/transform/TransformPanel';
+import {BlueprintEditorSourceMode} from '../../src/components/blueprint/panels/transform/useBlueprintEditorDraft';
 import {deserializeBlueprint, serializeBlueprint} from '../../src/parsing/blueprintParser';
 import type {BlueprintString, BlueprintStringWithIndex, UpgradePlanner} from '../../src/parsing/types';
 import {db, LIBRARY_ROOT_ID, type LibraryRecord} from '../../src/storage/db';
@@ -915,8 +916,8 @@ describe('TransformPanel', () => {
 		render(<TransformPanel blueprint={blueprint} />);
 
 		openBlueprintEditor();
-		expect(screen.getByRole<HTMLButtonElement>('button', {name: 'Save blueprint'}).disabled).toBe(true);
-		await user.click(screen.getByRole('button', {name: 'Cancel'}));
+		expect(screen.getByRole<HTMLButtonElement>('button', {name: 'Save Blueprint'}).disabled).toBe(true);
+		await user.click(screen.getByRole('button', {name: 'Close'}));
 
 		expect({
 			dialog: screen.queryByRole('dialog', {name: 'Blueprint Editor'}),
@@ -925,6 +926,52 @@ describe('TransformPanel', () => {
 			dialog: null,
 			navigation: [],
 		});
+	});
+
+	test('creates a first captured root from explicit session state rather than an empty-label heuristic', async () => {
+		const user = userEvent.setup();
+		const onBlueprintCommit = vi.fn<(committedRoot: BlueprintString) => void>();
+		const capturedBlueprint: BlueprintString = {
+			blueprint: {item: 'blueprint', label: '', version: 0},
+		};
+		render(
+			<TransformPanel
+				blueprint={capturedBlueprint}
+				blueprintEditorSourceMode={BlueprintEditorSourceMode.CapturedDraft}
+				onBlueprintCommit={onBlueprintCommit}
+			/>,
+		);
+
+		openBlueprintEditor();
+		const createButton = screen.getByRole<HTMLButtonElement>('button', {name: 'Create Blueprint'});
+		expect(createButton.disabled).toBe(false);
+		await user.click(createButton);
+
+		expect({
+			commit: onBlueprintCommit.mock.calls,
+			dialog: screen.queryByRole('dialog', {name: 'Blueprint Editor'}),
+			navigation: navigate.mock.calls,
+		}).toStrictEqual({
+			commit: [[{blueprint: {item: 'blueprint', version: 0}}]],
+			dialog: null,
+			navigation: [],
+		});
+	});
+
+	test('dismisses an unchanged editor directly through both Escape and the title-bar close button', () => {
+		render(<TransformPanel blueprint={blueprint} />);
+
+		openBlueprintEditor();
+		fireEvent.keyDown(window, {key: 'Escape'});
+		expect(screen.queryByRole('dialog', {name: 'Blueprint Editor'})).toBeNull();
+
+		openBlueprintEditor();
+		fireEvent.click(screen.getByRole('button', {name: 'Close Blueprint Editor'}));
+		expect({
+			confirmation: screen.queryByRole('alertdialog', {name: 'There are uncommitted changes'}),
+			dialog: screen.queryByRole('dialog', {name: 'Blueprint Editor'}),
+			navigation: navigate.mock.calls,
+		}).toStrictEqual({confirmation: null, dialog: null, navigation: []});
 	});
 
 	test('keeps or discards dirty title, icon, description, and filter drafts on every close path', async () => {
@@ -968,20 +1015,20 @@ describe('TransformPanel', () => {
 		await user.click(screen.getByRole('checkbox', {name: 'Tiles'}));
 
 		fireEvent.keyDown(screen.getByRole('dialog', {name: 'Blueprint Editor'}), {key: 'Escape'});
-		const firstConfirmation = screen.getByRole('alertdialog', {name: 'Discard unsaved changes?'});
+		const firstConfirmation = screen.getByRole('alertdialog', {name: 'There are uncommitted changes'});
 		expect({
 			buttons: within(firstConfirmation)
 				.getAllByRole('button')
 				.map((button) => button.textContent),
 			navigation: navigate.mock.calls,
 		}).toStrictEqual({
-			buttons: ['Keep editing', 'Discard changes', 'Save blueprint'],
+			buttons: ['Keep Editing', 'Discard', 'Commit'],
 			navigation: [],
 		});
 
-		await user.click(within(firstConfirmation).getByRole('button', {name: 'Keep editing'}));
+		await user.click(within(firstConfirmation).getByRole('button', {name: 'Keep Editing'}));
 		expect({
-			confirmation: screen.queryByRole('alertdialog', {name: 'Discard unsaved changes?'}),
+			confirmation: screen.queryByRole('alertdialog', {name: 'There are uncommitted changes'}),
 			description: screen.getByRole<HTMLTextAreaElement>('textbox', {name: 'Blueprint description'}).value,
 			filters: ['Modules', 'Entities', 'Trains', 'Tiles'].map(
 				(name) => screen.getByRole<HTMLInputElement>('checkbox', {name}).checked,
@@ -997,8 +1044,8 @@ describe('TransformPanel', () => {
 		});
 
 		await user.click(screen.getByRole('button', {name: 'Close Blueprint Editor'}));
-		const secondConfirmation = screen.getByRole('alertdialog', {name: 'Discard unsaved changes?'});
-		await user.click(within(secondConfirmation).getByRole('button', {name: 'Discard changes'}));
+		const secondConfirmation = screen.getByRole('alertdialog', {name: 'There are uncommitted changes'});
+		await user.click(within(secondConfirmation).getByRole('button', {name: 'Discard'}));
 		expect({
 			dialog: screen.queryByRole('dialog', {name: 'Blueprint Editor'}),
 			navigation: navigate.mock.calls,
@@ -1011,7 +1058,7 @@ describe('TransformPanel', () => {
 				(name) => screen.getByRole<HTMLInputElement>('checkbox', {name}).checked,
 			),
 			icon: screen.getByRole('button', {name: 'Edit icon 1'}).getAttribute('title'),
-			saveDisabled: screen.getByRole<HTMLButtonElement>('button', {name: 'Save blueprint'}).disabled,
+			saveDisabled: screen.getByRole<HTMLButtonElement>('button', {name: 'Save Blueprint'}).disabled,
 			title: screen.getByText('Alice', {selector: '.blueprint-editor__title'}).textContent,
 		}).toStrictEqual({
 			description: 'Source description',
@@ -1053,7 +1100,7 @@ describe('TransformPanel', () => {
 		await user.clear(screen.getByRole('textbox', {name: 'Parameter 1 name'}));
 		await user.type(screen.getByRole('textbox', {name: 'Parameter 1 name'}), 'Any plate');
 		await user.click(screen.getByRole('button', {name: 'Confirm'}));
-		await user.click(screen.getByRole('button', {name: 'Save blueprint'}));
+		await user.click(screen.getByRole('button', {name: 'Save Blueprint'}));
 
 		expect(navigate).toHaveBeenCalledExactlyOnceWith({
 			to: '/',
@@ -1097,7 +1144,7 @@ describe('TransformPanel', () => {
 			contextMenuAllowed,
 			count: removedComponent.querySelector('.blueprint-components__count')?.textContent,
 			navigation: navigate.mock.calls,
-			saveDisabled: screen.getByRole<HTMLButtonElement>('button', {name: 'Save blueprint'}).disabled,
+			saveDisabled: screen.getByRole<HTMLButtonElement>('button', {name: 'Save Blueprint'}).disabled,
 		}).toStrictEqual({
 			contextMenuAllowed: false,
 			count: '0',
@@ -1109,14 +1156,14 @@ describe('TransformPanel', () => {
 		const restoredComponent = screen.getByRole('button', {name: /Transport belt, 1/});
 		expect({
 			count: restoredComponent.querySelector('.blueprint-components__count')?.textContent,
-			saveDisabled: screen.getByRole<HTMLButtonElement>('button', {name: 'Save blueprint'}).disabled,
+			saveDisabled: screen.getByRole<HTMLButtonElement>('button', {name: 'Save Blueprint'}).disabled,
 		}).toStrictEqual({
 			count: '1',
 			saveDisabled: true,
 		});
 
 		fireEvent.keyDown(restoredComponent, {key: 'Delete'});
-		await user.click(screen.getByRole('button', {name: 'Save blueprint'}));
+		await user.click(screen.getByRole('button', {name: 'Save Blueprint'}));
 
 		expect(navigate).toHaveBeenCalledExactlyOnceWith({
 			to: '/',
@@ -1191,7 +1238,7 @@ describe('TransformPanel', () => {
 
 		openBlueprintEditor();
 		await user.click(screen.getByRole('checkbox', {name: 'Sort entries by label'}));
-		await user.click(screen.getByRole('button', {name: 'Save blueprint'}));
+		await user.click(screen.getByRole('button', {name: 'Save Blueprint'}));
 
 		expect(navigate).toHaveBeenCalledExactlyOnceWith({
 			to: '/',
@@ -1735,7 +1782,7 @@ describe('TransformPanel', () => {
 		await user.click(screen.getByRole('button', {name: 'Choose icon 3'}));
 		await user.type(screen.getByRole('searchbox', {name: 'Search'}), 'green');
 		await chooseSignal(user, 'Signal green');
-		await user.click(screen.getByRole('button', {name: 'Save blueprint'}));
+		await user.click(screen.getByRole('button', {name: 'Save Blueprint'}));
 
 		expect(navigate).toHaveBeenCalledExactlyOnceWith({
 			to: '/',
@@ -1775,7 +1822,7 @@ describe('TransformPanel', () => {
 		openBlueprintEditor();
 		fireEvent.change(screen.getByRole('spinbutton', {name: 'Width'}), {target: {value: '16'}});
 		await user.click(screen.getByRole('radio', {name: 'Relative'}));
-		await user.click(screen.getByRole('button', {name: 'Save blueprint'}));
+		await user.click(screen.getByRole('button', {name: 'Save Blueprint'}));
 
 		expect(navigate).toHaveBeenCalledExactlyOnceWith({
 			to: '/',
@@ -1858,13 +1905,12 @@ describe('TransformPanel', () => {
 
 		expect({
 			confirmation: screen
-				.getByRole('alertdialog', {name: 'Discard unsaved changes?'})
+				.getByRole('alertdialog', {name: 'There are uncommitted changes'})
 				.getAttribute('aria-modal'),
 			navigation: navigate.mock.calls,
 		}).toStrictEqual({confirmation: 'true', navigation: []});
 
-		await user.click(screen.getByRole('button', {name: 'Keep editing'}));
-		await user.click(screen.getByRole('button', {name: 'Save to book'}));
+		await user.click(screen.getByRole('button', {name: 'Commit'}));
 
 		expect(navigate).toHaveBeenCalledExactlyOnceWith({
 			to: '/',
@@ -1879,7 +1925,7 @@ describe('TransformPanel', () => {
 		openBlueprintEditor();
 		expect({
 			icon: screen.getByRole('button', {name: 'Edit icon 1'}).getAttribute('title'),
-			saveDisabled: screen.getByRole<HTMLButtonElement>('button', {name: 'Save to book'}).disabled,
+			saveDisabled: screen.getByRole<HTMLButtonElement>('button', {name: 'Save to Book'}).disabled,
 			title: screen.getByText('New label', {selector: '.blueprint-editor__title'}).textContent,
 		}).toStrictEqual({
 			icon: 'Signal red\nvirtual:signal-red',
@@ -2452,7 +2498,7 @@ describe('TransformPanel', () => {
 		openBlueprintEditor();
 		await user.click(screen.getByRole('checkbox', {name: 'Trains'}));
 		await user.click(screen.getByRole('checkbox', {name: 'Tiles'}));
-		await user.click(screen.getByRole('button', {name: 'Save blueprint'}));
+		await user.click(screen.getByRole('button', {name: 'Save Blueprint'}));
 
 		expect(navigate).toHaveBeenCalledExactlyOnceWith({
 			to: '/',
@@ -2479,7 +2525,7 @@ describe('TransformPanel', () => {
 
 		openBlueprintEditor();
 		await user.click(screen.getByRole('checkbox', {name: 'Entities'}));
-		await user.click(screen.getByRole('button', {name: 'Save blueprint'}));
+		await user.click(screen.getByRole('button', {name: 'Save Blueprint'}));
 
 		expect(navigate).toHaveBeenCalledExactlyOnceWith({
 			to: '/',

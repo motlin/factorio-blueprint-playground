@@ -15,14 +15,15 @@ import {BlueprintParameterizationDialog} from './BlueprintParameterizationDialog
 import {BlueprintSnapGridEditor} from './BlueprintSnapGridEditor';
 import {BlueprintTitleEditor} from './BlueprintTitleEditor';
 import {UpgradePlannerSelectorDialog, type UpgradePlannerChoice} from './UpgradePlannerSelectorDialog';
+import type {BlueprintEditorCommitAction} from './useBlueprintEditorDraft';
+import {useDialogFocus} from './useDialogFocus';
 
 /**
  * Factorio 2.1.12 source contract for the editor shell:
  *
- * - The caption is explicit `NewBlueprint`, `ExistingBlueprint`, or library-record
- *   view-mode state; new and existing captions must not be inferred from an empty
- *   title. The playground currently opens loaded blueprints and library entries,
- *   not new-item setup sessions.
+ * - `BlueprintEditorCommitAction` carries explicit captured-draft, existing-record,
+ *   or child-book state into the confirm caption. Empty titles remain valid in
+ *   every mode and do not decide the action.
  * - `BlueprintTitleEditor`, `BlueprintDescriptionEditor`, and
  *   `BlueprintLabelIcons` own the label fields shown in BE-1. Four icon slots are
  *   edited independently; the signal chooser follows BE-6.
@@ -50,9 +51,9 @@ interface BlueprintEditorDialogProps {
 	bookOperationSelected: boolean;
 	breadcrumb: string;
 	closeConfirmationOpen: boolean;
+	commitAction: BlueprintEditorCommitAction;
+	commitDisabled: boolean;
 	description: string;
-	dirty: boolean;
-	draftBlueprint?: BlueprintString;
 	filters: BlueprintFilterCategories;
 	flattenBookSelected: boolean;
 	icons: ReactNode;
@@ -60,6 +61,7 @@ interface BlueprintEditorDialogProps {
 	onApplyPlacedPlanner: (direction: UpgradeDirection) => void;
 	onClose: () => void;
 	onClearPlacedPlanner: () => void;
+	onCommit: () => void;
 	onComponentRemovedChange: (component: BlueprintComponentIdentity, removed: boolean) => void;
 	onDescriptionChange: (description: string) => void;
 	onDiscard: () => void;
@@ -71,7 +73,6 @@ interface BlueprintEditorDialogProps {
 	onModulesIncludedChange: (included: boolean) => void;
 	onParametersChange: (parameters: Parameter[]) => void;
 	onPlannerPlace: (choice: UpgradePlannerChoice, direction: UpgradeDirection) => void;
-	onSaved: (savedRoot: BlueprintString) => void;
 	onSnapGridChange: (settings: BlueprintSnapGrid) => void;
 	onSortBookSelectedChange: (selected: boolean) => void;
 	onTilesIncludedChange: (included: boolean) => void;
@@ -81,7 +82,6 @@ interface BlueprintEditorDialogProps {
 	placedPlanner: PlacedUpgradePlanner | undefined;
 	rootBlueprint: BlueprintString;
 	removedComponents: ReadonlySet<BlueprintComponentRemovalKey>;
-	selectedPath: string;
 	sessionPlanner?: UpgradePlannerChoice;
 	signalOptions: readonly SignalID[];
 	snapGrid: BlueprintSnapGrid | undefined;
@@ -98,9 +98,9 @@ export function BlueprintEditorDialog({
 	bookOperationSelected,
 	breadcrumb,
 	closeConfirmationOpen,
+	commitAction,
+	commitDisabled,
 	description,
-	dirty,
-	draftBlueprint,
 	filters,
 	flattenBookSelected,
 	icons,
@@ -108,6 +108,7 @@ export function BlueprintEditorDialog({
 	onApplyPlacedPlanner,
 	onClose,
 	onClearPlacedPlanner,
+	onCommit,
 	onComponentRemovedChange,
 	onDescriptionChange,
 	onDiscard,
@@ -119,7 +120,6 @@ export function BlueprintEditorDialog({
 	onModulesIncludedChange,
 	onParametersChange,
 	onPlannerPlace,
-	onSaved,
 	onSnapGridChange,
 	onSortBookSelectedChange,
 	onTilesIncludedChange,
@@ -129,7 +129,6 @@ export function BlueprintEditorDialog({
 	placedPlanner,
 	rootBlueprint,
 	removedComponents,
-	selectedPath,
 	sessionPlanner,
 	signalOptions,
 	snapGrid,
@@ -143,19 +142,19 @@ export function BlueprintEditorDialog({
 	const [parameterizationOpen, setParameterizationOpen] = useState(false);
 	const upgradePlannerSelectorId = useId();
 	const parameterizationDialogId = useId();
+	const dialogReference = useDialogFocus<HTMLElement>({
+		initialFocusSelector: '.blueprint-editor__settings button',
+		onClose,
+	});
 
 	return (
 		<div className="transform-dialog-backdrop transform-workbench-backdrop blueprint-editor__backdrop">
 			<section
+				ref={dialogReference}
 				className="factorio-frame factorio-frame--shallow transform-dialog transform-workbench transform-workbench--blueprint"
 				role="dialog"
 				aria-modal="true"
 				aria-label="Blueprint Editor"
-				onKeyDown={(event) => {
-					if (event.key === 'Escape') {
-						onClose();
-					}
-				}}
 			>
 				<header className="factorio-title-bar transform-dialog__header transform-workbench__header">
 					<div className="transform-workbench__title">
@@ -274,14 +273,12 @@ export function BlueprintEditorDialog({
 
 				<BlueprintEditorActions
 					closeConfirmationOpen={closeConfirmationOpen}
-					dirty={dirty}
-					draftBlueprint={draftBlueprint}
+					commitAction={commitAction}
+					commitDisabled={commitDisabled}
 					onClose={onClose}
+					onCommit={onCommit}
 					onDiscard={onDiscard}
 					onKeepEditing={onKeepEditing}
-					onSaved={onSaved}
-					rootBlueprint={rootBlueprint}
-					selectedPath={selectedPath}
 				/>
 			</section>
 			{upgradePlannerSelectorOpen ? (
