@@ -54,5 +54,8 @@ if ('requestIdleCallback' in window) {
 		void router.preloadRoute({
 			to: '/history',
 		});
+		void router.preloadRoute({
+			to: '/library',
+		});
 	});
 }

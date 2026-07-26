@@ -1,4 +1,4 @@
-import {createLazyFileRoute} from '@tanstack/react-router';
+import {createLazyFileRoute, Link} from '@tanstack/react-router';
 import {useLiveQuery} from 'dexie-react-hooks';
 import {useState} from 'react';
 
@@ -235,6 +235,10 @@ function History() {
 
 	return (
 		<Panel title="Blueprint History">
+			<p className="history-library-note">
+				This is the full chronological History shelf. Explicitly saved blueprints, books, and planners live in
+				the <Link to="/library">Blueprint Library</Link>.
+			</p>
 			<div>
 				<Button disabled={selectedItems.size === 0} onClick={downloadAsBook} data-testid="download-button">
 					Download Selected as Book
