@@ -7,7 +7,6 @@ import type {BlueprintString, SignalID} from '../../../../parsing/types';
 import {db, LIBRARY_ROOT_ID} from '../../../../storage/db';
 import {updateNestedBlueprint} from '../../../../transform/applyAtPath';
 import {blueprintComponentRemovalKey, type BlueprintComponentIdentity} from '../../../../transform/componentRemoval';
-import {blueprintFilterCategories} from '../../../../transform/strip';
 import {
 	applyUpgradeRules,
 	builtInUpgradeRules,
@@ -30,6 +29,7 @@ import {useUpgradePlannerDraft} from './useUpgradePlannerDraft';
 interface TransformPanelProps {
 	blueprint?: BlueprintString;
 	blueprintEditorSourceMode?: BlueprintEditorSourceMode;
+	capturedOnSpacePlatform?: boolean;
 	onBlueprintCommit?: (committedRoot: BlueprintString) => void;
 	rootBlueprint?: BlueprintString;
 	selectedPath?: string;
@@ -38,6 +38,7 @@ interface TransformPanelProps {
 export function TransformPanel({
 	blueprint,
 	blueprintEditorSourceMode = BlueprintEditorSourceMode.ExistingRecord,
+	capturedOnSpacePlatform = false,
 	onBlueprintCommit,
 	rootBlueprint = blueprint,
 	selectedPath = '',
@@ -58,6 +59,7 @@ export function TransformPanel({
 		editorDescription,
 		editorDirty,
 		editorDraft,
+		editorFilterAnalysis,
 		editorIconPickerIndex,
 		editorIcons,
 		editorLabel,
@@ -82,18 +84,25 @@ export function TransformPanel({
 		setRemovedEditorComponents,
 		setSortBookSelected,
 		setStripEntitiesSelected,
+		setStripFuelSelected,
 		setStripModulesSelected,
+		setStripStationNamesSelected,
 		setStripTilesSelected,
 		setStripTrainsSelected,
+		setStripVehiclesSelected,
 		sortBookSelected,
 		stripEntitiesSelected,
+		stripFuelSelected,
 		stripModulesSelected,
+		stripStationNamesSelected,
 		stripTilesSelected,
 		stripTrainsSelected,
+		stripVehiclesSelected,
 	} = useBlueprintEditorDraft({
 		blueprint,
 		rootBlueprint,
 		selectedPath,
+		capturedOnSpacePlatform,
 		sourceMode: blueprintEditorSourceMode,
 	});
 
@@ -105,7 +114,6 @@ export function TransformPanel({
 		}
 		return [...options.values()];
 	}, [editorIcons, upgradeDraft.sourceOptions]);
-	const editorFilters = useMemo(() => blueprintFilterCategories(blueprint ?? {}), [blueprint]);
 	const editorDraftBlueprint = editorDraft.rootBlueprint;
 	if (blueprint === undefined || type === 'deconstruction-planner') {
 		return null;
@@ -306,7 +314,7 @@ export function TransformPanel({
 					commitDisabled={editorCommitDisabled}
 					description={editorDescription}
 					closeConfirmationOpen={blueprintCloseConfirmationOpen}
-					filters={editorFilters}
+					filterAnalysis={editorFilterAnalysis}
 					flattenBookSelected={flattenBookSelected}
 					icons={
 						<BlueprintLabelIcons
@@ -347,11 +355,17 @@ export function TransformPanel({
 					onEntitiesIncludedChange={(included) => {
 						setStripEntitiesSelected(!included);
 					}}
+					onFuelIncludedChange={(included) => {
+						setStripFuelSelected(!included);
+					}}
 					onFlattenBookSelectedChange={setFlattenBookSelected}
 					onLabelChange={setEditorLabel}
 					onKeepEditing={keepEditingBlueprint}
 					onModulesIncludedChange={(included) => {
 						setStripModulesSelected(!included);
+					}}
+					onStationNamesIncludedChange={(included) => {
+						setStripStationNamesSelected(!included);
 					}}
 					onParametersChange={setEditorParameters}
 					onPlannerPlace={(choice, direction) => {
@@ -366,6 +380,9 @@ export function TransformPanel({
 					onTrainsIncludedChange={(included) => {
 						setStripTrainsSelected(!included);
 					}}
+					onVehiclesIncludedChange={(included) => {
+						setStripVehiclesSelected(!included);
+					}}
 					parameters={editorParameters}
 					plannerDropError={editorPlannerDropError}
 					placedPlanner={editorPlacedPlanner}
@@ -376,9 +393,12 @@ export function TransformPanel({
 					snapGrid={editorSnapGrid}
 					sortBookSelected={sortBookSelected}
 					stripEntitiesSelected={stripEntitiesSelected}
+					stripFuelSelected={stripFuelSelected}
 					stripModulesSelected={stripModulesSelected}
+					stripStationNamesSelected={stripStationNamesSelected}
 					stripTilesSelected={stripTilesSelected}
 					stripTrainsSelected={stripTrainsSelected}
+					stripVehiclesSelected={stripVehiclesSelected}
 				/>
 			) : null}
 			{upgradeDraft.discardConfirmationOpen ? (

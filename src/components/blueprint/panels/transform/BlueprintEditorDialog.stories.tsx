@@ -2,6 +2,8 @@ import type {Meta, StoryObj} from '@storybook/react-vite';
 import {fn} from 'storybook/test';
 
 import type {BlueprintString} from '../../../../parsing/types';
+import {BlueprintEditorSourceMode} from '../../../../transform/blueprintEditor';
+import {blueprintFilterAnalysis} from '../../../../transform/strip';
 import {BlueprintEditorDialog} from './BlueprintEditorDialog';
 import {BlueprintLabelIcons} from './BlueprintLabelIcons';
 import {transformStoryParameters} from './transformStoryParameters';
@@ -36,7 +38,7 @@ const meta = {
 		},
 		commitDisabled: true,
 		description: blueprint.blueprint?.description ?? '',
-		filters: {entities: true, modules: false, tiles: true, trains: false},
+		filterAnalysis: blueprintFilterAnalysis(blueprint, BlueprintEditorSourceMode.ExistingRecord),
 		flattenBookSelected: false,
 		icons: (
 			<BlueprintLabelIcons
@@ -56,16 +58,19 @@ const meta = {
 		onDiscard: fn(),
 		onDropPlanner: fn(),
 		onEntitiesIncludedChange: fn(),
+		onFuelIncludedChange: fn(),
 		onFlattenBookSelectedChange: fn(),
 		onKeepEditing: fn(),
 		onLabelChange: fn(),
 		onModulesIncludedChange: fn(),
+		onStationNamesIncludedChange: fn(),
 		onParametersChange: fn(),
 		onPlannerPlace: fn(),
 		onSnapGridChange: fn(),
 		onSortBookSelectedChange: fn(),
 		onTilesIncludedChange: fn(),
 		onTrainsIncludedChange: fn(),
+		onVehiclesIncludedChange: fn(),
 		parameters: [],
 		plannerDropError: undefined,
 		placedPlanner: undefined,
@@ -75,9 +80,12 @@ const meta = {
 		snapGrid: undefined,
 		sortBookSelected: false,
 		stripEntitiesSelected: false,
+		stripFuelSelected: false,
 		stripModulesSelected: false,
+		stripStationNamesSelected: false,
 		stripTilesSelected: false,
 		stripTrainsSelected: false,
+		stripVehiclesSelected: false,
 	},
 	parameters: transformStoryParameters,
 	tags: ['autodocs'],

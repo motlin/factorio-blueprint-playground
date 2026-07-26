@@ -7,26 +7,34 @@ import {
 	applyBlueprintEditorMetadata,
 	applyBlueprintParameters,
 	applyBlueprintSnapGrid,
+	BlueprintEditorSourceMode,
 	blueprintEditorMetadata,
 	blueprintParameters,
 	blueprintSnapGrid,
 	type BlueprintSnapGrid,
 } from '../../../../transform/blueprintEditor';
 import {type BlueprintComponentRemovalKey, removeBlueprintComponents} from '../../../../transform/componentRemoval';
-import {stripEntities, stripModules, stripTiles, stripTrains} from '../../../../transform/strip';
+import {
+	blueprintFilterAnalysis,
+	stripEntities,
+	stripFuel,
+	stripModules,
+	stripStationNames,
+	stripTiles,
+	stripTrains,
+	stripVehicles,
+} from '../../../../transform/strip';
 import type {PlacedUpgradePlanner} from './BlueprintEditorToolbar';
 
 interface UseBlueprintEditorDraftOptions {
 	blueprint?: BlueprintString;
 	rootBlueprint?: BlueprintString;
 	selectedPath: string;
+	capturedOnSpacePlatform: boolean;
 	sourceMode: BlueprintEditorSourceMode;
 }
 
-export enum BlueprintEditorSourceMode {
-	CapturedDraft = 'captured-draft',
-	ExistingRecord = 'existing-record',
-}
+export {BlueprintEditorSourceMode} from '../../../../transform/blueprintEditor';
 
 export interface BlueprintEditorCommitAction {
 	caption: string;
@@ -84,8 +92,13 @@ export function useBlueprintEditorDraft({
 	blueprint,
 	rootBlueprint,
 	selectedPath,
+	capturedOnSpacePlatform,
 	sourceMode,
 }: UseBlueprintEditorDraftOptions) {
+	const filterAnalysis = useMemo(
+		() => blueprintFilterAnalysis(blueprint ?? {}, sourceMode, capturedOnSpacePlatform),
+		[blueprint, capturedOnSpacePlatform, sourceMode],
+	);
 	const metadata = useMemo(() => sourceMetadata(blueprint), [blueprint]);
 	const sourceIcons = useMemo(
 		() => [...metadata.icons].sort((left, right) => left.index - right.index).map((icon) => icon.signal),
@@ -112,10 +125,13 @@ export function useBlueprintEditorDraft({
 	const [removedEditorComponents, setRemovedEditorComponents] = useState<Set<BlueprintComponentRemovalKey>>(
 		() => new Set(),
 	);
-	const [stripEntitiesSelected, setStripEntitiesSelected] = useState(false);
-	const [stripModulesSelected, setStripModulesSelected] = useState(false);
-	const [stripTrainsSelected, setStripTrainsSelected] = useState(false);
-	const [stripTilesSelected, setStripTilesSelected] = useState(false);
+	const [stripEntitiesSelected, setStripEntitiesSelected] = useState(!filterAnalysis.defaults.entities);
+	const [stripFuelSelected, setStripFuelSelected] = useState(!filterAnalysis.defaults.fuel);
+	const [stripModulesSelected, setStripModulesSelected] = useState(!filterAnalysis.defaults.modules);
+	const [stripStationNamesSelected, setStripStationNamesSelected] = useState(!filterAnalysis.defaults.stationNames);
+	const [stripTrainsSelected, setStripTrainsSelected] = useState(!filterAnalysis.defaults.trains);
+	const [stripTilesSelected, setStripTilesSelected] = useState(!filterAnalysis.defaults.tiles);
+	const [stripVehiclesSelected, setStripVehiclesSelected] = useState(!filterAnalysis.defaults.vehicles);
 	const [flattenBookSelected, setFlattenBookSelected] = useState(false);
 	const [sortBookSelected, setSortBookSelected] = useState(false);
 
@@ -129,13 +145,16 @@ export function useBlueprintEditorDraft({
 		setEditorPlacedPlanner(undefined);
 		setEditorPlannerDropError(undefined);
 		setRemovedEditorComponents(new Set());
-		setStripEntitiesSelected(false);
-		setStripModulesSelected(false);
-		setStripTrainsSelected(false);
-		setStripTilesSelected(false);
+		setStripEntitiesSelected(!filterAnalysis.defaults.entities);
+		setStripFuelSelected(!filterAnalysis.defaults.fuel);
+		setStripModulesSelected(!filterAnalysis.defaults.modules);
+		setStripStationNamesSelected(!filterAnalysis.defaults.stationNames);
+		setStripTrainsSelected(!filterAnalysis.defaults.trains);
+		setStripTilesSelected(!filterAnalysis.defaults.tiles);
+		setStripVehiclesSelected(!filterAnalysis.defaults.vehicles);
 		setFlattenBookSelected(false);
 		setSortBookSelected(false);
-	}, [metadata.description, metadata.label, sourceIcons, sourceParameters, sourceSnapGrid]);
+	}, [filterAnalysis.defaults, metadata.description, metadata.label, sourceIcons, sourceParameters, sourceSnapGrid]);
 
 	const editorDirty = useMemo(
 		() =>
@@ -145,10 +164,13 @@ export function useBlueprintEditorDraft({
 			JSON.stringify(editorSnapGrid) !== JSON.stringify(sourceSnapGrid) ||
 			JSON.stringify(editorParameters) !== JSON.stringify(sourceParameters) ||
 			removedEditorComponents.size > 0 ||
-			stripEntitiesSelected ||
-			stripModulesSelected ||
-			stripTrainsSelected ||
-			stripTilesSelected ||
+			stripEntitiesSelected !== !filterAnalysis.defaults.entities ||
+			stripFuelSelected !== !filterAnalysis.defaults.fuel ||
+			stripModulesSelected !== !filterAnalysis.defaults.modules ||
+			stripStationNamesSelected !== !filterAnalysis.defaults.stationNames ||
+			stripTrainsSelected !== !filterAnalysis.defaults.trains ||
+			stripTilesSelected !== !filterAnalysis.defaults.tiles ||
+			stripVehiclesSelected !== !filterAnalysis.defaults.vehicles ||
 			flattenBookSelected ||
 			sortBookSelected,
 		[
@@ -157,6 +179,7 @@ export function useBlueprintEditorDraft({
 			editorLabel,
 			editorParameters,
 			editorSnapGrid,
+			filterAnalysis.defaults,
 			flattenBookSelected,
 			metadata.description,
 			metadata.label,
@@ -166,9 +189,12 @@ export function useBlueprintEditorDraft({
 			sourceParameters,
 			sourceSnapGrid,
 			stripEntitiesSelected,
+			stripFuelSelected,
 			stripModulesSelected,
+			stripStationNamesSelected,
 			stripTilesSelected,
 			stripTrainsSelected,
+			stripVehiclesSelected,
 		],
 	);
 	const editorCommitAction = useMemo(
@@ -199,8 +225,11 @@ export function useBlueprintEditorDraft({
 		}
 		selectedBlueprint = removeBlueprintComponents(selectedBlueprint, removedEditorComponents);
 		if (stripTrainsSelected) selectedBlueprint = stripTrains(selectedBlueprint);
+		if (stripVehiclesSelected) selectedBlueprint = stripVehicles(selectedBlueprint);
 		if (stripEntitiesSelected) selectedBlueprint = stripEntities(selectedBlueprint);
 		if (stripModulesSelected) selectedBlueprint = stripModules(selectedBlueprint);
+		if (stripFuelSelected) selectedBlueprint = stripFuel(selectedBlueprint);
+		if (stripStationNamesSelected) selectedBlueprint = stripStationNames(selectedBlueprint);
 		if (stripTilesSelected) selectedBlueprint = stripTiles(selectedBlueprint);
 		if (flattenBookSelected) selectedBlueprint = flattenBook(selectedBlueprint);
 		if (sortBookSelected) selectedBlueprint = sortBookByLabel(selectedBlueprint);
@@ -222,9 +251,12 @@ export function useBlueprintEditorDraft({
 		selectedPath,
 		sortBookSelected,
 		stripEntitiesSelected,
+		stripFuelSelected,
 		stripModulesSelected,
+		stripStationNamesSelected,
 		stripTilesSelected,
 		stripTrainsSelected,
+		stripVehiclesSelected,
 	]);
 
 	const openBlueprintEditor = useCallback(() => {
@@ -273,6 +305,7 @@ export function useBlueprintEditorDraft({
 		editorDescription,
 		editorDirty,
 		editorDraft,
+		editorFilterAnalysis: filterAnalysis,
 		editorIconPickerIndex,
 		editorIcons,
 		editorLabel,
@@ -297,13 +330,19 @@ export function useBlueprintEditorDraft({
 		setRemovedEditorComponents,
 		setSortBookSelected,
 		setStripEntitiesSelected,
+		setStripFuelSelected,
 		setStripModulesSelected,
+		setStripStationNamesSelected,
 		setStripTilesSelected,
 		setStripTrainsSelected,
+		setStripVehiclesSelected,
 		sortBookSelected,
 		stripEntitiesSelected,
+		stripFuelSelected,
 		stripModulesSelected,
+		stripStationNamesSelected,
 		stripTilesSelected,
 		stripTrainsSelected,
+		stripVehiclesSelected,
 	};
 }

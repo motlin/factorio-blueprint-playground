@@ -958,6 +958,68 @@ describe('TransformPanel', () => {
 		});
 	});
 
+	test('applies captured-draft tile, train, and vehicle defaults before the first commit', async () => {
+		const user = userEvent.setup();
+		const onBlueprintCommit = vi.fn<(committedRoot: BlueprintString) => void>();
+		const capturedBlueprint: BlueprintString = {
+			blueprint: {
+				item: 'blueprint',
+				version: 0,
+				entities: [
+					{entity_number: 100, name: 'assembling-machine-3', position: {x: 0, y: 0}},
+					{entity_number: 200, name: 'locomotive', position: {x: 1, y: 0}},
+					{entity_number: 300, name: 'car', position: {x: 2, y: 0}},
+				],
+				tiles: [{name: 'concrete', position: {x: 0, y: 1}}],
+			},
+		};
+		render(
+			<TransformPanel
+				blueprint={capturedBlueprint}
+				blueprintEditorSourceMode={BlueprintEditorSourceMode.CapturedDraft}
+				onBlueprintCommit={onBlueprintCommit}
+			/>,
+		);
+
+		openBlueprintEditor();
+		const filtersSection = screen.getByRole('heading', {name: 'Filters'}).closest('section');
+		if (filtersSection === null) {
+			throw new Error('Expected the captured blueprint filters section.');
+		}
+		expect(
+			within(filtersSection)
+				.getAllByRole<HTMLInputElement>('checkbox')
+				.map((checkbox) => ({
+					checked: checkbox.checked,
+					label: checkbox.labels?.[0]?.textContent,
+				})),
+		).toStrictEqual([
+			{checked: true, label: 'Entities'},
+			{checked: false, label: 'Tiles'},
+			{checked: false, label: 'Trains'},
+			{checked: false, label: 'Vehicles'},
+		]);
+		await user.click(screen.getByRole('button', {name: 'Create Blueprint'}));
+
+		expect(onBlueprintCommit.mock.calls).toStrictEqual([
+			[
+				{
+					blueprint: {
+						item: 'blueprint',
+						version: 0,
+						entities: [
+							{
+								entity_number: 100,
+								name: 'assembling-machine-3',
+								position: {x: 0, y: 0},
+							},
+						],
+					},
+				},
+			],
+		]);
+	});
+
 	test('dismisses an unchanged editor directly through both Escape and the title-bar close button', () => {
 		render(<TransformPanel blueprint={blueprint} />);
 
