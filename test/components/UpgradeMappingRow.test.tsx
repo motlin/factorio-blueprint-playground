@@ -1,4 +1,4 @@
-import {fireEvent, render, screen} from '@testing-library/react';
+import {fireEvent, render, screen, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {describe, expect, test, vi} from 'vite-plus/test';
 
@@ -49,6 +49,7 @@ describe('UpgradeMappingRow', () => {
 				targetTitle: target.title,
 			},
 			comparator: source.querySelector('.transform-signal-slot__comparator')?.textContent,
+			qualityControlAdjacentToEndpoints: within(row).queryByRole('combobox', {name: /quality/i}),
 			operations: {
 				remove: onRemove.mock.calls,
 				source: onSourceChoose.mock.calls,
@@ -63,6 +64,7 @@ describe('UpgradeMappingRow', () => {
 				targetTitle: 'Fast transport belt\nentity:fast-transport-belt\nQuality: = normal',
 			},
 			comparator: '≤',
+			qualityControlAdjacentToEndpoints: null,
 			operations: {
 				remove: [
 					[beltMapping, true],

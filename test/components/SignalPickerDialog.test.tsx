@@ -154,13 +154,12 @@ test('shows source quality controls with the Factorio comparators and quality ic
 		qualityButtons: within(qualityBar)
 			.getAllByRole('button')
 			.map((button) => button.getAttribute('aria-label') ?? button.textContent),
-		qualityIcons: within(qualityBar)
-			.getAllByTestId('icon')
-			.map((icon) => icon.getAttribute('src')),
+		qualityIcons: [
+			...qualityBar.querySelectorAll('.upgrade-quality-controls__quality > .factorio-quality-badge'),
+		].map((icon) => icon.getAttribute('src')),
 	}).toStrictEqual({
 		qualityButtons: [
 			'Any quality',
-			'Quality comparison: =',
 			'Normal quality',
 			'Uncommon quality',
 			'Rare quality',
@@ -223,10 +222,48 @@ test('does not serialize the source no-quality sentinel or a stale comparator', 
 		/>,
 	);
 
-	await user.click(screen.getByRole('button', {name: 'Any quality'}));
+	await user.click(screen.getByRole('button', {name: 'Quality comparison: >'}));
+	await user.click(screen.getByRole('menuitemradio', {name: 'Any quality'}));
 	await user.click(screen.getByRole('button', {name: 'Confirm'}));
 
 	expect(onChoose.mock.calls).toStrictEqual([[{type: 'entity', name: 'test-entity'}]]);
+});
+
+test('gives the foreground comparator menu ownership until it is cancelled', async () => {
+	const user = userEvent.setup();
+	const onChoose = vi.fn<SignalPickerDialogProps['onChoose']>();
+	const onClose = vi.fn<() => void>();
+	render(
+		<SignalPickerDialog
+			confirmationMode="required"
+			title="Choose source signal"
+			options={[qualitySignal]}
+			initialSignal={{...qualitySignal, quality: 'rare', comparator: '='}}
+			qualityMode="source"
+			onChoose={onChoose}
+			onClose={onClose}
+		/>,
+	);
+
+	const picker = screen.getByRole('dialog', {name: 'Choose source signal'});
+	await user.click(screen.getByRole('button', {name: 'Quality comparison: ='}));
+	expect(picker.inert).toBe(true);
+	fireEvent.keyDown(window, {key: 'Enter'});
+	expect(onChoose.mock.calls).toStrictEqual([]);
+	fireEvent.keyDown(window, {key: 'Escape'});
+	await Promise.resolve();
+
+	expect({
+		closeCalls: onClose.mock.calls,
+		comparisonDialog: screen.queryByRole('dialog', {name: 'Quality comparison'}),
+		pickerInert: picker.inert,
+		pickerVisible: screen.getByRole('dialog', {name: 'Choose source signal'}) === picker,
+	}).toStrictEqual({
+		closeCalls: [],
+		comparisonDialog: null,
+		pickerInert: false,
+		pickerVisible: true,
+	});
 });
 
 test('serializes normal as an explicit source quality', async () => {

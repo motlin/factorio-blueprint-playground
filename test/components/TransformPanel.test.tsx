@@ -1542,6 +1542,27 @@ describe('TransformPanel', () => {
 		});
 	});
 
+	test('returns from a confirmed source picker without changing To or auto-advancing', async () => {
+		const user = userEvent.setup();
+		render(<TransformPanel blueprint={blueprint} />);
+
+		openUpgradePlanner();
+		const targetBefore = screen.getByRole('button', {name: 'Choose target for Transport belt'}).title;
+		await user.click(screen.getByRole('button', {name: 'Choose source, currently Transport belt'}));
+		await user.click(screen.getByRole('button', {name: 'Rare quality'}));
+		await chooseSignal(user, 'Transport belt');
+
+		expect({
+			sourcePicker: screen.queryByRole('dialog', {name: 'Set the filter'}),
+			targetAfter: screen.getByRole('button', {name: 'Choose target for Transport belt'}).title,
+			targetPicker: screen.queryByRole('dialog', {name: 'Select upgrade'}),
+		}).toStrictEqual({
+			sourcePicker: null,
+			targetAfter: targetBefore,
+			targetPicker: null,
+		});
+	});
+
 	test('keeps an incomplete mapping row through picker cancellation until it is removed', async () => {
 		const user = userEvent.setup();
 		render(<TransformPanel blueprint={blueprint} />);
