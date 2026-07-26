@@ -3,8 +3,10 @@ import {useState} from 'react';
 import type {QualityComparator} from '../../../../parsing/types';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
 import {
+	anyQualityLabel,
 	upgradeQualities,
 	upgradeQualityComparators,
+	upgradeQualityLabel,
 	type UpgradeQualityMode,
 	type UpgradeQualitySelection,
 } from './upgradeQuality';
@@ -46,9 +48,9 @@ function QualityComparatorControl({
 			<button
 				type="button"
 				className="upgrade-quality-controls__any"
-				aria-label="Any quality"
+				aria-label={anyQualityLabel}
 				aria-pressed={qualitySelection === 'any'}
-				title="Any quality"
+				title={anyQualityLabel}
 				onClick={() => {
 					onQualityChange('any');
 				}}
@@ -98,7 +100,7 @@ function QualityButtons({
 	qualitySelection: UpgradeQualitySelection;
 }) {
 	return upgradeQualities.map((quality) => {
-		const label = `${signalName({name: quality})} quality`;
+		const label = `${upgradeQualityLabel(quality)} quality`;
 		return (
 			<button
 				type="button"

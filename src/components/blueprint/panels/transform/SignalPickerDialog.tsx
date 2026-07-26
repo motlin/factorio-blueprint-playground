@@ -1,6 +1,7 @@
 import {useCallback, useId, useMemo, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 
+import gameUiSpec from '../../../../generated/game-ui-spec.json';
 import type {QualityComparator, SignalID, SignalType} from '../../../../parsing/types';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
 import {ButtonGreen} from '../../../ui/ButtonGreen';
@@ -70,7 +71,7 @@ import {useDialogFocus} from './useDialogFocus';
  * 2.1.12; BE-6 and the July 23 Set the filter, comparator-menu, and restricted
  * Select upgrade captures.
  */
-const gridColumnCount = 10;
+const gridColumnCount = gameUiSpec.utilityConstants.selectSlotRowCount;
 
 type PickerSignal = UpgradeQualitySignal;
 type PickerCategoryId = 'items' | 'recipes' | 'fluids' | 'virtual' | 'environment' | 'other';

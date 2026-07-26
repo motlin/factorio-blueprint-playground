@@ -1,0 +1,667 @@
+import type {GameUiSourceLock, GameUiSpec} from './schema';
+import {parseGameUiSpec} from './schema';
+
+interface LuaPrototype {
+	type: string;
+	name: string;
+	order?: string;
+	icon?: string;
+	group?: string;
+	level?: number;
+	hidden?: boolean;
+	next?: string;
+	nextUpgrade?: string;
+	fastReplaceableGroup?: string;
+}
+
+interface LuaFrame {
+	fields: Map<string, string | number | boolean>;
+}
+
+enum LuaTokenKind {
+	Identifier,
+	String,
+	Number,
+	OpeningBrace,
+	ClosingBrace,
+	Equals,
+}
+
+interface LuaToken {
+	kind: LuaTokenKind;
+	value: string;
+}
+
+const QUALITY_SOURCE_PATHS = [
+	'data/base/prototypes/categories/quality.lua',
+	'data/quality/prototypes/quality.lua',
+] as const;
+const ITEM_GROUP_SOURCE_PATHS = [
+	'data/base/prototypes/item-groups.lua',
+	'data/space-age/prototypes/item-groups.lua',
+] as const;
+const LOCALE_SOURCE_PATHS = [
+	'data/core/locale/en/core.cfg',
+	'data/base/locale/en/base.cfg',
+	'data/quality/locale/en/quality.cfg',
+	'data/space-age/locale/en/space-age.cfg',
+] as const;
+const UPGRADE_SOURCE_PATHS = [
+	'data/base/prototypes/entity/circuit-network.lua',
+	'data/base/prototypes/entity/crash-site.lua',
+	'data/base/prototypes/entity/entities.lua',
+	'data/base/prototypes/entity/fire.lua',
+	'data/base/prototypes/entity/mining-drill.lua',
+	'data/base/prototypes/entity/trains.lua',
+	'data/base/prototypes/entity/transport-belts.lua',
+	'data/base/prototypes/entity/turrets.lua',
+	'data/space-age/prototypes/entity/big-mining-drill.lua',
+	'data/space-age/prototypes/entity/entities.lua',
+	'data/space-age/prototypes/entity/transport-belts.lua',
+	'data/space-age/prototypes/entity/turrets.lua',
+] as const;
+
+function requiredSource(sources: ReadonlyMap<string, string>, path: string): string {
+	const source = sources.get(path);
+	if (source === undefined) {
+		throw new Error(`Missing authorized Factorio source: ${path}`);
+	}
+	return source;
+}
+
+function longBracketClosing(source: string, start: number): {closing: string; contentStart: number} | undefined {
+	if (source[start] !== '[') {
+		return undefined;
+	}
+	let cursor = start + 1;
+	while (source[cursor] === '=') {
+		cursor += 1;
+	}
+	if (source[cursor] !== '[') {
+		return undefined;
+	}
+	const equals = source.slice(start + 1, cursor);
+	return {closing: `]${equals}]`, contentStart: cursor + 1};
+}
+
+function tokenizeLua(source: string): LuaToken[] {
+	const tokens: LuaToken[] = [];
+	let cursor = 0;
+	while (cursor < source.length) {
+		const character = source[cursor] ?? '';
+		if (/\s/.test(character)) {
+			cursor += 1;
+			continue;
+		}
+		if (character === '-' && source[cursor + 1] === '-') {
+			const blockComment = longBracketClosing(source, cursor + 2);
+			if (blockComment === undefined) {
+				const lineEnd = source.indexOf('\n', cursor + 2);
+				cursor = lineEnd < 0 ? source.length : lineEnd + 1;
+				continue;
+			}
+			const commentEnd = source.indexOf(blockComment.closing, blockComment.contentStart);
+			if (commentEnd < 0) {
+				throw new Error('Unterminated Lua block comment.');
+			}
+			cursor = commentEnd + blockComment.closing.length;
+			continue;
+		}
+		if (character === '"' || character === "'") {
+			const quote = character;
+			let value = '';
+			cursor += 1;
+			while (cursor < source.length && source[cursor] !== quote) {
+				if (source[cursor] === '\\') {
+					cursor += 1;
+					if (cursor >= source.length) {
+						throw new Error('Unterminated Lua string escape.');
+					}
+				}
+				value += source[cursor];
+				cursor += 1;
+			}
+			if (source[cursor] !== quote) {
+				throw new Error('Unterminated Lua string.');
+			}
+			tokens.push({kind: LuaTokenKind.String, value});
+			cursor += 1;
+			continue;
+		}
+		const longString = longBracketClosing(source, cursor);
+		if (longString !== undefined) {
+			const stringEnd = source.indexOf(longString.closing, longString.contentStart);
+			if (stringEnd < 0) {
+				throw new Error('Unterminated Lua long string.');
+			}
+			tokens.push({kind: LuaTokenKind.String, value: source.slice(longString.contentStart, stringEnd)});
+			cursor = stringEnd + longString.closing.length;
+			continue;
+		}
+		if (/[A-Za-z_]/.test(character)) {
+			const start = cursor;
+			cursor += 1;
+			while (/[A-Za-z0-9_]/.test(source[cursor] ?? '')) {
+				cursor += 1;
+			}
+			tokens.push({kind: LuaTokenKind.Identifier, value: source.slice(start, cursor)});
+			continue;
+		}
+		if (/[0-9]/.test(character)) {
+			const start = cursor;
+			cursor += 1;
+			while (/[0-9]/.test(source[cursor] ?? '')) {
+				cursor += 1;
+			}
+			tokens.push({kind: LuaTokenKind.Number, value: source.slice(start, cursor)});
+			continue;
+		}
+		if (character === '{') {
+			tokens.push({kind: LuaTokenKind.OpeningBrace, value: character});
+		} else if (character === '}') {
+			tokens.push({kind: LuaTokenKind.ClosingBrace, value: character});
+		} else if (character === '=') {
+			tokens.push({kind: LuaTokenKind.Equals, value: character});
+		}
+		cursor += 1;
+	}
+	return tokens;
+}
+
+function literalTokenValue(token: LuaToken | undefined): string | number | boolean | undefined {
+	if (token?.kind === LuaTokenKind.String) {
+		return token.value;
+	}
+	if (token?.kind === LuaTokenKind.Number) {
+		return Number(token.value);
+	}
+	if (token?.kind === LuaTokenKind.Identifier && (token.value === 'true' || token.value === 'false')) {
+		return token.value === 'true';
+	}
+	return undefined;
+}
+
+function optionalString(fields: ReadonlyMap<string, string | number | boolean>, field: string): string | undefined {
+	const value = fields.get(field);
+	return typeof value === 'string' ? value : undefined;
+}
+
+function luaPrototype(frame: LuaFrame): LuaPrototype | undefined {
+	const type = optionalString(frame.fields, 'type');
+	const name = optionalString(frame.fields, 'name');
+	if (type === undefined || name === undefined) {
+		return undefined;
+	}
+	const level = frame.fields.get('level');
+	const hidden = frame.fields.get('hidden');
+	return {
+		type,
+		name,
+		order: optionalString(frame.fields, 'order'),
+		icon: optionalString(frame.fields, 'icon'),
+		group: optionalString(frame.fields, 'group'),
+		level: typeof level === 'number' ? level : undefined,
+		hidden: typeof hidden === 'boolean' ? hidden : undefined,
+		next: optionalString(frame.fields, 'next'),
+		nextUpgrade: optionalString(frame.fields, 'next_upgrade'),
+		fastReplaceableGroup: optionalString(frame.fields, 'fast_replaceable_group'),
+	};
+}
+
+export function extractLiteralLuaPrototypes(source: string): LuaPrototype[] {
+	const frames: LuaFrame[] = [];
+	const prototypes: LuaPrototype[] = [];
+	const tokens = tokenizeLua(source);
+	for (let index = 0; index < tokens.length; index += 1) {
+		const token = tokens[index];
+		if (token.kind === LuaTokenKind.OpeningBrace) {
+			frames.push({fields: new Map()});
+			continue;
+		}
+		if (token.kind === LuaTokenKind.ClosingBrace) {
+			const frame = frames.pop();
+			if (frame === undefined) {
+				throw new Error('Unexpected closing brace in Lua source.');
+			}
+			const prototype = luaPrototype(frame);
+			if (prototype !== undefined) {
+				prototypes.push(prototype);
+			}
+			continue;
+		}
+		if (
+			token.kind !== LuaTokenKind.Identifier ||
+			tokens[index + 1]?.kind !== LuaTokenKind.Equals ||
+			frames.length === 0
+		) {
+			continue;
+		}
+		const value = literalTokenValue(tokens[index + 2]);
+		if (value !== undefined) {
+			frames.at(-1)?.fields.set(token.value, value);
+		}
+	}
+	if (frames.length > 0) {
+		throw new Error('Unclosed table in Lua source.');
+	}
+	return prototypes;
+}
+
+function parseLocale(source: string): Map<string, string> {
+	const entries = new Map<string, string>();
+	let section = '';
+	for (const line of source.split(/\r?\n/)) {
+		const sectionMatch = /^\[([^\]]+)\]$/.exec(line);
+		if (sectionMatch !== null) {
+			section = sectionMatch[1];
+			continue;
+		}
+		const entryMatch = /^([^=]+)=(.*)$/.exec(line);
+		if (entryMatch !== null) {
+			entries.set(`${section}.${entryMatch[1]}`, entryMatch[2]);
+		}
+	}
+	return entries;
+}
+
+function combinedLocales(sources: ReadonlyMap<string, string>): Map<string, string> {
+	const locales = new Map<string, string>();
+	for (const path of LOCALE_SOURCE_PATHS) {
+		for (const [key, value] of parseLocale(requiredSource(sources, path))) {
+			locales.set(key, value);
+		}
+	}
+	return locales;
+}
+
+function requireLocale(locales: ReadonlyMap<string, string>, key: string): string {
+	const value = locales.get(key);
+	if (value === undefined) {
+		throw new Error(`Missing authorized English locale label: ${key}`);
+	}
+	return value;
+}
+
+function integerAssignment(source: string, name: string): number {
+	const match = new RegExp(`^\\s*${name}\\s*=\\s*(\\d+)\\s*[,;]?`, 'm').exec(source);
+	if (match === null) {
+		throw new Error(`Missing integer assignment: ${name}`);
+	}
+	return Number(match[1]);
+}
+
+function objectIntegerField(source: string, name: string): number {
+	const match = new RegExp(`^\\s*${name}\\s*=\\s*(\\d+)\\s*,?`, 'm').exec(source);
+	if (match === null) {
+		throw new Error(`Missing integer object field: ${name}`);
+	}
+	return Number(match[1]);
+}
+
+function styleBlock(source: string, name: string): string {
+	const startMatch = new RegExp(`^\\s*${name}\\s*=\\s*\\{`, 'm').exec(source);
+	if (startMatch === null) {
+		throw new Error(`Missing style block: ${name}`);
+	}
+	const openingBrace = source.indexOf('{', startMatch.index);
+	let depth = 0;
+	for (let cursor = openingBrace; cursor < source.length; cursor += 1) {
+		if (source[cursor] === '{') {
+			depth += 1;
+		} else if (source[cursor] === '}') {
+			depth -= 1;
+			if (depth === 0) {
+				return source.slice(openingBrace + 1, cursor);
+			}
+		}
+	}
+	throw new Error(`Unclosed style block: ${name}`);
+}
+
+function requiredMatch(source: string, expression: RegExp, label: string): RegExpExecArray {
+	const match = expression.exec(source);
+	if (match === null) {
+		throw new Error(`Missing ${label}.`);
+	}
+	return match;
+}
+
+function extractSignalTypeOrder(source: string): string[] {
+	const typeNames = [...source.matchAll(/addIterator\((\w+)PrototypeList::Iterator\(\)\);/g)].map(
+		(match) => match[1],
+	);
+	const typeByPrototypeList = new Map<string, string>([
+		['Item', 'item'],
+		['Entity', 'entity'],
+		['Fluid', 'fluid'],
+		['VirtualSignal', 'virtual'],
+		['Recipe', 'recipe'],
+		['SpaceLocation', 'space-location'],
+		['Quality', 'quality'],
+	]);
+	return typeNames.map((typeName) => {
+		const signalType = typeByPrototypeList.get(typeName);
+		if (signalType === undefined) {
+			throw new Error(`Unknown ChatIcon prototype list: ${typeName}`);
+		}
+		return signalType;
+	});
+}
+
+function decodeCppString(value: string): string {
+	return value.replaceAll(/\\x([0-9A-Fa-f]{2})/g, (_match, hexadecimal: string) =>
+		String.fromCodePoint(Number.parseInt(hexadecimal, 16)),
+	);
+}
+
+function extractComparators(comparisonSource: string, stringUtilitySource: string): string[] {
+	const arrayBody = requiredMatch(
+		comparisonSource,
+		/Comparison::allComparisons\s*=\s*\{([^}]+)\}/s,
+		'Comparison::allComparisons',
+	)[1];
+	const names = [...arrayBody.matchAll(/Comparison::(\w+)/g)].map((match) => match[1]);
+	const returnValues = new Map<string, string>();
+	for (const match of comparisonSource.matchAll(/case Comparison::(\w+): return ("[^"]+"|UTF8_\w+);/g)) {
+		const rawValue = match[2];
+		if (rawValue.startsWith('"')) {
+			returnValues.set(match[1], rawValue.slice(1, -1));
+			continue;
+		}
+		const macro = requiredMatch(
+			stringUtilitySource,
+			new RegExp(`#define\\s+${rawValue}\\s+"([^"]+)"`),
+			rawValue,
+		)[1];
+		returnValues.set(match[1], Buffer.from(decodeCppString(macro), 'binary').toString('utf8'));
+	}
+	return names.map((name) => {
+		const value = returnValues.get(name);
+		if (value === undefined) {
+			throw new Error(`Missing serialized comparator: ${name}`);
+		}
+		return value;
+	});
+}
+
+function mergePrototypes(
+	sources: ReadonlyMap<string, string>,
+	paths: readonly string[],
+	predicate: (prototype: LuaPrototype) => boolean,
+): LuaPrototype[] {
+	const prototypes = new Map<string, LuaPrototype>();
+	for (const path of paths) {
+		for (const prototype of extractLiteralLuaPrototypes(requiredSource(sources, path))) {
+			if (!predicate(prototype)) {
+				continue;
+			}
+			const key = `${prototype.type}:${prototype.name}`;
+			if (prototypes.has(key)) {
+				throw new Error(`Duplicate literal prototype: ${key}`);
+			}
+			prototypes.set(key, prototype);
+		}
+	}
+	return [...prototypes.values()];
+}
+
+function requiredPrototypeField(prototype: LuaPrototype, field: 'icon' | 'order'): string {
+	const value = prototype[field];
+	if (value === undefined) {
+		throw new Error(`Prototype ${prototype.type}:${prototype.name} has no literal ${field}.`);
+	}
+	return value;
+}
+
+function extractQualities(
+	sources: ReadonlyMap<string, string>,
+	locales: ReadonlyMap<string, string>,
+): GameUiSpec['qualities'] {
+	const qualities = mergePrototypes(sources, QUALITY_SOURCE_PATHS, (prototype) => prototype.type === 'quality');
+	const normal = qualities.find((quality) => quality.name === 'normal');
+	if (normal === undefined) {
+		throw new Error('Missing normal quality prototype.');
+	}
+	const qualityData = requiredSource(sources, 'data/quality/data.lua');
+	const qualityUpdates = requiredSource(sources, 'data/quality/prototypes/base-data-updates.lua');
+	if (!/data\.raw\.quality\.normal\.hidden\s*=\s*false/.test(qualityData)) {
+		throw new Error('Quality feature does not expose normal quality.');
+	}
+	normal.hidden = false;
+	const normalNext = requiredMatch(
+		qualityUpdates,
+		/data\.raw\.quality\.normal\.next\s*=\s*"([^"]+)"/,
+		'normal quality next relationship',
+	)[1];
+	normal.next = normalNext;
+	return qualities
+		.map((quality) => {
+			if (quality.level === undefined) {
+				throw new Error(`Quality ${quality.name} has no literal level.`);
+			}
+			return {
+				name: quality.name,
+				label: requireLocale(locales, `quality-name.${quality.name}`),
+				level: quality.level,
+				order: requiredPrototypeField(quality, 'order'),
+				icon: requiredPrototypeField(quality, 'icon'),
+				hidden: quality.hidden ?? false,
+				...(quality.next === undefined ? {} : {next: quality.next}),
+			};
+		})
+		.sort((left, right) => left.order.localeCompare(right.order) || left.name.localeCompare(right.name));
+}
+
+function extractCategories(
+	sources: ReadonlyMap<string, string>,
+	locales: ReadonlyMap<string, string>,
+): GameUiSpec['signals']['categories'] {
+	return mergePrototypes(sources, ITEM_GROUP_SOURCE_PATHS, (prototype) => prototype.type === 'item-group')
+		.map((category) => ({
+			name: category.name,
+			label: requireLocale(locales, `item-group-name.${category.name}`),
+			order: requiredPrototypeField(category, 'order'),
+			icon: requiredPrototypeField(category, 'icon'),
+		}))
+		.sort((left, right) => left.order.localeCompare(right.order) || left.name.localeCompare(right.name));
+}
+
+function addUpgrade(
+	upgrades: Map<string, {prototypeType: string; from: string; to: string}>,
+	prototypeType: string,
+	from: string,
+	to: string,
+): void {
+	const existing = upgrades.get(from);
+	if (existing !== undefined && (existing.to !== to || existing.prototypeType !== prototypeType)) {
+		throw new Error(`Prototype ${from} has conflicting literal next upgrades.`);
+	}
+	upgrades.set(from, {prototypeType, from, to});
+}
+
+function orderedUpgrades(
+	upgrades: ReadonlyMap<string, {prototypeType: string; from: string; to: string}>,
+): GameUiSpec['upgrades']['next'] {
+	const remaining = new Map(upgrades);
+	const targets = new Set([...remaining.values()].map(({to}) => to));
+	const starts = [...remaining.keys()].filter((from) => !targets.has(from)).sort();
+	const result: GameUiSpec['upgrades']['next'] = [];
+	const appendChain = (start: string) => {
+		let from = start;
+		while (true) {
+			const upgrade = remaining.get(from);
+			if (upgrade === undefined) {
+				return;
+			}
+			result.push(upgrade);
+			remaining.delete(from);
+			from = upgrade.to;
+		}
+	};
+	for (const start of starts) {
+		appendChain(start);
+	}
+	for (const start of [...remaining.keys()].sort()) {
+		appendChain(start);
+	}
+	return result;
+}
+
+function extractUpgrades(sources: ReadonlyMap<string, string>): GameUiSpec['upgrades'] {
+	const groupMembers = new Map<string, Map<string, {prototypeType: string; name: string}>>();
+	const nextUpgrades = new Map<string, {prototypeType: string; from: string; to: string}>();
+	for (const path of UPGRADE_SOURCE_PATHS) {
+		const source = requiredSource(sources, path);
+		for (const prototype of extractLiteralLuaPrototypes(source)) {
+			if (prototype.fastReplaceableGroup !== undefined && prototype.fastReplaceableGroup !== '') {
+				const group =
+					groupMembers.get(prototype.fastReplaceableGroup) ??
+					new Map<string, {prototypeType: string; name: string}>();
+				group.set(`${prototype.type}:${prototype.name}`, {prototypeType: prototype.type, name: prototype.name});
+				groupMembers.set(prototype.fastReplaceableGroup, group);
+			}
+			if (prototype.nextUpgrade !== undefined) {
+				addUpgrade(nextUpgrades, prototype.type, prototype.name, prototype.nextUpgrade);
+			}
+		}
+		for (const match of source.matchAll(/data\.raw\["([^"]+)"\]\["([^"]+)"\]\.next_upgrade\s*=\s*"([^"]+)"/g)) {
+			addUpgrade(nextUpgrades, match[1], match[2], match[3]);
+		}
+		for (const match of source.matchAll(/data\.raw\.(\w+)\.(\w+)\.next_upgrade\s*=\s*"([^"]+)"/g)) {
+			addUpgrade(nextUpgrades, match[1], match[2], match[3]);
+		}
+	}
+	const groups = [...groupMembers]
+		.map(([name, members]) => ({
+			name,
+			members: [...members.values()].sort(
+				(left, right) =>
+					left.prototypeType.localeCompare(right.prototypeType) || left.name.localeCompare(right.name),
+			),
+		}))
+		.sort((left, right) => left.name.localeCompare(right.name));
+	return {groups, next: orderedUpgrades(nextUpgrades)};
+}
+
+function extractStyleBindings(guiStyleSource: string, guiStyleHeader: string): GameUiSpec['styles']['bindings'] {
+	const slotButton = requiredMatch(
+		guiStyleSource,
+		/GuiStyle::slotButtonStyleName\s*=\s*"([^"]+)"/,
+		'GuiStyle slot button binding',
+	)[1];
+	const binding = (getter: string) =>
+		requiredMatch(
+			guiStyleHeader,
+			new RegExp(`MACRO\\(\\w+,\\s*${getter},\\s*"([^"]+)"\\)`),
+			`GuiStyle ${getter} binding`,
+		)[1];
+	return {
+		slotButton,
+		filterSlotTable: binding('filterSlotTable'),
+		deepSlotsScrollPane: binding('deepSlotsScrollPane'),
+	};
+}
+
+export function buildGameUiSpec(sourceLock: GameUiSourceLock, sources: ReadonlyMap<string, string>): GameUiSpec {
+	const authorizedPaths = new Set(sourceLock.sources.map(({path}) => path));
+	for (const path of sources.keys()) {
+		if (!authorizedPaths.has(path)) {
+			throw new Error(`Unauthorized Factorio source supplied to generator: ${path}`);
+		}
+	}
+	const locales = combinedLocales(sources);
+	const utilitySource = requiredSource(sources, 'data/core/prototypes/utility-constants.lua');
+	const styleSource = requiredSource(sources, 'data/core/prototypes/style.lua');
+	const slotTable = styleBlock(styleSource, 'slot_table');
+	const signalsTableSource = requiredSource(sources, 'src/Gui/SignalsTable.cpp');
+	const signalsTableConstructor = requiredMatch(
+		signalsTableSource,
+		/SignalsTable::SignalsTable[\s\S]+?:\s*agui::Table\((\d+),/,
+		'SignalsTable column count',
+	)[1];
+	const signalsTableWidth = requiredMatch(
+		signalsTableSource,
+		/setMinimalWidth\(GuiConstants::getScaled\((\d+)\)\)/,
+		'SignalsTable minimum width',
+	)[1];
+	const qualityConditionSource = requiredSource(sources, 'src/Gui/QualityConditionGui.cpp');
+	if (!qualityConditionSource.includes('Comparison::allComparisons')) {
+		throw new Error('Quality condition comparator order is no longer sourced from Comparison::allComparisons.');
+	}
+	const qualitySelectorSource = requiredSource(sources, 'src/Gui/QualitySelector.cpp');
+	if (!qualitySelectorSource.includes('qualitySelectorDropdownThreshold')) {
+		throw new Error('Quality selector no longer uses the configured dropdown threshold.');
+	}
+
+	return parseGameUiSpec({
+		schemaVersion: 1,
+		sourceVersion: sourceLock.sourceVersion,
+		provenance: {
+			repository: sourceLock.repository,
+			tag: sourceLock.tag,
+			commit: sourceLock.commit,
+			locale: 'en',
+			sources: [...sourceLock.sources].sort((left, right) => left.path.localeCompare(right.path)),
+		},
+		qualities: extractQualities(sources, locales),
+		qualityComparators: extractComparators(
+			requiredSource(sources, 'src/Comparison.cpp'),
+			requiredSource(sources, 'libraries/CommonUtil/StringUtil.hpp'),
+		),
+		labels: {
+			anyQuality: requireLocale(locales, '.quality-condition-any'),
+		},
+		signals: {
+			typeOrder: extractSignalTypeOrder(requiredSource(sources, 'src/Gui/ChatIconIDIterator.cpp')),
+			categories: extractCategories(sources, locales),
+		},
+		upgrades: extractUpgrades(sources),
+		utilityConstants: {
+			selectGroupRowCount: objectIntegerField(utilitySource, 'select_group_row_count'),
+			selectSlotRowCount: objectIntegerField(utilitySource, 'select_slot_row_count'),
+			qualitySelectorDropdownThreshold: objectIntegerField(utilitySource, 'quality_selector_dropdown_threshold'),
+		},
+		styles: {
+			slotSize: integerAssignment(styleSource, 'slot_size'),
+			filterGroupTabWidth: objectIntegerField(styleBlock(styleSource, 'filter_group_tab'), 'minimal_width'),
+			filterGroupTabHeight: objectIntegerField(styleBlock(styleSource, 'filter_group_tab'), 'height'),
+			filterSlotHorizontalSpacing: objectIntegerField(slotTable, 'horizontal_spacing'),
+			filterSlotVerticalSpacing: objectIntegerField(slotTable, 'vertical_spacing'),
+			signalsTableColumnCount: Number(signalsTableConstructor),
+			signalsTableMinimumWidth: Number(signalsTableWidth),
+			bindings: extractStyleBindings(
+				requiredSource(sources, 'src/Gui/GuiStyle.cpp'),
+				requiredSource(sources, 'src/Gui/GuiStyle.hpp'),
+			),
+		},
+	});
+}
+
+export function serializeGameUiSpec(specification: GameUiSpec): string {
+	const formatJson = (value: unknown, depth: number): string => {
+		if (value === null || typeof value !== 'object') {
+			return JSON.stringify(value);
+		}
+		if (Array.isArray(value)) {
+			if (value.length === 0) {
+				return '[]';
+			}
+			if (value.every((entry) => entry === null || typeof entry !== 'object')) {
+				return `[${value.map((entry) => formatJson(entry, depth + 1)).join(', ')}]`;
+			}
+			const indentation = '\t'.repeat(depth + 1);
+			return `[\n${indentation}${value
+				.map((entry) => formatJson(entry, depth + 1))
+				.join(`,\n${indentation}`)}\n${'\t'.repeat(depth)}]`;
+		}
+		const entries = Object.entries(value);
+		if (entries.length === 0) {
+			return '{}';
+		}
+		const indentation = '\t'.repeat(depth + 1);
+		return `{\n${indentation}${entries
+			.map(([key, entry]) => `${JSON.stringify(key)}: ${formatJson(entry, depth + 1)}`)
+			.join(`,\n${indentation}`)}\n${'\t'.repeat(depth)}}`;
+	};
+	return `${formatJson(parseGameUiSpec(specification), 0)}\n`;
+}

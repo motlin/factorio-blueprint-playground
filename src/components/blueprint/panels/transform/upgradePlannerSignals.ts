@@ -1,4 +1,5 @@
 import gameData from '../../../../generated/game-data.json';
+import gameUiSpec from '../../../../generated/game-ui-spec.json';
 import type {SignalID, UpgradeSourceSignal} from '../../../../parsing/types';
 
 /**
@@ -108,7 +109,7 @@ export function isUpgradeTargetSelectionAllowed(source: UpgradeSourceSignal, tar
 
 export function upgradeTargetOptions(source: UpgradeSourceSignal, currentTarget: SignalID): SignalID[] {
 	const adjacent = new Map<string, Set<string>>();
-	for (const {from, to} of gameData.nextUpgrades) {
+	for (const {from, to} of gameUiSpec.upgrades.next) {
 		const fromTargets = adjacent.get(from) ?? new Set<string>();
 		fromTargets.add(to);
 		adjacent.set(from, fromTargets);
