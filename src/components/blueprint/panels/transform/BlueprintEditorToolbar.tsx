@@ -2,6 +2,7 @@ import {useId} from 'react';
 
 import type {UpgradeDirection} from '../../../../transform/upgradePlanner';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
+import {FactorioButton, FactorioButtonKind, FactorioInventorySlot, FactorioTooltip} from '../../../ui/FactorioUi';
 import type {UpgradePlannerChoice} from './UpgradePlannerSelectorItem';
 
 export interface PlacedUpgradePlanner {
@@ -60,9 +61,8 @@ export function BlueprintEditorToolbar({
 		<div className="blueprint-editor-toolbar" role="toolbar" aria-label="Blueprint editor actions">
 			<div className="factorio-toolbar-control">
 				<div className="blueprint-editor-toolbar__upgrade">
-					<button
-						type="button"
-						className="factorio-toolbar-button blueprint-editor-toolbar__button blueprint-editor-toolbar__button--upgrade"
+					<FactorioButton
+						className="blueprint-editor-toolbar__button blueprint-editor-toolbar__button--upgrade"
 						aria-label={
 							placedPlanner === undefined
 								? 'Upgrade items and entities in the blueprint'
@@ -99,10 +99,9 @@ export function BlueprintEditorToolbar({
 						}}
 					>
 						<FactorioIcon icon={{type: 'item', name: 'upgrade-planner'}} size="large" />
-					</button>
-					<button
-						type="button"
-						className="factorio-toolbar-button blueprint-editor-toolbar__planner-slot"
+					</FactorioButton>
+					<FactorioInventorySlot
+						className="blueprint-editor-toolbar__planner-slot"
 						aria-label={
 							selectedPlannerLabel === undefined
 								? 'Choose upgrade planner for toolbar slot'
@@ -139,24 +138,22 @@ export function BlueprintEditorToolbar({
 								</span>
 							</>
 						)}
-					</button>
+					</FactorioInventorySlot>
 					{placedPlanner === undefined ? null : (
-						<button
-							type="button"
+						<FactorioButton
+							kind={FactorioButtonKind.Delete}
 							className="blueprint-editor-toolbar__planner-clear"
 							aria-label={`Remove ${selectedPlannerLabel} from toolbar slot`}
 							title={`Remove ${selectedPlannerLabel} from toolbar slot`}
 							onClick={onClearPlacedPlanner}
-						>
-							×
-						</button>
+						/>
 					)}
 				</div>
-				<span id={tooltipId} className="factorio-toolbar-tooltip" role="tooltip">
+				<FactorioTooltip id={tooltipId} className="factorio-toolbar-tooltip">
 					{placedPlanner === undefined
 						? 'Upgrade items and entities in the blueprint.'
 						: `Apply ${selectedPlannerLabel}. Shift+Enter or right-click applies the opposite direction.`}
-				</span>
+				</FactorioTooltip>
 				<p
 					id={dropErrorId}
 					className="blueprint-editor-toolbar__drop-error"
@@ -167,9 +164,8 @@ export function BlueprintEditorToolbar({
 			</div>
 			{parameterizationAvailable ? (
 				<div className="factorio-toolbar-control">
-					<button
-						type="button"
-						className="factorio-toolbar-button blueprint-editor-toolbar__button blueprint-editor-toolbar__button--parameterization"
+					<FactorioButton
+						className="blueprint-editor-toolbar__button blueprint-editor-toolbar__button--parameterization"
 						aria-label="Parametrise or reconfigure the blueprint"
 						aria-controls={parameterizationDialogId}
 						aria-describedby={parameterizationTooltipId}
@@ -181,10 +177,10 @@ export function BlueprintEditorToolbar({
 						}}
 					>
 						<FactorioIcon icon={{type: 'item', name: 'parameter-'}} size="large" />
-					</button>
-					<span id={parameterizationTooltipId} className="factorio-toolbar-tooltip" role="tooltip">
+					</FactorioButton>
+					<FactorioTooltip id={parameterizationTooltipId} className="factorio-toolbar-tooltip">
 						Parametrise/reconfigure the blueprint.
-					</span>
+					</FactorioTooltip>
 				</div>
 			) : null}
 		</div>

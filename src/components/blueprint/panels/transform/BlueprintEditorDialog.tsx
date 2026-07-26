@@ -5,6 +5,7 @@ import type {BlueprintSnapGrid} from '../../../../transform/blueprintEditor';
 import type {BlueprintComponentIdentity, BlueprintComponentRemovalKey} from '../../../../transform/componentRemoval';
 import type {BlueprintFilterCategories} from '../../../../transform/strip';
 import type {UpgradeDirection} from '../../../../transform/upgradePlanner';
+import {FactorioButton, FactorioButtonKind} from '../../../ui/FactorioUi';
 import {BlueprintComponentsGrid} from './BlueprintComponentsGrid';
 import {BlueprintContentFilters} from './BlueprintContentFilters';
 import {BlueprintDescriptionEditor} from './BlueprintDescriptionEditor';
@@ -146,7 +147,7 @@ export function BlueprintEditorDialog({
 	return (
 		<div className="transform-dialog-backdrop transform-workbench-backdrop blueprint-editor__backdrop">
 			<section
-				className="transform-dialog transform-workbench transform-workbench--blueprint"
+				className="factorio-frame factorio-frame--shallow transform-dialog transform-workbench transform-workbench--blueprint"
 				role="dialog"
 				aria-modal="true"
 				aria-label="Blueprint Editor"
@@ -156,7 +157,7 @@ export function BlueprintEditorDialog({
 					}
 				}}
 			>
-				<header className="transform-dialog__header transform-workbench__header">
+				<header className="factorio-title-bar transform-dialog__header transform-workbench__header">
 					<div className="transform-workbench__title">
 						<div>
 							<h3>
@@ -167,15 +168,13 @@ export function BlueprintEditorDialog({
 							<span>{breadcrumb}</span>
 						</div>
 					</div>
-					<button
-						type="button"
+					<FactorioButton
+						kind={FactorioButtonKind.Close}
 						className="transform-dialog__close"
 						aria-label="Close Blueprint Editor"
 						title="Close Blueprint Editor"
 						onClick={onClose}
-					>
-						×
-					</button>
+					/>
 				</header>
 
 				<div className="transform-workbench__body blueprint-editor__layout">

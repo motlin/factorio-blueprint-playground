@@ -1,4 +1,5 @@
 import type {SignalID, SignalType} from '../../../parsing/types';
+import {FactorioQualityBadge} from '../../ui/FactorioUi';
 
 import styles from './FactorioIcon.module.css';
 
@@ -28,12 +29,10 @@ function getQualityNode(icon: SignalID) {
 	}
 
 	return (
-		<img
+		<FactorioQualityBadge
 			loading="lazy"
 			className={styles.iconQuality}
-			src={`https://factorio-icon-cdn.pages.dev/quality/${icon.quality}.webp`}
-			alt={icon.quality}
-			title={`Quality: ${icon.quality}`}
+			quality={icon.quality}
 			data-testid="quality"
 		/>
 	);

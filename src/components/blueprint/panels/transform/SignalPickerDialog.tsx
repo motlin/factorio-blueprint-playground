@@ -5,6 +5,7 @@ import gameUiSpec from '../../../../generated/game-ui-spec.json';
 import type {QualityComparator, SignalID, SignalType} from '../../../../parsing/types';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
 import {ButtonGreen} from '../../../ui/ButtonGreen';
+import {FactorioButton, FactorioButtonKind, FactorioInventorySlot} from '../../../ui/FactorioUi';
 import {signalWithUpgradeQuality, type UpgradeQualitySelection, type UpgradeQualitySignal} from './upgradeQuality';
 import {UpgradeQualityControls} from './UpgradeQualityControls';
 import {useDialogFocus} from './useDialogFocus';
@@ -71,7 +72,7 @@ import {useDialogFocus} from './useDialogFocus';
  * 2.1.12; BE-6 and the July 23 Set the filter, comparator-menu, and restricted
  * Select upgrade captures.
  */
-const gridColumnCount = gameUiSpec.utilityConstants.selectSlotRowCount;
+const gridColumnCount = gameUiSpec.styles.signalsTableColumnCount;
 
 type PickerSignal = UpgradeQualitySignal;
 type PickerCategoryId = 'items' | 'recipes' | 'fluids' | 'virtual' | 'environment' | 'other';
@@ -247,12 +248,12 @@ export function SignalPickerDialog({
 		<div className="transform-dialog-backdrop transform-picker__backdrop">
 			<section
 				ref={dialogReference}
-				className="transform-dialog transform-dialog--picker"
+				className="factorio-frame factorio-frame--shallow transform-dialog transform-dialog--picker"
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby={headingId}
 			>
-				<header className="transform-dialog__header transform-picker__header">
+				<header className="factorio-title-bar transform-dialog__header transform-picker__header">
 					<h3 id={headingId}>{title}</h3>
 					<label className="transform-picker__search" htmlFor={searchId}>
 						<span>Search</span>
@@ -265,17 +266,15 @@ export function SignalPickerDialog({
 							}}
 						/>
 					</label>
-					<button
-						type="button"
+					<FactorioButton
+						kind={FactorioButtonKind.Close}
 						className="transform-dialog__close"
 						aria-label={`Close ${title}`}
 						title={`Close ${title}`}
 						onClick={() => {
 							onClose();
 						}}
-					>
-						×
-					</button>
+					/>
 				</header>
 				<div className="panel-hole transform-picker">
 					<div className="transform-picker__tabs" role="tablist" aria-label="Signal categories">
@@ -297,20 +296,24 @@ export function SignalPickerDialog({
 					</div>
 					<div
 						id={gridId}
-						className="transform-picker__grid"
+						className="factorio-scroll-frame transform-picker__grid"
+						data-factorio-style={gameUiSpec.styles.bindings.deepSlotsScrollPane}
 						role="group"
 						aria-label={`${activeCategory?.label ?? 'Signal'} choices`}
+						style={{
+							columnGap: gameUiSpec.styles.filterSlotHorizontalSpacing,
+							rowGap: gameUiSpec.styles.filterSlotVerticalSpacing,
+						}}
 					>
 						{filteredOptions.map((signal, index) => (
-							<button
-								type="button"
+							<FactorioInventorySlot
 								key={signalPrototypeIdentity(signal)}
 								ref={(button) => {
 									optionButtons.current[index] = button;
 								}}
 								className="transform-picker__option"
 								aria-label={`Choose ${signalName(signal)}`}
-								aria-pressed={signalPrototypeIdentity(signal) === selectedIdentity}
+								selected={signalPrototypeIdentity(signal) === selectedIdentity}
 								tabIndex={index === tabbableOptionIndex ? 0 : -1}
 								title={signalTitle(signal)}
 								onClick={() => {
@@ -321,7 +324,7 @@ export function SignalPickerDialog({
 								}}
 							>
 								<FactorioIcon icon={signal} size="large" />
-							</button>
+							</FactorioInventorySlot>
 						))}
 						{filteredOptions.length === 0 ? (
 							<p className="transform-picker__empty">No matching signals in this category.</p>

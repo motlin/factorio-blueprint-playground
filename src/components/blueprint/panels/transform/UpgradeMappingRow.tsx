@@ -1,6 +1,7 @@
 import type {UpgradeSourceSignal} from '../../../../parsing/types';
 import type {UpgradeCandidate} from '../../../../transform/upgradePlanner';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
+import {FactorioInventorySlot} from '../../../ui/FactorioUi';
 import {signalName, signalTitle} from './upgradePlannerSignals';
 
 interface SignalSlotProps {
@@ -38,13 +39,12 @@ interface UpgradeMappingRowProps {
  */
 export function SignalSlot({label, onClick, onContextMenu, signal}: SignalSlotProps) {
 	return (
-		<button
-			type="button"
+		<FactorioInventorySlot
 			className={`transform-signal-slot${signal === undefined ? ' transform-signal-slot--empty' : ''}${
 				signal?.comparator === undefined ? '' : ' transform-signal-slot--condition'
 			}`}
 			aria-label={label}
-			aria-disabled={onClick === undefined}
+			disabled={onClick === undefined}
 			title={signal === undefined ? label : signalTitle(signal)}
 			onClick={() => {
 				onClick?.();
@@ -62,7 +62,7 @@ export function SignalSlot({label, onClick, onContextMenu, signal}: SignalSlotPr
 					{signal.comparator}
 				</span>
 			)}
-		</button>
+		</FactorioInventorySlot>
 	);
 }
 

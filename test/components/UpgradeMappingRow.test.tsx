@@ -58,7 +58,7 @@ describe('UpgradeMappingRow', () => {
 			attributes: {
 				key: 'entity:transport-belt:rare:≤',
 				rowTitle: 'Transport belt → Fast transport belt',
-				sourceClass: 'transform-signal-slot transform-signal-slot--condition',
+				sourceClass: 'factorio-inventory-slot transform-signal-slot transform-signal-slot--condition',
 				sourceTitle: 'Transport belt\nentity:transport-belt\nQuality: ≤ rare',
 				targetTitle: 'Fast transport belt\nentity:fast-transport-belt\nQuality: = normal',
 			},

@@ -6,6 +6,7 @@ import {serializeBlueprint} from '../../../../parsing/blueprintParser';
 import type {BlueprintString, UpgradePlanner} from '../../../../parsing/types';
 import {findUpgradePlanners, parseUpgradePlanner, type UpgradeDirection} from '../../../../transform/upgradePlanner';
 import {db, type DatabaseBlueprint} from '../../../../storage/db';
+import {FactorioButton, FactorioButtonKind} from '../../../ui/FactorioUi';
 import {useDialogFocus} from './useDialogFocus';
 import {UpgradePlannerSelectorItem, type UpgradePlannerChoice} from './UpgradePlannerSelectorItem';
 
@@ -180,24 +181,22 @@ export function UpgradePlannerSelectorDialog({
 			<section
 				ref={dialogReference}
 				id={dialogId}
-				className="transform-dialog upgrade-planner-selector"
+				className="factorio-frame factorio-frame--shallow transform-dialog upgrade-planner-selector"
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby={headingId}
 			>
-				<header className="transform-dialog__header upgrade-planner-selector__header">
+				<header className="factorio-title-bar transform-dialog__header upgrade-planner-selector__header">
 					<h3 id={headingId}>
 						{includeEditingChoices ? 'Load an upgrade planner' : 'Select the upgrade planner to apply'}
 					</h3>
-					<button
-						type="button"
+					<FactorioButton
+						kind={FactorioButtonKind.Close}
 						className="transform-dialog__close"
 						aria-label="Close upgrade planner selector"
 						title="Close upgrade planner selector"
 						onClick={onClose}
-					>
-						×
-					</button>
+					/>
 				</header>
 				<p id={instructionsId} className="upgrade-planner-selector__hint">
 					{includeEditingChoices ? (
