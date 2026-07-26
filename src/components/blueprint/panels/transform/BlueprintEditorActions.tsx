@@ -18,6 +18,21 @@ interface BlueprintEditorActionsProps {
 	selectedPath: string;
 }
 
+/**
+ * Commit contract from Factorio 2.1.12's setup and record-preview editors:
+ *
+ * - The footer exposes one green commit action, not an intermediate Apply step.
+ * - An explicit `NewBlueprint` versus `ExistingBlueprint` view mode owns
+ *   Create-versus-Commit wording. Transform sessions edit loaded data, so their
+ *   existing-root action is `Save blueprint`; a nested library entry is
+ *   `Save to book`.
+ * - Dirty close offers keep, discard, or that same commit action. Saving a nested
+ *   selection writes it back into the root book before navigation/export state is
+ *   replaced.
+ *
+ * Evidence: BlueprintSetupGui, BlueprintRecordPreviewEdit, and
+ * BlueprintToBeSetup.
+ */
 export function BlueprintEditorActions({
 	closeConfirmationOpen,
 	dirty,

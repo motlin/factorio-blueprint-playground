@@ -15,6 +15,34 @@ import {BlueprintSnapGridEditor} from './BlueprintSnapGridEditor';
 import {BlueprintTitleEditor} from './BlueprintTitleEditor';
 import {UpgradePlannerSelectorDialog, type UpgradePlannerChoice} from './UpgradePlannerSelectorDialog';
 
+/**
+ * Factorio 2.1.12 source contract for the editor shell:
+ *
+ * - The caption is explicit `NewBlueprint`, `ExistingBlueprint`, or library-record
+ *   view-mode state; new and existing captions must not be inferred from an empty
+ *   title. The playground currently opens loaded blueprints and library entries,
+ *   not new-item setup sessions.
+ * - `BlueprintTitleEditor`, `BlueprintDescriptionEditor`, and
+ *   `BlueprintLabelIcons` own the label fields shown in BE-1. Four icon slots are
+ *   edited independently; the signal chooser follows BE-6.
+ * - `BlueprintSnapGridEditor` owns the enabled state, positive grid size,
+ *   absolute/relative choice, and absolute offset. Disabling snapping removes its
+ *   persisted fields.
+ * - `BlueprintComponentsGrid` owns the BE-7 inventory: secondary activation
+ *   removes a component type and primary activation restores it.
+ * - `BlueprintContentFilters` owns the BE-8 options. Modules appear only when
+ *   present; Entities, Trains, and Tiles appear only when more than one structural
+ *   category is relevant.
+ * - `BlueprintParameterizationDialog` is the local BE-5 child editor for parameter
+ *   name, value signal, enabled state, and dependency. Its confirmation updates
+ *   the parent draft only.
+ * - BE-1's rendered blueprint is evidence for Factorio's renderer, which this
+ *   application does not have. The shell must not substitute a metadata pane or a
+ *   fabricated preview.
+ *
+ * Evidence: BlueprintSetupGui, BlueprintSettingsGui,
+ * BlueprintRecordPreviewEdit, and BlueprintLabelEdit.
+ */
 interface BlueprintEditorDialogProps {
 	blueprint: BlueprintString;
 	book: boolean;

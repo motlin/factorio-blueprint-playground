@@ -24,6 +24,19 @@ interface BlueprintEditorToolbarProps {
 	selectorOpen: boolean;
 }
 
+/**
+ * Launcher contract from Factorio 2.1.12 BlueprintSettingsGui:
+ *
+ * - The Upgrade Planner control is a launcher when empty. Choosing or dropping a
+ *   planner fills its tool slot; primary activation applies upgrade direction and
+ *   secondary activation applies downgrade direction. The BE-1 toolbar and its
+ *   selector are tool actions, not a second editor commit stage.
+ * - Parametrisation opens the BE-5 local child editor for blueprints. The child
+ *   confirms back into the editor draft; it does not save the loaded root.
+ *
+ * `UpgradePlannerSelectorDialog`, `UpgradePlannerSelectorItem`, and
+ * `BlueprintParameterizationDialog` implement the launcher children.
+ */
 export function BlueprintEditorToolbar({
 	dropError,
 	onApplyPlacedPlanner,
