@@ -6,6 +6,8 @@ import {serializeBlueprint} from '../../../../parsing/blueprintParser';
 import type {BlueprintString, UpgradePlanner} from '../../../../parsing/types';
 import {findUpgradePlanners, parseUpgradePlanner, type UpgradeDirection} from '../../../../transform/upgradePlanner';
 import {db, type LibraryRecord} from '../../../../storage/db';
+import {BlueprintRecordViews} from '../../../library/BlueprintRecordViews';
+import type {BlueprintRecordModel} from '../../../library/blueprintRecordModel';
 import {FactorioButton, FactorioButtonKind} from '../../../ui/FactorioUi';
 import {useDialogFocus} from './useDialogFocus';
 import {UpgradePlannerSelectorItem, type UpgradePlannerChoice} from './UpgradePlannerSelectorItem';
@@ -24,6 +26,26 @@ interface UpgradePlannerSelectorDialogProps {
 
 const serializedPlannerCache = new WeakMap<UpgradePlanner, string>();
 const libraryPlannerCache = new WeakMap<LibraryRecord, UpgradePlanner>();
+
+interface UpgradePlannerSelectorRecord extends BlueprintRecordModel {
+	choice: UpgradePlannerChoice;
+}
+
+const DEFAULT_UPGRADE_CHOICE: UpgradePlannerChoice = {
+	label: 'Default Upgrade',
+	source: 'suggested',
+};
+const DEFAULT_UPGRADE_RECORD: UpgradePlannerSelectorRecord = {
+	id: DEFAULT_UPGRADE_CHOICE.source,
+	choice: DEFAULT_UPGRADE_CHOICE,
+	gameData: {
+		type: 'upgrade_planner',
+		label: DEFAULT_UPGRADE_CHOICE.label,
+		description: "Applies Factorio's automatic upgrade relationships.",
+		icons: [],
+	},
+};
+const DEFAULT_UPGRADE_RECORDS = [DEFAULT_UPGRADE_RECORD];
 
 function serializedPlanner(planner: UpgradePlanner): string {
 	const cachedPlanner = serializedPlannerCache.get(planner);
@@ -47,7 +69,52 @@ function libraryPlanner(record: LibraryRecord): UpgradePlanner {
 }
 
 function libraryPlannerLabel(record: LibraryRecord, planner: UpgradePlanner): string {
-	return record.gameData.label ?? planner.label ?? planner.settings.description ?? 'Saved upgrade planner';
+	return record.gameData.label ?? planner.label ?? 'Untitled upgrade planner';
+}
+
+function plannerIcons(planner: UpgradePlanner) {
+	return [...(planner.settings.icons ?? [])]
+		.sort((left, right) => left.index - right.index)
+		.map((icon) => icon.signal);
+}
+
+function applicationPlannerRecords(
+	libraryRecords: readonly LibraryRecord[],
+	sessionChoice: UpgradePlannerChoice | undefined,
+): UpgradePlannerSelectorRecord[] {
+	const records = libraryRecords.map<UpgradePlannerSelectorRecord>((record) => {
+		const planner = libraryPlanner(record);
+		const choice: UpgradePlannerChoice = {
+			label: libraryPlannerLabel(record, planner),
+			planner,
+			source: `library:${record.id}`,
+		};
+		return {
+			id: choice.source,
+			choice,
+			gameData: {
+				...record.gameData,
+				label: choice.label,
+				description: record.gameData.description ?? planner.settings.description,
+				icons: record.gameData.icons.length === 0 ? plannerIcons(planner) : record.gameData.icons,
+			},
+		};
+	});
+
+	if (sessionChoice !== undefined && !records.some((record) => record.choice.source === sessionChoice.source)) {
+		records.push({
+			id: sessionChoice.source,
+			choice: sessionChoice,
+			gameData: {
+				type: 'upgrade_planner',
+				label: sessionChoice.label,
+				description: sessionChoice.planner?.settings.description,
+				icons: sessionChoice.planner === undefined ? [] : plannerIcons(sessionChoice.planner),
+			},
+		});
+	}
+
+	return records;
 }
 
 function createUpgradePlannerChoices(
@@ -56,7 +123,7 @@ function createUpgradePlannerChoices(
 	includeEditingChoices: boolean,
 	sessionChoice: UpgradePlannerChoice | undefined,
 ): UpgradePlannerChoice[] {
-	const choices: UpgradePlannerChoice[] = [{label: 'Default Upgrade', source: 'suggested'}];
+	const choices: UpgradePlannerChoice[] = [DEFAULT_UPGRADE_CHOICE];
 	const serializedPlanners = new Set<string>();
 
 	if (sessionChoice !== undefined) {
@@ -104,8 +171,7 @@ function createUpgradePlannerChoices(
  *   built-in no-record choice. URL provenance must not define whether an
  *   otherwise saved planner belongs to the library.
  * - Equal serialized contents do not make two records the same: shelf/book
- *   location is record identity. The current content-based de-duplication and
- *   absence of search/view controls are transitional projections.
+ *   location is record identity.
  * - Application mode is BE-3: choosing Default Upgrade, a library planner, or an
  *   inventory planner dispatches upgrade/downgrade immediately and closes. It is
  *   not a save-confirmation dialog and must never make a saved planner wait for a
@@ -135,8 +201,15 @@ export function UpgradePlannerSelectorDialog({
 		[],
 	);
 	const choices = useMemo(
-		() => createUpgradePlannerChoices(rootBlueprint, libraryRecords, includeEditingChoices, sessionChoice),
+		() =>
+			includeEditingChoices
+				? createUpgradePlannerChoices(rootBlueprint, libraryRecords, includeEditingChoices, sessionChoice)
+				: [],
 		[rootBlueprint, libraryRecords, includeEditingChoices, sessionChoice],
+	);
+	const applicationRecords = useMemo(
+		() => applicationPlannerRecords(libraryRecords, sessionChoice),
+		[libraryRecords, sessionChoice],
 	);
 	const [activeIndex, setActiveIndex] = useState(() =>
 		Math.max(
@@ -145,7 +218,9 @@ export function UpgradePlannerSelectorDialog({
 		),
 	);
 	const dialogReference = useDialogFocus<HTMLElement>({
-		initialFocusSelector: '.upgrade-planner-selector__tile[tabindex="0"]',
+		initialFocusSelector: includeEditingChoices
+			? '.upgrade-planner-selector__tile[tabindex="0"]'
+			: '.blueprint-record-item[tabindex="0"]',
 		onClose,
 	});
 
@@ -176,6 +251,7 @@ export function UpgradePlannerSelectorDialog({
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby={headingId}
+				aria-describedby={instructionsId}
 			>
 				<header className="factorio-title-bar transform-dialog__header upgrade-planner-selector__header">
 					<h3 id={headingId}>
@@ -186,7 +262,9 @@ export function UpgradePlannerSelectorDialog({
 						className="transform-dialog__close"
 						aria-label="Close upgrade planner selector"
 						title="Close upgrade planner selector"
-						onClick={onClose}
+						onClick={() => {
+							onClose();
+						}}
 					/>
 				</header>
 				<p id={instructionsId} className="upgrade-planner-selector__hint">
@@ -199,30 +277,51 @@ export function UpgradePlannerSelectorDialog({
 						</>
 					)}
 				</p>
-				<div className="upgrade-planner-selector__grid" role="grid" aria-label="Upgrade planners">
-					{choices.map((choice, index) => (
-						<UpgradePlannerSelectorItem
-							key={choice.source}
-							active={index === activeIndex}
-							buttonRef={(button) => {
-								buttonReferences.current[index] = button;
+				{includeEditingChoices ? (
+					<div className="upgrade-planner-selector__grid" role="grid" aria-label="Upgrade planners">
+						{choices.map((choice, index) => (
+							<UpgradePlannerSelectorItem
+								key={choice.source}
+								active={index === activeIndex}
+								buttonRef={(button) => {
+									buttonReferences.current[index] = button;
+								}}
+								choice={choice}
+								choiceCount={choices.length}
+								index={index}
+								instructionsId={instructionsId}
+								onChoose={() => {
+									onChoose(choice, 'upgrade');
+								}}
+								onFocus={() => {
+									setActiveIndex(index);
+								}}
+								onMoveFocus={moveFocus}
+								selected={choice.source === selectedSource}
+							/>
+						))}
+					</div>
+				) : (
+					<div className="upgrade-planner-selector__records">
+						<BlueprintRecordViews
+							aria-label="Upgrade planners"
+							initialActiveRecordId={selectedSource}
+							onActivate={(record) => {
+								onChoose(record.choice, 'upgrade');
+								onClose();
 							}}
-							choice={choice}
-							choiceCount={choices.length}
-							directional={!includeEditingChoices}
-							index={index}
-							instructionsId={instructionsId}
-							onApply={(direction) => {
-								onChoose(choice, direction);
+							onAlternateActivate={(record) => {
+								onChoose(record.choice, 'downgrade');
+								onClose();
 							}}
-							onFocus={() => {
-								setActiveIndex(index);
-							}}
-							onMoveFocus={moveFocus}
-							selected={choice.source === selectedSource}
+							records={applicationRecords}
+							recordsWhenSearchEmpty={DEFAULT_UPGRADE_RECORDS}
+							recordInstructionsId={instructionsId}
+							searchLabel="Search upgrade planners"
+							searchResultNoun="upgrade planners"
 						/>
-					))}
-				</div>
+					</div>
+				)}
 			</section>
 		</div>,
 		document.body,

@@ -1,5 +1,4 @@
 import type {UpgradePlanner} from '../../../../parsing/types';
-import type {UpgradeDirection} from '../../../../transform/upgradePlanner';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
 
 export interface UpgradePlannerChoice {
@@ -13,26 +12,19 @@ interface UpgradePlannerSelectorItemProps {
 	buttonRef: (button: HTMLButtonElement | null) => void;
 	choice: UpgradePlannerChoice;
 	choiceCount: number;
-	directional: boolean;
 	index: number;
 	instructionsId: string;
-	onApply: (direction: UpgradeDirection) => void;
+	onChoose: () => void;
 	onFocus: () => void;
 	onMoveFocus: (index: number) => void;
 	selected: boolean;
 }
 
 /**
- * Planner application activation is the command boundary: primary/left click
- * applies upgrade direction, secondary/right click applies downgrade direction,
- * and the selector then closes. Default, library-record, and transient inventory
- * choices share those semantics. Enter and Shift+Enter are browser accessibility
- * equivalents, not another confirmation stage.
- *
- * A tile renders the record's own icon, label, and description according to the
- * shared library view mode. The current generic planner icon and label-only tile
- * represent the compact transitional view. In draft-loading mode, primary
- * activation copies a source into the editor and right-click has no direction.
+ * The editor's Load selector is a browser-only source chooser. Its tiles copy a
+ * planner into the editable draft and retain Empty/Paste choices. The global
+ * apply-only selector uses `BlueprintRecordViews` instead, so its library records
+ * share search, List/Grid/Slots presentation, and directional activation.
  *
  * Evidence: SelectUpgradePlannerGui and BE-3 at Factorio 2.1.12.
  */
@@ -41,10 +33,9 @@ export function UpgradePlannerSelectorItem({
 	buttonRef,
 	choice,
 	choiceCount,
-	directional,
 	index,
 	instructionsId,
-	onApply,
+	onChoose,
 	onFocus,
 	onMoveFocus,
 	selected,
@@ -56,27 +47,13 @@ export function UpgradePlannerSelectorItem({
 			className="upgrade-planner-selector__tile"
 			aria-label={choice.label}
 			aria-describedby={instructionsId}
-			aria-keyshortcuts={directional ? 'Shift+Enter' : undefined}
 			aria-pressed={selected}
 			tabIndex={active ? 0 : -1}
 			title={choice.label}
-			onClick={() => {
-				onApply('upgrade');
-			}}
-			onContextMenu={
-				directional
-					? (event) => {
-							event.preventDefault();
-							onApply('downgrade');
-						}
-					: undefined
-			}
+			onClick={onChoose}
 			onFocus={onFocus}
 			onKeyDown={(event) => {
-				if (directional && event.key === 'Enter' && event.shiftKey) {
-					event.preventDefault();
-					onApply('downgrade');
-				} else if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+				if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
 					event.preventDefault();
 					onMoveFocus(index + 1);
 				} else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {

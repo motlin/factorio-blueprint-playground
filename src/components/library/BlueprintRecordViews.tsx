@@ -1,5 +1,15 @@
 import {ChevronRight, Grid2X2, LayoutGrid, List, Search} from 'lucide-react';
-import {useEffect, useId, useImperativeHandle, useMemo, useRef, useState, type KeyboardEvent, type Ref} from 'react';
+import {
+	useEffect,
+	useId,
+	useImperativeHandle,
+	useMemo,
+	useRef,
+	useState,
+	type KeyboardEvent,
+	type MouseEvent,
+	type Ref,
+} from 'react';
 
 import {FactorioIcon} from '../core/icons/FactorioIcon';
 import {FactorioButton, FactorioInventorySlot, FactorioScrollFrame, FactorioTooltip} from '../ui/FactorioUi';
@@ -19,11 +29,17 @@ export interface BlueprintRecordViewsHandle {
 interface BlueprintRecordViewsProps<RecordModel extends BlueprintRecordModel> {
 	'aria-label': string;
 	compareRecords?: (left: RecordModel, right: RecordModel) => number;
+	initialActiveRecordId?: string;
 	isRecordActionable?: (record: RecordModel) => boolean;
 	onActivate: (record: RecordModel) => void;
+	onAlternateActivate?: (record: RecordModel) => void;
 	onEscape?: () => void;
 	records: readonly RecordModel[];
+	recordsWhenSearchEmpty?: readonly RecordModel[];
+	recordInstructionsId?: string;
 	ref?: Ref<BlueprintRecordViewsHandle>;
+	searchLabel?: string;
+	searchResultNoun?: string;
 }
 
 interface BlueprintRecordItemProps<RecordModel extends BlueprintRecordModel> {
@@ -31,9 +47,11 @@ interface BlueprintRecordItemProps<RecordModel extends BlueprintRecordModel> {
 	actionable: boolean;
 	buttonRef: (button: HTMLButtonElement | null) => void;
 	onActivate: () => void;
+	onAlternateActivate?: () => void;
 	onFocus: () => void;
 	onKeyDown: (event: KeyboardEvent<HTMLButtonElement>) => void;
 	record: RecordModel;
+	recordInstructionsId?: string;
 	viewMode: BlueprintRecordViewMode;
 }
 
@@ -131,23 +149,36 @@ function BlueprintRecordItem<RecordModel extends BlueprintRecordModel>({
 	actionable,
 	buttonRef,
 	onActivate,
+	onAlternateActivate,
 	onFocus,
 	onKeyDown,
 	record,
+	recordInstructionsId,
 	viewMode,
 }: BlueprintRecordItemProps<RecordModel>) {
 	const tooltipId = useId();
 	const label = blueprintRecordLabel(record);
 	const description = record.gameData.description?.trim() ?? '';
+	const describedBy = recordInstructionsId === undefined ? tooltipId : `${tooltipId} ${recordInstructionsId}`;
 	const commonButtonProps = {
-		'aria-describedby': tooltipId,
+		'aria-describedby': describedBy,
 		'aria-disabled': !actionable,
+		'aria-keyshortcuts': onAlternateActivate === undefined ? undefined : 'Shift+Enter',
 		'aria-label': recordAccessibleName(record, actionable),
 		onClick: () => {
 			if (actionable) {
 				onActivate();
 			}
 		},
+		onContextMenu:
+			onAlternateActivate === undefined
+				? undefined
+				: (event: MouseEvent<HTMLButtonElement>) => {
+						if (actionable) {
+							event.preventDefault();
+							onAlternateActivate();
+						}
+					},
 		onFocus,
 		onKeyDown,
 		ref: buttonRef,
@@ -192,25 +223,35 @@ function BlueprintRecordItem<RecordModel extends BlueprintRecordModel>({
 export function BlueprintRecordViews<RecordModel extends BlueprintRecordModel>({
 	'aria-label': ariaLabel,
 	compareRecords,
+	initialActiveRecordId,
 	isRecordActionable = () => true,
 	onActivate,
+	onAlternateActivate,
 	onEscape,
 	records,
+	recordsWhenSearchEmpty,
+	recordInstructionsId,
 	ref,
+	searchLabel = 'Search blueprint records',
+	searchResultNoun = 'records',
 }: BlueprintRecordViewsProps<RecordModel>) {
-	const [activeRecordIndex, setActiveRecordIndex] = useState(0);
 	const [searchText, setSearchText] = useState('');
 	const [viewMode, setViewMode] = useState(initialViewMode);
 	const recordReferences = useRef(new Map<string, HTMLButtonElement>());
-	const visibleRecords = useMemo(
-		() => filterAndSortBlueprintRecords(records, searchText, compareRecords),
-		[compareRecords, records, searchText],
+	const visibleRecords = useMemo(() => {
+		const filteredRecords = filterAndSortBlueprintRecords(records, searchText, compareRecords);
+		return searchText.trim() === '' ? [...(recordsWhenSearchEmpty ?? []), ...filteredRecords] : filteredRecords;
+	}, [compareRecords, records, recordsWhenSearchEmpty, searchText]);
+	const initialActiveRecordIndex = Math.max(
+		0,
+		visibleRecords.findIndex((record) => record.id === initialActiveRecordId),
 	);
+	const [activeRecordIndex, setActiveRecordIndex] = useState(() => initialActiveRecordIndex);
 	const visibleRecordIds = visibleRecords.map((record) => record.id).join('\u0000');
 
 	useEffect(() => {
-		setActiveRecordIndex(0);
-	}, [searchText, visibleRecordIds]);
+		setActiveRecordIndex(initialActiveRecordIndex);
+	}, [initialActiveRecordIndex, searchText, visibleRecordIds]);
 
 	useImperativeHandle(
 		ref,
@@ -238,7 +279,15 @@ export function BlueprintRecordViews<RecordModel extends BlueprintRecordModel>({
 
 	const handleRecordKeyDown = (event: KeyboardEvent<HTMLButtonElement>, recordIndex: number): void => {
 		const record = visibleRecords[recordIndex];
-		if ((event.key === 'Enter' || event.key === ' ') && isRecordActionable(record)) {
+		if (
+			event.key === 'Enter' &&
+			event.shiftKey &&
+			onAlternateActivate !== undefined &&
+			isRecordActionable(record)
+		) {
+			event.preventDefault();
+			onAlternateActivate(record);
+		} else if ((event.key === 'Enter' || event.key === ' ') && isRecordActionable(record)) {
 			event.preventDefault();
 			onActivate(record);
 		} else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
@@ -264,7 +313,7 @@ export function BlueprintRecordViews<RecordModel extends BlueprintRecordModel>({
 			<div className="blueprint-record-views__toolbar">
 				<label className="blueprint-record-views__search">
 					<Search aria-hidden="true" />
-					<span className="visually-hidden">Search blueprint records</span>
+					<span className="visually-hidden">{searchLabel}</span>
 					<input
 						type="search"
 						value={searchText}
@@ -297,7 +346,7 @@ export function BlueprintRecordViews<RecordModel extends BlueprintRecordModel>({
 			<FactorioScrollFrame aria-label={ariaLabel} className="blueprint-library__records">
 				{visibleRecords.length === 0 ? (
 					<p className="blueprint-record-views__no-results" role="status">
-						No records match “{searchText.trim()}”.
+						No {searchResultNoun} match “{searchText.trim()}”.
 					</p>
 				) : (
 					<ul className={`blueprint-record-views__items blueprint-record-views__items--${viewMode}`}>
@@ -314,10 +363,18 @@ export function BlueprintRecordViews<RecordModel extends BlueprintRecordModel>({
 										}
 									}}
 									record={record}
+									recordInstructionsId={recordInstructionsId}
 									viewMode={viewMode}
 									onActivate={() => {
 										onActivate(record);
 									}}
+									onAlternateActivate={
+										onAlternateActivate === undefined
+											? undefined
+											: () => {
+													onAlternateActivate(record);
+												}
+									}
 									onFocus={() => {
 										setActiveRecordIndex(index);
 									}}
