@@ -177,6 +177,7 @@ export function IconReplacementDialog({onChange, onClose, replacements, rootBlue
 			</section>
 			{choosingSource ? (
 				<SignalPickerDialog
+					confirmationMode="immediate"
 					title="Choose source icon used here"
 					options={availableCandidates.map((candidate) => candidate.signal)}
 					onClose={() => {
@@ -190,6 +191,7 @@ export function IconReplacementDialog({onChange, onClose, replacements, rootBlue
 			) : null}
 			{choosingTarget && draftFrom !== undefined ? (
 				<SignalPickerDialog
+					confirmationMode="immediate"
 					title="Choose target icon"
 					options={targetOptions(draftFrom)}
 					onClose={() => {

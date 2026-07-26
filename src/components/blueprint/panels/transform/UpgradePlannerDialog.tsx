@@ -320,6 +320,7 @@ function UpgradeMappingsEditor({
 			) : null}
 			{targetPickerCandidate === undefined ? null : (
 				<SignalPickerDialog
+					confirmationMode="required"
 					initialSignal={targetPickerCandidate.to}
 					initialQuality={targetPickerCandidate.to.quality ?? 'normal'}
 					title="Select upgrade"
@@ -337,6 +338,7 @@ function UpgradeMappingsEditor({
 			)}
 			{sourcePickerCandidate === undefined ? null : (
 				<SignalPickerDialog
+					confirmationMode="required"
 					initialSignal={sourcePickerCandidate.from}
 					title="Set the filter"
 					options={availableEditSources(sourcePickerCandidate)}
@@ -356,6 +358,7 @@ function UpgradeMappingsEditor({
 			)}
 			{addSourcePickerOpen ? (
 				<SignalPickerDialog
+					confirmationMode="required"
 					initialSignal={addMappingSource}
 					title="Set the filter"
 					options={
@@ -389,6 +392,7 @@ function UpgradeMappingsEditor({
 			) : null}
 			{addTargetPickerOpen && addMappingSource !== undefined ? (
 				<SignalPickerDialog
+					confirmationMode="required"
 					title="Select upgrade"
 					options={upgradeTargetOptions(addMappingSource, addMappingSource)}
 					qualityMode="target"

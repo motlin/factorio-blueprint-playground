@@ -400,6 +400,7 @@ export function BlueprintParameterizationDialog({
 
 			{choosingValueIndex === undefined || choosingParameter?.type !== 'id' ? null : (
 				<SignalPickerDialog
+					confirmationMode="required"
 					initialQuality={choosingParameter['quality-condition']?.quality ?? 'any'}
 					initialSignal={inferredSignal(choosingParameter, pickerOptions)}
 					onChoose={(signal) => {

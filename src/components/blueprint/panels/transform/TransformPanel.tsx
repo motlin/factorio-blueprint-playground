@@ -430,6 +430,7 @@ export function TransformPanel({
 			) : null}
 			{editorIconPickerIndex === undefined ? null : (
 				<SignalPickerDialog
+					confirmationMode="required"
 					initialSignal={editorIcons[editorIconPickerIndex]}
 					title={`Choose label icon ${(editorIconPickerIndex + 1).toString()}`}
 					options={editorIconOptions}

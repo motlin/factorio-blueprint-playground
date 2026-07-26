@@ -5,7 +5,7 @@ import gameUiSpec from '../../../../generated/game-ui-spec.json';
 import type {QualityComparator, SignalID, SignalType} from '../../../../parsing/types';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
 import {ButtonGreen} from '../../../ui/ButtonGreen';
-import {FactorioButton, FactorioButtonKind, FactorioInventorySlot} from '../../../ui/FactorioUi';
+import {FactorioButton, FactorioButtonKind, FactorioInventorySlot, FactorioScrollFrame} from '../../../ui/FactorioUi';
 import {signalWithUpgradeQuality, type UpgradeQualitySelection, type UpgradeQualitySignal} from './upgradeQuality';
 import {UpgradeQualityControls} from './UpgradeQualityControls';
 import {useDialogFocus} from './useDialogFocus';
@@ -73,36 +73,45 @@ import {useDialogFocus} from './useDialogFocus';
  * Select upgrade captures.
  */
 const gridColumnCount = gameUiSpec.styles.signalsTableColumnCount;
+const maximumVisibleGridRows = gameUiSpec.utilityConstants.selectSlotRowCount;
+const hiddenPrototypeNames = new Set([
+	'bottomless-chest',
+	'electric-energy-interface',
+	'fluid-unknown',
+	'infinity-cargo-wagon',
+	'infinity-chest',
+	'infinity-pipe',
+	'item-unknown',
+	'linked-chest',
+	'proxy-container',
+	'recipe-unknown',
+	'signal-unknown',
+	'space-location-unknown',
+	'tile-unknown',
+]);
 
 type PickerSignal = UpgradeQualitySignal;
-type PickerCategoryId = 'items' | 'recipes' | 'fluids' | 'virtual' | 'environment' | 'other';
+type PickerCategoryId = string;
 type QualityMode = 'source' | 'target';
+export type SignalPickerConfirmationMode = 'immediate' | 'required';
 
 interface PickerCategory {
 	id: PickerCategoryId;
+	icon: SignalID;
 	label: string;
-	types: ReadonlySet<SignalType>;
 }
 
-const pickerCategories: readonly PickerCategory[] = [
-	{id: 'items', label: 'Items and entities', types: new Set(['item', 'entity'])},
-	{id: 'recipes', label: 'Recipes', types: new Set(['recipe'])},
-	{id: 'fluids', label: 'Fluids', types: new Set(['fluid'])},
-	{id: 'virtual', label: 'Virtual signals', types: new Set(['virtual', 'virtual-signal'])},
-	{
-		id: 'environment',
-		label: 'Environment',
-		types: new Set(['planet', 'space-location', 'tile']),
-	},
-	{
-		id: 'other',
-		label: 'Other signals',
-		types: new Set(['achievement', 'equipment', 'item-group', 'quality', 'technology', 'utility']),
-	},
-];
+const pickerCategories: readonly PickerCategory[] = gameUiSpec.signals.categories.map(({label, name}) => ({
+	id: name,
+	icon: {type: 'item-group', name},
+	label,
+}));
 
 export interface SignalPickerDialogProps {
+	confirmationMode: SignalPickerConfirmationMode;
+	includeHiddenSignals?: boolean;
 	initialQuality?: UpgradeQualitySelection;
+	initialSearch?: string;
 	initialSignal?: PickerSignal;
 	isSelectionAllowed?: (signal: PickerSignal) => boolean;
 	onChoose: (signal: PickerSignal) => void;
@@ -136,17 +145,86 @@ function signalTitle(signal: PickerSignal): string {
 	return `${signalName(signal)}\n${normalizedSignalType(signal)}:${signal.name}${quality}`;
 }
 
-function categoryForSignal(signal: SignalID): PickerCategory {
+function categoryIdForSignal(signal: SignalID): PickerCategoryId {
 	const type = normalizedSignalType(signal);
-	const category = pickerCategories.find((candidate) => candidate.types.has(type));
+	if (type === 'item' || type === 'entity') {
+		return 'logistics';
+	}
+	if (type === 'recipe') {
+		return 'production';
+	}
+	if (type === 'fluid') {
+		return 'fluids';
+	}
+	if (type === 'virtual' || type === 'virtual-signal') {
+		return 'signals';
+	}
+	if (type === 'tile') {
+		return 'tiles';
+	}
+	if (type === 'planet' || type === 'space-location') {
+		return 'environment';
+	}
+	if (type === 'equipment') {
+		return 'combat';
+	}
+	if (type === 'quality') {
+		return 'effects';
+	}
+	return 'other';
+}
+
+function categoryForSignal(signal: SignalID): PickerCategory {
+	const categoryId = categoryIdForSignal(signal);
+	const category = pickerCategories.find((candidate) => candidate.id === categoryId);
 	if (category === undefined) {
-		throw new Error(`Signal type ${type} has no picker category.`);
+		throw new Error(`Signal category ${categoryId} is absent from the generated UI specification.`);
 	}
 	return category;
 }
 
+function isHiddenPrototype(signal: SignalID): boolean {
+	return signal.name === 'parameter-' || signal.name.endsWith('-unknown') || hiddenPrototypeNames.has(signal.name);
+}
+
+function signalWithCurrentQuality(
+	signal: PickerSignal,
+	qualityMode: QualityMode | undefined,
+	qualitySelection: UpgradeQualitySelection,
+	qualityComparator: QualityComparator,
+): PickerSignal {
+	return qualityMode === undefined
+		? signal
+		: signalWithUpgradeQuality(signal, qualityMode, qualitySelection, qualityComparator);
+}
+
+interface GridCell {
+	key: string;
+	signal?: SignalID;
+}
+
+function signalGridCells(options: readonly SignalID[]): GridCell[] {
+	const cells: GridCell[] = [];
+	let previousType: SignalType | undefined;
+	for (const signal of options) {
+		const type = normalizedSignalType(signal);
+		if (previousType !== undefined && previousType !== type && cells.length % gridColumnCount !== 0) {
+			const padding = gridColumnCount - (cells.length % gridColumnCount);
+			for (let index = 0; index < padding; index += 1) {
+				cells.push({key: `padding-${cells.length.toString()}`});
+			}
+		}
+		cells.push({key: signalPrototypeIdentity(signal), signal});
+		previousType = type;
+	}
+	return cells;
+}
+
 export function SignalPickerDialog({
+	confirmationMode,
+	includeHiddenSignals = false,
 	initialQuality,
+	initialSearch = '',
 	initialSignal,
 	isSelectionAllowed,
 	onChoose,
@@ -159,20 +237,25 @@ export function SignalPickerDialog({
 	const searchId = useId();
 	const gridId = useId();
 	const optionButtons = useRef<Array<HTMLButtonElement | null>>([]);
+	const signalNameReference = useRef<HTMLDivElement>(null);
+	const visibleOptions = useMemo(
+		() => options.filter((signal) => includeHiddenSignals || !isHiddenPrototype(signal)),
+		[includeHiddenSignals, options],
+	);
 	const availableCategories = useMemo(
 		() =>
 			pickerCategories.filter((category) =>
-				options.some((signal) => category.id === categoryForSignal(signal).id),
+				visibleOptions.some((signal) => category.id === categoryForSignal(signal).id),
 			),
-		[options],
+		[visibleOptions],
 	);
 	const initialCategoryId: PickerCategoryId | undefined =
-		options.length === 0 ? undefined : categoryForSignal(initialSignal ?? options[0]).id;
+		visibleOptions.length === 0 ? undefined : categoryForSignal(initialSignal ?? visibleOptions[0]).id;
 	const [activeCategoryId, setActiveCategoryId] = useState<PickerCategoryId | undefined>(initialCategoryId);
-	const [search, setSearch] = useState('');
+	const [search, setSearch] = useState(initialSearch);
 	const [selectedSignal, setSelectedSignal] = useState<PickerSignal | undefined>(
 		initialSignal === undefined ||
-			!options.some((signal) => signalPrototypeIdentity(signal) === signalPrototypeIdentity(initialSignal))
+			!visibleOptions.some((signal) => signalPrototypeIdentity(signal) === signalPrototypeIdentity(initialSignal))
 			? undefined
 			: initialSignal,
 	);
@@ -185,29 +268,80 @@ export function SignalPickerDialog({
 					: 'normal'),
 	);
 	const [qualityComparator, setQualityComparator] = useState<QualityComparator>(initialSignal?.comparator ?? '=');
-	const activeCategory: PickerCategory | undefined =
-		activeCategoryId === undefined
-			? undefined
-			: (availableCategories.find((category) => category.id === activeCategoryId) ?? availableCategories[0]);
 	const normalizedSearch = search.trim().toLowerCase();
-	const filteredOptions = options.filter(
-		(signal) =>
-			activeCategory !== undefined &&
-			activeCategory.id === categoryForSignal(signal).id &&
-			(normalizedSearch === '' || signalName(signal).toLowerCase().includes(normalizedSearch)),
+	const categoryOptions = useMemo(
+		() =>
+			new Map(
+				availableCategories.map((category) => [
+					category.id,
+					visibleOptions.filter(
+						(signal) =>
+							category.id === categoryForSignal(signal).id &&
+							(normalizedSearch === '' || signalName(signal).toLowerCase().includes(normalizedSearch)),
+					),
+				]),
+			),
+		[availableCategories, normalizedSearch, visibleOptions],
+	);
+	const matchingCategories = availableCategories.filter(
+		(category) => (categoryOptions.get(category.id)?.length ?? 0) > 0,
+	);
+	const exactMatchCategory = availableCategories.find((category) =>
+		(categoryOptions.get(category.id) ?? []).some(
+			(signal) => signalName(signal).toLowerCase() === normalizedSearch,
+		),
+	);
+	const resolvedActiveCategoryId =
+		exactMatchCategory?.id ??
+		((categoryOptions.get(activeCategoryId ?? '')?.length ?? 0) > 0 ? activeCategoryId : matchingCategories[0]?.id);
+	const activeCategory: PickerCategory | undefined =
+		resolvedActiveCategoryId === undefined
+			? undefined
+			: availableCategories.find((category) => category.id === resolvedActiveCategoryId);
+	const filteredOptions = activeCategory === undefined ? [] : (categoryOptions.get(activeCategory.id) ?? []);
+	const gridCells = signalGridCells(filteredOptions);
+	const stableGridRows = Math.max(
+		1,
+		Math.min(
+			maximumVisibleGridRows,
+			Math.max(
+				1,
+				...availableCategories.map((category) =>
+					Math.ceil(
+						signalGridCells(visibleOptions.filter((signal) => category.id === categoryForSignal(signal).id))
+							.length / gridColumnCount,
+					),
+				),
+			),
+		),
 	);
 	const selectedIdentity = selectedSignal === undefined ? undefined : signalPrototypeIdentity(selectedSignal);
 	const selectedOptionIndex = filteredOptions.findIndex(
 		(signal) => signalPrototypeIdentity(signal) === selectedIdentity,
 	);
-	const tabbableOptionIndex = selectedOptionIndex < 0 ? 0 : selectedOptionIndex;
+	const optionAllowed = (signal: SignalID) =>
+		isSelectionAllowed?.(signalWithCurrentQuality(signal, qualityMode, qualitySelection, qualityComparator)) ??
+		true;
+	const firstAllowedOptionIndex = filteredOptions.findIndex(optionAllowed);
+	const tabbableOptionIndex =
+		selectedOptionIndex >= 0 && optionAllowed(filteredOptions[selectedOptionIndex])
+			? selectedOptionIndex
+			: firstAllowedOptionIndex;
 	const confirmedSignal =
 		selectedSignal === undefined
 			? undefined
-			: qualityMode === undefined
-				? selectedSignal
-				: signalWithUpgradeQuality(selectedSignal, qualityMode, qualitySelection, qualityComparator);
+			: signalWithCurrentQuality(selectedSignal, qualityMode, qualitySelection, qualityComparator);
 	const selectionAllowed = confirmedSignal !== undefined && (isSelectionAllowed?.(confirmedSignal) ?? true);
+	const clearInspectedSignal = () => {
+		if (signalNameReference.current !== null) {
+			signalNameReference.current.textContent = '\u00a0';
+		}
+	};
+	const showInspectedSignal = (signal: SignalID) => {
+		if (signalNameReference.current !== null) {
+			signalNameReference.current.textContent = signalName(signal);
+		}
+	};
 
 	const confirmSelection = useCallback(() => {
 		if (confirmedSignal === undefined || !selectionAllowed) {
@@ -219,25 +353,41 @@ export function SignalPickerDialog({
 		closeOnQ: true,
 		initialFocusSelector: 'input[type="search"]',
 		onClose,
-		onEnter: confirmSelection,
+		onEnter: confirmationMode === 'required' ? confirmSelection : undefined,
 	});
 
 	const moveGridFocus = (event: React.KeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
 		let nextIndex: number | undefined;
 		if (event.key === 'ArrowRight') {
-			nextIndex = Math.min(currentIndex + 1, filteredOptions.length - 1);
+			nextIndex = filteredOptions.findIndex((signal, index) => index > currentIndex && optionAllowed(signal));
 		} else if (event.key === 'ArrowLeft') {
-			nextIndex = Math.max(currentIndex - 1, 0);
+			for (let index = currentIndex - 1; index >= 0; index -= 1) {
+				if (optionAllowed(filteredOptions[index])) {
+					nextIndex = index;
+					break;
+				}
+			}
 		} else if (event.key === 'ArrowDown') {
 			nextIndex = Math.min(currentIndex + gridColumnCount, filteredOptions.length - 1);
+			while (nextIndex > currentIndex && !optionAllowed(filteredOptions[nextIndex])) {
+				nextIndex -= 1;
+			}
 		} else if (event.key === 'ArrowUp') {
 			nextIndex = Math.max(currentIndex - gridColumnCount, 0);
+			while (nextIndex < currentIndex && !optionAllowed(filteredOptions[nextIndex])) {
+				nextIndex += 1;
+			}
 		} else if (event.key === 'Home') {
-			nextIndex = 0;
+			nextIndex = firstAllowedOptionIndex;
 		} else if (event.key === 'End') {
-			nextIndex = filteredOptions.length - 1;
+			for (let index = filteredOptions.length - 1; index >= 0; index -= 1) {
+				if (optionAllowed(filteredOptions[index])) {
+					nextIndex = index;
+					break;
+				}
+			}
 		}
-		if (nextIndex === undefined || nextIndex === currentIndex) {
+		if (nextIndex === undefined || nextIndex < 0 || nextIndex === currentIndex) {
 			return;
 		}
 		event.preventDefault();
@@ -263,6 +413,7 @@ export function SignalPickerDialog({
 							value={search}
 							onChange={(event) => {
 								setSearch(event.currentTarget.value);
+								clearInspectedSignal();
 							}}
 						/>
 					</label>
@@ -277,83 +428,147 @@ export function SignalPickerDialog({
 					/>
 				</header>
 				<div className="panel-hole transform-picker">
-					<div className="transform-picker__tabs" role="tablist" aria-label="Signal categories">
-						{availableCategories.map((category) => (
-							<button
-								type="button"
-								role="tab"
-								key={category.id}
-								aria-controls={gridId}
-								aria-selected={category.id === activeCategoryId}
-								onClick={() => {
-									setActiveCategoryId(category.id);
-									setSelectedSignal(undefined);
+					<div className="transform-picker__body">
+						{availableCategories.length > 1 ? (
+							<div
+								className="transform-picker__tabs"
+								role="tablist"
+								aria-label="Signal categories"
+								style={{
+									gridTemplateRows: `repeat(${gameUiSpec.utilityConstants.selectGroupRowCount.toString()}, ${gameUiSpec.styles.filterGroupTabHeight.toString()}px)`,
 								}}
 							>
-								{category.label}
-							</button>
-						))}
-					</div>
-					<div
-						id={gridId}
-						className="factorio-scroll-frame transform-picker__grid"
-						data-factorio-style={gameUiSpec.styles.bindings.deepSlotsScrollPane}
-						role="group"
-						aria-label={`${activeCategory?.label ?? 'Signal'} choices`}
-						style={{
-							columnGap: gameUiSpec.styles.filterSlotHorizontalSpacing,
-							rowGap: gameUiSpec.styles.filterSlotVerticalSpacing,
-						}}
-					>
-						{filteredOptions.map((signal, index) => (
-							<FactorioInventorySlot
-								key={signalPrototypeIdentity(signal)}
-								ref={(button) => {
-									optionButtons.current[index] = button;
-								}}
-								className="transform-picker__option"
-								aria-label={`Choose ${signalName(signal)}`}
-								selected={signalPrototypeIdentity(signal) === selectedIdentity}
-								tabIndex={index === tabbableOptionIndex ? 0 : -1}
-								title={signalTitle(signal)}
-								onClick={() => {
-									setSelectedSignal(signal);
-								}}
-								onKeyDown={(event) => {
-									moveGridFocus(event, index);
-								}}
-							>
-								<FactorioIcon icon={signal} size="large" />
-							</FactorioInventorySlot>
-						))}
-						{filteredOptions.length === 0 ? (
-							<p className="transform-picker__empty">No matching signals in this category.</p>
+								{availableCategories.map((category) => {
+									const hasMatches = (categoryOptions.get(category.id)?.length ?? 0) > 0;
+									return (
+										<button
+											type="button"
+											role="tab"
+											key={category.id}
+											aria-controls={gridId}
+											aria-label={category.label}
+											aria-selected={category.id === resolvedActiveCategoryId}
+											disabled={!hasMatches}
+											title={category.label}
+											style={{
+												width: gameUiSpec.styles.filterGroupTabWidth,
+												height: gameUiSpec.styles.filterGroupTabHeight,
+											}}
+											onClick={() => {
+												setActiveCategoryId(category.id);
+											}}
+										>
+											<FactorioIcon decorative icon={category.icon} size="large" />
+											<span>{category.label}</span>
+										</button>
+									);
+								})}
+							</div>
 						) : null}
+						<div className="transform-picker__signal-table">
+							<FactorioScrollFrame
+								id={gridId}
+								className="transform-picker__grid"
+								aria-label={`${activeCategory?.label ?? 'Signal'} choices`}
+								style={{
+									columnGap: gameUiSpec.styles.filterSlotHorizontalSpacing,
+									rowGap: gameUiSpec.styles.filterSlotVerticalSpacing,
+									height: stableGridRows * gameUiSpec.styles.slotSize,
+									width: gameUiSpec.styles.signalsTableMinimumWidth,
+								}}
+							>
+								{gridCells.map((cell) => {
+									if (cell.signal === undefined) {
+										return (
+											<span
+												key={cell.key}
+												className="transform-picker__grid-padding"
+												aria-hidden="true"
+											/>
+										);
+									}
+									const signal = cell.signal;
+									const optionIndex = filteredOptions.indexOf(signal);
+									const allowed = optionAllowed(signal);
+									return (
+										<FactorioInventorySlot
+											key={cell.key}
+											ref={(button) => {
+												optionButtons.current[optionIndex] = button;
+											}}
+											className="transform-picker__option"
+											aria-label={`Choose ${signalName(signal)}`}
+											disabled={!allowed}
+											selected={signalPrototypeIdentity(signal) === selectedIdentity}
+											tabIndex={optionIndex === tabbableOptionIndex ? 0 : -1}
+											title={signalTitle(signal)}
+											onBlur={clearInspectedSignal}
+											onClick={() => {
+												if (confirmationMode === 'immediate') {
+													onChoose(
+														signalWithCurrentQuality(
+															signal,
+															qualityMode,
+															qualitySelection,
+															qualityComparator,
+														),
+													);
+												} else {
+													setSelectedSignal(signal);
+												}
+											}}
+											onFocus={() => {
+												showInspectedSignal(signal);
+											}}
+											onKeyDown={(event) => {
+												moveGridFocus(event, optionIndex);
+											}}
+											onMouseEnter={() => {
+												showInspectedSignal(signal);
+											}}
+											onMouseLeave={clearInspectedSignal}
+										>
+											<FactorioIcon decorative icon={signal} size="large" />
+										</FactorioInventorySlot>
+									);
+								})}
+								{filteredOptions.length === 0 ? (
+									<p className="transform-picker__empty">No matching signals.</p>
+								) : null}
+							</FactorioScrollFrame>
+							<div ref={signalNameReference} className="transform-picker__signal-name" aria-live="polite">
+								{'\u00a0'}
+							</div>
+						</div>
 					</div>
 				</div>
-				<footer className="transform-picker__footer">
-					{qualityMode === undefined ? (
-						<span />
-					) : (
-						<UpgradeQualityControls
-							mode={qualityMode}
-							qualityComparator={qualityComparator}
-							qualitySelection={qualitySelection}
-							onComparatorChange={setQualityComparator}
-							onQualityChange={setQualitySelection}
-						/>
-					)}
-					<ButtonGreen
-						disabled={!selectionAllowed}
-						onClick={(event) => {
-							event.preventDefault();
-							confirmSelection();
-						}}
-					>
-						<span aria-hidden="true">✓</span>
-						<span className="transform-picker__confirm-label">Confirm</span>
-					</ButtonGreen>
-				</footer>
+				{qualityMode !== undefined || confirmationMode === 'required' ? (
+					<footer className="transform-picker__footer">
+						{qualityMode === undefined ? (
+							<span />
+						) : (
+							<UpgradeQualityControls
+								mode={qualityMode}
+								qualityComparator={qualityComparator}
+								qualitySelection={qualitySelection}
+								onComparatorChange={setQualityComparator}
+								onQualityChange={setQualitySelection}
+							/>
+						)}
+						{confirmationMode === 'required' ? (
+							<ButtonGreen
+								disabled={!selectionAllowed}
+								onClick={(event) => {
+									event.preventDefault();
+									confirmSelection();
+								}}
+							>
+								<span aria-hidden="true">✓</span>
+								<span className="transform-picker__confirm-label">Confirm</span>
+							</ButtonGreen>
+						) : null}
+					</footer>
+				) : null}
 			</section>
 		</div>,
 		document.body,

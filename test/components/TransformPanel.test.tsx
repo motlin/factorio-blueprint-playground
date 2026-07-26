@@ -70,10 +70,13 @@ async function choosePlanner(user: ReturnType<typeof userEvent.setup>, label: st
 
 async function chooseSignal(user: ReturnType<typeof userEvent.setup>, label: string) {
 	if (screen.queryByRole('button', {name: `Choose ${label}`}) === null && label.startsWith('Signal ')) {
-		await user.click(screen.getByRole('tab', {name: 'Virtual signals'}));
+		await user.click(screen.getByRole('tab', {name: 'Signals'}));
 	}
 	await user.click(screen.getByRole('button', {name: `Choose ${label}`}));
-	await user.click(screen.getByRole('button', {name: 'Confirm'}));
+	const confirm = screen.queryByRole('button', {name: 'Confirm'});
+	if (confirm !== null) {
+		await user.click(confirm);
+	}
 }
 
 function choosePlannerWithClicks(label: string) {
@@ -83,10 +86,13 @@ function choosePlannerWithClicks(label: string) {
 
 function chooseSignalWithClicks(label: string) {
 	if (screen.queryByRole('button', {name: `Choose ${label}`}) === null && label.startsWith('Signal ')) {
-		fireEvent.click(screen.getByRole('tab', {name: 'Virtual signals'}));
+		fireEvent.click(screen.getByRole('tab', {name: 'Signals'}));
 	}
 	fireEvent.click(screen.getByRole('button', {name: `Choose ${label}`}));
-	fireEvent.click(screen.getByRole('button', {name: 'Confirm'}));
+	const confirm = screen.queryByRole('button', {name: 'Confirm'});
+	if (confirm !== null) {
+		fireEvent.click(confirm);
+	}
 }
 
 function firstEmptyMappingSourceButton(): HTMLButtonElement {
@@ -380,7 +386,7 @@ describe('TransformPanel', () => {
 			mappings: ['Mapping from Transport belt to Fast transport belt', 'Mapping from Fast inserter to Inserter'],
 			renderCommits: {
 				firstMapping: 6,
-				iconChange: 8,
+				iconChange: 6,
 				initial: 1,
 				loadEmptyPlanner: 4,
 				openPlanner: 1,
