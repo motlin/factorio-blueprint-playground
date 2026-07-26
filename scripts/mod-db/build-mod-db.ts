@@ -8,6 +8,8 @@ import {
 	extractPickerSignals,
 	extractPrototypeNames,
 	extractPrototypeUpgrades,
+	extractUpgradeModuleItems,
+	extractVisiblePlaceResults,
 	parseBaseSupplement,
 	parseFactorioLabDataset,
 	parsePrefixes,
@@ -142,11 +144,17 @@ const output = `${JSON.stringify(database, undefined, '\t')}\n`;
 const nextUpgrades = extractPrototypeUpgrades([...factorioDataSources.values()]);
 const virtualSignals = extractPrototypeNames([...factorioDataSources.values()], 'virtual-signal');
 const pickerSignals = extractPickerSignals([...factorioDataSources.values()]);
+const upgradeEntityItems = [
+	...new Set([...extractVisiblePlaceResults(baseItemSource), ...extractVisiblePlaceResults(spaceAgeItemSource)]),
+].sort();
+const upgradeModuleItems = extractUpgradeModuleItems([...factorioDataSources.values()]);
 const gameDataOutput = `${JSON.stringify(
 	{
 		factorioDataVersion: sourceLock.factorioData.version,
 		nextUpgrades,
 		pickerSignals,
+		upgradeEntityItems,
+		upgradeModuleItems,
 		virtualSignals,
 	},
 	undefined,
@@ -166,4 +174,6 @@ console.log(
 	`Generated ${nextUpgrades.length.toString()} native next-upgrade mappings from Factorio ${sourceLock.factorioData.version}.`,
 );
 console.log(`Generated ${pickerSignals.length.toString()} categorized signals for the signal picker.`);
+console.log(`Generated ${upgradeEntityItems.length.toString()} placeable Upgrade Planner entities.`);
+console.log(`Generated ${upgradeModuleItems.length.toString()} Upgrade Planner module items.`);
 console.log(`Generated ${virtualSignals.length.toString()} virtual signals for the replacement picker.`);

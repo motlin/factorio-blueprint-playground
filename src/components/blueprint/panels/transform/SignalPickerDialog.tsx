@@ -6,7 +6,12 @@ import type {QualityComparator, SignalID, SignalType} from '../../../../parsing/
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
 import {ButtonGreen} from '../../../ui/ButtonGreen';
 import {FactorioButton, FactorioButtonKind, FactorioInventorySlot, FactorioScrollFrame} from '../../../ui/FactorioUi';
-import {signalWithUpgradeQuality, type UpgradeQualitySelection, type UpgradeQualitySignal} from './upgradeQuality';
+import {
+	initialUpgradeQualitySelection,
+	signalWithUpgradeQuality,
+	type UpgradeQualitySelection,
+	type UpgradeQualitySignal,
+} from './upgradeQuality';
 import {UpgradeQualityControls} from './UpgradeQualityControls';
 import {useDialogFocus} from './useDialogFocus';
 
@@ -260,12 +265,7 @@ export function SignalPickerDialog({
 			: initialSignal,
 	);
 	const [qualitySelection, setQualitySelection] = useState<UpgradeQualitySelection>(
-		initialQuality ??
-			(qualityMode === 'source'
-				? (initialSignal?.quality ?? 'any')
-				: qualityMode === 'target'
-					? (initialSignal?.quality ?? 'normal')
-					: 'normal'),
+		initialQuality ?? initialUpgradeQualitySelection(initialSignal, qualityMode),
 	);
 	const [qualityComparator, setQualityComparator] = useState<QualityComparator>(initialSignal?.comparator ?? '=');
 	const normalizedSearch = search.trim().toLowerCase();

@@ -4,6 +4,7 @@ import {describe, expect, test, vi} from 'vite-plus/test';
 
 import {UpgradeQualityControls} from '../../src/components/blueprint/panels/transform/UpgradeQualityControls';
 import {
+	initialUpgradeQualitySelection,
 	qualitySelectorUsesDropdown,
 	signalWithUpgradeQuality,
 	type UpgradeQualitySelection,
@@ -41,6 +42,18 @@ describe('signalWithUpgradeQuality', () => {
 		expect(() => signalWithUpgradeQuality(signal, 'target', 'any', '=')).toThrow(
 			'Target quality selection must be explicit.',
 		);
+	});
+
+	test('defaults From to Any quality and To to exact normal quality', () => {
+		expect({
+			existingSource: initialUpgradeQualitySelection({...signal, quality: 'rare'}, 'source'),
+			newSource: initialUpgradeQualitySelection(undefined, 'source'),
+			newTarget: initialUpgradeQualitySelection(undefined, 'target'),
+		}).toStrictEqual({
+			existingSource: 'rare',
+			newSource: 'any',
+			newTarget: 'normal',
+		});
 	});
 
 	test('switches to the dropdown at the generated visible-quality threshold', () => {

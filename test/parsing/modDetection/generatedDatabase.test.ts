@@ -40,6 +40,11 @@ describe('generated mod database', () => {
 			gameDataFactorioVersion: gameDataJson.factorioDataVersion,
 			nextUpgradeCount: gameDataJson.nextUpgrades.length,
 			pickerSignalCount: gameDataJson.pickerSignals.length,
+			upgradeEntityItemCount: gameDataJson.upgradeEntityItems.length,
+			upgradeEntityItems: ['accumulator', 'assembling-machine-1', 'transport-belt', 'bottomless-chest'].map(
+				(name) => gameDataJson.upgradeEntityItems.includes(name),
+			),
+			upgradeModuleItems: gameDataJson.upgradeModuleItems,
 			virtualSignalCount: gameDataJson.virtualSignals.length,
 		}).toStrictEqual({
 			generatedAt: sourceLock.factorioLab.committedAt.slice(0, 10),
@@ -48,6 +53,23 @@ describe('generated mod database', () => {
 			gameDataFactorioVersion: sourceLock.factorioData.version,
 			nextUpgradeCount: 14,
 			pickerSignalCount: 1230,
+			upgradeEntityItemCount: 112,
+			upgradeEntityItems: [true, true, true, false],
+			upgradeModuleItems: [
+				'speed-module',
+				'speed-module-2',
+				'speed-module-3',
+				'efficiency-module',
+				'efficiency-module-2',
+				'efficiency-module-3',
+				'productivity-module',
+				'productivity-module-2',
+				'productivity-module-3',
+				'quality-module',
+				'quality-module-2',
+				'quality-module-3',
+				'empty-module-slot',
+			],
 			virtualSignalCount: 155,
 		});
 	});

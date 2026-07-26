@@ -504,6 +504,44 @@ describe('upgrade planner transforms', () => {
 		});
 	});
 
+	test('passes unsupported module settings through the parsed endpoint boundary losslessly', () => {
+		const parsed = parseUpgradePlanner(`{
+			upgrade_planner: {
+				item: 'upgrade-planner',
+				version: 0,
+				settings: {
+					mappers: [{
+						index: 1,
+						from: {type: 'item', name: 'speed-module', module_limit: 2},
+						to: {
+							type: 'entity',
+							name: 'assembling-machine-3',
+							module_slots: [{name: 'productivity-module'}, {}, {}, {}],
+						},
+					}],
+				},
+			},
+		}`);
+
+		expect(parsed).toStrictEqual({
+			item: 'upgrade-planner',
+			version: 0,
+			settings: {
+				mappers: [
+					{
+						index: 1,
+						from: {type: 'item', name: 'speed-module', module_limit: 2},
+						to: {
+							type: 'entity',
+							name: 'assembling-machine-3',
+							module_slots: [{name: 'productivity-module'}, {}, {}, {}],
+						},
+					},
+				],
+			},
+		});
+	});
+
 	test('rejects incomplete and ambiguous configured mappings', () => {
 		const incomplete: UpgradePlanner = {
 			item: 'upgrade-planner',

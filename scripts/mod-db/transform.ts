@@ -81,6 +81,7 @@ interface LuaUpgradeFrame {
 interface LuaPrototypeFrame {
 	name: string | undefined;
 	order: string | undefined;
+	subgroup: string | undefined;
 	type: string | undefined;
 }
 
@@ -120,7 +121,10 @@ const pickerPrototypeTypes: readonly {
 	{prototypeType: 'achievement', signalType: 'achievement'},
 ];
 
-export function extractPrototypeNames(sources: readonly string[], prototypeType: string): string[] {
+function extractMatchingPrototypeNames(
+	sources: readonly string[],
+	matches: (prototype: LuaPrototypeFrame) => boolean,
+): string[] {
 	const prototypes = new Map<string, string>();
 	for (const source of sources) {
 		const frames: LuaPrototypeFrame[] = [];
@@ -128,7 +132,7 @@ export function extractPrototypeNames(sources: readonly string[], prototypeType:
 		for (let index = 0; index < tokens.length; index += 1) {
 			const token = tokens[index];
 			if (token.kind === LuaTokenKind.OpeningBrace) {
-				frames.push({name: undefined, order: undefined, type: undefined});
+				frames.push({name: undefined, order: undefined, subgroup: undefined, type: undefined});
 				continue;
 			}
 			if (token.kind === LuaTokenKind.ClosingBrace) {
@@ -136,7 +140,7 @@ export function extractPrototypeNames(sources: readonly string[], prototypeType:
 				if (frame === undefined) {
 					throw new Error('Unexpected closing brace in Lua source.');
 				}
-				if (frame.type === prototypeType && frame.name !== undefined) {
+				if (matches(frame) && frame.name !== undefined) {
 					prototypes.set(frame.name, frame.order ?? frame.name);
 				}
 				continue;
@@ -155,6 +159,8 @@ export function extractPrototypeNames(sources: readonly string[], prototypeType:
 				frame.name = value.value;
 			} else if (token.value === 'order') {
 				frame.order = value.value;
+			} else if (token.value === 'subgroup') {
+				frame.subgroup = value.value;
 			}
 		}
 		if (frames.length > 0) {
@@ -166,6 +172,18 @@ export function extractPrototypeNames(sources: readonly string[], prototypeType:
 			leftOrder === rightOrder ? leftName.localeCompare(rightName) : leftOrder.localeCompare(rightOrder),
 		)
 		.map(([name]) => name);
+}
+
+export function extractPrototypeNames(sources: readonly string[], prototypeType: string): string[] {
+	return extractMatchingPrototypeNames(sources, ({type}) => type === prototypeType);
+}
+
+export function extractUpgradeModuleItems(sources: readonly string[]): string[] {
+	return extractMatchingPrototypeNames(
+		sources,
+		({name, subgroup, type}) =>
+			type === 'module' || (type === 'item' && subgroup === 'module' && name === 'empty-module-slot'),
+	);
 }
 
 export function extractPickerSignals(sources: readonly string[]): PickerSignalPrototype[] {
@@ -264,7 +282,7 @@ function tokenizeLua(source: string): LuaToken[] {
 	return tokens;
 }
 
-export function extractHiddenPlaceResults(source: string): string[] {
+function extractPlaceResults(source: string, hidden: boolean): string[] {
 	const frames: LuaTableFrame[] = [];
 	const placeResults = new Set<string>();
 	const tokens = tokenizeLua(source);
@@ -280,7 +298,7 @@ export function extractHiddenPlaceResults(source: string): string[] {
 			if (frame === undefined) {
 				throw new Error('Unexpected closing brace in Lua source.');
 			}
-			if (frame.hidden && frame.prototypeType !== undefined) {
+			if (frame.hidden === hidden && frame.prototypeType !== undefined) {
 				for (const placeResult of frame.placeResults) {
 					placeResults.add(placeResult);
 				}
@@ -308,6 +326,14 @@ export function extractHiddenPlaceResults(source: string): string[] {
 		throw new Error('Unclosed table in Lua source.');
 	}
 	return [...placeResults].sort();
+}
+
+export function extractHiddenPlaceResults(source: string): string[] {
+	return extractPlaceResults(source, true);
+}
+
+export function extractVisiblePlaceResults(source: string): string[] {
+	return extractPlaceResults(source, false);
 }
 
 export function extractPrototypeUpgrades(sources: readonly string[]): PrototypeUpgrade[] {

@@ -40,11 +40,13 @@ interface UpgradeRuleLookup {
 }
 
 const qualitySchema = z.enum(['normal', 'uncommon', 'rare', 'epic', 'legendary']);
-const signalSchema = z.object({
-	type: z.enum(['item', 'entity']).optional(),
-	name: z.string().min(1),
-	quality: qualitySchema.optional(),
-});
+const signalSchema = z
+	.object({
+		type: z.enum(['item', 'entity']).optional(),
+		name: z.string().min(1),
+		quality: qualitySchema.optional(),
+	})
+	.loose();
 const upgradeSourceSignalSchema = signalSchema.extend({
 	comparator: z.enum(['=', '!=', '<', '<=', '>', '>=', '≠', '≤', '≥']).optional(),
 });

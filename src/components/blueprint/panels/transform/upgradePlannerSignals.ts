@@ -62,11 +62,49 @@ export const pickerSignals: readonly SignalID[] = gameData.pickerSignals.map(({n
 	}
 });
 
-function upgradeModuleFamily(signal: SignalID): string | undefined {
-	if (normalizedSignalType(signal) !== 'item') {
-		return undefined;
+const upgradeEntityItemNames = new Set(gameData.upgradeEntityItems);
+const upgradeModuleNames = new Set(gameData.upgradeModuleItems);
+const pickerItemOrder = new Map(
+	gameData.pickerSignals.flatMap(({name, type}, index) => (type === 'item' ? [[name, index] as const] : [])),
+);
+const nextUpgradeOrder = new Map<string, number>();
+for (const {from, to} of gameUiSpec.upgrades.next) {
+	if (!nextUpgradeOrder.has(from)) {
+		nextUpgradeOrder.set(from, nextUpgradeOrder.size);
 	}
-	return signal.name.match(/^(efficiency|productivity|quality|speed)-module(?:-[23])?$/)?.[1];
+	if (!nextUpgradeOrder.has(to)) {
+		nextUpgradeOrder.set(to, nextUpgradeOrder.size);
+	}
+}
+const upgradeEntityGroups = gameUiSpec.upgrades.groups.map((group) => ({
+	...group,
+	members: group.members.filter(({name}) => upgradeEntityItemNames.has(name)),
+}));
+const upgradeEntityNames = new Set(upgradeEntityGroups.flatMap(({members}) => members.map(({name}) => name)));
+const beltPrototypeTypes = new Set(['splitter', 'transport-belt', 'underground-belt']);
+
+function comparePickerOrder(left: SignalID, right: SignalID): number {
+	return (
+		(pickerItemOrder.get(left.name) ?? Number.MAX_SAFE_INTEGER) -
+			(pickerItemOrder.get(right.name) ?? Number.MAX_SAFE_INTEGER) || left.name.localeCompare(right.name)
+	);
+}
+
+function compareUpgradeTargetOrder(left: SignalID, right: SignalID): number {
+	return (
+		(nextUpgradeOrder.get(left.name) ?? Number.MAX_SAFE_INTEGER) -
+			(nextUpgradeOrder.get(right.name) ?? Number.MAX_SAFE_INTEGER) || comparePickerOrder(left, right)
+	);
+}
+
+function appendCurrentOption(options: SignalID[], currentSource: SignalID | undefined): SignalID[] {
+	if (
+		currentSource === undefined ||
+		options.some((option) => signalPrototypeIdentity(option) === signalPrototypeIdentity(currentSource))
+	) {
+		return options;
+	}
+	return [...options, currentSource];
 }
 
 export function normalizedSignalType(signal: SignalID): string {
@@ -95,51 +133,64 @@ export function signalPrototypeIdentity(signal: SignalID): string {
 }
 
 export function isUpgradeSourceOption(signal: SignalID): boolean {
-	return normalizedSignalType(signal) === 'entity' || upgradeModuleFamily(signal) !== undefined;
+	const type = normalizedSignalType(signal);
+	return (
+		(type === 'entity' && upgradeEntityNames.has(signal.name)) ||
+		(type === 'item' && upgradeModuleNames.has(signal.name))
+	);
+}
+
+export function upgradeSourceOptions(currentSource?: SignalID): SignalID[] {
+	const generatedOptions = [
+		...upgradeEntityGroups.flatMap(({members}) => members.map(({name}): SignalID => ({type: 'entity', name}))),
+		...gameData.upgradeModuleItems.map((name): SignalID => ({type: 'item', name})),
+	].sort(comparePickerOrder);
+	return appendCurrentOption(generatedOptions, currentSource);
 }
 
 export function isUpgradeTargetSelectionAllowed(source: UpgradeSourceSignal, target: SignalID): boolean {
-	return upgradeTargetOptions(source, target).some(
+	return upgradeTargetOptions(source).some(
 		(option) => normalizedSignalType(option) === normalizedSignalType(target) && option.name === target.name,
 	);
 }
 
-export function upgradeTargetOptions(source: UpgradeSourceSignal, currentTarget: SignalID): SignalID[] {
-	const adjacent = new Map<string, Set<string>>();
-	for (const {from, to} of gameUiSpec.upgrades.next) {
-		const fromTargets = adjacent.get(from) ?? new Set<string>();
-		fromTargets.add(to);
-		adjacent.set(from, fromTargets);
-		const toTargets = adjacent.get(to) ?? new Set<string>();
-		toTargets.add(from);
-		adjacent.set(to, toTargets);
+/**
+ * Unsupported endpoint fields from imported planners remain opaque. They are
+ * retained when compatibility is knowable without runtime prototype data:
+ * module limits survive module-to-module changes, and entity module-slot plans
+ * survive quality changes on the same prototype. A different entity prototype
+ * resets opaque fields because slot counts and allowed effects are dynamic.
+ */
+export function replaceUpgradeTarget(currentTarget: SignalID | undefined, nextTarget: SignalID): SignalID {
+	if (currentTarget === undefined) {
+		return {...nextTarget};
 	}
-	const visited = new Set([source.name]);
-	const pending = [source.name];
-	while (pending.length > 0) {
-		const current = pending.shift();
-		if (current === undefined) {
-			break;
-		}
-		for (const candidate of adjacent.get(current) ?? []) {
-			if (!visited.has(candidate)) {
-				visited.add(candidate);
-				pending.push(candidate);
-			}
-		}
+	const samePrototype = signalPrototypeIdentity(currentTarget) === signalPrototypeIdentity(nextTarget);
+	const compatibleModules =
+		normalizedSignalType(currentTarget) === 'item' &&
+		normalizedSignalType(nextTarget) === 'item' &&
+		upgradeModuleNames.has(currentTarget.name) &&
+		upgradeModuleNames.has(nextTarget.name);
+	return samePrototype || compatibleModules ? {...currentTarget, ...nextTarget} : {...nextTarget};
+}
+
+export function upgradeTargetOptions(source: UpgradeSourceSignal): SignalID[] {
+	if (normalizedSignalType(source) === 'item' && upgradeModuleNames.has(source.name)) {
+		return gameData.upgradeModuleItems.map((name) => ({type: 'item', name}));
 	}
-	if (
-		normalizedSignalType(source) !== 'entity' &&
-		normalizedSignalType(source) === normalizedSignalType(currentTarget)
-	) {
-		visited.add(currentTarget.name);
+	if (normalizedSignalType(source) !== 'entity') {
+		return [];
 	}
-	const moduleFamily = upgradeModuleFamily(source);
-	if (moduleFamily !== undefined) {
-		return [`${moduleFamily}-module`, `${moduleFamily}-module-2`, `${moduleFamily}-module-3`].map((name) => ({
-			type: currentTarget.type ?? source.type,
-			name,
-		}));
+	const sourceGroup = upgradeEntityGroups.find(({members}) => members.some(({name}) => name === source.name));
+	const sourceMember = sourceGroup?.members.find(({name}) => name === source.name);
+	if (sourceGroup === undefined || sourceMember === undefined) {
+		return [];
 	}
-	return [...visited].map((name) => ({type: currentTarget.type ?? source.type, name}));
+	return sourceGroup.members
+		.filter(
+			({prototypeType}) =>
+				!beltPrototypeTypes.has(sourceMember.prototypeType) || prototypeType === sourceMember.prototypeType,
+		)
+		.map(({name}): SignalID => ({type: 'entity', name}))
+		.sort(compareUpgradeTargetOrder);
 }

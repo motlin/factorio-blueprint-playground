@@ -42,6 +42,13 @@ export const upgradeQualities = gameUiSpec.qualities
 export const upgradeQualityComparators = gameUiSpec.qualityComparators.map((value) => qualityComparator(value));
 export const anyQualityLabel = gameUiSpec.labels.anyQuality;
 
+export function initialUpgradeQualitySelection(
+	signal: UpgradeQualitySignal | undefined,
+	mode: UpgradeQualityMode | undefined,
+): UpgradeQualitySelection {
+	return mode === 'source' ? (signal?.quality ?? 'any') : (signal?.quality ?? 'normal');
+}
+
 export function qualitySelectorUsesDropdown(visibleQualityCount: number): boolean {
 	if (!Number.isInteger(visibleQualityCount) || visibleQualityCount < 0) {
 		throw new Error('Visible quality count must be a nonnegative integer.');

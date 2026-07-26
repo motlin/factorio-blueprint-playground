@@ -216,9 +216,7 @@ function UpgradeMappingsEditor({
 		).values(),
 	];
 	const targetPickerOptions =
-		targetPickerMapping?.from === undefined
-			? sourceOptions
-			: upgradeTargetOptions(targetPickerMapping.from, targetPickerMapping.to ?? targetPickerMapping.from);
+		targetPickerMapping?.from === undefined ? sourceOptions : upgradeTargetOptions(targetPickerMapping.from);
 
 	return (
 		<>

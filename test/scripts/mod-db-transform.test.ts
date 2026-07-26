@@ -9,6 +9,8 @@ import {
 	extractPickerSignals,
 	extractPrototypeNames,
 	extractPrototypeUpgrades,
+	extractUpgradeModuleItems,
+	extractVisiblePlaceResults,
 	parseFactorioLabDataset,
 	transformDatasets,
 } from '../../scripts/mod-db/transform';
@@ -100,6 +102,7 @@ describe('transformDatasets', () => {
 		`;
 
 		expect(extractHiddenPlaceResults(source)).toStrictEqual(['editor-one', 'editor-two']);
+		expect(extractVisiblePlaceResults(source)).toStrictEqual(['ordinary-item']);
 	});
 
 	it('extracts table and data.raw next-upgrade assignments from Lua prototypes', () => {
@@ -153,6 +156,23 @@ describe('transformDatasets', () => {
 			{type: 'virtual', name: 'signal-test'},
 			{type: 'planet', name: 'test-planet'},
 			{type: 'technology', name: 'test-technology'},
+		]);
+	});
+
+	it('extracts upgrade modules and the empty-slot sentinel from literal prototype metadata', () => {
+		const sources = [
+			`data:extend({
+				{type = "module", name = "speed-module", subgroup = "module", order = "a"},
+				{type = "module", name = "productivity-module", subgroup = "module", order = "b"},
+				{type = "item", name = "empty-module-slot", subgroup = "module", order = "z"},
+				{type = "item", name = "iron-plate", subgroup = "raw-material", order = "c"}
+			})`,
+		];
+
+		expect(extractUpgradeModuleItems(sources)).toStrictEqual([
+			'speed-module',
+			'productivity-module',
+			'empty-module-slot',
 		]);
 	});
 });

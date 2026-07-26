@@ -1,6 +1,5 @@
 import {useMemo, useRef, useState} from 'react';
 
-import gameData from '../../../../generated/game-data.json';
 import {serializeBlueprint} from '../../../../parsing/blueprintParser';
 import type {
 	BlueprintString,
@@ -30,11 +29,10 @@ import {
 import type {UpgradePlannerChoice} from './UpgradePlannerSelectorDialog';
 import type {PositionedUpgradeMapping} from './UpgradeMappingGrid';
 import {
-	isUpgradeSourceOption,
 	isUpgradeTargetSelectionAllowed,
-	normalizedSignalType,
-	pickerSignals,
+	replaceUpgradeTarget,
 	signalIdentity,
+	upgradeSourceOptions,
 } from './upgradePlannerSignals';
 
 type UpgradePlannerScope = 'selection' | 'root';
@@ -59,22 +57,6 @@ interface UpgradePlannerDraftApplication {
 	rules: UpgradeRule[];
 	scope: UpgradePlannerScope;
 	textReplacementEnabled: boolean;
-}
-
-function upgradeSourceOptions(): SignalID[] {
-	const options = new Map<string, SignalID>();
-	for (const {from, to} of gameData.nextUpgrades) {
-		options.set(`entity:${from}`, {type: 'entity', name: from});
-		options.set(`entity:${to}`, {type: 'entity', name: to});
-	}
-	for (const signal of pickerSignals.filter(isUpgradeSourceOption)) {
-		options.set(`${normalizedSignalType(signal)}:${signal.name}`, signal);
-	}
-	return [...options.values()].sort(
-		(left, right) =>
-			normalizedSignalType(left).localeCompare(normalizedSignalType(right)) ||
-			left.name.localeCompare(right.name),
-	);
 }
 
 function completeRules(mappings: readonly UpgradeMappingDraft[], source: string): UpgradeRule[] {
@@ -482,7 +464,11 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 					}
 					return current.map((mapping) =>
 						mapping.mappingId === mappingId
-							? {...mapping, preserveQuality: false, to: {...nextTarget}}
+							? {
+									...mapping,
+									preserveQuality: false,
+									to: replaceUpgradeTarget(mapping.to, nextTarget),
+								}
 							: mapping,
 					);
 				});

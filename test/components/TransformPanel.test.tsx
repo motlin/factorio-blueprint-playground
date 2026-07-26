@@ -1693,44 +1693,30 @@ describe('TransformPanel', () => {
 
 		await user.click(firstEmptyMappingSourceButton());
 		const sourcePicker = screen.getByRole('dialog', {name: 'Set the filter'});
-		expect(
-			within(sourcePicker)
-				.getAllByRole('button', {name: /^Choose /})
-				.map((button) => button.getAttribute('aria-label')),
-		).toStrictEqual([
-			'Choose Assembling machine 1',
-			'Choose Assembling machine 2',
-			'Choose Assembling machine 3',
-			'Choose Bulk inserter',
-			'Choose Express splitter',
-			'Choose Express transport belt',
-			'Choose Express underground belt',
-			'Choose Fast inserter',
-			'Choose Fast splitter',
-			'Choose Fast transport belt',
-			'Choose Fast underground belt',
-			'Choose Inserter',
-			'Choose Splitter',
-			'Choose Steel furnace',
-			'Choose Stone furnace',
-			'Choose Transport belt',
-			'Choose Turbo splitter',
-			'Choose Turbo transport belt',
-			'Choose Turbo underground belt',
-			'Choose Underground belt',
-			'Choose Efficiency module',
-			'Choose Efficiency module 2',
-			'Choose Efficiency module 3',
-			'Choose Productivity module',
-			'Choose Productivity module 2',
-			'Choose Productivity module 3',
-			'Choose Quality module',
-			'Choose Quality module 2',
-			'Choose Quality module 3',
-			'Choose Speed module',
-			'Choose Speed module 2',
-			'Choose Speed module 3',
-		]);
+		const sourceChoices = within(sourcePicker)
+			.getAllByRole('button', {name: /^Choose /})
+			.map((button) => button.getAttribute('aria-label'));
+		expect({
+			assemblers: [
+				'Choose Assembling machine 1',
+				'Choose Assembling machine 2',
+				'Choose Assembling machine 3',
+			].map((choice) => sourceChoices.includes(choice)),
+			belts: ['Choose Transport belt', 'Choose Express transport belt', 'Choose Turbo underground belt'].map(
+				(choice) => sourceChoices.includes(choice),
+			),
+			modules: ['Choose Speed module', 'Choose Productivity module 3', 'Choose Empty module slot'].map((choice) =>
+				sourceChoices.includes(choice),
+			),
+			qualityOnlyEntity: sourceChoices.includes('Choose Accumulator'),
+			unrelatedItem: sourceChoices.includes('Choose Iron plate'),
+		}).toStrictEqual({
+			assemblers: [true, true, true],
+			belts: [true, true, true],
+			modules: [true, true, true],
+			qualityOnlyEntity: true,
+			unrelatedItem: false,
+		});
 
 		await chooseSignal(user, 'Assembling machine 1');
 		await user.click(screen.getByRole('button', {name: 'Choose target for Assembling machine 1'}));
