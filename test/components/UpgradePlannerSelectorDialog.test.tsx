@@ -187,10 +187,10 @@ describe('UpgradePlannerSelectorDialog', () => {
 				{
 					describedBy: instructions.id,
 					icon: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
-					label: 'Empty planner',
+					label: 'Empty Planner',
 					pressed: 'false',
 					tabIndex: -1,
-					title: 'Empty planner',
+					title: 'Empty Planner',
 				},
 				{
 					describedBy: instructions.id,

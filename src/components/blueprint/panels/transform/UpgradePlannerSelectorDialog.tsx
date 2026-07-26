@@ -72,6 +72,9 @@ function createUpgradePlannerChoices(
 	}
 
 	for (const record of libraryRecords) {
+		if (sessionChoice?.source === `library:${record.id}`) {
+			continue;
+		}
 		const planner = libraryPlanner(record);
 		choices.push({
 			label: libraryPlannerLabel(record, planner),
@@ -81,7 +84,7 @@ function createUpgradePlannerChoices(
 	}
 
 	if (includeEditingChoices) {
-		choices.push({label: 'Empty planner', source: 'custom'}, {label: 'Paste upgrade planner…', source: 'pasted'});
+		choices.push({label: 'Empty Planner', source: 'custom'}, {label: 'Paste upgrade planner…', source: 'pasted'});
 	}
 
 	return choices;

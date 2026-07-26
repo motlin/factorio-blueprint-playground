@@ -1,7 +1,7 @@
 import {useId, useState} from 'react';
 
 import type {BlueprintString, SignalID, UpgradeSourceSignal} from '../../../../parsing/types';
-import type {UpgradeRule} from '../../../../transform/upgradePlanner';
+import type {UpgradeDirection, UpgradeRule} from '../../../../transform/upgradePlanner';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
 import {ButtonGreen} from '../../../ui/ButtonGreen';
 import {FactorioButton, FactorioButtonKind} from '../../../ui/FactorioUi';
@@ -37,15 +37,16 @@ import {UpgradePlannerSelectorDialog, type UpgradePlannerChoice} from './Upgrade
  *
  * Blueprint application
  *
- * - Applying a saved planner is a separate explicit operation. Upgrade reads the
- *   same records From to To; downgrade reads them in reverse. Direction never
- *   changes the editor shape or creates another mapper set.
+ * - Applying the displayed draft is a separate explicit operation. Upgrade
+ *   reads the same records From to To; downgrade reads them in reverse.
+ *   Direction never changes the editor shape or creates another mapper set.
  * - A mapper remains part of the planner when the current blueprint has no
  *   matches. Counts may describe a proposed application, but must not add,
  *   remove, reorder, or otherwise become the source of editor rows.
- * - Saving a planner definition and applying it to a selected blueprint/root are
- *   distinct commands. The application selector may follow a save in this
- *   product, but saving alone must not apply the planner.
+ * - Saving a planner definition to the Blueprint Library and applying it to a
+ *   selected blueprint/root are distinct commands. Apply reads the draft already
+ *   visible here and never opens another planner selector. Saving alone does not
+ *   transform or close the current blueprint.
  *
  * Evidence: UpgradeItemGui, UpgradeFilterSelectListGui,
  * UpgradeDestinationSelectListGui, UpgradeRecord, UpgradeItem, UpgradeData, and
@@ -75,14 +76,106 @@ interface UpgradePlannerDialogProps {
 	canChooseRootScope: boolean;
 	mappings: UpgradePlannerMappings;
 	matchCount: number;
+	onApply: (direction: UpgradeDirection) => void;
 	onClose: () => void;
-	onSave: () => void;
 	onScopeChange: (scope: 'selection' | 'root') => void;
 	replacements: BookWideReplacementsProps;
 	saveDisabled: boolean;
+	savePrompt: UpgradePlannerSavePromptProps;
+	savedLibraryMessage?: string;
 	scope: 'selection' | 'root';
 	selectionScopeDisabled: boolean;
 	selectionScopeLabel: string;
+}
+
+interface UpgradePlannerSavePromptProps {
+	initialLabel: string;
+	onCancel: () => void;
+	onOpen: () => void;
+	onSaveAsNew: (label: string) => void;
+	onUpdateExisting?: (label: string) => void;
+	open: boolean;
+	pending: boolean;
+}
+
+function UpgradePlannerSavePrompt({
+	initialLabel,
+	onCancel,
+	onSaveAsNew,
+	onUpdateExisting,
+	open,
+	pending,
+}: UpgradePlannerSavePromptProps) {
+	const headingId = useId();
+	const [label, setLabel] = useState(initialLabel);
+	const normalizedLabel = label.trim();
+
+	if (!open) {
+		return null;
+	}
+
+	return (
+		<div className="transform-dialog-backdrop transform-dialog-backdrop--confirmation">
+			<section
+				className="factorio-frame factorio-frame--shallow transform-dialog transform-dialog--confirmation upgrade-planner-save"
+				role="dialog"
+				aria-modal="true"
+				aria-labelledby={headingId}
+				onKeyDown={(event) => {
+					event.stopPropagation();
+					if (event.key === 'Escape' && !pending) {
+						onCancel();
+					}
+				}}
+			>
+				<header className="factorio-title-bar transform-dialog__header">
+					<h3 id={headingId}>Save to Blueprint Library</h3>
+				</header>
+				<label>
+					<strong>Planner name</strong>
+					<input
+						autoFocus
+						aria-label="Planner name"
+						disabled={pending}
+						value={label}
+						onChange={(event) => {
+							setLabel(event.currentTarget.value);
+						}}
+					/>
+				</label>
+				<p>
+					Save as new creates a planner on <strong>Blueprint Library › Root shelf</strong>.
+					{onUpdateExisting === undefined
+						? null
+						: ' Update existing keeps the loaded record in its current library destination.'}
+				</p>
+				<div className="transform-dialog__actions">
+					<FactorioButton className="transform-button" disabled={pending} onClick={onCancel}>
+						Cancel Save
+					</FactorioButton>
+					{onUpdateExisting === undefined ? null : (
+						<FactorioButton
+							className="transform-button"
+							disabled={pending || normalizedLabel === ''}
+							onClick={() => {
+								onUpdateExisting(normalizedLabel);
+							}}
+						>
+							Update Existing Library Record
+						</FactorioButton>
+					)}
+					<ButtonGreen
+						disabled={pending || normalizedLabel === ''}
+						onClick={() => {
+							onSaveAsNew(normalizedLabel);
+						}}
+					>
+						Save as New Library Record
+					</ButtonGreen>
+				</div>
+			</section>
+		</div>
+	);
 }
 
 function UpgradeMappingsEditor({
@@ -323,11 +416,13 @@ export function UpgradePlannerDialog({
 	canChooseRootScope,
 	mappings,
 	matchCount,
+	onApply,
 	onClose,
-	onSave,
 	onScopeChange,
 	replacements,
 	saveDisabled,
+	savePrompt,
+	savedLibraryMessage,
 	scope,
 	selectionScopeDisabled,
 	selectionScopeLabel,
@@ -342,6 +437,8 @@ export function UpgradePlannerDialog({
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby={dialogHeadingId}
+				aria-hidden={savePrompt.open || undefined}
+				inert={savePrompt.open}
 				onKeyDown={(event) => {
 					if (event.key === 'Escape') {
 						onClose();
@@ -421,13 +518,44 @@ export function UpgradePlannerDialog({
 							onClose();
 						}}
 					>
-						Cancel
+						Close Planner
 					</FactorioButton>
-					<ButtonGreen disabled={saveDisabled} onClick={onSave}>
-						Save planner
-					</ButtonGreen>
+					{savedLibraryMessage === undefined ? null : (
+						<p className="upgrade-planner-dialog__saved-record" role="status">
+							{savedLibraryMessage}
+						</p>
+					)}
+					<div className="transform-workbench__apply-actions">
+						<FactorioButton
+							className="transform-button"
+							disabled={saveDisabled}
+							onClick={() => {
+								savePrompt.onOpen();
+							}}
+						>
+							Save to Blueprint Library
+						</FactorioButton>
+						<FactorioButton
+							className="transform-button"
+							disabled={saveDisabled}
+							onClick={() => {
+								onApply('downgrade');
+							}}
+						>
+							Apply Downgrade to {scope === 'root' ? 'Entire Root Book' : 'Current Blueprint'}
+						</FactorioButton>
+						<ButtonGreen
+							disabled={saveDisabled}
+							onClick={() => {
+								onApply('upgrade');
+							}}
+						>
+							Apply Upgrade to {scope === 'root' ? 'Entire Root Book' : 'Current Blueprint'}
+						</ButtonGreen>
+					</div>
 				</footer>
 			</section>
+			{savePrompt.open ? <UpgradePlannerSavePrompt {...savePrompt} /> : null}
 		</div>
 	);
 }

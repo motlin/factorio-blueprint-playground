@@ -50,8 +50,8 @@ function renderPlannerHtml(): string {
 				],
 			}}
 			matchCount={1}
+			onApply={noop}
 			onClose={noop}
-			onSave={noop}
 			onScopeChange={noop}
 			replacements={{
 				iconMappingCount: 0,
@@ -66,6 +66,14 @@ function renderPlannerHtml(): string {
 				textReplacementEnabled: false,
 			}}
 			saveDisabled={false}
+			savePrompt={{
+				initialLabel: 'Default Upgrade',
+				onCancel: noop,
+				onOpen: noop,
+				onSaveAsNew: noop,
+				open: false,
+				pending: false,
+			}}
 			scope="selection"
 			selectionScopeDisabled={false}
 			selectionScopeLabel="Selected blueprint"
