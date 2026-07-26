@@ -9,7 +9,7 @@ import {extractBlueprint} from '../parsing/blueprintParser';
 import type {BlueprintString} from '../parsing/types';
 import type {RootSearch} from '../routes';
 import {updateBlueprintMetadata} from '../state/blueprintLocalStorage';
-import {db, generateSha} from '../storage/db';
+import {db} from '../storage/db';
 
 import DisqusComments from './blueprint/disqus/DisqusComments';
 import {BlueprintErrorFallback} from './blueprint/error/BlueprintErrorFallback';
@@ -54,8 +54,7 @@ export function BlueprintPlayground() {
 		if (pasted == null || pasted === '') return null;
 
 		try {
-			const sha = await generateSha(pasted);
-			return await db.blueprints.get(sha);
+			return await db.findHistoryByData(pasted);
 		} catch (dbError) {
 			logger.error('Error finding blueprint in database', dbError, {
 				context: 'BlueprintPlayground.useLiveQuery',
@@ -73,7 +72,7 @@ export function BlueprintPlayground() {
 			}),
 		});
 	};
-	const existingBlueprintSha = existingBlueprint?.metadata.sha;
+	const existingBlueprintId = existingBlueprint?.id;
 	const savedSelection = existingBlueprint?.metadata.selection;
 
 	useEffect(() => {
@@ -83,14 +82,14 @@ export function BlueprintPlayground() {
 			pasted != null &&
 			pasted !== '' &&
 			isSuccess &&
-			existingBlueprintSha !== undefined &&
+			existingBlueprintId !== undefined &&
 			savedSelection !== selectedPath
 		) {
-			void updateBlueprintMetadata(existingBlueprintSha, {
+			void updateBlueprintMetadata(existingBlueprintId, {
 				selection: selectedPath,
 			});
 		}
-	}, [selectedPath, pasted, isSuccess, existingBlueprintSha, savedSelection]);
+	}, [selectedPath, pasted, isSuccess, existingBlueprintId, savedSelection]);
 
 	return (
 		<div className="container">

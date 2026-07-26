@@ -6,19 +6,19 @@ import {beforeEach, describe, expect, test, vi} from 'vite-plus/test';
 import {TransformPanel} from '../../src/components/blueprint/panels/transform/TransformPanel';
 import {deserializeBlueprint, serializeBlueprint} from '../../src/parsing/blueprintParser';
 import type {BlueprintString, BlueprintStringWithIndex, UpgradePlanner} from '../../src/parsing/types';
-import type {DatabaseBlueprint} from '../../src/storage/db';
+import {LIBRARY_ROOT_ID, type LibraryRecord} from '../../src/storage/db';
 import {stripTiles, stripTrains} from '../../src/transform/strip';
 import {applyUpgradeRules, builtInUpgradeRules} from '../../src/transform/upgradePlanner';
 import {readFixtureFile} from '../fixtures/utils';
 
-const {analysisCounts, historyBlueprints, navigate} = vi.hoisted(() => ({
+const {analysisCounts, libraryRecords, navigate} = vi.hoisted(() => ({
 	analysisCounts: {metadataIcons: 0, upgradeRules: 0},
-	historyBlueprints: [] as DatabaseBlueprint[],
+	libraryRecords: [] as LibraryRecord[],
 	navigate: vi.fn<(options: unknown) => void>(),
 }));
 
 vi.mock('dexie-react-hooks', () => ({
-	useLiveQuery: () => historyBlueprints,
+	useLiveQuery: () => libraryRecords,
 }));
 vi.mock('@tanstack/react-router', async (importOriginal) => ({
 	...(await importOriginal()),
@@ -118,16 +118,15 @@ async function saveAndApplyPlanner(
 	}
 }
 
-function storedPlanner(sha: string, planner: UpgradePlanner, label: string): DatabaseBlueprint {
+function storedPlanner(id: string, planner: UpgradePlanner, label: string, position: number): LibraryRecord {
 	return {
-		metadata: {
-			sha,
-			createdOn: 0,
-			lastUpdatedOn: 0,
-			data: serializeBlueprint({upgrade_planner: planner}),
-			fetchMethod: 'data',
-		},
+		id,
+		createdOn: 0,
+		updatedOn: 0,
+		data: serializeBlueprint({upgrade_planner: planner}),
 		gameData: {type: 'upgrade_planner', label, icons: []},
+		parentId: LIBRARY_ROOT_ID,
+		position,
 	};
 }
 
@@ -154,7 +153,7 @@ describe('TransformPanel', () => {
 	beforeEach(() => {
 		analysisCounts.metadataIcons = 0;
 		analysisCounts.upgradeRules = 0;
-		historyBlueprints.length = 0;
+		libraryRecords.length = 0;
 		navigate.mockReset();
 	});
 
@@ -2083,9 +2082,9 @@ describe('TransformPanel', () => {
 				],
 			},
 		};
-		historyBlueprints.push(
-			storedPlanner('sha-100', bookPlanner, 'Duplicate book planner'),
-			storedPlanner('sha-200', recentPlanner, "Bob's recent planner"),
+		libraryRecords.push(
+			storedPlanner('planner-alice', bookPlanner, 'Duplicate book planner', 0),
+			storedPlanner('planner-bob', recentPlanner, "Bob's library planner", 1),
 		);
 		render(<TransformPanel blueprint={selectedBlueprint} rootBlueprint={rootBlueprint} selectedPath="1" />);
 
@@ -2098,7 +2097,8 @@ describe('TransformPanel', () => {
 		).toStrictEqual([
 			'Default Upgrade',
 			"Alice's library planner",
-			"Bob's recent planner",
+			'Duplicate book planner',
+			"Bob's library planner",
 			'Empty planner',
 			'Paste upgrade planner…',
 		]);
@@ -2162,7 +2162,7 @@ describe('TransformPanel', () => {
 			screen.getAllByRole('button', {name: /Choose source, currently/}).map((sourceButton) => sourceButton.title),
 		).toStrictEqual(['Transport belt\nentity:transport-belt', 'Speed module\nitem:speed-module']);
 
-		choosePlannerWithClicks("Bob's recent planner");
+		choosePlannerWithClicks("Bob's library planner");
 		expect(
 			screen.getAllByRole('button', {name: /Choose source, currently/}).map((sourceButton) => ({
 				from: sourceButton.title,

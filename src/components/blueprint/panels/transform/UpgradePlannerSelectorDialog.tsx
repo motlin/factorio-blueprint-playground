@@ -5,7 +5,7 @@ import {createPortal} from 'react-dom';
 import {serializeBlueprint} from '../../../../parsing/blueprintParser';
 import type {BlueprintString, UpgradePlanner} from '../../../../parsing/types';
 import {findUpgradePlanners, parseUpgradePlanner, type UpgradeDirection} from '../../../../transform/upgradePlanner';
-import {db, type DatabaseBlueprint} from '../../../../storage/db';
+import {db, type LibraryRecord} from '../../../../storage/db';
 import {FactorioButton, FactorioButtonKind} from '../../../ui/FactorioUi';
 import {useDialogFocus} from './useDialogFocus';
 import {UpgradePlannerSelectorItem, type UpgradePlannerChoice} from './UpgradePlannerSelectorItem';
@@ -23,7 +23,7 @@ interface UpgradePlannerSelectorDialogProps {
 }
 
 const serializedPlannerCache = new WeakMap<UpgradePlanner, string>();
-const historyPlannerCache = new WeakMap<DatabaseBlueprint, {planner: UpgradePlanner; serialized: string}>();
+const libraryPlannerCache = new WeakMap<LibraryRecord, UpgradePlanner>();
 
 function serializedPlanner(planner: UpgradePlanner): string {
 	const cachedPlanner = serializedPlannerCache.get(planner);
@@ -36,24 +36,23 @@ function serializedPlanner(planner: UpgradePlanner): string {
 	return serialized;
 }
 
-function historyPlanner(blueprint: DatabaseBlueprint) {
-	const cachedPlanner = historyPlannerCache.get(blueprint);
+function libraryPlanner(record: LibraryRecord): UpgradePlanner {
+	const cachedPlanner = libraryPlannerCache.get(record);
 	if (cachedPlanner !== undefined) {
 		return cachedPlanner;
 	}
-	const planner = parseUpgradePlanner(blueprint.metadata.data);
-	const parsedPlanner = {planner, serialized: serializedPlanner(planner)};
-	historyPlannerCache.set(blueprint, parsedPlanner);
-	return parsedPlanner;
+	const planner = parseUpgradePlanner(record.data);
+	libraryPlannerCache.set(record, planner);
+	return planner;
 }
 
-function historyPlannerLabel(blueprint: DatabaseBlueprint, planner: UpgradePlanner): string {
-	return planner.label ?? blueprint.gameData.label ?? planner.settings.description ?? 'Recent upgrade planner';
+function libraryPlannerLabel(record: LibraryRecord, planner: UpgradePlanner): string {
+	return record.gameData.label ?? planner.label ?? planner.settings.description ?? 'Saved upgrade planner';
 }
 
 function createUpgradePlannerChoices(
 	rootBlueprint: BlueprintString,
-	historyBlueprints: readonly DatabaseBlueprint[],
+	libraryRecords: readonly LibraryRecord[],
 	includeEditingChoices: boolean,
 	sessionChoice: UpgradePlannerChoice | undefined,
 ): UpgradePlannerChoice[] {
@@ -72,16 +71,13 @@ function createUpgradePlannerChoices(
 		}
 	}
 
-	for (const blueprint of historyBlueprints) {
-		const {planner, serialized} = historyPlanner(blueprint);
-		if (!serializedPlanners.has(serialized)) {
-			serializedPlanners.add(serialized);
-			choices.push({
-				label: historyPlannerLabel(blueprint, planner),
-				planner,
-				source: `history:${blueprint.metadata.sha}`,
-			});
-		}
+	for (const record of libraryRecords) {
+		const planner = libraryPlanner(record);
+		choices.push({
+			label: libraryPlannerLabel(record, planner),
+			planner,
+			source: `library:${record.id}`,
+		});
 	}
 
 	if (includeEditingChoices) {
@@ -99,7 +95,7 @@ function createUpgradePlannerChoices(
  *   and books, then every Upgrade Planner item found recursively in controller
  *   inventories. Search matches the stored label or description for both record
  *   and inventory sources.
- * - Browser book planners (`book:*`) and IndexedDB planners (`history:*`) are the
+ * - Browser book planners (`book:*`) and IndexedDB planners (`library:*`) are the
  *   nested and shelf-root records of one private library. A session/dropped
  *   planner is the inventory-like transient source. `Default Upgrade` is the
  *   built-in no-record choice. URL provenance must not define whether an
@@ -130,22 +126,14 @@ export function UpgradePlannerSelectorDialog({
 	const headingId = useId();
 	const instructionsId = useId();
 	const buttonReferences = useRef<Array<HTMLButtonElement | null>>([]);
-	const historyBlueprints = useLiveQuery(
-		async () =>
-			await db.blueprints
-				.orderBy('metadata.lastUpdatedOn')
-				.reverse()
-				.filter(
-					(blueprint) =>
-						blueprint.gameData.type === 'upgrade_planner' && blueprint.metadata.fetchMethod !== 'url',
-				)
-				.toArray(),
+	const libraryRecords = useLiveQuery(
+		async () => (await db.listLibraryTree()).filter((record) => record.gameData.type === 'upgrade_planner'),
 		[],
 		[],
 	);
 	const choices = useMemo(
-		() => createUpgradePlannerChoices(rootBlueprint, historyBlueprints, includeEditingChoices, sessionChoice),
-		[rootBlueprint, historyBlueprints, includeEditingChoices, sessionChoice],
+		() => createUpgradePlannerChoices(rootBlueprint, libraryRecords, includeEditingChoices, sessionChoice),
+		[rootBlueprint, libraryRecords, includeEditingChoices, sessionChoice],
 	);
 	const [activeIndex, setActiveIndex] = useState(() =>
 		Math.max(

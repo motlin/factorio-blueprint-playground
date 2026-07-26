@@ -8,17 +8,17 @@ import {
 } from '../../src/components/blueprint/panels/transform/UpgradePlannerSelectorDialog';
 import {serializeBlueprint} from '../../src/parsing/blueprintParser';
 import type {BlueprintString, UpgradePlanner} from '../../src/parsing/types';
-import type {DatabaseBlueprint} from '../../src/storage/db';
+import {LIBRARY_ROOT_ID, type LibraryRecord} from '../../src/storage/db';
 import {parseUpgradePlanner, type UpgradeDirection} from '../../src/transform/upgradePlanner';
 import upgradePlannerFixture from '../fixtures/blueprints/json/upgrade.json';
 
 const mocks = vi.hoisted(() => ({
-	historyBlueprints: [] as DatabaseBlueprint[],
+	libraryRecords: [] as LibraryRecord[],
 	serializationCount: 0,
 }));
 
 vi.mock('dexie-react-hooks', () => ({
-	useLiveQuery: () => mocks.historyBlueprints,
+	useLiveQuery: () => mocks.libraryRecords,
 }));
 vi.mock('../../src/parsing/blueprintParser', async (importOriginal) => {
 	const original = await importOriginal<typeof import('../../src/parsing/blueprintParser')>();
@@ -57,24 +57,23 @@ const rootBlueprint: BlueprintString = {
 	},
 };
 
-function storedPlanner(sha: string, planner: UpgradePlanner, label: string, lastUpdatedOn: number): DatabaseBlueprint {
+function storedPlanner(id: string, planner: UpgradePlanner, label: string, position: number): LibraryRecord {
 	return {
-		metadata: {
-			sha,
-			createdOn: 0,
-			lastUpdatedOn,
-			data: serializeBlueprint({upgrade_planner: planner}),
-			fetchMethod: 'data',
-		},
+		id,
+		createdOn: 0,
+		updatedOn: 0,
+		data: serializeBlueprint({upgrade_planner: planner}),
 		gameData: {type: 'upgrade_planner', label, icons: []},
+		parentId: LIBRARY_ROOT_ID,
+		position,
 	};
 }
 
 describe('UpgradePlannerSelectorDialog', () => {
 	beforeEach(() => {
-		mocks.historyBlueprints = [
-			storedPlanner('sha-100', fixturePlanner, 'Duplicate fixture planner', 1000),
-			storedPlanner('sha-200', zeroMatchPlanner, 'Zero-match history planner', 0),
+		mocks.libraryRecords = [
+			storedPlanner('planner-alice', fixturePlanner, 'Duplicate fixture planner', 0),
+			storedPlanner('planner-bob', zeroMatchPlanner, 'Zero-match library planner', 1),
 		];
 		mocks.serializationCount = 0;
 	});
@@ -113,8 +112,8 @@ describe('UpgradePlannerSelectorDialog', () => {
 		}).toStrictEqual({
 			activeElement: 'Default Upgrade',
 			serializations: {
-				afterFocusAndSessionChanges: 3,
-				afterRender: 3,
+				afterFocusAndSessionChanges: 1,
+				afterRender: 1,
 			},
 		});
 	});
@@ -172,10 +171,18 @@ describe('UpgradePlannerSelectorDialog', () => {
 				{
 					describedBy: instructions.id,
 					icon: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
-					label: 'Zero-match module planner',
+					label: 'Duplicate fixture planner',
 					pressed: 'false',
 					tabIndex: -1,
-					title: 'Zero-match module planner',
+					title: 'Duplicate fixture planner',
+				},
+				{
+					describedBy: instructions.id,
+					icon: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
+					label: 'Zero-match library planner',
+					pressed: 'false',
+					tabIndex: -1,
+					title: 'Zero-match library planner',
 				},
 				{
 					describedBy: instructions.id,
@@ -213,7 +220,7 @@ describe('UpgradePlannerSelectorDialog', () => {
 
 		const defaultPlanner = screen.getByRole('button', {name: /Default Upgrade/});
 		const fixturePlannerButton = screen.getByRole('button', {name: /Alice's fixture belt upgrades/});
-		const zeroMatchPlannerButton = screen.getByRole('button', {name: /Zero-match module planner/});
+		const zeroMatchPlannerButton = screen.getByRole('button', {name: /Zero-match library planner/});
 		await user.click(defaultPlanner);
 		const contextMenuAllowed = fireEvent.contextMenu(fixturePlannerButton);
 		zeroMatchPlannerButton.focus();
@@ -237,17 +244,17 @@ describe('UpgradePlannerSelectorDialog', () => {
 				],
 				[
 					{
-						label: 'Zero-match module planner',
+						label: 'Zero-match library planner',
 						planner: zeroMatchPlanner,
-						source: 'history:sha-200',
+						source: 'library:planner-bob',
 					},
 					'upgrade',
 				],
 				[
 					{
-						label: 'Zero-match module planner',
+						label: 'Zero-match library planner',
 						planner: zeroMatchPlanner,
-						source: 'history:sha-200',
+						source: 'library:planner-bob',
 					},
 					'downgrade',
 				],

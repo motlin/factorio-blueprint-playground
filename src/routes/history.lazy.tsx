@@ -14,7 +14,7 @@ import {logger} from '../lib/sentry';
 import {type BlueprintInfo, BlueprintWrapper} from '../parsing/BlueprintWrapper';
 import {deserializeBlueprint, deserializeBlueprintNoThrow, serializeBlueprint} from '../parsing/blueprintParser';
 import type {BlueprintString} from '../parsing/types';
-import {type BlueprintGameData, type DatabaseBlueprint, type DatabaseBlueprintType, db} from '../storage/db';
+import {type BlueprintGameData, type DatabaseBlueprintType, db, type ImportHistoryRecord} from '../storage/db';
 import {makeBook, splitBook} from '../transform/bookOps';
 
 export const Route = createLazyFileRoute('/history')({
@@ -39,49 +39,40 @@ function getGameData(blueprint: BlueprintString): BlueprintGameData {
 	};
 }
 
-export async function addSplitBookToHistory(book: BlueprintString): Promise<DatabaseBlueprint[]> {
+export async function addSplitBookToHistory(book: BlueprintString): Promise<ImportHistoryRecord[]> {
 	if (book.blueprint_book === undefined) {
 		throw new Error('Cannot split a blueprint that is not a book');
 	}
 
-	const addedBlueprints: DatabaseBlueprint[] = [];
+	const addedBlueprints: ImportHistoryRecord[] = [];
 	for (const child of splitBook(book)) {
-		addedBlueprints.push(await db.addBlueprint(serializeBlueprint(child), getGameData(child), undefined, 'data'));
+		addedBlueprints.push(
+			await db.importToHistory({
+				data: serializeBlueprint(child),
+				gameData: getGameData(child),
+				fetchMethod: 'data',
+			}),
+		);
 	}
 
 	return addedBlueprints;
 }
 
 /**
- * Browser Blueprint Library surface contract:
+ * Browser import-history surface contract:
  *
- * - History is the browser's private shelf of saved records, not a separate
- *   append-only concept competing with "saved planners". Blueprints, books, and
- *   both planner types belong to this one model; an opened book navigates into
- *   its ordered child records and back without losing the containing root.
- * - Factorio exposes private and game shelf tabs and replaces the shelf body with
- *   an opened-book view while retaining tab/browse history. This browser
- *   currently has one private shelf, and `metadata.selection` plus the blueprint
- *   tree are its corresponding book-navigation state.
- * - Search matches record label or description. With no search, ordered empty
- *   slots remain valid drop destinations; filtered results omit empty slots.
- *   Library and planner-selector searches must use the same record metadata.
- * - Open/edit acts on one record. Label, description, and icon saves replace that
- *   record at its path; delete removes that record. `Split Selected Books` is an
- *   explicit transformation that creates new shelf roots, never ordinary book
- *   navigation.
- *
- * The current recency-sorted bulk history table is a transitional list view over
- * this shelf contract.
+ * Each successful import appends a row, including repeated imports of identical
+ * data. Rows retain source and selection metadata for reopening, but they are not
+ * Blueprint Library inventory slots. Explicitly saved planners and other records
+ * live in the separate ordered library store.
  */
 function History() {
 	const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set<string>());
 	const [error, setError] = useState<Error | null>(null);
 
-	const blueprints = useLiveQuery<DatabaseBlueprint[]>(async () => {
+	const blueprints = useLiveQuery<ImportHistoryRecord[]>(async () => {
 		try {
-			const result = await db.blueprints.orderBy('metadata.lastUpdatedOn').reverse().toArray();
-			return result;
+			return await db.listHistory();
 		} catch (loadError: unknown) {
 			logger.error(
 				'Failed to load blueprint history',
@@ -97,13 +88,13 @@ function History() {
 
 	const isLoading = blueprints === undefined;
 
-	const toggleSelection = (sha: string): void => {
+	const toggleSelection = (id: string): void => {
 		setSelectedItems((prev: Set<string>) => {
 			const newSelection = new Set<string>(prev);
-			if (newSelection.has(sha)) {
-				newSelection.delete(sha);
+			if (newSelection.has(id)) {
+				newSelection.delete(id);
 			} else {
-				newSelection.add(sha);
+				newSelection.add(id);
 			}
 			return newSelection;
 		});
@@ -111,8 +102,7 @@ function History() {
 
 	const selectAll = (): void => {
 		if (blueprints == null) return;
-		const shaArray = blueprints.map((bp: DatabaseBlueprint): string => bp.metadata.sha);
-		setSelectedItems(new Set<string>(shaArray));
+		setSelectedItems(new Set<string>(blueprints.map((blueprint) => blueprint.id)));
 	};
 
 	const selectNone = (): void => {
@@ -122,7 +112,7 @@ function History() {
 	const downloadAsBook = (): void => {
 		try {
 			if (blueprints == null) return;
-			const selectedBlueprints = blueprints.filter((bp: DatabaseBlueprint) => selectedItems.has(bp.metadata.sha));
+			const selectedBlueprints = blueprints.filter((blueprint) => selectedItems.has(blueprint.id));
 			if (selectedBlueprints.length === 0) return;
 
 			// If only one blueprint is selected, download it directly
@@ -135,7 +125,7 @@ function History() {
 			}
 
 			const parsedBlueprints: BlueprintString[] = selectedBlueprints
-				.map((bp: DatabaseBlueprint) => deserializeBlueprintNoThrow(bp.metadata.data))
+				.map((blueprint) => deserializeBlueprintNoThrow(blueprint.metadata.data))
 				.filter((bp): bp is BlueprintString => bp !== null);
 
 			const date = new Date();
@@ -164,7 +154,7 @@ function History() {
 		if (blueprints == null) return;
 
 		const selectedBooks = blueprints.filter(
-			(blueprint) => selectedItems.has(blueprint.metadata.sha) && blueprint.gameData.type === 'blueprint_book',
+			(blueprint) => selectedItems.has(blueprint.id) && blueprint.gameData.type === 'blueprint_book',
 		);
 		if (selectedBooks.length === 0) return;
 
@@ -198,7 +188,7 @@ function History() {
 
 		try {
 			const selectedItemsArray: string[] = Array.from(selectedItems);
-			await db.removeBulkBlueprints(selectedItemsArray);
+			await db.removeHistoryRecords(selectedItemsArray);
 			setSelectedItems(new Set<string>());
 		} catch (deleteError: unknown) {
 			logger.error(
@@ -240,7 +230,7 @@ function History() {
 	}
 
 	const selectedBookCount = blueprints.filter(
-		(blueprint) => selectedItems.has(blueprint.metadata.sha) && blueprint.gameData.type === 'blueprint_book',
+		(blueprint) => selectedItems.has(blueprint.id) && blueprint.gameData.type === 'blueprint_book',
 	).length;
 
 	return (

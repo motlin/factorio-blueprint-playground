@@ -75,7 +75,7 @@ function resolveRules(
 		if (source === 'pasted') {
 			return resolvePlannerRules(parseUpgradePlanner(plannerInput));
 		}
-		if (source.startsWith('book:') || source.startsWith('history:')) {
+		if (source.startsWith('book:') || source.startsWith('library:')) {
 			if (selectedPlanner === undefined) {
 				throw new Error('The loaded upgrade planner is unavailable.');
 			}

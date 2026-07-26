@@ -2,14 +2,14 @@ import {render} from '@testing-library/react';
 import {beforeEach, describe, expect, test, vi} from 'vite-plus/test';
 
 import type {BlueprintFetchResult} from '../../src/fetching/blueprintFetcher';
-import type {DatabaseBlueprint} from '../../src/storage/db';
+import type {ImportHistoryRecord} from '../../src/storage/db';
 
 const mocks = vi.hoisted(() => ({
-	existingBlueprint: undefined as DatabaseBlueprint | undefined,
+	existingBlueprint: undefined as ImportHistoryRecord | undefined,
 	loaderData: undefined as BlueprintFetchResult,
 	navigate: vi.fn<(options: unknown) => void>(),
 	search: {pasted: 'alice-blueprint', selection: '1'},
-	updateBlueprintMetadata: vi.fn<(sha: string, changes: {selection: string}) => Promise<unknown>>(),
+	updateBlueprintMetadata: vi.fn<(id: string, changes: {selection: string}) => Promise<unknown>>(),
 }));
 
 vi.mock('@tanstack/react-router', () => ({
@@ -27,15 +27,16 @@ vi.mock('../../src/state/blueprintLocalStorage', () => ({
 	updateBlueprintMetadata: mocks.updateBlueprintMetadata,
 }));
 vi.mock('../../src/storage/db', () => ({
-	db: {},
-	generateSha: vi.fn<() => Promise<string>>(),
+	db: {findHistoryByData: vi.fn<() => Promise<unknown>>()},
 }));
 vi.mock('../../src/components/blueprint/disqus/DisqusComments', () => ({default: () => null}));
 
 import {BlueprintPlayground} from '../../src/components/BlueprintPlayground';
 
-function storedBlueprint(selection: string): DatabaseBlueprint {
+function storedBlueprint(selection: string): ImportHistoryRecord {
 	return {
+		id: 'history-alice',
+		importedOn: 0,
 		metadata: {
 			sha: 'sha-100',
 			createdOn: 0,
@@ -85,6 +86,6 @@ describe('BlueprintPlayground', () => {
 		mocks.existingBlueprint = storedBlueprint('1');
 		rerender(<BlueprintPlayground />);
 
-		expect(mocks.updateBlueprintMetadata.mock.calls).toStrictEqual([['sha-100', {selection: '1'}]]);
+		expect(mocks.updateBlueprintMetadata.mock.calls).toStrictEqual([['history-alice', {selection: '1'}]]);
 	});
 });
