@@ -1,7 +1,7 @@
 import {fireEvent, render, screen, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {useState} from 'react';
-import {expect, test, vi} from 'vite-plus/test';
+import {describe, expect, test, vi} from 'vite-plus/test';
 
 import {
 	SignalPickerDialog,
@@ -20,6 +20,29 @@ const categorizedOptions: SignalID[] = [
 ];
 
 const qualitySignal = {type: 'entity', name: 'test-entity'} as const;
+
+function accessibleName(element: Element | null | undefined): string | null {
+	if (element === null || element === undefined) {
+		return null;
+	}
+	const explicitLabel = element.getAttribute('aria-label');
+	if (explicitLabel !== null) {
+		return explicitLabel;
+	}
+	const labelledBy = element.getAttribute('aria-labelledby');
+	if (labelledBy !== null) {
+		return document.getElementById(labelledBy)?.textContent ?? null;
+	}
+	if (
+		element instanceof HTMLButtonElement ||
+		element instanceof HTMLInputElement ||
+		element instanceof HTMLSelectElement ||
+		element instanceof HTMLTextAreaElement
+	) {
+		return element.labels?.[0]?.textContent ?? element.textContent;
+	}
+	return element.textContent;
+}
 
 test('groups only caller-supplied game signals and confirms a selected icon', async () => {
 	const user = userEvent.setup();
@@ -176,93 +199,120 @@ test('shows source quality controls with the Factorio comparators and quality ic
 	});
 });
 
-test.each([
-	['=', '='],
-	['≠', '≠'],
-	['<', '<'],
-	['≤', '≤'],
-	['>', '>'],
-	['≥', '≥'],
-] as const)('serializes the %s source quality comparator', async (_label, comparator) => {
-	const user = userEvent.setup();
-	const onChoose = vi.fn<SignalPickerDialogProps['onChoose']>();
-	render(
-		<SignalPickerDialog
-			confirmationMode="required"
-			title="Choose source signal"
-			options={[qualitySignal]}
-			initialSignal={qualitySignal}
-			qualityMode="source"
-			onChoose={onChoose}
-			onClose={vi.fn<() => void>()}
-		/>,
-	);
+describe('SignalPickerDialog golden quality and comparator source contracts', () => {
+	test.each([
+		['=', '='],
+		['≠', '≠'],
+		['<', '<'],
+		['≤', '≤'],
+		['>', '>'],
+		['≥', '≥'],
+	] as const)('serializes the %s source quality comparator', async (_label, comparator) => {
+		const user = userEvent.setup();
+		const onChoose = vi.fn<SignalPickerDialogProps['onChoose']>();
+		render(
+			<SignalPickerDialog
+				confirmationMode="required"
+				title="Choose source signal"
+				options={[qualitySignal]}
+				initialSignal={qualitySignal}
+				qualityMode="source"
+				onChoose={onChoose}
+				onClose={vi.fn<() => void>()}
+			/>,
+		);
 
-	await user.click(screen.getByRole('button', {name: 'Rare quality'}));
-	await user.click(screen.getByRole('button', {name: 'Quality comparison: ='}));
-	await user.click(screen.getByRole('menuitemradio', {name: comparator}));
-	await user.click(screen.getByRole('button', {name: 'Confirm'}));
+		await user.click(screen.getByRole('button', {name: 'Rare quality'}));
+		await user.click(screen.getByRole('button', {name: 'Quality comparison: ='}));
+		await user.click(screen.getByRole('menuitemradio', {name: comparator}));
+		await user.click(screen.getByRole('button', {name: 'Confirm'}));
 
-	expect(onChoose.mock.calls).toStrictEqual([[{type: 'entity', name: 'test-entity', quality: 'rare', comparator}]]);
-});
+		expect(onChoose.mock.calls).toStrictEqual([
+			[{type: 'entity', name: 'test-entity', quality: 'rare', comparator}],
+		]);
+	});
 
-test('does not serialize the source no-quality sentinel or a stale comparator', async () => {
-	const user = userEvent.setup();
-	const onChoose = vi.fn<SignalPickerDialogProps['onChoose']>();
-	const initialSignal = {...qualitySignal, quality: 'rare', comparator: '>'} as const;
-	render(
-		<SignalPickerDialog
-			confirmationMode="required"
-			title="Choose source signal"
-			options={[initialSignal]}
-			initialSignal={initialSignal}
-			qualityMode="source"
-			onChoose={onChoose}
-			onClose={vi.fn<() => void>()}
-		/>,
-	);
+	test('does not serialize the source no-quality sentinel or a stale comparator', async () => {
+		const user = userEvent.setup();
+		const onChoose = vi.fn<SignalPickerDialogProps['onChoose']>();
+		const initialSignal = {...qualitySignal, quality: 'rare', comparator: '>'} as const;
+		render(
+			<SignalPickerDialog
+				confirmationMode="required"
+				title="Choose source signal"
+				options={[initialSignal]}
+				initialSignal={initialSignal}
+				qualityMode="source"
+				onChoose={onChoose}
+				onClose={vi.fn<() => void>()}
+			/>,
+		);
 
-	await user.click(screen.getByRole('button', {name: 'Quality comparison: >'}));
-	await user.click(screen.getByRole('menuitemradio', {name: 'Any quality'}));
-	await user.click(screen.getByRole('button', {name: 'Confirm'}));
+		await user.click(screen.getByRole('button', {name: 'Quality comparison: >'}));
+		await user.click(screen.getByRole('menuitemradio', {name: 'Any quality'}));
+		await user.click(screen.getByRole('button', {name: 'Confirm'}));
 
-	expect(onChoose.mock.calls).toStrictEqual([[{type: 'entity', name: 'test-entity'}]]);
-});
+		expect(onChoose.mock.calls).toStrictEqual([[{type: 'entity', name: 'test-entity'}]]);
+	});
 
-test('gives the foreground comparator menu ownership until it is cancelled', async () => {
-	const user = userEvent.setup();
-	const onChoose = vi.fn<SignalPickerDialogProps['onChoose']>();
-	const onClose = vi.fn<() => void>();
-	render(
-		<SignalPickerDialog
-			confirmationMode="required"
-			title="Choose source signal"
-			options={[qualitySignal]}
-			initialSignal={{...qualitySignal, quality: 'rare', comparator: '='}}
-			qualityMode="source"
-			onChoose={onChoose}
-			onClose={onClose}
-		/>,
-	);
+	test('gives the foreground comparator menu ownership until it is cancelled', async () => {
+		const user = userEvent.setup();
+		const onChoose = vi.fn<SignalPickerDialogProps['onChoose']>();
+		const onClose = vi.fn<() => void>();
+		render(
+			<SignalPickerDialog
+				confirmationMode="required"
+				title="Choose source signal"
+				options={[qualitySignal]}
+				initialSignal={{...qualitySignal, quality: 'rare', comparator: '='}}
+				qualityMode="source"
+				onChoose={onChoose}
+				onClose={onClose}
+			/>,
+		);
 
-	const picker = screen.getByRole('dialog', {name: 'Choose source signal'});
-	await user.click(screen.getByRole('button', {name: 'Quality comparison: ='}));
-	expect(picker.inert).toBe(true);
-	fireEvent.keyDown(window, {key: 'Enter'});
-	expect(onChoose.mock.calls).toStrictEqual([]);
-	fireEvent.keyDown(window, {key: 'Escape'});
-	await Promise.resolve();
+		const picker = screen.getByRole('dialog', {name: 'Choose source signal'});
+		await user.click(screen.getByRole('button', {name: 'Quality comparison: ='}));
+		const comparisonDialog = screen.getByRole('dialog', {name: 'Quality comparison'});
+		expect({
+			activeElement: accessibleName(document.activeElement),
+			dialogStack: [
+				{
+					ariaHidden: picker.getAttribute('aria-hidden'),
+					inert: picker.inert,
+					name: accessibleName(picker),
+				},
+				{
+					ariaHidden: comparisonDialog.getAttribute('aria-hidden'),
+					inert: comparisonDialog.inert,
+					name: accessibleName(comparisonDialog),
+				},
+			],
+		}).toStrictEqual({
+			activeElement: 'Any quality',
+			dialogStack: [
+				{ariaHidden: 'true', inert: true, name: 'Choose source signal'},
+				{ariaHidden: null, inert: false, name: 'Quality comparison'},
+			],
+		});
+		fireEvent.keyDown(window, {key: 'Enter'});
+		expect(onChoose.mock.calls).toStrictEqual([]);
+		fireEvent.keyDown(window, {key: 'Escape'});
+		await Promise.resolve();
 
-	expect({
-		closeCalls: onClose.mock.calls,
-		comparisonDialog: screen.queryByRole('dialog', {name: 'Quality comparison'}),
-		pickerInert: picker.inert,
-		pickerVisible: screen.getByRole('dialog', {name: 'Choose source signal'}) === picker,
-	}).toStrictEqual({
-		closeCalls: [],
-		comparisonDialog: null,
-		pickerInert: false,
-		pickerVisible: true,
+		expect({
+			activeElement: accessibleName(document.activeElement),
+			closeCalls: onClose.mock.calls,
+			comparisonDialog: screen.queryByRole('dialog', {name: 'Quality comparison'}),
+			pickerInert: picker.inert,
+			pickerVisible: screen.getByRole('dialog', {name: 'Choose source signal'}) === picker,
+		}).toStrictEqual({
+			activeElement: 'Quality comparison: =',
+			closeCalls: [],
+			comparisonDialog: null,
+			pickerInert: false,
+			pickerVisible: true,
+		});
 	});
 });
 
@@ -614,36 +664,63 @@ function NestedPickerStack() {
 	);
 }
 
-test('cancels only the topmost picker and restores each invoking slot in stack order', async () => {
-	const user = userEvent.setup();
-	render(<NestedPickerStack />);
+describe('SignalPickerDialog golden cancellation and focus source contracts', () => {
+	test('cancels only the topmost picker and restores each invoking slot in stack order', async () => {
+		const user = userEvent.setup();
+		render(<NestedPickerStack />);
 
-	const opener = screen.getByRole('button', {name: 'Open outer picker'});
-	await user.click(opener);
-	const outerDialog = screen.getByRole('dialog', {name: 'Outer picker'});
-	const invokingSlot = screen.getByRole('button', {name: 'Choose Iron plate'});
-	await user.click(invokingSlot);
-	expect(outerDialog.inert).toBe(true);
+		const opener = screen.getByRole('button', {name: 'Open outer picker'});
+		await user.click(opener);
+		const outerDialog = screen.getByRole('dialog', {name: 'Outer picker'});
+		const invokingSlot = screen.getByRole('button', {name: 'Choose Iron plate'});
+		await user.click(invokingSlot);
+		const innerDialog = screen.getByRole('dialog', {name: 'Inner picker'});
+		expect({
+			activeElement: accessibleName(document.activeElement),
+			dialogStack: [
+				{
+					ariaHidden: outerDialog.getAttribute('aria-hidden'),
+					inert: outerDialog.inert,
+					name: accessibleName(outerDialog),
+				},
+				{
+					ariaHidden: innerDialog.getAttribute('aria-hidden'),
+					inert: innerDialog.inert,
+					name: accessibleName(innerDialog),
+				},
+			],
+		}).toStrictEqual({
+			activeElement: 'Search',
+			dialogStack: [
+				{ariaHidden: 'true', inert: true, name: 'Outer picker'},
+				{ariaHidden: null, inert: false, name: 'Inner picker'},
+			],
+		});
 
-	fireEvent.keyDown(window, {key: 'Escape'});
-	await Promise.resolve();
-	expect({
-		focusedInvoker: document.activeElement === invokingSlot,
-		inner: screen.queryByRole('dialog', {name: 'Inner picker'}),
-		outerInert: outerDialog.inert,
-	}).toStrictEqual({
-		focusedInvoker: true,
-		inner: null,
-		outerInert: false,
-	});
+		fireEvent.keyDown(window, {key: 'Escape'});
+		await Promise.resolve();
+		expect({
+			activeElement: accessibleName(document.activeElement),
+			dialogStack: [
+				{
+					ariaHidden: outerDialog.getAttribute('aria-hidden'),
+					inert: outerDialog.inert,
+					name: accessibleName(outerDialog),
+				},
+			],
+		}).toStrictEqual({
+			activeElement: 'Choose Iron plate',
+			dialogStack: [{ariaHidden: null, inert: false, name: 'Outer picker'}],
+		});
 
-	fireEvent.keyDown(window, {key: 'q', code: 'KeyQ'});
-	await Promise.resolve();
-	expect({
-		focusedOpener: document.activeElement === opener,
-		outer: screen.queryByRole('dialog', {name: 'Outer picker'}),
-	}).toStrictEqual({
-		focusedOpener: true,
-		outer: null,
+		fireEvent.keyDown(window, {key: 'q', code: 'KeyQ'});
+		await Promise.resolve();
+		expect({
+			activeElement: accessibleName(document.activeElement),
+			dialogStack: screen.queryAllByRole('dialog').map((dialog) => accessibleName(dialog)),
+		}).toStrictEqual({
+			activeElement: 'Open outer picker',
+			dialogStack: [],
+		});
 	});
 });

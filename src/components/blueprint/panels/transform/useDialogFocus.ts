@@ -182,7 +182,7 @@ export function useDialogFocus<T extends HTMLElement>({
 			updateDialogLayers();
 			queueMicrotask(() => {
 				if (
-					dialogStack.at(-1) === nextTopmostDialog &&
+					(dialogStack.length === 0 || dialogStack.at(-1) === nextTopmostDialog) &&
 					invokingElementReference.current?.isConnected === true &&
 					!invokingElementReference.current.closest('[inert]')
 				) {

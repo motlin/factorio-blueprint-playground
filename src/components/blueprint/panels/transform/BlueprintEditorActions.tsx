@@ -16,6 +16,72 @@ interface BlueprintEditorActionsProps {
 	onKeepEditing: () => void;
 }
 
+interface BlueprintEditorCloseConfirmationProps {
+	commitDisabled: boolean;
+	onCommit: () => void;
+	onDiscard: () => void;
+	onKeepEditing: () => void;
+}
+
+function BlueprintEditorCloseConfirmation({
+	commitDisabled,
+	onCommit,
+	onDiscard,
+	onKeepEditing,
+}: BlueprintEditorCloseConfirmationProps) {
+	const confirmationHeadingId = useId();
+	const confirmationReference = useDialogFocus<HTMLElement>({
+		initialFocusSelector: '[data-dialog-initial-focus="true"]',
+		onClose: onKeepEditing,
+	});
+
+	return createPortal(
+		<div className="transform-dialog-backdrop transform-dialog-backdrop--confirmation">
+			<section
+				ref={confirmationReference}
+				className="factorio-frame factorio-frame--shallow transform-dialog transform-dialog--confirmation"
+				role="alertdialog"
+				aria-modal="true"
+				aria-labelledby={confirmationHeadingId}
+			>
+				<header className="factorio-title-bar transform-dialog__header">
+					<h3 id={confirmationHeadingId}>There are uncommitted changes</h3>
+				</header>
+				<p>Commit the draft, discard it, or return to editing.</p>
+				<div className="transform-dialog__actions">
+					<FactorioButton
+						data-dialog-initial-focus="true"
+						className="transform-button"
+						onClick={() => {
+							onKeepEditing();
+						}}
+					>
+						Keep Editing
+					</FactorioButton>
+					<FactorioButton
+						kind={FactorioButtonKind.Delete}
+						className="transform-button"
+						onClick={() => {
+							onDiscard();
+						}}
+					>
+						Discard
+					</FactorioButton>
+					<ButtonGreen
+						disabled={commitDisabled}
+						onClick={() => {
+							onCommit();
+						}}
+					>
+						Commit
+					</ButtonGreen>
+				</div>
+			</section>
+		</div>,
+		document.body,
+	);
+}
+
 /**
  * Factorio 2.1.12 `BlueprintSetupGui` commit contract:
  *
@@ -36,12 +102,6 @@ export function BlueprintEditorActions({
 	onDiscard,
 	onKeepEditing,
 }: BlueprintEditorActionsProps) {
-	const confirmationHeadingId = useId();
-	const confirmationReference = useDialogFocus<HTMLElement>({
-		initialFocusSelector: '[data-dialog-initial-focus="true"]',
-		onClose: onKeepEditing,
-	});
-
 	return (
 		<>
 			<footer className="transform-workbench__footer transform-workbench__footer--actions blueprint-editor-actions">
@@ -63,53 +123,14 @@ export function BlueprintEditorActions({
 					{commitAction.caption}
 				</ButtonGreen>
 			</footer>
-			{closeConfirmationOpen
-				? createPortal(
-						<div className="transform-dialog-backdrop transform-dialog-backdrop--confirmation">
-							<section
-								ref={confirmationReference}
-								className="factorio-frame factorio-frame--shallow transform-dialog transform-dialog--confirmation"
-								role="alertdialog"
-								aria-modal="true"
-								aria-labelledby={confirmationHeadingId}
-							>
-								<header className="factorio-title-bar transform-dialog__header">
-									<h3 id={confirmationHeadingId}>There are uncommitted changes</h3>
-								</header>
-								<p>Commit the draft, discard it, or return to editing.</p>
-								<div className="transform-dialog__actions">
-									<FactorioButton
-										data-dialog-initial-focus="true"
-										className="transform-button"
-										onClick={() => {
-											onKeepEditing();
-										}}
-									>
-										Keep Editing
-									</FactorioButton>
-									<FactorioButton
-										kind={FactorioButtonKind.Delete}
-										className="transform-button"
-										onClick={() => {
-											onDiscard();
-										}}
-									>
-										Discard
-									</FactorioButton>
-									<ButtonGreen
-										disabled={commitDisabled}
-										onClick={() => {
-											onCommit();
-										}}
-									>
-										Commit
-									</ButtonGreen>
-								</div>
-							</section>
-						</div>,
-						document.body,
-					)
-				: null}
+			{closeConfirmationOpen ? (
+				<BlueprintEditorCloseConfirmation
+					commitDisabled={commitDisabled}
+					onCommit={onCommit}
+					onDiscard={onDiscard}
+					onKeepEditing={onKeepEditing}
+				/>
+			) : null}
 		</>
 	);
 }

@@ -1,4 +1,4 @@
-import {fireEvent, render, screen, within} from '@testing-library/react';
+import {act, fireEvent, render, screen, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {beforeEach, describe, expect, test, vi} from 'vite-plus/test';
 
@@ -99,7 +99,7 @@ function visiblePlannerNames(): Array<string | null> {
 		.map((button) => button.getAttribute('aria-label'));
 }
 
-describe('UpgradePlannerSelectorDialog', () => {
+describe('UpgradePlannerSelectorDialog golden apply-only source contracts', () => {
 	beforeEach(() => {
 		Object.defineProperty(window, 'localStorage', {configurable: true, value: localStorage});
 		window.localStorage.clear();
@@ -186,10 +186,21 @@ describe('UpgradePlannerSelectorDialog', () => {
 	test('reuses the persistent library list, grid, and slot presentations', async () => {
 		const user = userEvent.setup();
 		const {unmount} = renderApplySelector();
+		const initialDialog = screen.getByRole('dialog', {name: 'Select the upgrade planner to apply'});
 
-		expect(screen.getByRole('list').className).toBe(
-			'blueprint-record-views__items blueprint-record-views__items--list',
-		);
+		expect({
+			activeElement: document.activeElement?.getAttribute('aria-label'),
+			dialog: {
+				ariaHidden: initialDialog.getAttribute('aria-hidden'),
+				inert: initialDialog.inert,
+				modal: initialDialog.getAttribute('aria-modal'),
+			},
+			listClass: screen.getByRole('list').className,
+		}).toStrictEqual({
+			activeElement: 'Default Upgrade',
+			dialog: {ariaHidden: null, inert: false, modal: 'true'},
+			listClass: 'blueprint-record-views__items blueprint-record-views__items--list',
+		});
 		await user.click(screen.getByRole('button', {name: 'Grid view'}));
 		expect(screen.getByRole('list').className).toBe(
 			'blueprint-record-views__items blueprint-record-views__items--grid',
@@ -209,21 +220,47 @@ describe('UpgradePlannerSelectorDialog', () => {
 
 		unmount();
 		renderApplySelector();
-		expect(screen.getByRole('list').className).toBe(
-			'blueprint-record-views__items blueprint-record-views__items--slots',
-		);
+		const restoredDialog = screen.getByRole('dialog', {name: 'Select the upgrade planner to apply'});
+		expect({
+			activeElement: document.activeElement?.getAttribute('aria-label'),
+			dialog: {
+				ariaHidden: restoredDialog.getAttribute('aria-hidden'),
+				inert: restoredDialog.inert,
+				modal: restoredDialog.getAttribute('aria-modal'),
+			},
+			listClass: screen.getByRole('list').className,
+		}).toStrictEqual({
+			activeElement: 'Default Upgrade',
+			dialog: {ariaHidden: null, inert: false, modal: 'true'},
+			listClass: 'blueprint-record-views__items blueprint-record-views__items--slots',
+		});
 	});
 
-	test('applies and dismisses in the pointer and keyboard gesture directions', async () => {
+	test('applies upgrade on left click and downgrade on right click in the apply-only selector', async () => {
 		const user = userEvent.setup();
 		const {onChoose, onClose} = renderApplySelector();
 		const defaultPlanner = screen.getByRole('button', {name: 'Default Upgrade'});
 		const nestedPlanner = screen.getByRole('button', {name: 'Nested belt planner'});
 		const zeroMatchPlannerButton = screen.getByRole('button', {name: 'Zero-match library planner'});
+		const dialog = screen.getByRole('dialog', {name: 'Select the upgrade planner to apply'});
+
+		expect({
+			activeElement: document.activeElement?.getAttribute('aria-label'),
+			dialog: {
+				ariaHidden: dialog.getAttribute('aria-hidden'),
+				inert: dialog.inert,
+				modal: dialog.getAttribute('aria-modal'),
+			},
+		}).toStrictEqual({
+			activeElement: 'Default Upgrade',
+			dialog: {ariaHidden: null, inert: false, modal: 'true'},
+		});
 
 		await user.click(defaultPlanner);
 		const contextMenuAllowed = fireEvent.contextMenu(nestedPlanner);
-		zeroMatchPlannerButton.focus();
+		act(() => {
+			zeroMatchPlannerButton.focus();
+		});
 		await user.keyboard('{Enter}');
 		await user.keyboard('{Shift>}{Enter}{/Shift}');
 

@@ -9,7 +9,7 @@ import {deserializeBlueprint, serializeBlueprint} from '../../src/parsing/bluepr
 import type {BlueprintString, BlueprintStringWithIndex, UpgradePlanner} from '../../src/parsing/types';
 import {db, LIBRARY_ROOT_ID, type LibraryRecord} from '../../src/storage/db';
 import {stripTiles, stripTrains} from '../../src/transform/strip';
-import {applyUpgradeRules, builtInUpgradeRules, parseUpgradePlanner} from '../../src/transform/upgradePlanner';
+import {parseUpgradePlanner} from '../../src/transform/upgradePlanner';
 import {readFixtureFile} from '../fixtures/utils';
 
 const {analysisCounts, libraryRecords, navigate} = vi.hoisted(() => ({
@@ -51,6 +51,87 @@ const blueprint: BlueprintString = {
 		item: 'blueprint',
 		version: 0,
 		entities: [{entity_number: 1, name: 'transport-belt', position: {x: 0, y: 0}}],
+	},
+};
+const rareBeltUpgradesPlanner: UpgradePlanner = {
+	item: 'upgrade-planner',
+	label: 'Rare belt upgrades',
+	version: 0,
+	settings: {
+		description: 'Rare belt line',
+		icons: [{index: 1, signal: {type: 'virtual', name: 'signal-red'}}],
+		mappers: [
+			{
+				index: 1,
+				from: {type: 'entity', name: 'assembling-machine-1'},
+				to: {type: 'entity', name: 'assembling-machine-2'},
+			},
+			{
+				index: 2,
+				from: {type: 'entity', name: 'assembling-machine-2'},
+				to: {type: 'entity', name: 'assembling-machine-3'},
+			},
+			{
+				index: 3,
+				from: {type: 'entity', name: 'inserter'},
+				to: {type: 'entity', name: 'fast-inserter'},
+			},
+			{
+				index: 4,
+				from: {type: 'entity', name: 'fast-inserter'},
+				to: {type: 'entity', name: 'bulk-inserter'},
+			},
+			{
+				index: 5,
+				from: {type: 'entity', name: 'splitter'},
+				to: {type: 'entity', name: 'fast-splitter'},
+			},
+			{
+				index: 6,
+				from: {type: 'entity', name: 'fast-splitter'},
+				to: {type: 'entity', name: 'express-splitter'},
+			},
+			{
+				index: 7,
+				from: {type: 'entity', name: 'express-splitter'},
+				to: {type: 'entity', name: 'turbo-splitter'},
+			},
+			{
+				index: 8,
+				from: {type: 'entity', name: 'stone-furnace'},
+				to: {type: 'entity', name: 'steel-furnace'},
+			},
+			{
+				index: 9,
+				from: {type: 'entity', name: 'transport-belt'},
+				to: {type: 'entity', name: 'fast-transport-belt', quality: 'rare'},
+			},
+			{
+				index: 10,
+				from: {type: 'entity', name: 'fast-transport-belt'},
+				to: {type: 'entity', name: 'express-transport-belt'},
+			},
+			{
+				index: 11,
+				from: {type: 'entity', name: 'express-transport-belt'},
+				to: {type: 'entity', name: 'turbo-transport-belt'},
+			},
+			{
+				index: 12,
+				from: {type: 'entity', name: 'underground-belt'},
+				to: {type: 'entity', name: 'fast-underground-belt'},
+			},
+			{
+				index: 13,
+				from: {type: 'entity', name: 'fast-underground-belt'},
+				to: {type: 'entity', name: 'express-underground-belt'},
+			},
+			{
+				index: 14,
+				from: {type: 'entity', name: 'express-underground-belt'},
+				to: {type: 'entity', name: 'turbo-underground-belt'},
+			},
+		],
 	},
 };
 let nextLibraryRecordNumber = 1;
@@ -115,6 +196,48 @@ function mappingSlotIndex(button: HTMLElement): number {
 	return [...parent.children].indexOf(row!);
 }
 
+function accessibleName(element: Element): string | null {
+	const explicitLabel = element.getAttribute('aria-label');
+	if (explicitLabel !== null) {
+		return explicitLabel;
+	}
+	const labelledBy = element.getAttribute('aria-labelledby');
+	if (labelledBy !== null) {
+		return document.getElementById(labelledBy)?.textContent ?? null;
+	}
+	if (
+		element instanceof HTMLButtonElement ||
+		element instanceof HTMLInputElement ||
+		element instanceof HTMLSelectElement ||
+		element instanceof HTMLTextAreaElement
+	) {
+		return element.labels?.[0]?.textContent ?? element.textContent;
+	}
+	return element.textContent;
+}
+
+function interactionState() {
+	const activeElement = document.activeElement;
+	return {
+		activeElement:
+			activeElement === null
+				? null
+				: {
+						name: accessibleName(activeElement),
+						tagName: activeElement.tagName,
+					},
+		dialogStack: [...document.querySelectorAll<HTMLElement>('[role="dialog"], [role="alertdialog"]')].map(
+			(dialog) => ({
+				ariaHidden: dialog.getAttribute('aria-hidden'),
+				inert: dialog.inert,
+				modal: dialog.getAttribute('aria-modal'),
+				name: accessibleName(dialog),
+				role: dialog.getAttribute('role'),
+			}),
+		),
+	};
+}
+
 async function applyPlanner(user: ReturnType<typeof userEvent.setup>, direction: 'upgrade' | 'downgrade' = 'upgrade') {
 	await user.click(
 		screen.getByRole('button', {
@@ -154,7 +277,7 @@ function largeNestedBookFixture() {
 	return {rootBlueprint, selectedBlueprint};
 }
 
-describe('TransformPanel', () => {
+describe('TransformPanel golden source-contract interaction sequences', () => {
 	beforeEach(() => {
 		vi.restoreAllMocks();
 		analysisCounts.metadataIcons = 0;
@@ -742,7 +865,7 @@ describe('TransformPanel', () => {
 		},
 	);
 
-	test('saves a new library record without applying, shows it, and can place that saved planner', async () => {
+	test('saves a planner to the library without applying and persists the full record', async () => {
 		const user = userEvent.setup();
 		render(<TransformPanel blueprint={blueprint} />);
 
@@ -759,12 +882,45 @@ describe('TransformPanel', () => {
 		await chooseSignal(user, 'Signal red');
 		await user.click(screen.getByRole('button', {name: 'Save Planner'}));
 		const savePrompt = screen.getByRole('dialog', {name: 'Save to Blueprint Library'});
-		expect(savePrompt.textContent).toContain('Save “Rare belt upgrades” to Blueprint Library › Root shelf.');
+		expect({
+			dialogState: interactionState(),
+			operations: within(savePrompt)
+				.getAllByRole('button')
+				.map((button) => button.textContent),
+		}).toStrictEqual({
+			dialogState: {
+				activeElement: {name: 'Cancel Save', tagName: 'BUTTON'},
+				dialogStack: [
+					{
+						ariaHidden: 'true',
+						inert: true,
+						modal: 'true',
+						name: 'Upgrade Planner',
+						role: 'dialog',
+					},
+					{
+						ariaHidden: null,
+						inert: false,
+						modal: 'true',
+						name: 'Save to Blueprint Library',
+						role: 'dialog',
+					},
+				],
+			},
+			operations: ['Cancel Save', 'Save Planner'],
+		});
 		await user.click(within(savePrompt).getByRole('button', {name: 'Save Planner'}));
+		await Promise.resolve();
 
 		const savedInput = vi.mocked(db.saveLibraryCopy).mock.calls[0][0];
+		const {data: savedRecordData, ...savedRecordMetadata} = libraryRecords[0];
 		expect({
 			destination: savedInput.destination,
+			dialogState: interactionState(),
+			libraryRecord: {
+				...savedRecordMetadata,
+				planner: parseUpgradePlanner(savedRecordData),
+			},
 			navigation: navigate.mock.calls,
 			planner: parseUpgradePlanner(savedInput.data),
 			recordDescription: savedInput.gameData.description,
@@ -776,17 +932,36 @@ describe('TransformPanel', () => {
 			}).textContent,
 		}).toStrictEqual({
 			destination: {parentId: LIBRARY_ROOT_ID, position: 0},
-			navigation: [],
-			planner: {
-				item: 'upgrade-planner',
-				label: 'Rare belt upgrades',
-				version: 0,
-				settings: {
-					description: 'Rare belt line',
-					icons: [{index: 1, signal: {type: 'virtual', name: 'signal-red'}}],
-					mappers: expect.any(Array),
-				},
+			dialogState: {
+				activeElement: {name: 'Save Planner', tagName: 'BUTTON'},
+				dialogStack: [
+					{
+						ariaHidden: null,
+						inert: false,
+						modal: 'true',
+						name: 'Upgrade Planner',
+						role: 'dialog',
+					},
+				],
 			},
+			libraryRecord: {
+				id: 'saved-planner-1',
+				createdOn: 1,
+				updatedOn: 1,
+				gameData: {
+					type: 'upgrade_planner',
+					label: 'Rare belt upgrades',
+					description: 'Rare belt line',
+					gameVersion: '0',
+					icons: [{type: 'virtual', name: 'signal-red'}],
+				},
+				selection: undefined,
+				parentId: LIBRARY_ROOT_ID,
+				position: 0,
+				planner: rareBeltUpgradesPlanner,
+			},
+			navigation: [],
+			planner: rareBeltUpgradesPlanner,
 			recordDescription: 'Rare belt line',
 			recordIcons: [{type: 'virtual', name: 'signal-red'}],
 			recordLabel: 'Rare belt upgrades',
@@ -874,9 +1049,33 @@ describe('TransformPanel', () => {
 		await user.type(updatedName, 'Express belt upgrades{Enter}');
 		await user.click(screen.getByRole('button', {name: 'Save Planner'}));
 		const updatePrompt = screen.getByRole('dialog', {name: 'Save to Blueprint Library'});
-		expect(updatePrompt.textContent).toContain(
-			'Update the saved record “Library belts” in its current Blueprint Library location',
-		);
+		expect({
+			dialogState: interactionState(),
+			operations: within(updatePrompt)
+				.getAllByRole('button')
+				.map((button) => button.textContent),
+		}).toStrictEqual({
+			dialogState: {
+				activeElement: {name: 'Cancel Save', tagName: 'BUTTON'},
+				dialogStack: [
+					{
+						ariaHidden: 'true',
+						inert: true,
+						modal: 'true',
+						name: 'Upgrade Planner',
+						role: 'dialog',
+					},
+					{
+						ariaHidden: null,
+						inert: false,
+						modal: 'true',
+						name: 'Save to Blueprint Library',
+						role: 'dialog',
+					},
+				],
+			},
+			operations: ['Cancel Save', 'Update Planner', 'Save a Copy'],
+		});
 		await user.click(within(updatePrompt).getByRole('button', {name: 'Update Planner'}));
 		await screen.findByText('Updated “Express belt upgrades” in its Blueprint Library destination.');
 
@@ -926,6 +1125,7 @@ describe('TransformPanel', () => {
 			},
 		};
 		const original = storedPlanner('original-planner-id', planner, 'Original planner', 0);
+		const copiedPlanner: UpgradePlanner = {...planner, label: 'Copied planner'};
 		libraryRecords.push(original);
 		render(<TransformPanel blueprint={blueprint} />);
 
@@ -939,30 +1139,33 @@ describe('TransformPanel', () => {
 		const prompt = screen.getByRole('dialog', {name: 'Save to Blueprint Library'});
 		await user.click(within(prompt).getByRole('button', {name: 'Save a Copy'}));
 
+		const {data: copiedRecordData, ...copiedRecordMetadata} = libraryRecords[1];
+		const saveInput = vi.mocked(db.saveLibraryCopy).mock.calls[0][0];
+		const {data: copiedInputData, ...copiedInputMetadata} = saveInput;
 		expect({
-			copiedRecord: libraryRecords[1],
+			copiedRecord: {...copiedRecordMetadata, planner: parseUpgradePlanner(copiedRecordData)},
 			originalRecord: libraryRecords[0],
-			saveInput: vi.mocked(db.saveLibraryCopy).mock.calls[0][0],
+			saveInput: {...copiedInputMetadata, planner: parseUpgradePlanner(copiedInputData)},
 			updateCalls: vi.mocked(db.updateLibraryRecord).mock.calls,
 		}).toStrictEqual({
 			copiedRecord: {
-				...original,
 				id: 'saved-planner-1',
 				createdOn: 1,
 				updatedOn: 1,
-				data: expect.any(String),
 				gameData: {
-					...original.gameData,
+					type: 'upgrade_planner',
 					label: 'Copied planner',
 					description: 'Original description',
 					gameVersion: '0',
+					icons: [],
 				},
+				parentId: LIBRARY_ROOT_ID,
 				position: 1,
+				planner: copiedPlanner,
 				selection: undefined,
 			},
 			originalRecord: original,
 			saveInput: {
-				data: expect.any(String),
 				destination: {parentId: LIBRARY_ROOT_ID, position: 1},
 				gameData: {
 					type: 'upgrade_planner',
@@ -971,10 +1174,11 @@ describe('TransformPanel', () => {
 					gameVersion: '0',
 					icons: [],
 				},
+				planner: copiedPlanner,
 			},
 			updateCalls: [],
 		});
-		expect(parseUpgradePlanner(libraryRecords[1].data).label).toBe('Copied planner');
+		expect(parseUpgradePlanner(libraryRecords[1].data)).toStrictEqual(copiedPlanner);
 	});
 
 	test('reloads saved planner record metadata from the Blueprint Library', async () => {
@@ -1112,7 +1316,7 @@ describe('TransformPanel', () => {
 		});
 	});
 
-	test('creates a first captured root from explicit session state rather than an empty-label heuristic', async () => {
+	test('commits a post-capture Blueprint Editor draft as the first root blueprint', async () => {
 		const user = userEvent.setup();
 		const onBlueprintCommit = vi.fn<(committedRoot: BlueprintString) => void>();
 		const capturedBlueprint: BlueprintString = {
@@ -1126,18 +1330,40 @@ describe('TransformPanel', () => {
 			/>,
 		);
 
-		openBlueprintEditor();
+		const editorTool = screen.getByRole('button', {name: 'Open Blueprint Editor'});
+		await user.click(editorTool);
 		const createButton = screen.getByRole<HTMLButtonElement>('button', {name: 'Create Blueprint'});
-		expect(createButton.disabled).toBe(false);
+		expect({
+			createDisabled: createButton.disabled,
+			dialogState: interactionState(),
+		}).toStrictEqual({
+			createDisabled: false,
+			dialogState: {
+				activeElement: {name: 'Edit blueprint title', tagName: 'BUTTON'},
+				dialogStack: [
+					{
+						ariaHidden: null,
+						inert: false,
+						modal: 'true',
+						name: 'Blueprint Editor',
+						role: 'dialog',
+					},
+				],
+			},
+		});
 		await user.click(createButton);
+		await Promise.resolve();
 
 		expect({
 			commit: onBlueprintCommit.mock.calls,
-			dialog: screen.queryByRole('dialog', {name: 'Blueprint Editor'}),
+			dialogState: interactionState(),
 			navigation: navigate.mock.calls,
 		}).toStrictEqual({
 			commit: [[{blueprint: {item: 'blueprint', version: 0}}]],
-			dialog: null,
+			dialogState: {
+				activeElement: {name: 'Open Blueprint Editor', tagName: 'BUTTON'},
+				dialogStack: [],
+			},
 			navigation: [],
 		});
 	});
@@ -1248,7 +1474,8 @@ describe('TransformPanel', () => {
 		};
 		render(<TransformPanel blueprint={sourceBlueprint} />);
 
-		openBlueprintEditor();
+		const editorTool = screen.getByRole('button', {name: 'Open Blueprint Editor'});
+		await user.click(editorTool);
 		await user.click(screen.getByRole('button', {name: 'Edit blueprint title'}));
 		await user.clear(screen.getByRole('textbox', {name: 'Blueprint title'}));
 		await user.type(screen.getByRole('textbox', {name: 'Blueprint title'}), 'Bob{Enter}');
@@ -1262,28 +1489,62 @@ describe('TransformPanel', () => {
 
 		fireEvent.keyDown(screen.getByRole('dialog', {name: 'Blueprint Editor'}), {key: 'Escape'});
 		const firstConfirmation = screen.getByRole('alertdialog', {name: 'There are uncommitted changes'});
-		expect({
-			buttons: within(firstConfirmation)
-				.getAllByRole('button')
-				.map((button) => button.textContent),
-			navigation: navigate.mock.calls,
-		}).toStrictEqual({
-			buttons: ['Keep Editing', 'Discard', 'Commit'],
-			navigation: [],
+		await waitFor(() => {
+			expect({
+				buttons: within(firstConfirmation)
+					.getAllByRole('button')
+					.map((button) => button.textContent),
+				dialogState: interactionState(),
+				navigation: navigate.mock.calls,
+			}).toStrictEqual({
+				buttons: ['Keep Editing', 'Discard', 'Commit'],
+				dialogState: {
+					activeElement: {name: 'Keep Editing', tagName: 'BUTTON'},
+					dialogStack: [
+						{
+							ariaHidden: 'true',
+							inert: true,
+							modal: 'true',
+							name: 'Blueprint Editor',
+							role: 'dialog',
+						},
+						{
+							ariaHidden: null,
+							inert: false,
+							modal: 'true',
+							name: 'There are uncommitted changes',
+							role: 'alertdialog',
+						},
+					],
+				},
+				navigation: [],
+			});
 		});
 
 		await user.click(within(firstConfirmation).getByRole('button', {name: 'Keep Editing'}));
+		await Promise.resolve();
 		expect({
-			confirmation: screen.queryByRole('alertdialog', {name: 'There are uncommitted changes'}),
 			description: screen.getByRole<HTMLTextAreaElement>('textbox', {name: 'Blueprint description'}).value,
+			dialogState: interactionState(),
 			filters: ['Modules', 'Entities', 'Trains', 'Tiles'].map(
 				(name) => screen.getByRole<HTMLInputElement>('checkbox', {name}).checked,
 			),
 			icon: screen.getByRole('button', {name: 'Edit icon 1'}).getAttribute('title'),
 			title: screen.getByText('Bob', {selector: '.blueprint-editor__title'}).textContent,
 		}).toStrictEqual({
-			confirmation: null,
 			description: 'Draft description',
+			dialogState: {
+				activeElement: {name: 'Tiles', tagName: 'INPUT'},
+				dialogStack: [
+					{
+						ariaHidden: null,
+						inert: false,
+						modal: 'true',
+						name: 'Blueprint Editor',
+						role: 'dialog',
+					},
+				],
+			},
 			filters: [false, true, true, false],
 			icon: 'Signal red\nvirtual:signal-red',
 			title: 'Bob',
@@ -1292,12 +1553,19 @@ describe('TransformPanel', () => {
 		await user.click(screen.getByRole('button', {name: 'Close Blueprint Editor'}));
 		const secondConfirmation = screen.getByRole('alertdialog', {name: 'There are uncommitted changes'});
 		await user.click(within(secondConfirmation).getByRole('button', {name: 'Discard'}));
+		await Promise.resolve();
 		expect({
-			dialog: screen.queryByRole('dialog', {name: 'Blueprint Editor'}),
+			dialogState: interactionState(),
 			navigation: navigate.mock.calls,
-		}).toStrictEqual({dialog: null, navigation: []});
+		}).toStrictEqual({
+			dialogState: {
+				activeElement: {name: 'Open Blueprint Editor', tagName: 'BUTTON'},
+				dialogStack: [],
+			},
+			navigation: [],
+		});
 
-		openBlueprintEditor();
+		await user.click(editorTool);
 		expect({
 			description: screen.getByRole<HTMLTextAreaElement>('textbox', {name: 'Blueprint description'}).value,
 			filters: ['Modules', 'Entities', 'Trains', 'Tiles'].map(
@@ -1505,13 +1773,15 @@ describe('TransformPanel', () => {
 		});
 	});
 
-	test('edits and saves one planner definition before applying it forward', async () => {
+	test('applies the current planner draft directly without opening another selector', async () => {
 		const user = userEvent.setup();
 		render(<TransformPanel blueprint={blueprint} />);
 
-		openUpgradePlanner();
+		const plannerTool = screen.getByRole('button', {name: 'Open Upgrade Planner'});
+		await user.click(plannerTool);
 
 		expect({
+			dialogState: interactionState(),
 			plannerActions: [
 				'Save Planner',
 				'Apply Upgrade to Current Blueprint',
@@ -1521,6 +1791,18 @@ describe('TransformPanel', () => {
 				screen.queryByRole('button', {name}),
 			),
 		}).toStrictEqual({
+			dialogState: {
+				activeElement: {name: 'Upgrade Planner configuration', tagName: 'DIV'},
+				dialogStack: [
+					{
+						ariaHidden: null,
+						inert: false,
+						modal: 'true',
+						name: 'Upgrade Planner',
+						role: 'dialog',
+					},
+				],
+			},
 			plannerActions: [
 				'Save Planner',
 				'Apply Upgrade to Current Blueprint',
@@ -1530,12 +1812,38 @@ describe('TransformPanel', () => {
 		});
 
 		await applyPlanner(user);
-		expect(navigate).toHaveBeenCalledExactlyOnceWith({
-			to: '/',
-			search: {
-				pasted: serializeBlueprint(applyUpgradeRules(blueprint, builtInUpgradeRules('upgrade'))),
-				selection: '',
+		await Promise.resolve();
+		expect({
+			dialogState: interactionState(),
+			navigation: navigate.mock.calls,
+		}).toStrictEqual({
+			dialogState: {
+				activeElement: {name: 'Open Upgrade Planner', tagName: 'BUTTON'},
+				dialogStack: [],
 			},
+			navigation: [
+				[
+					{
+						to: '/',
+						search: {
+							pasted: serializeBlueprint({
+								blueprint: {
+									item: 'blueprint',
+									version: 0,
+									entities: [
+										{
+											entity_number: 1,
+											name: 'fast-transport-belt',
+											position: {x: 0, y: 0},
+										},
+									],
+								},
+							}),
+							selection: '',
+						},
+					},
+				],
+			],
 		});
 	});
 
@@ -1666,7 +1974,7 @@ describe('TransformPanel', () => {
 		});
 	});
 
-	test('adds a custom quality mapping with a source comparator and explicit target quality', async () => {
+	test('commits source quality and comparator selection with an explicit target quality', async () => {
 		const user = userEvent.setup();
 		const qualityBlueprint: BlueprintString = {
 			blueprint: {
@@ -1724,20 +2032,32 @@ describe('TransformPanel', () => {
 		const user = userEvent.setup();
 		render(<TransformPanel blueprint={blueprint} />);
 
-		openUpgradePlanner();
+		await user.click(screen.getByRole('button', {name: 'Open Upgrade Planner'}));
 		const targetBefore = screen.getByRole('button', {name: 'Choose target for Transport belt'}).title;
 		await user.click(screen.getByRole('button', {name: 'Choose source, currently Transport belt'}));
 		await user.click(screen.getByRole('button', {name: 'Rare quality'}));
 		await chooseSignal(user, 'Transport belt');
+		await Promise.resolve();
 
 		expect({
-			sourcePicker: screen.queryByRole('dialog', {name: 'Set the filter'}),
+			dialogState: interactionState(),
+			sourceAfter: screen.getByRole('button', {name: 'Choose source, currently Transport belt'}).title,
 			targetAfter: screen.getByRole('button', {name: 'Choose target for Transport belt'}).title,
-			targetPicker: screen.queryByRole('dialog', {name: 'Select upgrade'}),
 		}).toStrictEqual({
-			sourcePicker: null,
+			dialogState: {
+				activeElement: {name: 'Choose source, currently Transport belt', tagName: 'BUTTON'},
+				dialogStack: [
+					{
+						ariaHidden: null,
+						inert: false,
+						modal: 'true',
+						name: 'Upgrade Planner',
+						role: 'dialog',
+					},
+				],
+			},
+			sourceAfter: 'Transport belt\nentity:transport-belt\nQuality: = rare',
 			targetAfter: targetBefore,
-			targetPicker: null,
 		});
 	});
 
@@ -2051,7 +2371,7 @@ describe('TransformPanel', () => {
 		});
 	});
 
-	test('adds, replaces, removes, and serializes label icons in slot order', async () => {
+	test('commits local label-icon edits in exact slot order', async () => {
 		const user = userEvent.setup();
 		const iconBlueprint: BlueprintString = {
 			blueprint: {
@@ -2068,7 +2388,7 @@ describe('TransformPanel', () => {
 		};
 		render(<TransformPanel blueprint={iconBlueprint} />);
 
-		openBlueprintEditor();
+		await user.click(screen.getByRole('button', {name: 'Open Blueprint Editor'}));
 		await user.click(screen.getByRole('button', {name: 'Edit blueprint title'}));
 		await user.clear(screen.getByRole('textbox', {name: 'Blueprint title'}));
 		await user.type(screen.getByRole('textbox', {name: 'Blueprint title'}), 'Blue starter{Enter}');
@@ -2082,25 +2402,39 @@ describe('TransformPanel', () => {
 		await user.type(screen.getByRole('searchbox', {name: 'Search'}), 'green');
 		await chooseSignal(user, 'Signal green');
 		await user.click(screen.getByRole('button', {name: 'Save Blueprint'}));
+		await Promise.resolve();
 
-		expect(navigate).toHaveBeenCalledExactlyOnceWith({
-			to: '/',
-			search: {
-				pasted: serializeBlueprint({
-					blueprint: {
-						item: 'blueprint',
-						version: 0,
-						description: 'New description',
-						icons: [
-							{index: 1, signal: {type: 'virtual', name: 'signal-yellow'}},
-							{index: 2, signal: {type: 'virtual', name: 'signal-blue'}},
-							{index: 3, signal: {type: 'virtual', name: 'signal-green'}},
-						],
-						label: 'Blue starter',
-					},
-				}),
-				selection: '',
+		expect({
+			dialogState: interactionState(),
+			navigation: navigate.mock.calls,
+		}).toStrictEqual({
+			dialogState: {
+				activeElement: {name: 'Open Blueprint Editor', tagName: 'BUTTON'},
+				dialogStack: [],
 			},
+			navigation: [
+				[
+					{
+						to: '/',
+						search: {
+							pasted: serializeBlueprint({
+								blueprint: {
+									item: 'blueprint',
+									version: 0,
+									description: 'New description',
+									icons: [
+										{index: 1, signal: {type: 'virtual', name: 'signal-yellow'}},
+										{index: 2, signal: {type: 'virtual', name: 'signal-blue'}},
+										{index: 3, signal: {type: 'virtual', name: 'signal-green'}},
+									],
+									label: 'Blue starter',
+								},
+							}),
+							selection: '',
+						},
+					},
+				],
+			],
 		});
 	});
 
@@ -2140,7 +2474,7 @@ describe('TransformPanel', () => {
 		});
 	});
 
-	test('saves a child blueprint back into its root book and protects dirty drafts', async () => {
+	test('commits a nested-book child through the dirty-close confirmation', async () => {
 		const user = userEvent.setup();
 		const rootBlueprint: BlueprintString = {
 			blueprint_book: {
@@ -2193,7 +2527,8 @@ describe('TransformPanel', () => {
 			<TransformPanel blueprint={selectedBlueprint} rootBlueprint={rootBlueprint} selectedPath="1" />,
 		);
 
-		openBlueprintEditor();
+		const editorTool = screen.getByRole('button', {name: 'Open Blueprint Editor'});
+		await user.click(editorTool);
 		await user.click(screen.getByRole('button', {name: 'Edit blueprint title'}));
 		await user.clear(screen.getByRole('textbox', {name: 'Blueprint title'}));
 		await user.type(screen.getByRole('textbox', {name: 'Blueprint title'}), 'New label{Enter}');
@@ -2202,21 +2537,56 @@ describe('TransformPanel', () => {
 		await chooseSignal(user, 'Signal red');
 		await user.click(screen.getByRole('button', {name: 'Close Blueprint Editor'}));
 
-		expect({
-			confirmation: screen
-				.getByRole('alertdialog', {name: 'There are uncommitted changes'})
-				.getAttribute('aria-modal'),
-			navigation: navigate.mock.calls,
-		}).toStrictEqual({confirmation: 'true', navigation: []});
+		await waitFor(() => {
+			expect({
+				dialogState: interactionState(),
+				navigation: navigate.mock.calls,
+			}).toStrictEqual({
+				dialogState: {
+					activeElement: {name: 'Keep Editing', tagName: 'BUTTON'},
+					dialogStack: [
+						{
+							ariaHidden: 'true',
+							inert: true,
+							modal: 'true',
+							name: 'Blueprint Editor',
+							role: 'dialog',
+						},
+						{
+							ariaHidden: null,
+							inert: false,
+							modal: 'true',
+							name: 'There are uncommitted changes',
+							role: 'alertdialog',
+						},
+					],
+				},
+				navigation: [],
+			});
+		});
 
 		await user.click(screen.getByRole('button', {name: 'Commit'}));
+		await Promise.resolve();
 
-		expect(navigate).toHaveBeenCalledExactlyOnceWith({
-			to: '/',
-			search: {
-				pasted: serializeBlueprint(savedRoot),
-				selection: '1',
+		expect({
+			dialogState: interactionState(),
+			navigation: navigate.mock.calls,
+		}).toStrictEqual({
+			dialogState: {
+				activeElement: {name: 'Open Blueprint Editor', tagName: 'BUTTON'},
+				dialogStack: [],
 			},
+			navigation: [
+				[
+					{
+						to: '/',
+						search: {
+							pasted: serializeBlueprint(savedRoot),
+							selection: '1',
+						},
+					},
+				],
+			],
 		});
 
 		const savedBlueprint = savedRoot.blueprint_book?.blueprints[0];
@@ -2712,32 +3082,32 @@ describe('TransformPanel', () => {
 
 	test('saves a pasted planner with a zero-match mapping and applies its matching rule', async () => {
 		const user = userEvent.setup();
+		const pastedPlanner: UpgradePlanner = {
+			item: 'upgrade-planner',
+			label: 'Zero-match planner',
+			version: 0,
+			settings: {
+				mappers: [
+					{
+						index: 100,
+						from: {type: 'entity', name: 'transport-belt'},
+						to: {type: 'entity', name: 'express-transport-belt'},
+					},
+					{
+						index: 200,
+						from: {type: 'item', name: 'speed-module'},
+						to: {type: 'item', name: 'speed-module-2'},
+					},
+				],
+			},
+		};
 		render(<TransformPanel blueprint={blueprint} />);
 
-		openUpgradePlanner();
+		await user.click(screen.getByRole('button', {name: 'Open Upgrade Planner'}));
 		await choosePlanner(user, 'Paste upgrade planner…');
 		fireEvent.change(screen.getByPlaceholderText('Paste an upgrade planner string or JSON'), {
 			target: {
-				value: JSON.stringify({
-					upgrade_planner: {
-						item: 'upgrade-planner',
-						version: 0,
-						settings: {
-							mappers: [
-								{
-									index: 100,
-									from: {type: 'entity', name: 'transport-belt'},
-									to: {type: 'entity', name: 'express-transport-belt'},
-								},
-								{
-									index: 200,
-									from: {type: 'item', name: 'speed-module'},
-									to: {type: 'item', name: 'speed-module-2'},
-								},
-							],
-						},
-					},
-				}),
+				value: JSON.stringify({upgrade_planner: pastedPlanner}),
 			},
 		});
 
@@ -2762,20 +3132,95 @@ describe('TransformPanel', () => {
 			unmatchedMapping: `0 matches. ${mappingInstructions}`,
 		});
 
-		await applyPlanner(user);
-
-		expect(navigate).toHaveBeenCalledExactlyOnceWith({
-			to: '/',
-			search: {
-				pasted: serializeBlueprint({
-					blueprint: {
-						item: 'blueprint',
-						version: 0,
-						entities: [{entity_number: 1, name: 'express-transport-belt', position: {x: 0, y: 0}}],
+		await user.click(screen.getByRole('button', {name: 'Save Planner'}));
+		const savePrompt = screen.getByRole('dialog', {name: 'Save to Blueprint Library'});
+		await user.click(within(savePrompt).getByRole('button', {name: 'Save Planner'}));
+		await Promise.resolve();
+		const {data: savedRecordData, ...savedRecordMetadata} = libraryRecords[0];
+		const saveInput = vi.mocked(db.saveLibraryCopy).mock.calls[0][0];
+		const {data: saveInputData, ...saveInputMetadata} = saveInput;
+		expect({
+			dialogState: interactionState(),
+			libraryRecord: {...savedRecordMetadata, planner: parseUpgradePlanner(savedRecordData)},
+			navigation: navigate.mock.calls,
+			saveInput: {...saveInputMetadata, planner: parseUpgradePlanner(saveInputData)},
+		}).toStrictEqual({
+			dialogState: {
+				activeElement: {name: 'Save Planner', tagName: 'BUTTON'},
+				dialogStack: [
+					{
+						ariaHidden: null,
+						inert: false,
+						modal: 'true',
+						name: 'Upgrade Planner',
+						role: 'dialog',
 					},
-				}),
-				selection: '',
+				],
 			},
+			libraryRecord: {
+				id: 'saved-planner-1',
+				createdOn: 1,
+				updatedOn: 1,
+				gameData: {
+					type: 'upgrade_planner',
+					label: 'Zero-match planner',
+					description: undefined,
+					gameVersion: '0',
+					icons: [],
+				},
+				selection: undefined,
+				parentId: LIBRARY_ROOT_ID,
+				position: 0,
+				planner: pastedPlanner,
+			},
+			navigation: [],
+			saveInput: {
+				destination: {parentId: LIBRARY_ROOT_ID, position: 0},
+				gameData: {
+					type: 'upgrade_planner',
+					label: 'Zero-match planner',
+					description: undefined,
+					gameVersion: '0',
+					icons: [],
+				},
+				planner: pastedPlanner,
+			},
+		});
+
+		await applyPlanner(user);
+		await Promise.resolve();
+
+		expect({
+			dialogState: interactionState(),
+			navigation: navigate.mock.calls,
+		}).toStrictEqual({
+			dialogState: {
+				activeElement: {name: 'Open Upgrade Planner', tagName: 'BUTTON'},
+				dialogStack: [],
+			},
+			navigation: [
+				[
+					{
+						to: '/',
+						search: {
+							pasted: serializeBlueprint({
+								blueprint: {
+									item: 'blueprint',
+									version: 0,
+									entities: [
+										{
+											entity_number: 1,
+											name: 'express-transport-belt',
+											position: {x: 0, y: 0},
+										},
+									],
+								},
+							}),
+							selection: '',
+						},
+					},
+				],
+			],
 		});
 	});
 
