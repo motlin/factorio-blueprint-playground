@@ -4,7 +4,6 @@ import {createPortal} from 'react-dom';
 import gameUiSpec from '../../../../generated/game-ui-spec.json';
 import type {QualityComparator, SignalID, SignalType} from '../../../../parsing/types';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
-import {ButtonGreen} from '../../../ui/ButtonGreen';
 import {FactorioButton, FactorioButtonKind, FactorioInventorySlot, FactorioScrollFrame} from '../../../ui/FactorioUi';
 import {
 	initialUpgradeQualitySelection,
@@ -556,7 +555,8 @@ export function SignalPickerDialog({
 							/>
 						)}
 						{confirmationMode === 'required' ? (
-							<ButtonGreen
+							<FactorioButton
+								kind={FactorioButtonKind.Confirm}
 								disabled={!selectionAllowed}
 								onClick={(event) => {
 									event.preventDefault();
@@ -565,7 +565,7 @@ export function SignalPickerDialog({
 							>
 								<span aria-hidden="true">✓</span>
 								<span className="transform-picker__confirm-label">Confirm</span>
-							</ButtonGreen>
+							</FactorioButton>
 						) : null}
 					</footer>
 				) : null}

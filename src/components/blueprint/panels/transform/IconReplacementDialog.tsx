@@ -7,7 +7,6 @@ import {
 	type IconReplacement,
 	type MetadataIconCandidate,
 } from '../../../../transform/metadataSubstitution';
-import {ButtonGreen} from '../../../ui/ButtonGreen';
 import {FactorioButton, FactorioButtonKind} from '../../../ui/FactorioUi';
 import {SignalPickerDialog} from './SignalPickerDialog';
 import {SignalSlot} from './UpgradeMappingRow';
@@ -172,7 +171,9 @@ export function IconReplacementDialog({onChange, onClose, replacements, rootBlue
 					</div>
 				</div>
 				<div className="transform-dialog__actions">
-					<ButtonGreen onClick={onClose}>Done</ButtonGreen>
+					<FactorioButton kind={FactorioButtonKind.Confirm} onClick={onClose}>
+						Done
+					</FactorioButton>
 				</div>
 			</section>
 			{choosingSource ? (

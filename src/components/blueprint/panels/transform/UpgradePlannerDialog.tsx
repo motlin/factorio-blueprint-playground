@@ -3,7 +3,6 @@ import {useId, useState} from 'react';
 import type {BlueprintString, SignalID, UpgradeSourceSignal} from '../../../../parsing/types';
 import type {UpgradeDirection} from '../../../../transform/upgradePlanner';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
-import {ButtonGreen} from '../../../ui/ButtonGreen';
 import {FactorioButton, FactorioButtonKind} from '../../../ui/FactorioUi';
 import {Textarea} from '../../../ui/Textarea';
 import {BookWideReplacements, type BookWideReplacementsProps} from './BookWideReplacements';
@@ -176,14 +175,15 @@ function UpgradePlannerSavePrompt({
 							Update Planner
 						</FactorioButton>
 					)}
-					<ButtonGreen
+					<FactorioButton
+						kind={FactorioButtonKind.Confirm}
 						disabled={pending}
 						onClick={() => {
 							onSaveAsNew();
 						}}
 					>
 						{onUpdateExisting === undefined ? 'Save Planner' : 'Save a Copy'}
-					</ButtonGreen>
+					</FactorioButton>
 				</div>
 			</section>
 		</div>
@@ -532,14 +532,15 @@ export function UpgradePlannerDialog({
 						>
 							Apply Downgrade to {scope === 'root' ? 'Entire Root Book' : 'Current Blueprint'}
 						</FactorioButton>
-						<ButtonGreen
+						<FactorioButton
+							kind={FactorioButtonKind.Confirm}
 							disabled={saveDisabled}
 							onClick={() => {
 								onApply('upgrade');
 							}}
 						>
 							Apply Upgrade to {scope === 'root' ? 'Entire Root Book' : 'Current Blueprint'}
-						</ButtonGreen>
+						</FactorioButton>
 					</div>
 				</footer>
 			</section>

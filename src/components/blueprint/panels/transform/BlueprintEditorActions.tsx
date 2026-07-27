@@ -1,7 +1,6 @@
 import {useId} from 'react';
 import {createPortal} from 'react-dom';
 
-import {ButtonGreen} from '../../../ui/ButtonGreen';
 import {FactorioButton, FactorioButtonKind} from '../../../ui/FactorioUi';
 import type {BlueprintEditorCommitAction} from './useBlueprintEditorDraft';
 import {useDialogFocus} from './useDialogFocus';
@@ -67,14 +66,15 @@ function BlueprintEditorCloseConfirmation({
 					>
 						Discard
 					</FactorioButton>
-					<ButtonGreen
+					<FactorioButton
+						kind={FactorioButtonKind.Confirm}
 						disabled={commitDisabled}
 						onClick={() => {
 							onCommit();
 						}}
 					>
 						Commit
-					</ButtonGreen>
+					</FactorioButton>
 				</div>
 			</section>
 		</div>,
@@ -114,14 +114,15 @@ export function BlueprintEditorActions({
 					Close
 				</FactorioButton>
 				<p className="blueprint-editor-actions__scope">{commitAction.scopeDescription}</p>
-				<ButtonGreen
+				<FactorioButton
+					kind={FactorioButtonKind.Confirm}
 					disabled={commitDisabled}
 					onClick={() => {
 						onCommit();
 					}}
 				>
 					{commitAction.caption}
-				</ButtonGreen>
+				</FactorioButton>
 			</footer>
 			{closeConfirmationOpen ? (
 				<BlueprintEditorCloseConfirmation
