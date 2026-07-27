@@ -40,6 +40,9 @@ describe('generated mod database', () => {
 			gameDataFactorioVersion: gameDataJson.factorioDataVersion,
 			nextUpgradeCount: gameDataJson.nextUpgrades.length,
 			pickerSignalCount: gameDataJson.pickerSignals.length,
+			pickerSignalLayouts: ['transport-belt', 'locomotive', 'loader'].map((name) =>
+				gameDataJson.pickerSignals.find((signal) => signal.type === 'item' && signal.name === name),
+			),
 			upgradeEntityItemCount: gameDataJson.upgradeEntityItems.length,
 			upgradeEntityItems: ['accumulator', 'assembling-machine-1', 'transport-belt', 'bottomless-chest'].map(
 				(name) => gameDataJson.upgradeEntityItems.includes(name),
@@ -52,7 +55,33 @@ describe('generated mod database', () => {
 			factorioDataVersion: sourceLock.factorioData.version,
 			gameDataFactorioVersion: sourceLock.factorioData.version,
 			nextUpgradeCount: 14,
-			pickerSignalCount: 1230,
+			pickerSignalCount: 1249,
+			pickerSignalLayouts: [
+				{
+					group: 'logistics',
+					hidden: false,
+					name: 'transport-belt',
+					order: 'a[transport-belt]-a[transport-belt]',
+					subgroup: 'belt',
+					type: 'item',
+				},
+				{
+					group: 'logistics',
+					hidden: false,
+					name: 'locomotive',
+					order: 'c[rolling-stock]-a[locomotive]',
+					subgroup: 'train-transport',
+					type: 'item',
+				},
+				{
+					group: 'logistics',
+					hidden: true,
+					name: 'loader',
+					order: 'd[loader]-a[basic-loader]',
+					subgroup: 'belt',
+					type: 'item',
+				},
+			],
 			upgradeEntityItemCount: 112,
 			upgradeEntityItems: [true, true, true, false],
 			upgradeModuleItems: [

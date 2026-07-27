@@ -155,6 +155,10 @@ async function chooseSignal(user: ReturnType<typeof userEvent.setup>, label: str
 	if (screen.queryByRole('button', {name: `Choose ${label}`}) === null && label.startsWith('Signal ')) {
 		await user.click(screen.getByRole('tab', {name: 'Signals'}));
 	}
+	if (screen.queryByRole('button', {name: `Choose ${label}`}) === null) {
+		await user.clear(screen.getByRole('searchbox', {name: 'Search'}));
+		await user.type(screen.getByRole('searchbox', {name: 'Search'}), label);
+	}
 	await user.click(screen.getByRole('button', {name: `Choose ${label}`}));
 	const confirm = screen.queryByRole('button', {name: 'Confirm'});
 	if (confirm !== null) {
@@ -170,6 +174,9 @@ function choosePlannerWithClicks(label: string) {
 function chooseSignalWithClicks(label: string) {
 	if (screen.queryByRole('button', {name: `Choose ${label}`}) === null && label.startsWith('Signal ')) {
 		fireEvent.click(screen.getByRole('tab', {name: 'Signals'}));
+	}
+	if (screen.queryByRole('button', {name: `Choose ${label}`}) === null) {
+		fireEvent.change(screen.getByRole('searchbox', {name: 'Search'}), {target: {value: label}});
 	}
 	fireEvent.click(screen.getByRole('button', {name: `Choose ${label}`}));
 	const confirm = screen.queryByRole('button', {name: 'Confirm'});
@@ -2189,23 +2196,27 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 
 		await user.click(firstEmptyMappingSourceButton());
 		const sourcePicker = screen.getByRole('dialog', {name: 'Set the filter'});
-		const sourceChoices = within(sourcePicker)
-			.getAllByRole('button', {name: /^Choose /})
-			.map((button) => button.getAttribute('aria-label'));
+		const sourceChoices = new Set<string | null>();
+		for (const tab of within(sourcePicker).getAllByRole('tab')) {
+			await user.click(tab);
+			for (const button of within(sourcePicker).getAllByRole('button', {name: /^Choose /})) {
+				sourceChoices.add(button.getAttribute('aria-label'));
+			}
+		}
 		expect({
 			assemblers: [
 				'Choose Assembling machine 1',
 				'Choose Assembling machine 2',
 				'Choose Assembling machine 3',
-			].map((choice) => sourceChoices.includes(choice)),
+			].map((choice) => sourceChoices.has(choice)),
 			belts: ['Choose Transport belt', 'Choose Express transport belt', 'Choose Turbo underground belt'].map(
-				(choice) => sourceChoices.includes(choice),
+				(choice) => sourceChoices.has(choice),
 			),
 			modules: ['Choose Speed module', 'Choose Productivity module 3', 'Choose Empty module slot'].map((choice) =>
-				sourceChoices.includes(choice),
+				sourceChoices.has(choice),
 			),
-			qualityOnlyEntity: sourceChoices.includes('Choose Accumulator'),
-			unrelatedItem: sourceChoices.includes('Choose Iron plate'),
+			qualityOnlyEntity: sourceChoices.has('Choose Accumulator'),
+			unrelatedItem: sourceChoices.has('Choose Iron plate'),
 		}).toStrictEqual({
 			assemblers: [true, true, true],
 			belts: [true, true, true],

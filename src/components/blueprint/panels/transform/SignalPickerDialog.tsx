@@ -11,6 +11,12 @@ import {
 	type UpgradeQualitySelection,
 	type UpgradeQualitySignal,
 } from './upgradeQuality';
+import {
+	comparePickerSignalOrder,
+	signalPickerGroup,
+	signalPickerHidden,
+	signalPickerSubgroup,
+} from './upgradePlannerSignals';
 import {UpgradeQualityControls} from './UpgradeQualityControls';
 import {useDialogFocus} from './useDialogFocus';
 
@@ -150,6 +156,10 @@ function signalTitle(signal: PickerSignal): string {
 }
 
 function categoryIdForSignal(signal: SignalID): PickerCategoryId {
+	const generatedGroup = signalPickerGroup(signal);
+	if (generatedGroup !== undefined) {
+		return generatedGroup;
+	}
 	const type = normalizedSignalType(signal);
 	if (type === 'item' || type === 'entity') {
 		return 'logistics';
@@ -188,7 +198,12 @@ function categoryForSignal(signal: SignalID): PickerCategory {
 }
 
 function isHiddenPrototype(signal: SignalID): boolean {
-	return signal.name === 'parameter-' || signal.name.endsWith('-unknown') || hiddenPrototypeNames.has(signal.name);
+	return (
+		signalPickerHidden(signal) ||
+		signal.name === 'parameter-' ||
+		signal.name.endsWith('-unknown') ||
+		hiddenPrototypeNames.has(signal.name)
+	);
 }
 
 function signalWithCurrentQuality(
@@ -204,22 +219,23 @@ function signalWithCurrentQuality(
 
 interface GridCell {
 	key: string;
+	optionIndex?: number;
 	signal?: SignalID;
 }
 
 function signalGridCells(options: readonly SignalID[]): GridCell[] {
 	const cells: GridCell[] = [];
-	let previousType: SignalType | undefined;
-	for (const signal of options) {
-		const type = normalizedSignalType(signal);
-		if (previousType !== undefined && previousType !== type && cells.length % gridColumnCount !== 0) {
+	let previousSubgroup: string | undefined;
+	for (const [optionIndex, signal] of options.entries()) {
+		const subgroup = signalPickerSubgroup(signal);
+		if (previousSubgroup !== undefined && previousSubgroup !== subgroup && cells.length % gridColumnCount !== 0) {
 			const padding = gridColumnCount - (cells.length % gridColumnCount);
 			for (let index = 0; index < padding; index += 1) {
 				cells.push({key: `padding-${cells.length.toString()}`});
 			}
 		}
-		cells.push({key: signalPrototypeIdentity(signal), signal});
-		previousType = type;
+		cells.push({key: signalPrototypeIdentity(signal), optionIndex, signal});
+		previousSubgroup = subgroup;
 	}
 	return cells;
 }
@@ -243,7 +259,10 @@ export function SignalPickerDialog({
 	const optionButtons = useRef<Array<HTMLButtonElement | null>>([]);
 	const signalNameReference = useRef<HTMLDivElement>(null);
 	const visibleOptions = useMemo(
-		() => options.filter((signal) => includeHiddenSignals || !isHiddenPrototype(signal)),
+		() =>
+			options
+				.filter((signal) => includeHiddenSignals || !isHiddenPrototype(signal))
+				.sort(comparePickerSignalOrder),
 		[includeHiddenSignals, options],
 	);
 	const availableCategories = useMemo(
@@ -366,15 +385,34 @@ export function SignalPickerDialog({
 					break;
 				}
 			}
-		} else if (event.key === 'ArrowDown') {
-			nextIndex = Math.min(currentIndex + gridColumnCount, filteredOptions.length - 1);
-			while (nextIndex > currentIndex && !optionAllowed(filteredOptions[nextIndex])) {
-				nextIndex -= 1;
-			}
-		} else if (event.key === 'ArrowUp') {
-			nextIndex = Math.max(currentIndex - gridColumnCount, 0);
-			while (nextIndex < currentIndex && !optionAllowed(filteredOptions[nextIndex])) {
-				nextIndex += 1;
+		} else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+			const currentCellIndex = gridCells.findIndex((cell) => cell.optionIndex === currentIndex);
+			const currentRow = Math.floor(currentCellIndex / gridColumnCount);
+			const targetRow = currentRow + (event.key === 'ArrowDown' ? 1 : -1);
+			const targetRowStart = targetRow * gridColumnCount;
+			const targetRowEnd = targetRowStart + gridColumnCount;
+			const targetColumn = currentCellIndex % gridColumnCount;
+			for (let distance = 0; distance < gridColumnCount; distance += 1) {
+				for (const candidateColumn of [targetColumn - distance, targetColumn + distance]) {
+					const candidateCell =
+						candidateColumn < 0 || candidateColumn >= gridColumnCount
+							? undefined
+							: gridCells[targetRowStart + candidateColumn];
+					if (
+						targetRowStart < 0 ||
+						targetRowStart >= gridCells.length ||
+						targetRowEnd <= 0 ||
+						candidateCell?.optionIndex === undefined ||
+						!optionAllowed(filteredOptions[candidateCell.optionIndex])
+					) {
+						continue;
+					}
+					nextIndex = candidateCell.optionIndex;
+					break;
+				}
+				if (nextIndex !== undefined) {
+					break;
+				}
 			}
 		} else if (event.key === 'Home') {
 			nextIndex = firstAllowedOptionIndex;
@@ -487,7 +525,10 @@ export function SignalPickerDialog({
 										);
 									}
 									const signal = cell.signal;
-									const optionIndex = filteredOptions.indexOf(signal);
+									const optionIndex = cell.optionIndex;
+									if (optionIndex === undefined) {
+										throw new Error('Signal grid cell is missing its option index.');
+									}
 									const allowed = optionAllowed(signal);
 									return (
 										<FactorioInventorySlot

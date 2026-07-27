@@ -64,8 +64,11 @@ export const pickerSignals: readonly SignalID[] = gameData.pickerSignals.map(({n
 
 const upgradeEntityItemNames = new Set(gameData.upgradeEntityItems);
 const upgradeModuleNames = new Set(gameData.upgradeModuleItems);
-const pickerItemOrder = new Map(
-	gameData.pickerSignals.flatMap(({name, type}, index) => (type === 'item' ? [[name, index] as const] : [])),
+const pickerSignalLayouts = new Map(
+	gameData.pickerSignals.map(({group, hidden, name, subgroup, type}, index) => [
+		`${type}:${name}`,
+		{group, hidden, index, subgroup},
+	]),
 );
 const nextUpgradeOrder = new Map<string, number>();
 for (const {from, to} of gameUiSpec.upgrades.next) {
@@ -83,17 +86,30 @@ const upgradeEntityGroups = gameUiSpec.upgrades.groups.map((group) => ({
 const upgradeEntityNames = new Set(upgradeEntityGroups.flatMap(({members}) => members.map(({name}) => name)));
 const beltPrototypeTypes = new Set(['splitter', 'transport-belt', 'underground-belt']);
 
-function comparePickerOrder(left: SignalID, right: SignalID): number {
+function pickerSignalLayout(signal: SignalID) {
+	const type = normalizedSignalType(signal);
 	return (
-		(pickerItemOrder.get(left.name) ?? Number.MAX_SAFE_INTEGER) -
-			(pickerItemOrder.get(right.name) ?? Number.MAX_SAFE_INTEGER) || left.name.localeCompare(right.name)
+		pickerSignalLayouts.get(`${type}:${signal.name}`) ??
+		(type === 'entity' ? pickerSignalLayouts.get(`item:${signal.name}`) : undefined)
+	);
+}
+
+export function comparePickerSignalOrder(left: SignalID, right: SignalID): number {
+	const leftLayout = pickerSignalLayout(left);
+	const rightLayout = pickerSignalLayout(right);
+	if (leftLayout === undefined && rightLayout === undefined) {
+		return 0;
+	}
+	return (
+		(leftLayout?.index ?? Number.MAX_SAFE_INTEGER) - (rightLayout?.index ?? Number.MAX_SAFE_INTEGER) ||
+		left.name.localeCompare(right.name)
 	);
 }
 
 function compareUpgradeTargetOrder(left: SignalID, right: SignalID): number {
 	return (
 		(nextUpgradeOrder.get(left.name) ?? Number.MAX_SAFE_INTEGER) -
-			(nextUpgradeOrder.get(right.name) ?? Number.MAX_SAFE_INTEGER) || comparePickerOrder(left, right)
+			(nextUpgradeOrder.get(right.name) ?? Number.MAX_SAFE_INTEGER) || comparePickerSignalOrder(left, right)
 	);
 }
 
@@ -132,6 +148,18 @@ export function signalPrototypeIdentity(signal: SignalID): string {
 	return `${normalizedSignalType(signal)}:${signal.name}`;
 }
 
+export function signalPickerGroup(signal: SignalID): string | undefined {
+	return pickerSignalLayout(signal)?.group;
+}
+
+export function signalPickerHidden(signal: SignalID): boolean {
+	return pickerSignalLayout(signal)?.hidden ?? false;
+}
+
+export function signalPickerSubgroup(signal: SignalID): string {
+	return pickerSignalLayout(signal)?.subgroup ?? `unmapped-${normalizedSignalType(signal)}`;
+}
+
 export function isUpgradeSourceOption(signal: SignalID): boolean {
 	const type = normalizedSignalType(signal);
 	return (
@@ -144,7 +172,7 @@ export function upgradeSourceOptions(currentSource?: SignalID): SignalID[] {
 	const generatedOptions = [
 		...upgradeEntityGroups.flatMap(({members}) => members.map(({name}): SignalID => ({type: 'entity', name}))),
 		...gameData.upgradeModuleItems.map((name): SignalID => ({type: 'item', name})),
-	].sort(comparePickerOrder);
+	].sort(comparePickerSignalOrder);
 	return appendCurrentOption(generatedOptions, currentSource);
 }
 

@@ -141,21 +141,105 @@ describe('transformDatasets', () => {
 	it('extracts picker signals from explicit prototype types without inventing icon sources', () => {
 		const sources = [
 			`data:extend({
-				{type = "recipe", name = "test-recipe", order = "b"},
-				{type = "fluid", name = "test-fluid", order = "a"},
-				{type = "virtual-signal", name = "signal-test", order = "c"},
-				{type = "planet", name = "test-planet", order = "d"},
-				{type = "technology", name = "test-technology", order = "e"},
+				{type = "item-group", name = "logistics", order = "a"},
+				{type = "item-subgroup", name = "belt", group = "logistics", order = "b"},
+				{type = "item-subgroup", name = "train-transport", group = "logistics", order = "e"},
+				{type = "item", name = "fast-transport-belt", subgroup = "belt", order = "b", stack_size = 100},
+				{type = "item", name = "transport-belt", subgroup = "belt", order = "a", stack_size = 100},
+				{type = "item", name = "loader", hidden = true, subgroup = "belt", order = "c", stack_size = 50},
+				{type = "item-with-entity-data", name = "locomotive", subgroup = "train-transport", order = "a", stack_size = 5},
+				{type = "recipe", name = "test-recipe", subgroup = "other", order = "b"},
+				{type = "fluid", name = "test-fluid", subgroup = "other", order = "a"},
+				{type = "virtual-signal", name = "signal-test", subgroup = "other", order = "c"},
+				{type = "planet", name = "test-planet", subgroup = "other", order = "d"},
+				{type = "technology", name = "test-technology", subgroup = "other", order = "e"},
 				{type = "assembling-machine", name = "excluded-entity", order = "f"}
 			})`,
 		];
 
-		expect(extractPickerSignals(sources)).toStrictEqual([
-			{type: 'recipe', name: 'test-recipe'},
-			{type: 'fluid', name: 'test-fluid'},
-			{type: 'virtual', name: 'signal-test'},
-			{type: 'planet', name: 'test-planet'},
-			{type: 'technology', name: 'test-technology'},
+		expect(
+			extractPickerSignals(sources, [
+				'item',
+				'entity',
+				'fluid',
+				'virtual',
+				'recipe',
+				'space-location',
+				'quality',
+			]),
+		).toStrictEqual([
+			{type: 'item', name: 'transport-belt', group: 'logistics', hidden: false, subgroup: 'belt', order: 'a'},
+			{
+				type: 'item',
+				name: 'fast-transport-belt',
+				group: 'logistics',
+				hidden: false,
+				subgroup: 'belt',
+				order: 'b',
+			},
+			{type: 'item', name: 'loader', group: 'logistics', hidden: true, subgroup: 'belt', order: 'c'},
+			{
+				type: 'item',
+				name: 'locomotive',
+				group: 'logistics',
+				hidden: false,
+				subgroup: 'train-transport',
+				order: 'a',
+			},
+			{type: 'fluid', name: 'test-fluid', group: 'other', hidden: false, subgroup: 'other', order: 'a'},
+			{type: 'virtual', name: 'signal-test', group: 'other', hidden: false, subgroup: 'other', order: 'c'},
+			{type: 'recipe', name: 'test-recipe', group: 'other', hidden: false, subgroup: 'other', order: 'b'},
+			{type: 'item-group', name: 'logistics', group: 'other', hidden: false, subgroup: 'other', order: 'a'},
+			{type: 'planet', name: 'test-planet', group: 'other', hidden: false, subgroup: 'other', order: 'd'},
+			{
+				type: 'technology',
+				name: 'test-technology',
+				group: 'other',
+				hidden: false,
+				subgroup: 'other',
+				order: 'e',
+			},
+		]);
+	});
+
+	it('prefers prototype layout metadata over nested item references with the same name', () => {
+		const sources = [
+			`data:extend({
+				{type = "item-group", name = "logistics", order = "a"},
+				{type = "item-subgroup", name = "belt", group = "logistics", order = "b"},
+				{type = "item", name = "transport-belt", subgroup = "belt", order = "a[transport-belt]", stack_size = 100},
+				{type = "recipe", name = "transport-belt", results = {{type = "item", name = "transport-belt"}}}
+			})`,
+		];
+
+		expect(
+			extractPickerSignals(sources, [
+				'item',
+				'entity',
+				'fluid',
+				'virtual',
+				'recipe',
+				'space-location',
+				'quality',
+			]),
+		).toStrictEqual([
+			{
+				type: 'item',
+				name: 'transport-belt',
+				group: 'logistics',
+				hidden: false,
+				subgroup: 'belt',
+				order: 'a[transport-belt]',
+			},
+			{
+				type: 'recipe',
+				name: 'transport-belt',
+				group: 'other',
+				hidden: false,
+				subgroup: 'other',
+				order: 'transport-belt',
+			},
+			{type: 'item-group', name: 'logistics', group: 'other', hidden: false, subgroup: 'other', order: 'a'},
 		]);
 	});
 

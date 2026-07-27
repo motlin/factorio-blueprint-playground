@@ -84,8 +84,8 @@ test('groups only caller-supplied game signals and confirms a selected icon', as
 		dialogLabelledBy: heading.id,
 		headingId: heading.id,
 		searchLabel: 'Search',
-		tabLabels: ['Logistics', 'Production', 'Fluids', 'Signals', 'Environment', 'Unsorted'],
-		visibleChoices: ['Choose Iron plate', 'Choose Transport belt'],
+		tabLabels: ['Logistics', 'Intermediate products', 'Fluids', 'Signals', 'Unsorted'],
+		visibleChoices: ['Choose Transport belt'],
 	});
 
 	await user.type(screen.getByRole('searchbox', {name: 'Search'}), 'belt');
@@ -524,7 +524,7 @@ test('uses source category order, disables empty search categories, and keeps th
 			.map((button) => button.getAttribute('aria-label')),
 	}).toStrictEqual({
 		activeTab: 'true',
-		disabledTabs: ['Logistics', 'Production', 'Signals', 'Environment', 'Unsorted'],
+		disabledTabs: ['Logistics', 'Intermediate products', 'Signals', 'Unsorted'],
 		gridHeight: '80px',
 		gridStyle: 'deep_slots_scroll_pane',
 		gridWidth: '400px',
@@ -535,7 +535,8 @@ test('uses source category order, disables empty search categories, and keeps th
 	expect(screen.getByRole('tab', {name: 'Logistics'}).getAttribute('aria-selected')).toBe('true');
 });
 
-test('filters hidden prototypes by default and admits them only through the explicit include policy', () => {
+test('filters hidden prototypes by default and admits them only through the explicit include policy', async () => {
+	const user = userEvent.setup();
 	const hiddenOptions: SignalID[] = [
 		{type: 'item', name: 'parameter-'},
 		{type: 'item', name: 'iron-plate'},
@@ -567,7 +568,91 @@ test('filters hidden prototypes by default and admits them only through the expl
 	);
 	expect(
 		screen.getAllByRole('button', {name: /^Choose /}).map((button) => button.getAttribute('aria-label')),
-	).toStrictEqual(['Choose Parameter ', 'Choose Iron plate']);
+	).toStrictEqual(['Choose Iron plate']);
+
+	await user.click(screen.getByRole('tab', {name: 'Unsorted'}));
+	expect(
+		screen.getAllByRole('button', {name: /^Choose /}).map((button) => button.getAttribute('aria-label')),
+	).toStrictEqual(['Choose Parameter ', 'Choose Fluid unknown']);
+});
+
+test('orders generated entities by subgroup and starts each subgroup on a new game-style row', () => {
+	const options: SignalID[] = [
+		'loader',
+		'turbo-splitter',
+		'iron-chest',
+		'express-underground-belt',
+		'transport-belt',
+		'fast-loader',
+		'inserter',
+		'fast-transport-belt',
+		'express-loader',
+		'turbo-loader',
+		'underground-belt',
+		'fast-underground-belt',
+		'turbo-underground-belt',
+		'express-transport-belt',
+		'turbo-transport-belt',
+		'splitter',
+		'fast-splitter',
+		'express-splitter',
+	].map((name) => ({type: 'entity', name}));
+	render(
+		<SignalPickerDialog
+			confirmationMode="required"
+			title="Generated entity layout"
+			options={options}
+			onChoose={vi.fn<SignalPickerDialogProps['onChoose']>()}
+			onClose={vi.fn<() => void>()}
+		/>,
+	);
+
+	const cells = [...screen.getByRole('region', {name: 'Logistics choices'}).children].map(
+		(cell) => cell.getAttribute('aria-label') ?? 'empty',
+	);
+	expect({
+		beltRows: cells.slice(10, 30),
+		firstRow: cells.slice(0, 10),
+		hiddenLoaders: screen.queryAllByRole('button', {name: /loader/i}).map((button) => button.textContent),
+		lastRow: cells.slice(30),
+	}).toStrictEqual({
+		beltRows: [
+			'Choose Transport belt',
+			'Choose Fast transport belt',
+			'Choose Express transport belt',
+			'Choose Turbo transport belt',
+			'Choose Underground belt',
+			'Choose Fast underground belt',
+			'Choose Express underground belt',
+			'Choose Turbo underground belt',
+			'Choose Splitter',
+			'Choose Fast splitter',
+			'Choose Express splitter',
+			'Choose Turbo splitter',
+			'empty',
+			'empty',
+			'empty',
+			'empty',
+			'empty',
+			'empty',
+			'empty',
+			'empty',
+		],
+		firstRow: [
+			'Choose Iron chest',
+			'empty',
+			'empty',
+			'empty',
+			'empty',
+			'empty',
+			'empty',
+			'empty',
+			'empty',
+			'empty',
+		],
+		hiddenLoaders: [],
+		lastRow: ['Choose Inserter'],
+	});
 });
 
 test('renders disallowed signals disabled and exposes signal names on hover and focus', async () => {

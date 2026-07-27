@@ -302,6 +302,7 @@ function UpgradeMappingsEditor({
 			{targetPicker === undefined ? null : (
 				<SignalPickerDialog
 					confirmationMode="required"
+					includeHiddenSignals
 					initialSignal={targetPickerMapping?.to}
 					initialQuality={targetPickerMapping?.to?.quality ?? 'normal'}
 					title="Select upgrade"
@@ -323,6 +324,7 @@ function UpgradeMappingsEditor({
 			{sourcePicker === undefined ? null : (
 				<SignalPickerDialog
 					confirmationMode="required"
+					includeHiddenSignals
 					initialSignal={sourcePickerMapping?.from}
 					title="Set the filter"
 					options={sourcePickerOptions}
