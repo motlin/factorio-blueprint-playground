@@ -472,7 +472,7 @@ export function SignalPickerDialog({
 								role="tablist"
 								aria-label="Signal categories"
 								style={{
-									gridTemplateRows: `repeat(${gameUiSpec.utilityConstants.selectGroupRowCount.toString()}, ${gameUiSpec.styles.filterGroupTabHeight.toString()}px)`,
+									gridTemplateColumns: `repeat(${gameUiSpec.utilityConstants.selectGroupRowCount.toString()}, ${gameUiSpec.styles.filterGroupTabWidth.toString()}px)`,
 								}}
 							>
 								{availableCategories.map((category) => {

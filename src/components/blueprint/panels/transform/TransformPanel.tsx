@@ -3,7 +3,7 @@ import {useMemo, useState} from 'react';
 
 import {BlueprintWrapper} from '../../../../parsing/BlueprintWrapper';
 import {serializeBlueprint} from '../../../../parsing/blueprintParser';
-import type {BlueprintString, SignalID} from '../../../../parsing/types';
+import type {BlueprintString} from '../../../../parsing/types';
 import {db, LIBRARY_ROOT_ID} from '../../../../storage/db';
 import {updateNestedBlueprint} from '../../../../transform/applyAtPath';
 import {blueprintComponentRemovalKey, type BlueprintComponentIdentity} from '../../../../transform/componentRemoval';
@@ -21,7 +21,7 @@ import {BlueprintToolbelt} from './BlueprintToolbelt';
 import {IconReplacementDialog} from './IconReplacementDialog';
 import {SignalPickerDialog} from './SignalPickerDialog';
 import {UpgradePlannerDialog} from './UpgradePlannerDialog';
-import {pickerSignals, signalIdentity, signalTitle} from './upgradePlannerSignals';
+import {chatIconPickerOptions, signalTitle} from './upgradePlannerSignals';
 import {BlueprintEditorSourceMode, useBlueprintEditorDraft} from './useBlueprintEditorDraft';
 import type {UpgradePlannerChoice} from './UpgradePlannerSelectorDialog';
 import {useUpgradePlannerDraft} from './useUpgradePlannerDraft';
@@ -107,13 +107,10 @@ export function TransformPanel({
 	});
 
 	const type = blueprint === undefined ? undefined : new BlueprintWrapper(blueprint).getType();
-	const editorIconOptions = useMemo(() => {
-		const options = new Map<string, SignalID>();
-		for (const signal of [...pickerSignals, ...upgradeDraft.sourceOptions, ...editorIcons]) {
-			options.set(signalIdentity(signal), signal);
-		}
-		return [...options.values()];
-	}, [editorIcons, upgradeDraft.sourceOptions]);
+	const editorIconOptions = useMemo(
+		() => chatIconPickerOptions([...upgradeDraft.sourceOptions, ...editorIcons]),
+		[editorIcons, upgradeDraft.sourceOptions],
+	);
 	const editorDraftBlueprint = editorDraft.rootBlueprint;
 	if (blueprint === undefined || type === 'deconstruction-planner') {
 		return null;

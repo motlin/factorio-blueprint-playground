@@ -1,6 +1,7 @@
 import {describe, expect, test} from 'vite-plus/test';
 
 import {
+	chatIconPickerOptions,
 	isUpgradeSourceOption,
 	isUpgradeTargetSelectionAllowed,
 	replaceUpgradeTarget,
@@ -14,6 +15,39 @@ function optionNames(options: readonly {name: string}[]): string[] {
 }
 
 describe('upgradePlannerSignals', () => {
+	test('builds the game chat-icon catalog without duplicate item, entity, recipe, or unsupported signals', () => {
+		const options = chatIconPickerOptions([
+			{type: 'entity', name: 'transport-belt'},
+			{type: 'entity', name: 'straight-rail'},
+			{type: 'technology', name: 'automation'},
+		]);
+
+		expect(
+			options
+				.filter(({name}) =>
+					[
+						'transport-belt',
+						'straight-rail',
+						'automation',
+						'normal',
+						'uncommon',
+						'rare',
+						'epic',
+						'legendary',
+					].includes(name),
+				)
+				.map(({name, type}) => ({name, type})),
+		).toStrictEqual([
+			{type: 'item', name: 'transport-belt'},
+			{type: 'quality', name: 'normal'},
+			{type: 'quality', name: 'uncommon'},
+			{type: 'quality', name: 'rare'},
+			{type: 'quality', name: 'epic'},
+			{type: 'quality', name: 'legendary'},
+			{type: 'entity', name: 'straight-rail'},
+		]);
+	});
+
 	test('builds source options from generated entity groups and module prototypes', () => {
 		const options = upgradeSourceOptions();
 		const identities = new Set(options.map(signalPrototypeIdentity));

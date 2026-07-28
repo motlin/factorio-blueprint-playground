@@ -44,7 +44,7 @@ import type {SignalID, UpgradeSourceSignal} from '../../../../parsing/types';
  * UpgradeDestinationSelectListGui, UpgradeData, UpgradeFilter,
  * UpgradeDestination, UpgradeIDBase, and UpgradeMapping at Factorio 2.1.12.
  */
-export const pickerSignals: readonly SignalID[] = gameData.pickerSignals.map(({name, type}) => {
+const pickerSignals: readonly SignalID[] = gameData.pickerSignals.map(({name, type}) => {
 	switch (type) {
 		case 'achievement':
 		case 'fluid':
@@ -70,6 +70,15 @@ const pickerSignalLayouts = new Map(
 		{group, hidden, index, subgroup},
 	]),
 );
+for (const [qualityIndex, quality] of gameUiSpec.qualities.entries()) {
+	pickerSignalLayouts.set(`quality:${quality.name}`, {
+		group: 'effects',
+		hidden: quality.hidden,
+		index: gameData.pickerSignals.length + qualityIndex,
+		subgroup: 'quality',
+	});
+}
+const chatIconTypeOrder = new Map(gameUiSpec.signals.typeOrder.map((type, index) => [type, index]));
 const nextUpgradeOrder = new Map<string, number>();
 for (const {from, to} of gameUiSpec.upgrades.next) {
 	if (!nextUpgradeOrder.has(from)) {
@@ -146,6 +155,38 @@ export function signalTitle(signal: UpgradeSourceSignal): string {
 
 export function signalPrototypeIdentity(signal: SignalID): string {
 	return `${normalizedSignalType(signal)}:${signal.name}`;
+}
+
+function chatIconType(signal: SignalID): string {
+	const type = normalizedSignalType(signal);
+	return type === 'planet' ? 'space-location' : type;
+}
+
+function chatIconTypePriority(signal: SignalID): number {
+	return chatIconTypeOrder.get(chatIconType(signal)) ?? Number.MAX_SAFE_INTEGER;
+}
+
+/**
+ * Factorio's ChatIconIDIterator visits prototype types in source order and
+ * retains the first signal for each icon sprite. The static web catalog can
+ * prove the common inherited-icon case by prototype name: items own their
+ * corresponding entity and recipe icons because ItemPrototypeList is visited
+ * first. Caller-supplied unique entity icons remain available.
+ */
+export function chatIconPickerOptions(additionalSignals: readonly SignalID[] = []): SignalID[] {
+	const candidates: SignalID[] = [
+		...pickerSignals,
+		...gameUiSpec.qualities.map(({name}): SignalID => ({type: 'quality', name})),
+		...additionalSignals,
+	].filter((signal) => chatIconTypeOrder.has(chatIconType(signal)));
+	const canonicalSignals = new Map<string, SignalID>();
+	for (const candidate of candidates) {
+		const existing = canonicalSignals.get(candidate.name);
+		if (existing === undefined || chatIconTypePriority(candidate) < chatIconTypePriority(existing)) {
+			canonicalSignals.set(candidate.name, candidate);
+		}
+	}
+	return [...canonicalSignals.values()].sort(comparePickerSignalOrder);
 }
 
 export function signalPickerGroup(signal: SignalID): string | undefined {

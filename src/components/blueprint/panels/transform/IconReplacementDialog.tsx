@@ -10,7 +10,7 @@ import {
 import {FactorioButton, FactorioButtonKind} from '../../../ui/FactorioUi';
 import {SignalPickerDialog} from './SignalPickerDialog';
 import {SignalSlot} from './UpgradeMappingRow';
-import {normalizedSignalType, pickerSignals, signalIdentity, signalName} from './upgradePlannerSignals';
+import {chatIconPickerOptions, normalizedSignalType, signalIdentity, signalName} from './upgradePlannerSignals';
 import {useDialogFocus} from './useDialogFocus';
 
 export interface IconReplacementDialogProps {
@@ -56,7 +56,7 @@ function replacementCount(candidates: readonly MetadataIconCandidate[], signal: 
 }
 
 function targetOptions(source: SignalID): SignalID[] {
-	return pickerSignals.filter(
+	return chatIconPickerOptions().filter(
 		(signal) =>
 			normalizedSignalType(signal) === normalizedSignalType(source) &&
 			signalIdentity(signal) !== signalIdentity(source),

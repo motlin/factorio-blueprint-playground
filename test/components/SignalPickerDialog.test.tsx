@@ -70,6 +70,8 @@ test('groups only caller-supplied game signals and confirms a selected icon', as
 		headingId: heading.id,
 		initialFocusIsSearch: document.activeElement === search,
 		searchLabel: search.labels?.[0]?.textContent,
+		tabColumns: tabs.style.gridTemplateColumns,
+		tabRows: tabs.style.gridTemplateRows,
 		tabLabels: within(tabs)
 			.getAllByRole('tab')
 			.map((tab) => tab.textContent),
@@ -84,6 +86,8 @@ test('groups only caller-supplied game signals and confirms a selected icon', as
 		dialogLabelledBy: heading.id,
 		headingId: heading.id,
 		searchLabel: 'Search',
+		tabColumns: 'repeat(6, 71px)',
+		tabRows: '',
 		tabLabels: ['Logistics', 'Intermediate products', 'Fluids', 'Signals', 'Unsorted'],
 		visibleChoices: ['Choose Transport belt'],
 	});

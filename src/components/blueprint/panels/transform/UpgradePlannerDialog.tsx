@@ -12,8 +12,8 @@ import {BlueprintTitleEditor} from './BlueprintTitleEditor';
 import {SignalPickerDialog} from './SignalPickerDialog';
 import {UpgradeMappingGrid, type PositionedUpgradeMapping} from './UpgradeMappingGrid';
 import {
+	chatIconPickerOptions,
 	isUpgradeTargetSelectionAllowed,
-	pickerSignals,
 	signalIdentity,
 	signalPrototypeIdentity,
 	signalTitle,
@@ -365,14 +365,7 @@ export function UpgradePlannerDialog({
 	const configurationHeadingId = useId();
 	const recordHeadingId = useId();
 	const [previewIconPickerIndex, setPreviewIconPickerIndex] = useState<number>();
-	const previewIconOptions = [
-		...new Map(
-			[...pickerSignals, ...mappings.sourceOptions, ...recordMetadata.icons].map((signal) => [
-				signalIdentity(signal),
-				signal,
-			]),
-		).values(),
-	];
+	const previewIconOptions = chatIconPickerOptions([...mappings.sourceOptions, ...recordMetadata.icons]);
 	const dialogReference = useDialogFocus<HTMLElement>({
 		initialFocusSelector: '.upgrade-planner-dialog__scroll-region',
 		onClose,
