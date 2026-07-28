@@ -2155,6 +2155,20 @@ body {
 	list-style: none;
 }
 
+.upgrade-mapping-grid__pair[draggable='true'] {
+	cursor: grab;
+}
+
+.upgrade-mapping-grid__pair[draggable='true']:active {
+	cursor: grabbing;
+}
+
+.upgrade-mapping-grid__pair[data-drop-target='true'],
+.upgrade-mapping-grid__empty-slot[data-drop-target='true'] {
+	outline: 2px solid #e39827;
+	outline-offset: 1px;
+}
+
 .upgrade-mapping-grid__pair--incomplete {
 	box-shadow: inset 0 0 0 1px #d89424;
 }

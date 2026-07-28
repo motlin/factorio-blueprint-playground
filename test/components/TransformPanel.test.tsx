@@ -135,7 +135,8 @@ const rareBeltUpgradesPlanner: UpgradePlanner = {
 	},
 };
 let nextLibraryRecordNumber = 1;
-const mappingInstructions = 'Focus an endpoint and press Delete to clear that endpoint.';
+const mappingInstructions =
+	'Drag this From and To pair to move it, or focus either endpoint and press Control plus an arrow key. Press Delete to clear the focused endpoint.';
 
 function openUpgradePlanner() {
 	fireEvent.click(screen.getByRole('button', {name: 'Open Upgrade Planner'}));
@@ -2149,6 +2150,67 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		}).toStrictEqual({
 			emptyRow: 'Empty mapping slot 1',
 			remove: null,
+		});
+	});
+
+	test('swaps complete mapping records into occupied or empty fixed slots from the keyboard', async () => {
+		const user = userEvent.setup();
+		render(<TransformPanel blueprint={blueprint} />);
+
+		openUpgradePlanner();
+		await choosePlanner(user, 'Paste upgrade planner…');
+		fireEvent.change(screen.getByPlaceholderText('Paste an upgrade planner string or JSON'), {
+			target: {
+				value: JSON.stringify({
+					upgrade_planner: {
+						item: 'upgrade-planner',
+						version: 0,
+						settings: {
+							mappers: [
+								{
+									index: 1,
+									from: {type: 'entity', name: 'transport-belt'},
+									to: {type: 'entity', name: 'fast-transport-belt'},
+								},
+								{
+									index: 2,
+									from: {type: 'item', name: 'speed-module'},
+									to: {type: 'item', name: 'speed-module-2'},
+								},
+							],
+						},
+					},
+				}),
+			},
+		});
+
+		const beltSource = screen.getByRole('button', {name: 'Choose source, currently Transport belt'});
+		const moduleSource = screen.getByRole('button', {name: 'Choose source, currently Speed module'});
+		beltSource.focus();
+		await user.keyboard('{Control>}{ArrowRight}{/Control}');
+		expect({
+			beltSlot: mappingSlotIndex(beltSource),
+			beltTarget: beltSource
+				.closest('[data-mapping-key]')
+				?.querySelector<HTMLButtonElement>('button[aria-label^="Choose target"]')?.title,
+			moduleSlot: mappingSlotIndex(moduleSource),
+			moduleTarget: moduleSource
+				.closest('[data-mapping-key]')
+				?.querySelector<HTMLButtonElement>('button[aria-label^="Choose target"]')?.title,
+		}).toStrictEqual({
+			beltSlot: 1,
+			beltTarget: 'Fast transport belt\nentity:fast-transport-belt',
+			moduleSlot: 0,
+			moduleTarget: 'Speed module 2\nitem:speed-module-2',
+		});
+
+		await user.keyboard('{Control>}{ArrowRight}{/Control}');
+		expect({
+			beltSlot: mappingSlotIndex(beltSource),
+			moduleSlot: mappingSlotIndex(moduleSource),
+		}).toStrictEqual({
+			beltSlot: 2,
+			moduleSlot: 0,
 		});
 	});
 

@@ -33,6 +33,7 @@ function renderPlannerHtml(): string {
 				],
 				error: undefined,
 				onClearEndpoint: noop,
+				onMove: noop,
 				onPlannerLoad: noop,
 				onPlannerInputChange: noop,
 				onSourceChange: noop,
