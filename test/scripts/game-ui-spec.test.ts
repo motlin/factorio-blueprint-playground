@@ -27,6 +27,22 @@ describe('generated game UI specification', () => {
 				commit: sourceLock.commit,
 				locale: 'en',
 				sources: sourceLock.sources,
+				priorArt: {
+					repository: 'teoxoy/factorio-blueprint-editor',
+					commit: '2bfc95e662cad19e2de89e72016181ca96fdbea6',
+					license: 'MIT',
+					copyright: 'Copyright (c) 2020 Tanasoaia Teodor Andrei',
+					sources: [
+						{
+							path: 'packages/editor/src/UI/InventoryDialog.ts',
+							blob: 'a723eccca0ec00f07576d68cf4a4f3d30895e9af',
+						},
+						{
+							path: 'packages/exporter/src/export-data/data-final-fixes.lua',
+							blob: '48ee748a865b3c2113986a1a97134cbf63b3f540',
+						},
+					],
+				},
 			},
 		});
 	});
@@ -45,6 +61,10 @@ describe('generated game UI specification', () => {
 			anyQuality: specification.labels.anyQuality,
 			signalTypeOrder: specification.signals.typeOrder,
 			categoryOrder: specification.signals.categories.map(({name}) => name),
+			categoryLayouts: specification.signals.categories
+				.filter(({name}) => name === 'logistics' || name === 'space')
+				.map(({name, subgroups}) => ({name, subgroups})),
+			subgroupStartsNewRow: specification.signals.subgroupStartsNewRow,
 			assemblingMachineGroup: specification.upgrades.groups.find(({name}) => name === 'assembling-machine'),
 			transportBeltUpgrades: specification.upgrades.next.filter(({prototypeType}) =>
 				['splitter', 'transport-belt', 'underground-belt'].includes(prototypeType),
@@ -117,6 +137,37 @@ describe('generated game UI specification', () => {
 				'effects',
 				'other',
 			],
+			categoryLayouts: [
+				{
+					name: 'logistics',
+					subgroups: [
+						{name: 'storage', order: 'a'},
+						{name: 'belt', order: 'b'},
+						{name: 'inserter', order: 'c'},
+						{name: 'energy-pipe-distribution', order: 'd'},
+						{name: 'train-transport', order: 'e'},
+						{name: 'transport', order: 'f'},
+						{name: 'logistic-network', order: 'g'},
+						{name: 'circuit-network', order: 'h'},
+						{name: 'terrain', order: 'i'},
+					],
+				},
+				{
+					name: 'space',
+					subgroups: [
+						{name: 'space-interactors', order: 'a'},
+						{name: 'space-platform', order: 'a'},
+						{name: 'space-rocket', order: 'b'},
+						{name: 'space-environment', order: 'f'},
+						{name: 'space-material', order: 'g'},
+						{name: 'space-crushing', order: 'h'},
+						{name: 'space-processing', order: 'i'},
+						{name: 'planets', order: 'j'},
+						{name: 'planet-connections', order: 'k'},
+					],
+				},
+			],
+			subgroupStartsNewRow: true,
 			assemblingMachineGroup: {
 				name: 'assembling-machine',
 				members: [
