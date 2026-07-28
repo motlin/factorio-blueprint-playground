@@ -38,6 +38,26 @@ describe('generated game UI specification', () => {
 							blob: 'a723eccca0ec00f07576d68cf4a4f3d30895e9af',
 						},
 						{
+							path: 'packages/editor/src/UI/controls/Button.ts',
+							blob: 'd4c4d06bcb29f6a5dc0e2941986d961563d6816d',
+						},
+						{
+							path: 'packages/editor/src/UI/controls/Dialog.ts',
+							blob: 'd9b4a6f8f5819f45dedac80ed7569c452db24820',
+						},
+						{
+							path: 'packages/editor/src/UI/controls/Panel.ts',
+							blob: 'b61a3482f13def5a24987cfd7f3f92000284c2ed',
+						},
+						{
+							path: 'packages/editor/src/UI/controls/functions.ts',
+							blob: 'f90851e00c6cd674a013fb357e932218e29fb3fd',
+						},
+						{
+							path: 'packages/editor/src/UI/style.ts',
+							blob: 'e64f65935b3dec845524bd995d1778955bc8a452',
+						},
+						{
 							path: 'packages/exporter/src/export-data/data-final-fixes.lua',
 							blob: '48ee748a865b3c2113986a1a97134cbf63b3f540',
 						},

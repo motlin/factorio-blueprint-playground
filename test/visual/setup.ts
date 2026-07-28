@@ -157,13 +157,17 @@ export async function compareScreenshots(testName: string, html: string, selecto
 }
 
 export interface DialogViewportLayout {
+	backdropCoversViewport: boolean;
 	bodyFitsHorizontally: boolean;
 	bodyOwnsScrolling: boolean;
+	closeControlMatchesPriorArt: boolean;
+	dialogFaceMatchesPriorArt: boolean;
 	dialogFitsViewport: boolean;
 	footerVisible: boolean;
 	headerVisible: boolean;
 	mappingFitsHorizontally: boolean;
 	panelInsetsPreserved: boolean;
+	titleColorMatchesPriorArt: boolean;
 }
 
 export async function inspectDialogViewport(
@@ -192,29 +196,50 @@ export async function inspectDialogViewport(
 			}
 			const header = dialog.querySelector<HTMLElement>(':scope > .transform-workbench__header');
 			const footer = dialog.querySelector<HTMLElement>(':scope > .transform-workbench__footer');
+			const closeControl = dialog.querySelector<HTMLElement>(
+				':scope > .transform-workbench__header .transform-dialog__close',
+			);
+			const title = dialog.querySelector<HTMLElement>(':scope > .transform-workbench__header h3');
 			const mapping = dialog.querySelector<HTMLElement>('.upgrade-mapping-grid__slots');
 			const configuration = dialog.querySelector<HTMLElement>('.upgrade-planner-dialog__configuration');
 			const replacements = dialog.querySelector<HTMLElement>('.book-wide-replacements');
+			const backdrop = document.querySelector<HTMLElement>('.upgrade-planner-dialog__backdrop');
 			if (
 				header === null ||
 				footer === null ||
+				closeControl === null ||
+				title === null ||
 				mapping === null ||
 				configuration === null ||
-				replacements === null
+				replacements === null ||
+				backdrop === null
 			) {
 				throw new Error('Expected the complete upgrade planner layout.');
 			}
 
+			const backdropBounds = backdrop.getBoundingClientRect();
+			const closeBounds = closeControl.getBoundingClientRect();
 			const dialogBounds = dialog.getBoundingClientRect();
 			const headerBounds = header.getBoundingClientRect();
 			const footerBounds = footer.getBoundingClientRect();
 			const configurationBounds = configuration.getBoundingClientRect();
 			const replacementsBounds = replacements.getBoundingClientRect();
 			const bodyStyle = getComputedStyle(body);
+			const closeStyle = getComputedStyle(closeControl);
 			const dialogStyle = getComputedStyle(dialog);
 			return {
+				backdropCoversViewport:
+					backdropBounds.top === 0 &&
+					backdropBounds.right === window.innerWidth &&
+					backdropBounds.bottom === window.innerHeight &&
+					backdropBounds.left === 0,
 				bodyFitsHorizontally: body.scrollWidth <= body.clientWidth,
 				bodyOwnsScrolling: bodyStyle.overflowY === 'auto' && dialogStyle.overflow === 'hidden',
+				closeControlMatchesPriorArt:
+					closeBounds.width === 36 &&
+					closeBounds.height === 36 &&
+					closeStyle.backgroundColor === 'rgb(100, 100, 100)',
+				dialogFaceMatchesPriorArt: dialogStyle.backgroundColor === 'rgb(48, 48, 48)',
 				dialogFitsViewport:
 					dialogBounds.top >= 0 &&
 					dialogBounds.right <= window.innerWidth &&
@@ -224,6 +249,7 @@ export async function inspectDialogViewport(
 				headerVisible: headerBounds.top >= 0,
 				mappingFitsHorizontally: mapping.scrollWidth <= mapping.clientWidth,
 				panelInsetsPreserved: Math.abs(configurationBounds.left - replacementsBounds.left - 4) < 1,
+				titleColorMatchesPriorArt: getComputedStyle(title).color === 'rgb(255, 230, 192)',
 			};
 		});
 	} finally {

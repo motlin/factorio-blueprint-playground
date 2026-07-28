@@ -104,13 +104,17 @@ test('keeps the planner shell and mapping inside narrow and short viewports', as
 	}
 	const availableLayouts = layouts.filter((layout): layout is DialogViewportLayout => layout !== undefined);
 	const expectedLayout: DialogViewportLayout = {
+		backdropCoversViewport: true,
 		bodyFitsHorizontally: true,
 		bodyOwnsScrolling: true,
+		closeControlMatchesPriorArt: true,
+		dialogFaceMatchesPriorArt: true,
 		dialogFitsViewport: true,
 		footerVisible: true,
 		headerVisible: true,
 		mappingFitsHorizontally: true,
 		panelInsetsPreserved: true,
+		titleColorMatchesPriorArt: true,
 	};
 
 	expect(availableLayouts).toStrictEqual(availableLayouts.map(() => expectedLayout));

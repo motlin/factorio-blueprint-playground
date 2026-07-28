@@ -20,6 +20,14 @@
 		{
 			"id": "blueprint-panels-transform-blueprinttitleeditor--titled",
 			"requiredStates": ["rest", "filled"]
+		},
+		{
+			"id": "ui-factorio-primitives--dialog-chrome",
+			"requiredStates": ["rest", "focus"]
+		},
+		{
+			"id": "ui-factorio-primitives--nested-dialog-chrome",
+			"requiredStates": ["rest", "focus"]
 		}
 	]
 }
