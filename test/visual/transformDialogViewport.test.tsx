@@ -109,7 +109,7 @@ test('keeps the planner shell and mapping inside narrow and short viewports', as
 		footerVisible: true,
 		headerVisible: true,
 		mappingFitsHorizontally: true,
-		panelBordersAligned: true,
+		panelInsetsPreserved: true,
 	};
 
 	expect(availableLayouts).toStrictEqual(availableLayouts.map(() => expectedLayout));

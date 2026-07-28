@@ -1,0 +1,25 @@
+{
+	"schemaVersion": 1,
+	"stories": [
+		{
+			"id": "visual-conformance-state-contract--stable-states",
+			"requiredStates": ["rest", "hover", "focus", "pressed", "selected", "disabled", "empty", "filled", "error"]
+		},
+		{
+			"id": "blueprint-panels-transform-blueprintcomponentsgrid--removed-component",
+			"requiredStates": ["selected", "filled"]
+		},
+		{
+			"id": "blueprint-panels-transform-blueprintcomponentsgrid--inventory-grid",
+			"requiredStates": ["rest", "filled"]
+		},
+		{
+			"id": "blueprint-panels-transform-blueprinttitleeditor--untitled",
+			"requiredStates": ["empty"]
+		},
+		{
+			"id": "blueprint-panels-transform-blueprinttitleeditor--titled",
+			"requiredStates": ["rest", "filled"]
+		}
+	]
+}

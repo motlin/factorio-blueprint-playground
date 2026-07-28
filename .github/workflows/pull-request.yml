@@ -126,9 +126,29 @@ jobs:
             echo "No changes needed by pre-commit"
           fi
 
+  visual-conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: jdx/mise-action@dad1bfd3df957f44999b559dd69dc1671cb4e9ea # v4.2.1
+        with:
+          cache: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.local/share/pnpm/store
+          key: pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Run Storybook visual conformance
+        run: just visual-conformance
+
   deploy-preview:
     runs-on: ubuntu-latest
     if: github.actor != 'dependabot[bot]'
+    needs: visual-conformance
     permissions:
       contents: read
       pull-requests: write
@@ -144,6 +164,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
 
       - run: just build
+      - run: just build-storybook dist/storybook
 
       - name: Deploy to Cloudflare Pages
         id: cloudflare-deploy
@@ -154,6 +175,13 @@ jobs:
           # The runner has no standalone pnpm; wrangler-action would otherwise pick it from pnpm-lock.yaml.
           packageManager: npm
           command: pages deploy dist --project-name=factorio-blueprint-playground --branch=${{ github.head_ref }}
+
+      - name: Smoke test application and isolated Storybook
+        env:
+          DEPLOYMENT_URL: ${{ steps.cloudflare-deploy.outputs.deployment-url }}
+        run: |
+          vp exec playwright install --with-deps chromium
+          vp run visual-conformance:smoke "$DEPLOYMENT_URL"
 
       - name: Add Cloudflare preview URL to PR comment
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
@@ -166,6 +194,10 @@ jobs:
             const deploymentUrl = process.env.DEPLOYMENT_URL;
             const projectSubdomain = new URL(deploymentUrl).hostname.split('.').slice(1, -2).join('.');
             const branchUrl = `https://${process.env.HEAD_REF}.${projectSubdomain}.pages.dev`;
+            const storybookUrl = new URL(
+              'storybook/?path=/story/visual-conformance-state-contract--stable-states',
+              deploymentUrl,
+            );
             const headSha = process.env.HEAD_SHA;
             const body = [
               '## Cloudflare Pages Deployment',
@@ -176,6 +208,7 @@ jobs:
               '| **Status:** | ✅ Deploy successful! |',
               `| **Preview URL:** | ${deploymentUrl} |`,
               `| **Branch Preview URL:** | ${branchUrl} |`,
+              `| **Storybook review:** | ${storybookUrl.href} |`,
             ].join('\n');
 
             const { data: comments } = await github.rest.issues.listComments({
@@ -204,7 +237,7 @@ jobs:
   all-pr-checks:
     name: All PR checks
     if: ${{ !cancelled() }}
-    needs: [forbid-merge-commits, check-fix, pre-commit-fix, deploy-preview]
+    needs: [forbid-merge-commits, check-fix, pre-commit-fix, visual-conformance, deploy-preview]
     runs-on: ubuntu-latest
     steps:
       - uses: re-actors/alls-green@05ac9388f0aebcb5727afa17fcccfecd6f8ec5fe # release/v1

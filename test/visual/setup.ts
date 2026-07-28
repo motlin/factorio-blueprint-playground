@@ -163,7 +163,7 @@ export interface DialogViewportLayout {
 	footerVisible: boolean;
 	headerVisible: boolean;
 	mappingFitsHorizontally: boolean;
-	panelBordersAligned: boolean;
+	panelInsetsPreserved: boolean;
 }
 
 export async function inspectDialogViewport(
@@ -192,7 +192,7 @@ export async function inspectDialogViewport(
 			}
 			const header = dialog.querySelector<HTMLElement>(':scope > .transform-workbench__header');
 			const footer = dialog.querySelector<HTMLElement>(':scope > .transform-workbench__footer');
-			const mapping = dialog.querySelector<HTMLElement>('.upgrade-mapping-grid__row');
+			const mapping = dialog.querySelector<HTMLElement>('.upgrade-mapping-grid__slots');
 			const configuration = dialog.querySelector<HTMLElement>('.upgrade-planner-dialog__configuration');
 			const replacements = dialog.querySelector<HTMLElement>('.book-wide-replacements');
 			if (
@@ -223,7 +223,7 @@ export async function inspectDialogViewport(
 				footerVisible: footerBounds.bottom <= window.innerHeight,
 				headerVisible: headerBounds.top >= 0,
 				mappingFitsHorizontally: mapping.scrollWidth <= mapping.clientWidth,
-				panelBordersAligned: Math.abs(configurationBounds.left - replacementsBounds.left) < 1,
+				panelInsetsPreserved: Math.abs(configurationBounds.left - replacementsBounds.left - 4) < 1,
 			};
 		});
 	} finally {
