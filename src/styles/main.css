@@ -20,20 +20,32 @@ body {
 }
 
 .factorio-button {
+	/* Teoxoy Button geometry with Factorio 2.1 button, green_button, red_button, and frame_action_button states. */
+	--factorio-button-rest: var(--factorio-ui-control-face);
+	--factorio-button-rest-light: #9d9d9d;
+	--factorio-button-rest-dark: #515151;
+	--factorio-button-hover: #8b6745;
+	--factorio-button-hover-light: #9d9d9d;
+	--factorio-button-hover-dark: #515151;
+	--factorio-button-pressed: #b16925;
+	--factorio-button-pressed-light: #914905;
+	--factorio-button-pressed-dark: #cb833f;
+	--factorio-button-disabled: #3d3d3d;
+	--factorio-button-disabled-light: #1b1b1b;
+	--factorio-button-disabled-dark: #818181;
+
 	position: relative;
 	display: inline-flex;
 	box-sizing: border-box;
 	min-height: calc(36px * var(--factorio-ui-density));
 	align-items: center;
 	justify-content: center;
-	gap: calc(6px * var(--factorio-ui-density));
 	padding: calc(8px * var(--factorio-ui-density)) calc(12px * var(--factorio-ui-density));
-	border: 1px solid var(--factorio-ui-border);
-	background: #8e8e8e;
+	border: 0;
+	background: var(--factorio-button-rest);
 	box-shadow:
-		inset 1px 1px 0 #e3e3e3,
-		inset -2px -2px 0 #282828,
-		0 1px 3px #000;
+		inset 1px 1px 0 var(--factorio-button-rest-light),
+		inset -1px -1px 0 var(--factorio-button-rest-dark);
 	color: #171717;
 	font: inherit;
 	font-weight: 600;
@@ -41,23 +53,23 @@ body {
 	cursor: pointer;
 }
 
-.factorio-button:hover:not(:disabled) {
-	background: var(--factorio-ui-accent);
-	box-shadow:
-		inset 1px 1px 0 #fff,
-		inset -2px -2px 0 #432400,
-		0 0 4px #f9b44b;
+.factorio-button__content {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: calc(6px * var(--factorio-ui-density));
 }
 
+.factorio-button:hover:not(:disabled),
 .factorio-button[data-visual-state='hover']:not(:disabled) {
-	background: var(--factorio-ui-accent);
+	background: var(--factorio-button-hover);
 	box-shadow:
-		inset 1px 1px 0 #fff,
-		inset -2px -2px 0 #432400,
-		0 0 4px #f9b44b;
+		inset 1px 1px 0 var(--factorio-button-hover-light),
+		inset -1px -1px 0 var(--factorio-button-hover-dark);
 }
 
 .factorio-button:focus-visible,
+.factorio-button[data-visual-state='focus']:not(:disabled),
 .factorio-inventory-slot:focus-visible,
 .factorio-scroll-frame:focus-visible {
 	z-index: 1;
@@ -65,27 +77,29 @@ body {
 	outline-offset: 2px;
 }
 
-.factorio-button:active:not(:disabled) {
-	padding-top: calc(10px * var(--factorio-ui-density));
-	padding-bottom: calc(6px * var(--factorio-ui-density));
-	background: #f1be64;
-	box-shadow:
-		inset 2px 2px 2px #563a10,
-		inset -1px -1px 1px #e8c784,
-		0 1px 2px #000;
-}
-
+.factorio-button:active:not(:disabled),
 .factorio-button[data-visual-state='active']:not(:disabled) {
-	padding-top: calc(10px * var(--factorio-ui-density));
-	padding-bottom: calc(6px * var(--factorio-ui-density));
-	background: #f1be64;
+	background: var(--factorio-button-pressed);
 	box-shadow:
-		inset 2px 2px 2px #563a10,
-		inset -1px -1px 1px #e8c784,
-		0 1px 2px #000;
+		inset 1px 1px 0 var(--factorio-button-pressed-light),
+		inset -1px -1px 0 var(--factorio-button-pressed-dark);
 }
 
-.factorio-button:disabled,
+.factorio-button:active:not(:disabled) .factorio-button__content,
+.factorio-button[data-visual-state='active']:not(:disabled) .factorio-button__content {
+	transform: translateY(calc(1px * var(--factorio-ui-density)));
+}
+
+.factorio-button:disabled {
+	background: var(--factorio-button-disabled);
+	box-shadow:
+		inset 1px 1px 0 var(--factorio-button-disabled-light),
+		inset -1px -1px 0 var(--factorio-button-disabled-dark);
+	color: #818181;
+	cursor: default;
+	filter: grayscale(0.75);
+}
+
 .factorio-inventory-slot:disabled {
 	background: #3d3d3d;
 	box-shadow:
@@ -97,45 +111,47 @@ body {
 }
 
 .factorio-button--confirm {
-	background: var(--factorio-ui-confirm);
-	box-shadow:
-		inset 1px 1px 0 #95df99,
-		inset -2px -2px 0 #163218,
-		0 1px 3px #000;
+	--factorio-button-rest: var(--factorio-ui-confirm);
+	--factorio-button-rest-light: #95df99;
+	--factorio-button-rest-dark: #163218;
+	--factorio-button-hover: #92e897;
+	--factorio-button-hover-light: #cdf1cf;
+	--factorio-button-hover-dark: #235b27;
+	--factorio-button-pressed: #3f9146;
+	--factorio-button-pressed-light: #245b29;
+	--factorio-button-pressed-dark: #8ccf91;
+	--factorio-button-disabled: #284a2b;
+	--factorio-button-disabled-light: #172b19;
+	--factorio-button-disabled-dark: #47764a;
 }
 
-.factorio-button--confirm:hover:not(:disabled) {
-	background: #92e897;
-	box-shadow:
-		inset 1px 1px 0 #cdf1cf,
-		inset -2px -2px 0 #235b27,
-		0 0 4px #34be3c;
+.factorio-button--neutral {
+	color: var(--factorio-ui-text);
 }
 
-.factorio-button--confirm:disabled {
-	background: #002b02;
-	color: #376d3b;
+.factorio-button--neutral:hover:not(:disabled),
+.factorio-button--neutral[data-visual-state='hover']:not(:disabled) {
+	color: #fff;
+}
+
+.factorio-button--neutral:active:not(:disabled),
+.factorio-button--neutral[data-visual-state='active']:not(:disabled) {
+	color: #000;
 }
 
 .factorio-button--delete {
-	background: var(--factorio-ui-delete);
-	box-shadow:
-		inset 1px 1px 0 #fda1a1,
-		inset -2px -2px 0 #8b0101,
-		0 1px 3px #000;
-}
-
-.factorio-button--delete:hover:not(:disabled) {
-	background: #ff9b9b;
-	box-shadow:
-		inset 1px 1px 0 #f8eaea,
-		inset -2px -2px 0 #8b3434,
-		0 0 4px #c35353;
-}
-
-.factorio-button--delete:disabled {
-	background: #571f1f;
-	color: #8c4e4e;
+	--factorio-button-rest: var(--factorio-ui-delete);
+	--factorio-button-rest-light: #fda1a1;
+	--factorio-button-rest-dark: #8b0101;
+	--factorio-button-hover: #ff9b9b;
+	--factorio-button-hover-light: #f8eaea;
+	--factorio-button-hover-dark: #8b3434;
+	--factorio-button-pressed: #c43e3e;
+	--factorio-button-pressed-light: #8b2727;
+	--factorio-button-pressed-dark: #ef7777;
+	--factorio-button-disabled: #571f1f;
+	--factorio-button-disabled-light: #321111;
+	--factorio-button-disabled-dark: #8c4e4e;
 }
 
 .factorio-button--search,
@@ -145,6 +161,7 @@ body {
 	height: calc(36px * var(--factorio-ui-density));
 	min-height: calc(36px * var(--factorio-ui-density));
 	padding: calc(6px * var(--factorio-ui-density));
+	color: var(--factorio-ui-text);
 }
 
 .factorio-button--search svg,
@@ -154,31 +171,18 @@ body {
 	height: calc(18px * var(--factorio-ui-density));
 }
 
-.factorio-button--close {
-	/* Adapted from Teoxoy's MIT-licensed Button and DrawRectangle controls. */
-	border: 0;
-	background: var(--factorio-ui-control-face);
-	box-shadow:
-		inset 1px 1px 0 #9d9d9d,
-		inset -1px -1px 0 #515151;
-	color: var(--factorio-ui-text);
-}
-
+.factorio-button--search:hover:not(:disabled),
+.factorio-button--search[data-visual-state='hover']:not(:disabled),
 .factorio-button--close:hover:not(:disabled),
 .factorio-button--close[data-visual-state='hover']:not(:disabled) {
-	background: linear-gradient(rgb(177 105 37 / 50%), rgb(177 105 37 / 50%)), var(--factorio-ui-control-face);
-	box-shadow:
-		inset 1px 1px 0 #9d9d9d,
-		inset -1px -1px 0 #515151;
+	color: #171717;
 }
 
+.factorio-button--search:active:not(:disabled),
+.factorio-button--search[data-visual-state='active']:not(:disabled),
 .factorio-button--close:active:not(:disabled),
 .factorio-button--close[data-visual-state='active']:not(:disabled) {
-	padding: calc(6px * var(--factorio-ui-density));
-	background: #b16925;
-	box-shadow:
-		inset 1px 1px 0 #914905,
-		inset -1px -1px 0 #cb833f;
+	color: #171717;
 }
 
 .factorio-inventory-slot {

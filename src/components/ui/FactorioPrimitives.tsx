@@ -8,6 +8,14 @@ function classes(...values: Array<string | undefined>): string {
 	return values.filter((value) => value !== undefined && value !== '').join(' ');
 }
 
+const factorioButtonStyleByKind: Record<FactorioButtonKind, string> = {
+	[FactorioButtonKind.Neutral]: 'button',
+	[FactorioButtonKind.Confirm]: 'green_button',
+	[FactorioButtonKind.Delete]: 'red_button',
+	[FactorioButtonKind.Search]: 'frame_action_button',
+	[FactorioButtonKind.Close]: 'frame_action_button',
+};
+
 export interface FactorioButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 	kind?: FactorioButtonKind;
 	ref?: React.Ref<HTMLButtonElement>;
@@ -15,13 +23,13 @@ export interface FactorioButtonProps extends React.ButtonHTMLAttributes<HTMLButt
 
 function defaultButtonContents(kind: FactorioButtonKind): React.ReactNode {
 	if (kind === FactorioButtonKind.Search) {
-		return <Search aria-hidden="true" />;
+		return <Search aria-hidden="true" data-factorio-icon="search" />;
 	}
 	if (kind === FactorioButtonKind.Close) {
-		return <X aria-hidden="true" />;
+		return <X aria-hidden="true" data-factorio-icon="close" />;
 	}
 	if (kind === FactorioButtonKind.Delete) {
-		return <Trash2 aria-hidden="true" />;
+		return <Trash2 aria-hidden="true" data-factorio-icon="delete" />;
 	}
 	return null;
 }
@@ -29,6 +37,7 @@ function defaultButtonContents(kind: FactorioButtonKind): React.ReactNode {
 export function FactorioButton({
 	children,
 	className,
+	disabled,
 	kind = FactorioButtonKind.Neutral,
 	ref,
 	type = 'button',
@@ -39,9 +48,12 @@ export function FactorioButton({
 			{...buttonProps}
 			ref={ref}
 			type={type}
+			disabled={disabled}
+			aria-disabled={disabled ?? false}
+			data-factorio-style={factorioButtonStyleByKind[kind]}
 			className={classes('factorio-button', `factorio-button--${kind}`, className)}
 		>
-			{children ?? defaultButtonContents(kind)}
+			<span className="factorio-button__content">{children ?? defaultButtonContents(kind)}</span>
 		</button>
 	);
 }
