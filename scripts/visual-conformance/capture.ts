@@ -13,6 +13,7 @@ const captureManifest = captureManifestSchema.parse(captureManifestJson);
 const repositoryRoot = path.resolve(import.meta.dirname, '../..');
 const storybookDirectory = path.join(repositoryRoot, 'storybook-static');
 const snapshotDirectory = path.join(repositoryRoot, 'test/visual/__snapshots__/storybook');
+const failureArtifactDirectory = path.join(repositoryRoot, 'test-results/visual-conformance');
 const updateSnapshots = process.argv.slice(2).includes('--update');
 
 if (process.argv.slice(2).some((argument) => argument !== '--update') || process.argv.slice(2).length > 1) {
@@ -173,12 +174,23 @@ async function compareSnapshot(snapshotPath: string, screenshot: Buffer): Promis
 				`${expected.width.toString()}×${expected.height.toString()} versus ${actual.width.toString()}×${actual.height.toString()}.`,
 		);
 	}
-	const differentPixels = pixelmatch(expected.data, actual.data, undefined, expected.width, expected.height, {
+	const diff = new PNG({height: expected.height, width: expected.width});
+	const differentPixels = pixelmatch(expected.data, actual.data, diff.data, expected.width, expected.height, {
 		threshold: 0.1,
 	});
 	const difference = differentPixels / (expected.width * expected.height);
 	if (difference > 0.001) {
-		throw new Error(`${path.basename(snapshotPath)} differs by ${(difference * 100).toFixed(3)}%.`);
+		await fs.mkdir(failureArtifactDirectory, {recursive: true});
+		const snapshotName = path.basename(snapshotPath, '.png');
+		await Promise.all([
+			fs.writeFile(path.join(failureArtifactDirectory, `${snapshotName}--expected.png`), expectedBytes),
+			fs.writeFile(path.join(failureArtifactDirectory, `${snapshotName}--actual.png`), screenshot),
+			fs.writeFile(path.join(failureArtifactDirectory, `${snapshotName}--diff.png`), PNG.sync.write(diff)),
+		]);
+		throw new Error(
+			`${path.basename(snapshotPath)} differs by ${(difference * 100).toFixed(3)}%; ` +
+				`wrote expected, actual, and diff images to ${path.relative(repositoryRoot, failureArtifactDirectory)}.`,
+		);
 	}
 }
 

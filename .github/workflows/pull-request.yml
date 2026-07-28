@@ -145,6 +145,14 @@ jobs:
       - name: Run Storybook visual conformance
         run: just visual-conformance
 
+      - name: Upload visual-conformance failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: visual-conformance-failure
+          path: test-results/visual-conformance
+          if-no-files-found: ignore
+
   deploy-preview:
     runs-on: ubuntu-latest
     if: github.actor != 'dependabot[bot]'
