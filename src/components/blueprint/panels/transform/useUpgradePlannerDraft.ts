@@ -448,24 +448,6 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 					}),
 				);
 			},
-			onMove: (mappingId: string, targetSlotIndex: number) => {
-				setPlannerDraftChanged(true);
-				setMappingDrafts((current) => {
-					const moved = current.find((mapping) => mapping.mappingId === mappingId);
-					if (moved === undefined) {
-						throw new Error(`Upgrade mapping ${mappingId} is unavailable.`);
-					}
-					const displaced = current.find((mapping) => mapping.slotIndex === targetSlotIndex);
-					return current.map((mapping) => {
-						if (mapping.mappingId === mappingId) {
-							return {...mapping, slotIndex: targetSlotIndex};
-						}
-						return displaced?.mappingId === mapping.mappingId
-							? {...mapping, slotIndex: moved.slotIndex}
-							: mapping;
-					});
-				});
-			},
 			onPlannerInputChange: (value: string) => {
 				setPlannerDraftChanged(true);
 				setPlannerInput(value);

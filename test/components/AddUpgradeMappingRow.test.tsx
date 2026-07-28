@@ -9,14 +9,7 @@ describe('AddUpgradeMappingRow', () => {
 		const user = userEvent.setup();
 		const onSourceChoose = vi.fn<() => void>();
 		const onTargetChoose = vi.fn<() => void>();
-		render(
-			<AddUpgradeMappingRow
-				slotIndex={4}
-				onDrop={vi.fn<(event: React.DragEvent<HTMLDivElement>) => void>()}
-				onSourceChoose={onSourceChoose}
-				onTargetChoose={onTargetChoose}
-			/>,
-		);
+		render(<AddUpgradeMappingRow slotIndex={4} onSourceChoose={onSourceChoose} onTargetChoose={onTargetChoose} />);
 
 		const row = screen.getByRole('group', {name: 'Empty mapping slot 5'});
 		const source = screen.getByRole('button', {name: 'Choose source for new mapping'});

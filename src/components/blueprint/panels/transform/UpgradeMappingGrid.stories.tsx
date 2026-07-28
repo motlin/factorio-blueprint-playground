@@ -27,7 +27,6 @@ const meta = {
 		onChooseSource: fn(),
 		onChooseTarget: fn(),
 		onClearEndpoint: fn(),
-		onMove: fn(),
 	},
 	parameters: transformStoryParameters,
 	tags: ['autodocs'],

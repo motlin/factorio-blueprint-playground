@@ -18,11 +18,6 @@ interface UpgradeMappingRowProps {
 	onChooseTarget: () => void;
 	onClearSource: () => void;
 	onClearTarget: () => void;
-	onDragStart: (event: React.DragEvent<HTMLLIElement>) => void;
-	onMoveEarlier?: () => void;
-	onMoveLater?: () => void;
-	onDrop: (event: React.DragEvent<HTMLLIElement>) => void;
-	slotIndex: number;
 	to?: SignalID;
 }
 
@@ -76,7 +71,7 @@ function mappingLabel(from: UpgradeSourceSignal | undefined, to: SignalID | unde
 }
 
 /**
- * One mapper record is the draggable unit. Its two inventory slots stay
+ * One mapper record occupies a fixed From/To pair. Its two inventory slots stay
  * independently editable, and clearing either endpoint preserves the other.
  */
 export function UpgradeMappingRow({
@@ -87,11 +82,6 @@ export function UpgradeMappingRow({
 	onChooseTarget,
 	onClearSource,
 	onClearTarget,
-	onDragStart,
-	onMoveEarlier,
-	onMoveLater,
-	onDrop,
-	slotIndex,
 	to,
 }: UpgradeMappingRowProps) {
 	const label = mappingLabel(from, to);
@@ -104,14 +94,8 @@ export function UpgradeMappingRow({
 				from === undefined || to === undefined ? ' upgrade-mapping-grid__pair--incomplete' : ''
 			}`}
 			data-mapping-key={mappingId}
-			draggable
 			aria-label={label}
 			title={from === undefined || to === undefined ? label : `${sourceName} → ${targetName}`}
-			onDragStart={onDragStart}
-			onDragOver={(event) => {
-				event.preventDefault();
-			}}
-			onDrop={onDrop}
 		>
 			<SignalSlot
 				label={
@@ -135,31 +119,9 @@ export function UpgradeMappingRow({
 				onChoose={onChooseTarget}
 				onClear={to === undefined ? undefined : onClearTarget}
 			/>
-			<div className="upgrade-mapping-grid__reorder">
-				<button
-					type="button"
-					disabled={onMoveEarlier === undefined}
-					aria-label={`Move mapping in slot ${(slotIndex + 1).toString()} earlier`}
-					onClick={() => {
-						onMoveEarlier?.();
-					}}
-				>
-					↑
-				</button>
-				<button
-					type="button"
-					disabled={onMoveLater === undefined}
-					aria-label={`Move mapping in slot ${(slotIndex + 1).toString()} later`}
-					onClick={() => {
-						onMoveLater?.();
-					}}
-				>
-					↓
-				</button>
-			</div>
 			<span className="transform-visually-hidden">
-				{count.toString()} {count === 1 ? 'match' : 'matches'}. Drag this pair or use its move buttons to
-				reorder it. Focus an endpoint and press Delete to clear that endpoint.
+				{count.toString()} {count === 1 ? 'match' : 'matches'}. Focus an endpoint and press Delete to clear that
+				endpoint.
 			</span>
 		</li>
 	);

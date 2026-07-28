@@ -15,7 +15,6 @@ interface UpgradeMappingGridProps {
 	onChooseSource: (mappingId: string | undefined, slotIndex: number) => void;
 	onChooseTarget: (mappingId: string | undefined, slotIndex: number) => void;
 	onClearEndpoint: (mappingId: string, endpoint: 'from' | 'to') => void;
-	onMove: (mappingId: string, targetSlotIndex: number) => void;
 }
 
 const mappingsPerRow = 4;
@@ -37,7 +36,6 @@ export function UpgradeMappingGrid({
 	onChooseSource,
 	onChooseTarget,
 	onClearEndpoint,
-	onMove,
 }: UpgradeMappingGridProps) {
 	const mappingsBySlot = new Map<number, PositionedUpgradeMapping>();
 	for (const mapping of mappings) {
@@ -47,13 +45,6 @@ export function UpgradeMappingGrid({
 		mappingsBySlot.set(mapping.slotIndex, mapping);
 	}
 	const slotCount = paddedSlotCount(mappings);
-	const dropMapping = (event: React.DragEvent, targetSlotIndex: number) => {
-		event.preventDefault();
-		const mappingId = event.dataTransfer.getData('text/plain');
-		if (mappingId !== '') {
-			onMove(mappingId, targetSlotIndex);
-		}
-	};
 
 	return (
 		<div className="upgrade-mapping-grid" role="group" aria-label="From and To mappings">
@@ -86,23 +77,6 @@ export function UpgradeMappingGrid({
 									onClearTarget={() => {
 										onClearEndpoint(mapping.mappingId, 'to');
 									}}
-									onDragStart={(event) => {
-										event.dataTransfer.setData('text/plain', mapping.mappingId);
-										event.dataTransfer.effectAllowed = 'move';
-									}}
-									onDrop={(event) => {
-										dropMapping(event, slotIndex);
-									}}
-									onMoveEarlier={
-										slotIndex === 0
-											? undefined
-											: () => {
-													onMove(mapping.mappingId, slotIndex - 1);
-												}
-									}
-									onMoveLater={() => {
-										onMove(mapping.mappingId, slotIndex + 1);
-									}}
 								/>
 							);
 						}
@@ -110,9 +84,6 @@ export function UpgradeMappingGrid({
 							<li key={`empty-${slotIndex.toString()}`} className="upgrade-mapping-grid__empty-slot">
 								<AddUpgradeMappingRow
 									slotIndex={slotIndex}
-									onDrop={(event) => {
-										dropMapping(event, slotIndex);
-									}}
 									onSourceChoose={() => {
 										onChooseSource(undefined, slotIndex);
 									}}

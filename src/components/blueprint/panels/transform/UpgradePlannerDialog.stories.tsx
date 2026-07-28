@@ -34,7 +34,6 @@ const meta = {
 			],
 			error: undefined,
 			onClearEndpoint: fn(),
-			onMove: fn(),
 			onPlannerLoad: fn(),
 			onPlannerInputChange: fn(),
 			onSourceChange: fn(),

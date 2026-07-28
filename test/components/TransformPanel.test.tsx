@@ -135,8 +135,7 @@ const rareBeltUpgradesPlanner: UpgradePlanner = {
 	},
 };
 let nextLibraryRecordNumber = 1;
-const mappingInstructions =
-	'Drag this pair or use its move buttons to reorder it. Focus an endpoint and press Delete to clear that endpoint.';
+const mappingInstructions = 'Focus an endpoint and press Delete to clear that endpoint.';
 
 function openUpgradePlanner() {
 	fireEvent.click(screen.getByRole('button', {name: 'Open Upgrade Planner'}));
