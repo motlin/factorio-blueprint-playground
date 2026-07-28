@@ -32,8 +32,8 @@
 	},
 	"dependencies": {
 		"@sentry/react": "^10.66.0",
-		"@tanstack/react-query": "^5.101.2",
-		"@tanstack/react-query-devtools": "^5.101.2",
+		"@tanstack/react-query": "^5.101.3",
+		"@tanstack/react-query-devtools": "^5.101.3",
 		"@tanstack/react-router": "^1.170.18",
 		"date-fns": "^4.4.0",
 		"dexie": "^4.4.4",
