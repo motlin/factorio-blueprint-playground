@@ -134,10 +134,15 @@ export function useBlueprintEditorDraft({
 		[blueprint, capturedOnSpacePlatform, sourceMode],
 	);
 	const metadata = useMemo(() => sourceMetadata(blueprint), [blueprint]);
-	const sourceIcons = useMemo(
-		() => [...metadata.icons].sort((left, right) => left.index - right.index).map((icon) => icon.signal),
-		[metadata.icons],
-	);
+	const sourceIcons = useMemo(() => {
+		const slots = Array<SignalID | undefined>(4).fill(undefined);
+		for (const icon of metadata.icons) {
+			if (icon.index >= 1 && icon.index <= slots.length) {
+				slots[icon.index - 1] = icon.signal;
+			}
+		}
+		return slots;
+	}, [metadata.icons]);
 	const sourceSnapGrid = useMemo(
 		() => (blueprint?.blueprint === undefined ? undefined : blueprintSnapGrid(blueprint)),
 		[blueprint],
@@ -150,7 +155,7 @@ export function useBlueprintEditorDraft({
 	const [closeConfirmationOpen, setCloseConfirmationOpen] = useState(false);
 	const [editorLabel, setEditorLabel] = useState(metadata.label);
 	const [editorDescription, setEditorDescription] = useState(metadata.description);
-	const [editorIcons, setEditorIcons] = useState<SignalID[]>(sourceIcons);
+	const [editorIcons, setEditorIcons] = useState<Array<SignalID | undefined>>(sourceIcons);
 	const [editorSnapGrid, setEditorSnapGrid] = useState<BlueprintSnapGrid | undefined>(sourceSnapGrid);
 	const [editorParameters, setEditorParameters] = useState<Parameter[]>(sourceParameters);
 	const [editorIconPickerIndex, setEditorIconPickerIndex] = useState<number>();
@@ -251,7 +256,9 @@ export function useBlueprintEditorDraft({
 		if (selectedBlueprint.blueprint !== undefined || selectedBlueprint.blueprint_book !== undefined) {
 			selectedBlueprint = applyBlueprintEditorMetadata(selectedBlueprint, {
 				description: editorDescription,
-				icons: editorIcons.map((signal, index) => ({index: index + 1, signal})),
+				icons: editorIcons.flatMap((signal, index) =>
+					signal === undefined ? [] : [{index: index + 1, signal}],
+				),
 				label: editorLabel,
 			});
 		}

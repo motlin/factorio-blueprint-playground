@@ -52,6 +52,7 @@ function renderBlueprintEditorHtml(): string {
 			icons={
 				<BlueprintLabelIcons
 					icons={[{type: 'item', name: 'iron-plate'}]}
+					itemName="blueprint"
 					onChange={noop}
 					onChoose={noop}
 					signalTitle={(signal) => `${signal.type ?? 'item'}:${signal.name}`}

@@ -47,6 +47,7 @@ const meta = {
 		icons: (
 			<BlueprintLabelIcons
 				icons={[{type: 'item', name: 'iron-plate'}]}
+				itemName="blueprint"
 				onChange={fn()}
 				onChoose={fn()}
 				signalTitle={(signal) => `${signal.type ?? 'item'}:${signal.name}`}
