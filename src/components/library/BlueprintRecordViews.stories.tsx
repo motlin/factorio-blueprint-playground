@@ -78,16 +78,33 @@ type Story = StoryObj<typeof meta>;
 export const MixedRecords: Story = {};
 
 export const LongLabels: Story = {
+	tags: ['visual-conformance'],
 	args: {
 		records: [
 			record('long-label', 0, {
 				type: 'blueprint',
 				label: 'Interplanetary legendary-quality science production and rail distribution megabase sector with redundant unloading',
 				description:
-					'Long labels truncate in list mode and clamp to two lines in grid mode while the tooltip retains the complete text.',
+					'List mode keeps the complete label and wraps this description while grid mode keeps its compact two-line caption.',
 				icons: [{type: 'item', name: 'space-science-pack', quality: 'legendary'}],
 			}),
 		],
+	},
+	play: async ({canvasElement}) => {
+		const canvas = within(canvasElement);
+		const recordButton = canvas.getByRole('button', {
+			name: 'Interplanetary legendary-quality science production and rail distribution megabase sector with redundant unloading',
+		});
+
+		await expect(recordButton).toHaveAttribute('aria-current', 'true');
+		await expect(recordButton).toHaveAttribute('data-factorio-source', 'BlueprintsList::addItem');
+		await expect(recordButton.querySelector('.blueprint-record-item__icons')).toHaveAttribute(
+			'data-factorio-style',
+			'blueprint_record_selection_button',
+		);
+		await expect(recordButton.querySelector('strong')).toHaveTextContent(
+			'Interplanetary legendary-quality science production and rail distribution megabase sector with redundant unloading',
+		);
 	},
 };
 

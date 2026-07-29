@@ -254,6 +254,56 @@ describe('BlueprintRecordViews', () => {
 		).not.toBeNull();
 	});
 
+	test('renders list records with the source slot, complete metadata, book affordance, and roving selection', () => {
+		render(
+			<BlueprintRecordViews
+				aria-label="Blueprint records"
+				records={records}
+				compareRecords={comparePosition}
+				onActivate={() => undefined}
+			/>,
+		);
+
+		const blueprintButton = screen.getByRole('button', {name: 'Quality factory'});
+		const bookButton = screen.getByRole('button', {name: 'Open book Factory books'});
+		const firstListItem = blueprintButton.closest('li');
+		const secondListItem = screen.getByRole('button', {name: 'Tier changes'}).closest('li');
+		blueprintButton.focus();
+		fireEvent.keyDown(blueprintButton, {key: 'ArrowDown'});
+
+		expect({
+			bookAffordance: bookButton.querySelector('.blueprint-record-item__open-book')?.getAttribute('aria-hidden'),
+			description: blueprintButton.querySelector('.blueprint-record-item__description')?.textContent,
+			firstItemClass: firstListItem?.className,
+			label: blueprintButton.querySelector('strong')?.textContent,
+			recordSource: blueprintButton.dataset.factorioSource,
+			secondItemClass: secondListItem?.className,
+			selectedRecords: screen
+				.getAllByRole('button')
+				.filter((button) => button.classList.contains('blueprint-record-item'))
+				.map((button) => ({
+					current: button.getAttribute('aria-current'),
+					label: button.getAttribute('aria-label'),
+				})),
+			slotStyle: blueprintButton
+				.querySelector('.blueprint-record-item__icons')
+				?.getAttribute('data-factorio-style'),
+		}).toStrictEqual({
+			bookAffordance: 'true',
+			description: 'Builds modules.',
+			firstItemClass: '',
+			label: 'Quality factory',
+			recordSource: 'BlueprintsList::addItem',
+			secondItemClass: '',
+			selectedRecords: [
+				{current: null, label: 'Quality factory'},
+				{current: 'true', label: 'Tier changes'},
+				{current: null, label: 'Open book Factory books'},
+			],
+			slotStyle: 'blueprint_record_selection_button',
+		});
+	});
+
 	test('shares one source-faithful view preference and supports roving keyboard selection', async () => {
 		const user = userEvent.setup();
 		render(

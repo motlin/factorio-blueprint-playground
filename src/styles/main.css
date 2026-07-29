@@ -887,7 +887,12 @@ body {
 }
 
 .blueprint-record-views__items--list {
-	gap: 4px;
+	gap: 0;
+}
+
+.blueprint-record-views__items--list > li + li {
+	border-top: 1px solid #171717;
+	box-shadow: inset 0 1px 0 #4c4b4c;
 }
 
 .blueprint-record-views__items--grid {
@@ -909,16 +914,14 @@ body {
 .blueprint-record-item--list {
 	display: grid;
 	width: 100%;
-	min-height: 64px;
-	grid-template-columns: 48px minmax(0, 1fr) auto;
+	min-height: calc(80px * var(--factorio-ui-density));
+	grid-template-columns: calc(80px * var(--factorio-ui-density)) minmax(0, 1fr) auto;
 	align-items: center;
-	gap: 10px;
-	padding: 7px;
-	border: 1px solid #171717;
-	background: #414041;
-	box-shadow:
-		inset 1px 1px 0 #777,
-		inset -2px -2px 0 #1c1b1c;
+	gap: calc(8px * var(--factorio-ui-density));
+	padding: calc(4px * var(--factorio-ui-density)) 0;
+	border: 0;
+	background: transparent;
+	box-shadow: none;
 	text-align: left;
 	cursor: default;
 }
@@ -929,7 +932,7 @@ body {
 
 .blueprint-record-item--list:hover,
 .blueprint-record-item--list:focus-visible {
-	background: #5a4a32;
+	background: transparent;
 }
 
 .blueprint-record-item--grid {
@@ -961,6 +964,10 @@ body {
 	outline-offset: 1px;
 }
 
+.blueprint-record-item--list:focus-visible {
+	outline: 0;
+}
+
 .blueprint-record-item__text {
 	display: grid;
 	min-width: 0;
@@ -980,6 +987,15 @@ body {
 	white-space: nowrap;
 }
 
+.blueprint-record-item--list .blueprint-record-item__text strong {
+	overflow: visible;
+	color: var(--factorio-ui-text);
+	font-weight: 700;
+	overflow-wrap: anywhere;
+	text-overflow: clip;
+	white-space: normal;
+}
+
 .blueprint-record-item--grid .blueprint-record-item__text strong {
 	display: -webkit-box;
 	line-height: 1.25;
@@ -994,6 +1010,11 @@ body {
 	line-height: 1.3;
 }
 
+.blueprint-record-item--list .blueprint-record-item__description {
+	overflow-wrap: anywhere;
+	white-space: pre-wrap;
+}
+
 .blueprint-record-item__icons {
 	position: relative;
 	display: flex;
@@ -1006,6 +1027,48 @@ body {
 	border: 1px solid #171717;
 	background: #242324;
 	box-shadow: inset 0 2px 4px #111;
+}
+
+.blueprint-record-item--list .blueprint-record-item__icons {
+	box-sizing: border-box;
+	width: calc(80px * var(--factorio-ui-density));
+	height: calc(80px * var(--factorio-ui-density));
+	padding: calc(4px * var(--factorio-ui-density));
+	background: #646464;
+	box-shadow:
+		inset 1px 1px 0 #9d9d9d,
+		inset -2px -2px 0 #313031;
+}
+
+.blueprint-record-item--list:not([aria-disabled='true']):hover .blueprint-record-item__icons,
+.blueprint-record-item--list:not([aria-disabled='true']):focus-visible .blueprint-record-item__icons {
+	background: #8b6745;
+	box-shadow:
+		inset 1px 1px 0 #ae8d6d,
+		inset -2px -2px 0 #4d321d,
+		0 0 calc(5px * var(--factorio-ui-density)) rgb(227 152 39 / 50%);
+}
+
+.blueprint-record-item--list:not([aria-disabled='true']):active .blueprint-record-item__icons,
+.blueprint-record-item--list[aria-current='true'] .blueprint-record-item__icons {
+	background: var(--factorio-ui-selected);
+	box-shadow:
+		inset 1px 1px 0 #ffd37a,
+		inset -2px -2px 0 #5b320d;
+}
+
+.blueprint-record-item--list:focus-visible .blueprint-record-item__icons {
+	outline: calc(2px * var(--factorio-ui-density)) solid var(--factorio-ui-accent);
+	outline-offset: calc(1px * var(--factorio-ui-density));
+}
+
+.blueprint-record-item--list[aria-disabled='true'] .blueprint-record-item__icons {
+	opacity: 0.55;
+	filter: grayscale(0.45);
+}
+
+.blueprint-record-item--list[aria-disabled='true'] .blueprint-record-item__text {
+	color: var(--factorio-ui-muted);
 }
 
 .blueprint-record-item__icons > [data-factorio-icon-size] {
@@ -1044,6 +1107,18 @@ body {
 .blueprint-record-item__open-book {
 	width: 22px;
 	height: 22px;
+}
+
+.blueprint-record-item--list .blueprint-record-item__open-book {
+	box-sizing: border-box;
+	width: calc(28px * var(--factorio-ui-density));
+	height: calc(28px * var(--factorio-ui-density));
+	padding: calc(5px * var(--factorio-ui-density));
+	background: #646464;
+	box-shadow:
+		inset 1px 1px 0 #9d9d9d,
+		inset -1px -1px 0 #313031;
+	color: var(--factorio-ui-text);
 }
 
 .blueprint-record-item__tooltip {

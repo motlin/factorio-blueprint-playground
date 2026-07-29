@@ -151,7 +151,11 @@ function BlueprintRecordIcons({record}: {record: BlueprintRecordModel}) {
 			? [{name: RECORD_TYPE_ICON_NAMES[record.gameData.type], type: 'item' as const}]
 			: record.gameData.icons;
 	return (
-		<span className="blueprint-record-item__icons" aria-hidden="true">
+		<span
+			className="blueprint-record-item__icons"
+			aria-hidden="true"
+			data-factorio-style="blueprint_record_selection_button"
+		>
 			{icons.map((icon, index) => (
 				<FactorioIcon
 					key={`${icon.type ?? 'item'}:${icon.name}:${icon.quality ?? 'normal'}:${index.toString()}`}
@@ -207,6 +211,7 @@ function BlueprintRecordItem<RecordModel extends BlueprintRecordModel>({
 	const commonButtonProps = {
 		'aria-describedby': describedBy,
 		'aria-disabled': !actionable,
+		'aria-current': active ? ('true' as const) : undefined,
 		'aria-keyshortcuts': onAlternateActivate === undefined ? undefined : 'Shift+Enter',
 		'aria-label': recordAccessibleName(record, actionable),
 		onClick: () => {
@@ -246,6 +251,7 @@ function BlueprintRecordItem<RecordModel extends BlueprintRecordModel>({
 			{...commonButtonProps}
 			type="button"
 			className={`blueprint-record-item blueprint-record-item--${viewMode}`}
+			data-factorio-source="BlueprintsList::addItem"
 		>
 			<BlueprintRecordIcons record={record} />
 			<span className="blueprint-record-item__text">
