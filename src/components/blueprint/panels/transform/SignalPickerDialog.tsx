@@ -70,9 +70,10 @@ import {useDialogFocus} from './useDialogFocus';
  *
  * Transaction and focus
  *
- * - Clicking a slot stages signal and quality together. The green check or Enter
- *   confirms only a valid staged value; closing, Escape, or unmodified Q cancels
- *   without invoking `onChoose`. Q remains text input while search has focus.
+ * - Clicking a slot stages signal and quality together. Double-clicking that
+ *   slot, the green check, or Enter confirms only a valid staged value; closing,
+ *   Escape, or unmodified Q cancels without invoking `onChoose`. Q remains text
+ *   input while search has focus.
  * - Closing either way returns focus to the slot or button that opened the
  *   topmost picker. Parent dialogs stay inert until that picker is gone.
  * - Confirming a planner From value closes only Set the filter and leaves the
@@ -365,6 +366,21 @@ export function SignalPickerDialog({
 			? undefined
 			: signalWithCurrentQuality(selectedSignal, qualityMode, qualitySelection, qualityComparator);
 	const selectionAllowed = confirmedSignal !== undefined && (isSelectionAllowed?.(confirmedSignal) ?? true);
+	const chooseSignal = useCallback(
+		(signal: SignalID) => {
+			const signalWithQuality = signalWithCurrentQuality(
+				signal,
+				qualityMode,
+				qualitySelection,
+				qualityComparator,
+			);
+			if (!(isSelectionAllowed?.(signalWithQuality) ?? true)) {
+				return;
+			}
+			onChoose(signalWithQuality);
+		},
+		[isSelectionAllowed, onChoose, qualityComparator, qualityMode, qualitySelection],
+	);
 	const clearInspectedSignal = () => {
 		if (signalNameReference.current !== null) {
 			signalNameReference.current.textContent = '\u00a0';
@@ -645,16 +661,14 @@ export function SignalPickerDialog({
 											onBlur={clearInspectedSignal}
 											onClick={() => {
 												if (confirmationMode === 'immediate') {
-													onChoose(
-														signalWithCurrentQuality(
-															signal,
-															qualityMode,
-															qualitySelection,
-															qualityComparator,
-														),
-													);
+													chooseSignal(signal);
 												} else {
 													setSelectedSignal(signal);
+												}
+											}}
+											onDoubleClick={() => {
+												if (confirmationMode === 'required') {
+													chooseSignal(signal);
 												}
 											}}
 											onFocus={() => {

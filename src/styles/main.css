@@ -2628,6 +2628,37 @@ body {
 	height: calc(40px * var(--factorio-ui-density));
 }
 
+.transform-picker__option {
+	padding: calc(4px * var(--factorio-ui-density));
+}
+
+.transform-picker__option[aria-pressed='true']:hover:not(:disabled) {
+	background: #d88716;
+	box-shadow:
+		inset 1px 1px 0 #ffd37a,
+		inset -2px -2px 0 #5b320d;
+}
+
+.transform-picker__option:focus-visible {
+	z-index: 2;
+	outline: 2px solid #fff0cc;
+	outline-offset: -4px;
+	box-shadow:
+		inset 1px 1px 0 #ffd37a,
+		inset -2px -2px 0 #5b320d,
+		0 0 0 2px rgb(227 152 39 / 65%);
+}
+
+.transform-picker__option:disabled [data-testid='icon'] {
+	opacity: 0.45;
+}
+
+.transform-picker__option [data-testid='quality'] {
+	bottom: -1px;
+	left: -1px;
+	filter: drop-shadow(0 1px 1px #171717);
+}
+
 .transform-picker__empty {
 	grid-column: 1 / -1;
 	margin: 0;

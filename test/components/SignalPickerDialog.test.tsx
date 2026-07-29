@@ -149,6 +149,128 @@ test('preserves initial selection and quality while supporting keyboard grid nav
 	expect(onChoose.mock.calls).toStrictEqual([[{type: 'entity', name: 'test-entity-10', quality: 'rare'}]]);
 });
 
+test('moves keyboard focus by grid geometry while skipping inaccessible targets', () => {
+	const options: SignalID[] = Array.from({length: 22}, (_, index) => ({
+		type: 'entity',
+		name: `test-entity-${index.toString()}`,
+	}));
+	render(
+		<SignalPickerDialog
+			confirmationMode="required"
+			title="Choose spatial signal"
+			options={options}
+			initialSignal={options[0]}
+			isSelectionAllowed={(signal) => signal.name !== 'test-entity-10'}
+			onChoose={vi.fn<SignalPickerDialogProps['onChoose']>()}
+			onClose={vi.fn<() => void>()}
+		/>,
+	);
+
+	const firstOption = screen.getByRole('button', {name: 'Choose Test entity 0'});
+	firstOption.focus();
+	fireEvent.keyDown(firstOption, {key: 'ArrowDown'});
+	expect(document.activeElement?.getAttribute('aria-label')).toBe('Choose Test entity 11');
+
+	const eleventhOption = screen.getByRole('button', {name: 'Choose Test entity 11'});
+	fireEvent.keyDown(eleventhOption, {key: 'ArrowDown'});
+	expect(document.activeElement?.getAttribute('aria-label')).toBe('Choose Test entity 21');
+
+	const disabledOption = screen.getByRole<HTMLButtonElement>('button', {name: 'Choose Test entity 10'});
+	expect({
+		ariaDisabled: disabledOption.getAttribute('aria-disabled'),
+		disabled: disabledOption.disabled,
+		tabIndex: disabledOption.tabIndex,
+	}).toStrictEqual({
+		ariaDisabled: 'true',
+		disabled: true,
+		tabIndex: -1,
+	});
+});
+
+test('stages on one click and confirms the clicked option on a double click', async () => {
+	const user = userEvent.setup();
+	const onChoose = vi.fn<SignalPickerDialogProps['onChoose']>();
+	render(
+		<SignalPickerDialog
+			confirmationMode="required"
+			title="Choose with double click"
+			options={[
+				{type: 'item', name: 'iron-plate'},
+				{type: 'item', name: 'copper-plate'},
+			]}
+			onChoose={onChoose}
+			onClose={vi.fn<() => void>()}
+		/>,
+	);
+
+	const copper = screen.getByRole('button', {name: 'Choose Copper plate'});
+	await user.click(copper);
+	expect({
+		chooseCalls: onChoose.mock.calls,
+		selected: copper.getAttribute('aria-pressed'),
+	}).toStrictEqual({
+		chooseCalls: [],
+		selected: 'true',
+	});
+
+	const iron = screen.getByRole('button', {name: 'Choose Iron plate'});
+	await user.dblClick(iron);
+	expect(onChoose.mock.calls).toStrictEqual([[{type: 'item', name: 'iron-plate'}]]);
+});
+
+test('exposes rest, selected, disabled, and quality-badge option states', () => {
+	render(
+		<SignalPickerDialog
+			confirmationMode="required"
+			title="Signal option states"
+			initialSignal={{type: 'item', name: 'advanced-circuit', quality: 'rare'}}
+			options={[
+				{type: 'item', name: 'iron-plate'},
+				{type: 'item', name: 'advanced-circuit', quality: 'rare'},
+				{type: 'item', name: 'processing-unit', quality: 'epic'},
+			]}
+			isSelectionAllowed={(signal) => signal.name !== 'processing-unit'}
+			onChoose={vi.fn<SignalPickerDialogProps['onChoose']>()}
+			onClose={vi.fn<() => void>()}
+		/>,
+	);
+
+	const rest = screen.getByRole('button', {name: 'Choose Iron plate'});
+	const selected = screen.getByRole('button', {name: 'Choose Advanced circuit'});
+	const disabled = screen.getByRole<HTMLButtonElement>('button', {name: 'Choose Processing unit'});
+	expect({
+		disabled: {
+			ariaDisabled: disabled.getAttribute('aria-disabled'),
+			disabled: disabled.disabled,
+			quality: within(disabled).getByTestId('quality').getAttribute('src'),
+			tabIndex: disabled.tabIndex,
+		},
+		rest: {
+			factorioStyle: rest.getAttribute('data-factorio-style'),
+			selected: rest.getAttribute('aria-pressed'),
+		},
+		selected: {
+			quality: within(selected).getByTestId('quality').getAttribute('src'),
+			selected: selected.getAttribute('aria-pressed'),
+		},
+	}).toStrictEqual({
+		disabled: {
+			ariaDisabled: 'true',
+			disabled: true,
+			quality: 'https://factorio-icon-cdn.pages.dev/quality/epic.webp',
+			tabIndex: -1,
+		},
+		rest: {
+			factorioStyle: 'slot_button',
+			selected: 'false',
+		},
+		selected: {
+			quality: 'https://factorio-icon-cdn.pages.dev/quality/rare.webp',
+			selected: 'true',
+		},
+	});
+});
+
 test('keeps an empty constrained picker usable without offering an excluded initial signal', () => {
 	render(
 		<SignalPickerDialog

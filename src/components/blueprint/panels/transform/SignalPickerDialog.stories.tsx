@@ -1,5 +1,5 @@
 import type {Meta, StoryObj} from '@storybook/react-vite';
-import {expect, fn, within} from 'storybook/test';
+import {expect, fn, userEvent, within} from 'storybook/test';
 
 import type {SignalID} from '../../../../parsing/types';
 import {SignalPickerDialog} from './SignalPickerDialog';
@@ -143,6 +143,38 @@ export const RestrictedToPicker: Story = {
 		],
 		qualityMode: 'target',
 		isSelectionAllowed: (signal) => signal.name !== 'transport-belt',
+	},
+};
+
+export const SignalOptionStates: Story = {
+	args: {
+		title: 'Signal option states',
+		initialSignal: {type: 'item', name: 'advanced-circuit', quality: 'rare'},
+		options: [
+			{type: 'item', name: 'iron-plate'},
+			{type: 'item', name: 'copper-plate'},
+			{type: 'item', name: 'electronic-circuit'},
+			{type: 'item', name: 'advanced-circuit', quality: 'rare'},
+			{type: 'item', name: 'processing-unit', quality: 'epic'},
+		],
+		isSelectionAllowed: (signal) => signal.name !== 'processing-unit',
+	},
+	play: async ({canvasElement}) => {
+		const screen = within(canvasElement.ownerDocument.body);
+		const hovered = screen.getByRole('button', {name: 'Choose Copper plate'});
+		const focused = screen.getByRole('button', {name: 'Choose Electronic circuit'});
+		await userEvent.hover(hovered);
+		focused.focus();
+
+		await expect(screen.getByRole('button', {name: 'Choose Iron plate'})).toHaveAttribute('aria-pressed', 'false');
+		await expect(hovered).toHaveAttribute('aria-pressed', 'false');
+		await expect(focused).toHaveFocus();
+		await expect(screen.getByRole('button', {name: 'Choose Advanced circuit'})).toHaveAttribute(
+			'aria-pressed',
+			'true',
+		);
+		await expect(screen.getByRole('button', {name: 'Choose Processing unit'})).toBeDisabled();
+		await expect(screen.getAllByTestId('quality')).toHaveLength(2);
 	},
 };
 
