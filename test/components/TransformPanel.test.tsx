@@ -666,7 +666,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			headerElement: 'HEADER',
 			iconReplacements: null,
 			iconSlots: ['Choose icon 1', 'Choose icon 2', 'Choose icon 3', 'Choose icon 4'],
-			title: 'Untitled blueprint',
+			title: '<Unnamed blueprint>',
 			plannerMappings: null,
 			preview: null,
 			previewRegion: null,

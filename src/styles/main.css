@@ -3641,7 +3641,7 @@ body {
 	align-items: center;
 	min-height: 30px;
 	gap: 8px;
-	padding: 6px 8px 6px 12px;
+	padding: 4px 8px 4px 0;
 }
 
 .blueprint-editor__title-editor {
@@ -3649,35 +3649,63 @@ body {
 	min-width: 0;
 	flex: 1;
 	align-items: center;
-	gap: 5px;
+	gap: calc(5px * var(--factorio-ui-density));
 }
 
 .blueprint-editor__title-input {
 	display: flex;
+	width: min(calc(200px * var(--factorio-ui-density)), 100%);
 	min-width: 0;
-	flex: 1;
+	flex: 0 1 auto;
 }
 
 .blueprint-editor__title {
+	flex: 1;
 	min-width: 0;
-	color: #ffe6c0;
+	padding-left: calc(8px * var(--factorio-ui-density));
+	color: var(--factorio-ui-title);
+	font-size: calc(15px * var(--factorio-ui-density));
 	font-weight: bold;
+	line-height: calc(24px * var(--factorio-ui-density));
 	overflow-wrap: anywhere;
 	user-select: text;
 }
 
 .blueprint-editor__title-editor input {
-	flex: 1;
+	width: 100%;
 	min-width: 0;
-	padding: 7px 8px;
+	height: calc(28px * var(--factorio-ui-density));
+	padding: 0 calc(2px * var(--factorio-ui-density)) 0 calc(3px * var(--factorio-ui-density));
+	border: 1px solid #111;
+	background: var(--factorio-ui-dark);
+	box-shadow: inset 0 1px 3px #111;
+	color: var(--factorio-ui-text);
+	font: inherit;
+	font-size: calc(14px * var(--factorio-ui-density));
+	outline: 0;
+}
+
+.blueprint-editor__title-editor input:focus-visible {
+	border-color: var(--factorio-ui-accent);
+	box-shadow:
+		inset 0 1px 3px #111,
+		0 0 0 2px rgb(227 152 39 / 45%);
 }
 
 .blueprint-editor__title-edit {
-	width: 24px;
-	min-width: 24px;
-	height: 24px;
-	min-height: 24px;
-	padding: 4px;
+	width: calc(16px * var(--factorio-ui-density));
+	min-width: calc(16px * var(--factorio-ui-density));
+	max-width: calc(16px * var(--factorio-ui-density));
+	height: calc(16px * var(--factorio-ui-density));
+	min-height: calc(16px * var(--factorio-ui-density));
+	max-height: calc(16px * var(--factorio-ui-density));
+	margin-top: calc(1px * var(--factorio-ui-density));
+	padding: 0;
+}
+
+.blueprint-editor__title-edit svg {
+	width: calc(12px * var(--factorio-ui-density));
+	height: calc(12px * var(--factorio-ui-density));
 }
 
 .blueprint-editor-toolbar {
