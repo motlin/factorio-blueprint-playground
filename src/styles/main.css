@@ -3734,7 +3734,8 @@ body {
 	height: calc(36px * var(--factorio-ui-density));
 }
 
-.blueprint-editor-toolbar__button--upgrade {
+.blueprint-editor-toolbar__button--upgrade,
+.blueprint-editor-toolbar__button--parameterization {
 	/* Factorio 2.1.12 tool_button_green: 28px tool button with 2px padding. */
 	--factorio-button-rest: #65a95d;
 	--factorio-button-rest-light: #a6d69d;
@@ -3754,24 +3755,12 @@ body {
 	padding: calc(2px * var(--factorio-ui-density));
 }
 
-.blueprint-editor-toolbar__button--upgrade[aria-expanded='true'] {
+.blueprint-editor-toolbar__button--upgrade[aria-expanded='true'],
+.blueprint-editor-toolbar__button--parameterization[aria-expanded='true'] {
 	background: var(--factorio-button-pressed);
 	box-shadow:
 		inset 1px 1px 0 var(--factorio-button-pressed-light),
 		inset -1px -1px 0 var(--factorio-button-pressed-dark);
-}
-
-.blueprint-editor-toolbar__button--parameterization {
-	background: #71508e;
-	box-shadow:
-		inset 0 1px 1px #b897d2,
-		inset 0 -2px 2px #382346;
-}
-
-.blueprint-editor-toolbar__button--parameterization:hover,
-.blueprint-editor-toolbar__button--parameterization:focus-visible,
-.blueprint-editor-toolbar__button--parameterization[aria-expanded='true'] {
-	background: #8662a5;
 }
 
 .blueprint-editor-toolbar__planner-slot {

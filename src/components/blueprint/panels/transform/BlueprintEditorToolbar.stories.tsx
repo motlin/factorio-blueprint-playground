@@ -81,27 +81,74 @@ export const ParametrisationAvailable: Story = {
 	args: {
 		parameterizationAvailable: true,
 	},
-	play: async ({canvasElement}) => {
+	play: async ({args, canvasElement}) => {
 		const canvas = within(canvasElement);
+		const page = within(document.body);
 		const toolbar = canvas.getByRole('toolbar', {name: 'Blueprint editor actions'});
 		const gameActions = canvas.getByRole('group', {name: 'Factorio blueprint actions'});
+		const parameterButton = canvas.getByRole('button', {name: 'Parametrise or reconfigure the blueprint'});
+		const parameterButtonBounds = parameterButton.getBoundingClientRect();
 
 		await expect({
 			gameActions: [...gameActions.children].map((control) => ({
 				action: control.getAttribute('data-factorio-action'),
 				order: control.getAttribute('data-factorio-action-order'),
+				source: control.getAttribute('data-factorio-source'),
 			})),
+			parameterButton: {
+				expanded: parameterButton.getAttribute('aria-expanded'),
+				geometry: {height: parameterButtonBounds.height, width: parameterButtonBounds.width},
+				icon: parameterButton.querySelector('img')?.getAttribute('src'),
+				iconSize: parameterButton
+					.querySelector('[data-factorio-icon-size]')
+					?.getAttribute('data-factorio-icon-size'),
+				sprite: parameterButton.dataset.factorioSprite,
+				toggleState: parameterButton.dataset.factorioToggleState,
+				widgetStyle: parameterButton.dataset.factorioWidgetStyle,
+			},
 			toolbarButtons: [...toolbar.querySelectorAll('button')].map((button) => button.getAttribute('aria-label')),
 		}).toStrictEqual({
 			gameActions: [
-				{action: 'upgrade', order: '3'},
-				{action: 'parametrise', order: '4'},
+				{action: 'upgrade', order: '3', source: 'BlueprintSettingsGui::makeUpgradeButton'},
+				{action: 'parametrise', order: '4', source: 'BlueprintSettingsGui::makeParametriseSlot'},
 			],
+			parameterButton: {
+				expanded: 'false',
+				geometry: {height: 28, width: 28},
+				icon: '/assets/factorio/parametrise.png',
+				iconSize: 'small',
+				sprite: 'utility/parametrise',
+				toggleState: 'default',
+				widgetStyle: 'tool_button_green',
+			},
 			toolbarButtons: [
 				'Upgrade items and entities in the blueprint',
 				'Parametrise or reconfigure the blueprint',
 				'Choose or drop an upgrade planner to hold',
 			],
+		});
+		await userEvent.hover(parameterButton);
+		await expect(page.getByRole('tooltip')).toHaveTextContent('Parametrise/reconfigure the blueprint.');
+		await userEvent.unhover(parameterButton);
+		await userEvent.click(parameterButton);
+		await expect(args.onOpenParameterization.mock.calls).toStrictEqual([[]]);
+	},
+};
+
+export const ParametrisationExpanded: Story = {
+	args: {
+		parameterizationAvailable: true,
+		parameterizationOpen: true,
+	},
+	play: async ({canvasElement}) => {
+		const canvas = within(canvasElement);
+		const button = canvas.getByRole('button', {name: 'Parametrise or reconfigure the blueprint'});
+		await expect({
+			expanded: button.getAttribute('aria-expanded'),
+			toggleState: button.dataset.factorioToggleState,
+		}).toStrictEqual({
+			expanded: 'true',
+			toggleState: 'selected',
 		});
 	},
 };

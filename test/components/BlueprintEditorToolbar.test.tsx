@@ -150,9 +150,9 @@ test('renders the supported Factorio editor action with accessible states and a 
 	});
 });
 
-test('opens Blueprint parametrisation only when the current format supports it', () => {
+test('renders the source parametrisation launcher and latches it while its child dialog is open', () => {
 	const onOpenParameterization = vi.fn<() => void>();
-	render(
+	const {rerender} = render(
 		<BlueprintEditorToolbar
 			dropError={undefined}
 			onApplyPlacedPlanner={vi.fn<(direction: UpgradeDirection) => void>()}
@@ -175,33 +175,77 @@ test('opens Blueprint parametrisation only when the current format supports it',
 	fireEvent.click(button);
 
 	expect({
+		className: button.className,
 		controls: button.getAttribute('aria-controls'),
 		expanded: button.getAttribute('aria-expanded'),
 		hasPopup: button.getAttribute('aria-haspopup'),
 		icon: button.querySelector('img')?.getAttribute('src'),
+		iconSize: button.querySelector('[data-factorio-icon-size]')?.getAttribute('data-factorio-icon-size'),
 		gameActions: [...gameActions.children].map((control) => ({
 			action: control.getAttribute('data-factorio-action'),
 			order: control.getAttribute('data-factorio-action-order'),
+			source: control.getAttribute('data-factorio-source'),
 		})),
 		onOpenParameterizationCalls: onOpenParameterization.mock.calls,
+		sourceContract: {
+			sprite: button.dataset.factorioSprite,
+			toggleState: button.dataset.factorioToggleState,
+			widgetStyle: button.dataset.factorioWidgetStyle,
+		},
+		title: button.title,
 		toolbarButtons: [...toolbar.querySelectorAll('button')].map((control) => control.getAttribute('aria-label')),
 		tooltip: screen.getByText('Parametrise/reconfigure the blueprint.').textContent,
 	}).toStrictEqual({
+		className:
+			'factorio-button factorio-button--neutral blueprint-editor-toolbar__button blueprint-editor-toolbar__button--parameterization',
 		controls: 'blueprint-parameterization',
 		expanded: 'false',
 		hasPopup: 'dialog',
-		icon: 'https://factorio-icon-cdn.pages.dev/virtual-signal/signal-item-parameter.webp',
+		icon: '/assets/factorio/parametrise.png',
+		iconSize: 'small',
 		gameActions: [
-			{action: 'upgrade', order: '3'},
-			{action: 'parametrise', order: '4'},
+			{action: 'upgrade', order: '3', source: 'BlueprintSettingsGui::makeUpgradeButton'},
+			{action: 'parametrise', order: '4', source: 'BlueprintSettingsGui::makeParametriseSlot'},
 		],
 		onOpenParameterizationCalls: [[]],
+		sourceContract: {
+			sprite: 'utility/parametrise',
+			toggleState: 'default',
+			widgetStyle: 'tool_button_green',
+		},
+		title: 'Parametrise/reconfigure the blueprint.',
 		toolbarButtons: [
 			'Upgrade items and entities in the blueprint',
 			'Parametrise or reconfigure the blueprint',
 			'Choose or drop an upgrade planner to hold',
 		],
 		tooltip: 'Parametrise/reconfigure the blueprint.',
+	});
+
+	rerender(
+		<BlueprintEditorToolbar
+			dropError={undefined}
+			onApplyPlacedPlanner={vi.fn<(direction: UpgradeDirection) => void>()}
+			onClearPlacedPlanner={vi.fn<() => void>()}
+			onDropPlanner={vi.fn<(serializedPlanner: string) => void>()}
+			onOpenParameterization={onOpenParameterization}
+			onOpenUpgradePlannerSelector={vi.fn<() => void>()}
+			parameterizationAvailable={true}
+			parameterizationDialogId="blueprint-parameterization"
+			parameterizationOpen
+			placedPlanner={undefined}
+			selectorDialogId="upgrade-planner-selector"
+			selectorOpen={false}
+		/>,
+	);
+
+	const expandedButton = screen.getByRole('button', {name: 'Parametrise or reconfigure the blueprint'});
+	expect({
+		expanded: expandedButton.getAttribute('aria-expanded'),
+		toggleState: expandedButton.dataset.factorioToggleState,
+	}).toStrictEqual({
+		expanded: 'true',
+		toggleState: 'selected',
 	});
 });
 

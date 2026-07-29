@@ -1819,10 +1819,39 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		render(<TransformPanel blueprint={parameterizedBlueprint} />);
 
 		openBlueprintEditor();
-		await user.click(screen.getByRole('button', {name: 'Parametrise or reconfigure the blueprint'}));
-		await user.clear(screen.getByRole('textbox', {name: 'Parameter 1 name'}));
-		await user.type(screen.getByRole('textbox', {name: 'Parameter 1 name'}), 'Any plate');
+		const editor = screen.getByRole('dialog', {name: 'Blueprint Editor'});
+		const parameterButton = screen.getByRole('button', {name: 'Parametrise or reconfigure the blueprint'});
+		await user.click(parameterButton);
+		const parameterDialog = screen.getByRole('dialog', {name: 'Blueprint parametrisation'});
+		const parameterName = screen.getByRole('textbox', {name: 'Parameter 1 name'});
+		expect({
+			activeElement: document.activeElement,
+			editorAriaHidden: editor.getAttribute('aria-hidden'),
+			editorInert: editor.inert,
+			expanded: parameterButton.getAttribute('aria-expanded'),
+			parameterDialogId: parameterDialog.id,
+		}).toStrictEqual({
+			activeElement: parameterName,
+			editorAriaHidden: 'true',
+			editorInert: true,
+			expanded: 'true',
+			parameterDialogId: parameterButton.getAttribute('aria-controls'),
+		});
+		await user.clear(parameterName);
+		await user.type(parameterName, 'Any plate');
 		await user.click(screen.getByRole('button', {name: 'Confirm'}));
+		await waitFor(() => {
+			expect(document.activeElement).toBe(parameterButton);
+		});
+		expect({
+			editorAriaHidden: editor.getAttribute('aria-hidden'),
+			editorInert: editor.inert,
+			expanded: parameterButton.getAttribute('aria-expanded'),
+		}).toStrictEqual({
+			editorAriaHidden: null,
+			editorInert: false,
+			expanded: 'false',
+		});
 		await user.click(screen.getByRole('button', {name: 'Save Blueprint'}));
 
 		expect(navigate).toHaveBeenCalledExactlyOnceWith({

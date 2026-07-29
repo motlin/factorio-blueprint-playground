@@ -149,16 +149,15 @@ export function BlueprintEditorToolbar({
 							aria-describedby={parameterizationTooltipId}
 							aria-expanded={parameterizationOpen}
 							aria-haspopup="dialog"
-							title="Parametrise or reconfigure the blueprint"
+							data-factorio-sprite="utility/parametrise"
+							data-factorio-toggle-state={parameterizationOpen ? 'selected' : 'default'}
+							data-factorio-widget-style="tool_button_green"
+							title="Parametrise/reconfigure the blueprint."
 							onClick={() => {
 								onOpenParameterization();
 							}}
 						>
-							<FactorioIcon
-								decorative
-								icon={{type: 'virtual-signal', name: 'signal-item-parameter'}}
-								size="large"
-							/>
+							<FactorioIcon decorative icon={{type: 'utility', name: 'parametrise'}} size="small" />
 						</FactorioButton>
 						<FactorioTooltip
 							id={parameterizationTooltipId}
