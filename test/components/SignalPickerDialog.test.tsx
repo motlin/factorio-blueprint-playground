@@ -597,6 +597,117 @@ test('uses source category order, disables empty search categories, and keeps th
 	expect(screen.getByRole('tab', {name: 'Logistics'}).getAttribute('aria-selected')).toBe('true');
 });
 
+test('lays source-ordered categories into six-column rows with one selected keyboard tab', () => {
+	render(
+		<SignalPickerDialog
+			confirmationMode="required"
+			title="Source category rows"
+			options={[
+				{type: 'item', name: 'wooden-chest'},
+				{type: 'item', name: 'repair-pack'},
+				{type: 'recipe', name: 'basic-oil-processing'},
+				{type: 'item', name: 'space-platform-foundation'},
+				{type: 'item', name: 'pistol'},
+				{type: 'fluid', name: 'water'},
+				{type: 'virtual', name: 'signal-everything'},
+				{type: 'tile', name: 'stone-path'},
+				{type: 'quality', name: 'rare'},
+				{type: 'technology', name: 'automation'},
+			]}
+			onChoose={vi.fn<SignalPickerDialogProps['onChoose']>()}
+			onClose={vi.fn<() => void>()}
+		/>,
+	);
+
+	const tabs = screen.getByRole('tablist', {name: 'Signal categories'});
+	const categoryTabs = within(tabs).getAllByRole('tab');
+	const tabLabels = categoryTabs.map((tab) => tab.getAttribute('aria-label'));
+	expect({
+		categoryCount: categoryTabs.length,
+		categoryStyle: categoryTabs.map((tab) => tab.getAttribute('data-factorio-style')),
+		distinctCategoryCount: new Set(tabLabels).size,
+		selectedTabs: categoryTabs
+			.filter((tab) => tab.getAttribute('aria-selected') === 'true')
+			.map((tab) => tab.getAttribute('aria-label')),
+		tabOrientation: tabs.getAttribute('aria-orientation'),
+		tabIndexes: Object.fromEntries(categoryTabs.map((tab) => [tab.getAttribute('aria-label'), tab.tabIndex])),
+		tabLabels,
+		tabTemplate: tabs.style.gridTemplateColumns,
+		tabWidths: [...new Set(categoryTabs.map((tab) => tab.style.width))],
+	}).toStrictEqual({
+		categoryCount: 10,
+		categoryStyle: Array.from({length: 10}, () => 'filter_group_tab'),
+		distinctCategoryCount: 10,
+		selectedTabs: ['Logistics'],
+		tabOrientation: 'horizontal',
+		tabIndexes: {
+			Logistics: 0,
+			Production: -1,
+			'Intermediate products': -1,
+			Space: -1,
+			Combat: -1,
+			Fluids: -1,
+			Signals: -1,
+			Tiles: -1,
+			Effects: -1,
+			Unsorted: -1,
+		},
+		tabLabels: [
+			'Logistics',
+			'Production',
+			'Intermediate products',
+			'Space',
+			'Combat',
+			'Fluids',
+			'Signals',
+			'Tiles',
+			'Effects',
+			'Unsorted',
+		],
+		tabTemplate: 'repeat(6, 71px)',
+		tabWidths: ['71px'],
+	});
+});
+
+test('moves category selection and focus through source-defined tab rows', () => {
+	render(
+		<SignalPickerDialog
+			confirmationMode="required"
+			initialSearch="water"
+			title="Category keyboard navigation"
+			options={categorizedOptions}
+			onChoose={vi.fn<SignalPickerDialogProps['onChoose']>()}
+			onClose={vi.fn<() => void>()}
+		/>,
+	);
+
+	const fluids = screen.getByRole('tab', {name: 'Fluids'});
+	fluids.focus();
+	fireEvent.keyDown(fluids, {key: 'Home'});
+	expect({
+		activeTab: screen.getByRole('tab', {selected: true}).getAttribute('aria-label'),
+		focusedTab: accessibleName(document.activeElement),
+	}).toStrictEqual({
+		activeTab: 'Fluids',
+		focusedTab: 'Fluids',
+	});
+
+	const search = screen.getByRole<HTMLInputElement>('searchbox', {name: 'Search'});
+	fireEvent.change(search, {target: {value: ''}});
+	const logistics = screen.getByRole('tab', {name: 'Logistics'});
+	logistics.focus();
+	fireEvent.keyDown(logistics, {key: 'ArrowRight'});
+	expect({
+		activeTab: screen.getByRole('tab', {selected: true}).getAttribute('aria-label'),
+		focusedTab: accessibleName(document.activeElement),
+		logisticsTabIndex: logistics.tabIndex,
+	}).toStrictEqual({
+		activeTab: 'Intermediate products',
+		focusedTab: 'Intermediate products',
+		logisticsTabIndex: -1,
+	});
+});
+
 test('filters hidden prototypes by default and admits them only through the explicit include policy', async () => {
 	const user = userEvent.setup();
 	const hiddenOptions: SignalID[] = [

@@ -90,6 +90,7 @@ import {useDialogFocus} from './useDialogFocus';
  * Select upgrade captures.
  */
 const gridColumnCount = gameUiSpec.styles.signalsTableColumnCount;
+const categoryColumnCount = gameUiSpec.utilityConstants.selectGroupRowCount;
 const maximumVisibleGridRows = gameUiSpec.utilityConstants.selectSlotRowCount;
 const hiddenPrototypeNames = new Set([
 	'bottomless-chest',
@@ -118,11 +119,18 @@ interface PickerCategory {
 	label: string;
 }
 
-const pickerCategories: readonly PickerCategory[] = gameUiSpec.signals.categories.map(({label, name}) => ({
-	id: name,
-	icon: {type: 'item-group', name},
-	label,
-}));
+const pickerCategories: readonly PickerCategory[] = gameUiSpec.signals.categories.map(
+	({label, name}, index, categories) => {
+		if (categories.findIndex((category) => category.name === name) !== index) {
+			throw new Error(`Signal category ${name} occurs more than once in the generated UI specification.`);
+		}
+		return {
+			id: name,
+			icon: {type: 'item-group', name},
+			label,
+		};
+	},
+);
 
 export interface SignalPickerDialogProps {
 	confirmationMode: SignalPickerConfirmationMode;
@@ -263,6 +271,7 @@ export function SignalPickerDialog({
 	const headingId = useId();
 	const searchId = useId();
 	const gridId = useId();
+	const categoryButtons = useRef<Array<HTMLButtonElement | null>>([]);
 	const optionButtons = useRef<Array<HTMLButtonElement | null>>([]);
 	const searchReference = useRef<HTMLInputElement>(null);
 	const signalNameReference = useRef<HTMLDivElement>(null);
@@ -445,6 +454,48 @@ export function SignalPickerDialog({
 		event.preventDefault();
 		optionButtons.current[nextIndex]?.focus();
 	};
+	const activateCategory = (category: PickerCategory, categoryIndex: number) => {
+		if ((categoryOptions.get(category.id)?.length ?? 0) === 0) {
+			return;
+		}
+		setActiveCategoryId(category.id);
+		categoryButtons.current[categoryIndex]?.focus();
+	};
+	const moveCategoryFocus = (event: React.KeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
+		let candidateIndexes: number[] = [];
+		if (event.key === 'ArrowRight') {
+			candidateIndexes = Array.from(
+				{length: availableCategories.length - 1},
+				(_, offset) => (currentIndex + offset + 1) % availableCategories.length,
+			);
+		} else if (event.key === 'ArrowLeft') {
+			candidateIndexes = Array.from(
+				{length: availableCategories.length - 1},
+				(_, offset) => (currentIndex - offset - 1 + availableCategories.length) % availableCategories.length,
+			);
+		} else if (event.key === 'ArrowDown') {
+			candidateIndexes = [currentIndex + categoryColumnCount];
+		} else if (event.key === 'ArrowUp') {
+			candidateIndexes = [currentIndex - categoryColumnCount];
+		} else if (event.key === 'Home') {
+			candidateIndexes = availableCategories.map((_, index) => index);
+		} else if (event.key === 'End') {
+			candidateIndexes = availableCategories.map((_, index) => availableCategories.length - index - 1);
+		} else {
+			return;
+		}
+		const nextIndex = candidateIndexes.find(
+			(index) =>
+				index >= 0 &&
+				index < availableCategories.length &&
+				(categoryOptions.get(availableCategories[index].id)?.length ?? 0) > 0,
+		);
+		if (nextIndex === undefined || nextIndex === currentIndex) {
+			return;
+		}
+		event.preventDefault();
+		activateCategory(availableCategories[nextIndex], nextIndex);
+	};
 
 	return createPortal(
 		<FactorioDialogBackdrop nested className="transform-dialog-backdrop transform-picker__backdrop">
@@ -509,21 +560,28 @@ export function SignalPickerDialog({
 								className="transform-picker__tabs"
 								role="tablist"
 								aria-label="Signal categories"
+								aria-orientation="horizontal"
 								style={{
-									gridTemplateColumns: `repeat(${gameUiSpec.utilityConstants.selectGroupRowCount.toString()}, ${gameUiSpec.styles.filterGroupTabWidth.toString()}px)`,
+									gridTemplateColumns: `repeat(${categoryColumnCount.toString()}, ${gameUiSpec.styles.filterGroupTabWidth.toString()}px)`,
 								}}
 							>
-								{availableCategories.map((category) => {
+								{availableCategories.map((category, categoryIndex) => {
 									const hasMatches = (categoryOptions.get(category.id)?.length ?? 0) > 0;
 									return (
 										<button
 											type="button"
 											role="tab"
 											key={category.id}
+											ref={(button) => {
+												categoryButtons.current[categoryIndex] = button;
+											}}
+											className="transform-picker__tab"
+											data-factorio-style="filter_group_tab"
 											aria-controls={gridId}
 											aria-label={category.label}
 											aria-selected={category.id === resolvedActiveCategoryId}
 											disabled={!hasMatches}
+											tabIndex={category.id === resolvedActiveCategoryId ? 0 : -1}
 											title={category.label}
 											style={{
 												width: gameUiSpec.styles.filterGroupTabWidth,
@@ -531,6 +589,9 @@ export function SignalPickerDialog({
 											}}
 											onClick={() => {
 												setActiveCategoryId(category.id);
+											}}
+											onKeyDown={(event) => {
+												moveCategoryFocus(event, categoryIndex);
 											}}
 										>
 											<FactorioIcon decorative icon={category.icon} size="large" />

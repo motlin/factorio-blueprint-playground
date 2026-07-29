@@ -59,6 +59,24 @@ export const NarrowPlannerIconPicker: Story = {
 	},
 };
 
+export const SourceOrderedCategoryRows: Story = {
+	args: {
+		title: 'Select a signal',
+		options: [
+			{type: 'item', name: 'wooden-chest'},
+			{type: 'item', name: 'repair-pack'},
+			{type: 'recipe', name: 'basic-oil-processing'},
+			{type: 'item', name: 'space-platform-foundation'},
+			{type: 'item', name: 'pistol'},
+			{type: 'fluid', name: 'water'},
+			{type: 'virtual', name: 'signal-everything'},
+			{type: 'tile', name: 'stone-path'},
+			{type: 'quality', name: 'rare'},
+			{type: 'technology', name: 'automation'},
+		],
+	},
+};
+
 export const PlannerFromPicker: Story = {
 	args: {
 		title: 'Set the filter',
