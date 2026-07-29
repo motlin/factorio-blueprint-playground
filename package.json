@@ -84,7 +84,7 @@
 		"vite": "catalog:",
 		"vite-plus": "catalog:",
 		"vitest": "catalog:",
-		"wrangler": "^4.112.0"
+		"wrangler": "^4.113.0"
 	},
 	"packageManager": "pnpm@11.15.0"
 }
