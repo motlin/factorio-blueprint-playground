@@ -64,6 +64,14 @@ export function upgradeQualityLabel(quality: ExplicitQuality): string {
 	return label;
 }
 
+export function upgradeQualitySelectionTooltip(quality: ExplicitQuality): string {
+	const template = gameUiSpec.labels.qualitySelectionTooltip;
+	if (!template.includes('__1__')) {
+		throw new Error('Generated game UI quality selection tooltip has no quality placeholder.');
+	}
+	return template.replace('__1__', upgradeQualityLabel(quality));
+}
+
 /**
  * Blueprint boundary for the canonical picker contract in
  * `SignalPickerDialog`: `any` is UI state for an absent source

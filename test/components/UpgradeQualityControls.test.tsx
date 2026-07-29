@@ -179,11 +179,11 @@ describe('UpgradeQualityControls', () => {
 					pressed: null,
 					title: 'Quality comparison: >',
 				},
-				{expanded: null, label: 'Normal quality', pressed: 'false', title: 'Normal quality'},
-				{expanded: null, label: 'Uncommon quality', pressed: 'false', title: 'Uncommon quality'},
-				{expanded: null, label: 'Rare quality', pressed: 'true', title: 'Rare quality'},
-				{expanded: null, label: 'Epic quality', pressed: 'false', title: 'Epic quality'},
-				{expanded: null, label: 'Legendary quality', pressed: 'false', title: 'Legendary quality'},
+				{expanded: null, label: 'Normal quality', pressed: 'false', title: 'Quality: Normal'},
+				{expanded: null, label: 'Uncommon quality', pressed: 'false', title: 'Quality: Uncommon'},
+				{expanded: null, label: 'Rare quality', pressed: 'true', title: 'Quality: Rare'},
+				{expanded: null, label: 'Epic quality', pressed: 'false', title: 'Quality: Epic'},
+				{expanded: null, label: 'Legendary quality', pressed: 'false', title: 'Quality: Legendary'},
 			],
 			comparatorChanges: [['≤']],
 			menu: null,
@@ -367,22 +367,58 @@ describe('UpgradeQualityControls', () => {
 
 		await user.click(screen.getByRole('button', {name: 'Legendary quality'}));
 
+		const qualityControls = screen.getByRole('group', {name: 'Target quality'});
 		expect({
-			buttons: screen.getAllByRole('button').map((button) => ({
-				label: button.getAttribute('aria-label'),
-				pressed: button.getAttribute('aria-pressed'),
-				title: button.title,
-			})),
+			buttons: screen.getAllByRole('button').map((button) => {
+				const image = button.querySelector('img');
+				return {
+					image: image?.getAttribute('src'),
+					label: button.getAttribute('aria-label'),
+					pressed: button.getAttribute('aria-pressed'),
+					title: button.title,
+				};
+			}),
+			comparator: screen.queryByRole('button', {name: /Quality comparison/}),
+			mode: qualityControls.getAttribute('data-quality-selector-mode'),
 			qualityChanges: onQualityChange.mock.calls,
+			textDropdown: screen.queryByRole('combobox', {name: 'Quality'}),
 		}).toStrictEqual({
 			buttons: [
-				{label: 'Normal quality', pressed: 'true', title: 'Normal quality'},
-				{label: 'Uncommon quality', pressed: 'false', title: 'Uncommon quality'},
-				{label: 'Rare quality', pressed: 'false', title: 'Rare quality'},
-				{label: 'Epic quality', pressed: 'false', title: 'Epic quality'},
-				{label: 'Legendary quality', pressed: 'false', title: 'Legendary quality'},
+				{
+					image: 'https://factorio-icon-cdn.pages.dev/quality/normal.webp',
+					label: 'Normal quality',
+					pressed: 'true',
+					title: 'Quality: Normal',
+				},
+				{
+					image: 'https://factorio-icon-cdn.pages.dev/quality/uncommon.webp',
+					label: 'Uncommon quality',
+					pressed: 'false',
+					title: 'Quality: Uncommon',
+				},
+				{
+					image: 'https://factorio-icon-cdn.pages.dev/quality/rare.webp',
+					label: 'Rare quality',
+					pressed: 'false',
+					title: 'Quality: Rare',
+				},
+				{
+					image: 'https://factorio-icon-cdn.pages.dev/quality/epic.webp',
+					label: 'Epic quality',
+					pressed: 'false',
+					title: 'Quality: Epic',
+				},
+				{
+					image: 'https://factorio-icon-cdn.pages.dev/quality/legendary.webp',
+					label: 'Legendary quality',
+					pressed: 'false',
+					title: 'Quality: Legendary',
+				},
 			],
+			comparator: null,
+			mode: 'buttons',
 			qualityChanges: [['legendary']],
+			textDropdown: null,
 		});
 	});
 });

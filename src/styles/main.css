@@ -2951,6 +2951,7 @@ body {
 .upgrade-quality-controls__quality > .factorio-quality-badge {
 	width: calc(24px * var(--factorio-ui-density));
 	height: calc(24px * var(--factorio-ui-density));
+	pointer-events: none;
 }
 
 .transform-picker__confirm {

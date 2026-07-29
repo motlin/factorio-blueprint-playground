@@ -10,6 +10,7 @@ import {
 	upgradeQualities,
 	upgradeQualityComparators,
 	upgradeQualityLabel,
+	upgradeQualitySelectionTooltip,
 	type ExplicitQuality,
 	type UpgradeQualityMode,
 	type UpgradeQualitySelection,
@@ -328,7 +329,7 @@ function QualitySelector({
 				key={quality}
 				aria-label={label}
 				selected={qualitySelection === quality}
-				title={label}
+				title={upgradeQualitySelectionTooltip(quality)}
 				onClick={() => {
 					onQualityChange(quality);
 				}}
@@ -361,12 +362,14 @@ export function UpgradeQualityControls({
 		}
 		onComparatorChange(comparator);
 	};
+	const qualitySelectorMode = qualitySelectorUsesDropdown(upgradeQualities.length) ? 'dropdown' : 'buttons';
 
 	return (
 		<div
 			className="upgrade-quality-controls upgrade-quality-controls--picker"
 			role="group"
 			aria-label={`${modeLabel} quality`}
+			data-quality-selector-mode={qualitySelectorMode}
 		>
 			{mode === 'source' ? (
 				<QualityComparatorControl
