@@ -60,16 +60,20 @@ test('groups only caller-supplied game signals and confirms a selected icon', as
 	const tabs = screen.getByRole('tablist', {name: 'Signal categories'});
 	const dialog = screen.getByRole('dialog', {name: 'Choose test signal'});
 	const heading = screen.getByRole('heading', {name: 'Choose test signal'});
-	const search = screen.getByRole<HTMLInputElement>('searchbox', {name: 'Search'});
+	const searchToggle = screen.getByRole('button', {name: 'Search'});
 	const close = screen.getByRole('button', {name: 'Close Choose test signal'});
 	expect({
 		activeTab: within(tabs).getByRole('tab', {name: 'Logistics'}).getAttribute('aria-selected'),
+		backdropLayer: dialog.parentElement?.getAttribute('data-factorio-dialog-layer'),
 		closeTooltip: close.getAttribute('title'),
+		closeStyle: close.getAttribute('data-factorio-style'),
 		confirmDisabled: screen.getByRole<HTMLButtonElement>('button', {name: 'Confirm'}).disabled,
 		dialogLabelledBy: dialog.getAttribute('aria-labelledby'),
 		headingId: heading.id,
-		initialFocusIsSearch: document.activeElement === search,
-		searchLabel: search.labels?.[0]?.textContent,
+		initialFocusIsSearch: document.activeElement === searchToggle,
+		searchExpanded: searchToggle.getAttribute('aria-expanded'),
+		searchField: screen.queryByRole('searchbox', {name: 'Search'}),
+		searchStyle: searchToggle.getAttribute('data-factorio-style'),
 		tabColumns: tabs.style.gridTemplateColumns,
 		tabRows: tabs.style.gridTemplateRows,
 		tabLabels: within(tabs)
@@ -80,18 +84,23 @@ test('groups only caller-supplied game signals and confirms a selected icon', as
 			.map((choice) => choice.getAttribute('aria-label')),
 	}).toStrictEqual({
 		activeTab: 'true',
+		backdropLayer: 'nested',
 		closeTooltip: 'Close Choose test signal',
+		closeStyle: 'frame_action_button',
 		initialFocusIsSearch: true,
 		confirmDisabled: true,
 		dialogLabelledBy: heading.id,
 		headingId: heading.id,
-		searchLabel: 'Search',
+		searchExpanded: 'false',
+		searchField: null,
+		searchStyle: 'frame_action_button',
 		tabColumns: 'repeat(6, 71px)',
 		tabRows: '',
 		tabLabels: ['Logistics', 'Intermediate products', 'Fluids', 'Signals', 'Unsorted'],
 		visibleChoices: ['Choose Transport belt'],
 	});
 
+	await user.click(searchToggle);
 	await user.type(screen.getByRole('searchbox', {name: 'Search'}), 'belt');
 	await user.click(screen.getByRole('button', {name: 'Choose Transport belt'}));
 	expect({
@@ -414,6 +423,7 @@ test('confirms the selected signal with Enter and the visible green check', asyn
 		/>,
 	);
 
+	await user.click(screen.getByRole('button', {name: 'Search'}));
 	const search = screen.getByRole('searchbox', {name: 'Search'});
 	search.focus();
 	fireEvent.keyDown(search, {key: 'Enter'});
@@ -485,6 +495,7 @@ test('keeps Q in the search field instead of dismissing the picker', async () =>
 		/>,
 	);
 
+	await user.click(screen.getByRole('button', {name: 'Search'}));
 	const search = screen.getByRole<HTMLInputElement>('searchbox', {name: 'Search'});
 	await user.type(search, 'quality');
 
@@ -496,6 +507,53 @@ test('keeps Q in the search field instead of dismissing the picker', async () =>
 		chooseCalls: [],
 		closeCalls: [],
 		search: 'quality',
+	});
+});
+
+test('toggles the game-style search popup and clears its filter when closed', async () => {
+	const user = userEvent.setup();
+	render(
+		<SignalPickerDialog
+			confirmationMode="required"
+			title="Search popup"
+			options={[
+				{type: 'entity', name: 'transport-belt'},
+				{type: 'entity', name: 'inserter'},
+			]}
+			onChoose={vi.fn<SignalPickerDialogProps['onChoose']>()}
+			onClose={vi.fn<() => void>()}
+		/>,
+	);
+
+	const searchToggle = screen.getByRole('button', {name: 'Search'});
+	await user.click(searchToggle);
+	const search = screen.getByRole<HTMLInputElement>('searchbox', {name: 'Search'});
+	expect({
+		expanded: searchToggle.getAttribute('aria-expanded'),
+		inputFocused: document.activeElement === search,
+	}).toStrictEqual({
+		expanded: 'true',
+		inputFocused: true,
+	});
+
+	await user.type(search, 'belt');
+	expect(
+		screen.getAllByRole('button', {name: /^Choose /}).map((button) => button.getAttribute('aria-label')),
+	).toStrictEqual(['Choose Transport belt']);
+
+	await user.click(searchToggle);
+	expect({
+		activeElement: accessibleName(document.activeElement),
+		expanded: searchToggle.getAttribute('aria-expanded'),
+		search: screen.queryByRole('searchbox', {name: 'Search'}),
+		visibleChoices: screen
+			.getAllByRole('button', {name: /^Choose /})
+			.map((button) => button.getAttribute('aria-label')),
+	}).toStrictEqual({
+		activeElement: 'Search',
+		expanded: 'false',
+		search: null,
+		visibleChoices: ['Choose Transport belt', 'Choose Inserter'],
 	});
 });
 

@@ -46,6 +46,19 @@ export const BlueprintIconPicker: Story = {
 	},
 };
 
+export const NarrowPlannerIconPicker: Story = {
+	args: {
+		title: 'Choose planner preview icon 1',
+		initialSignal: {type: 'item', name: 'iron-plate'},
+		options: catalog,
+	},
+	parameters: {
+		viewport: {
+			defaultViewport: 'transform-narrow',
+		},
+	},
+};
+
 export const PlannerFromPicker: Story = {
 	args: {
 		title: 'Set the filter',

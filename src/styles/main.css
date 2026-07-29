@@ -2058,7 +2058,9 @@ body {
 }
 
 .transform-dialog--picker {
-	width: fit-content;
+	/* Six 71px game tabs plus the shallow-frame inset; Teoxoy's 404px inventory remains the single-group floor. */
+	width: min(432px, 100%);
+	min-width: min(404px, 100%);
 	height: auto;
 	padding: 0;
 	overflow: hidden;
@@ -2467,8 +2469,9 @@ body {
 }
 
 .transform-picker__header {
+	position: relative;
 	display: grid;
-	grid-template-columns: minmax(150px, auto) minmax(180px, 1fr) 36px;
+	grid-template-columns: minmax(0, 1fr) auto;
 	gap: 12px;
 	margin: 0;
 }
@@ -2479,20 +2482,38 @@ body {
 	white-space: nowrap;
 }
 
-.transform-picker__search {
-	display: grid;
-	grid-template-columns: auto minmax(0, 1fr);
+.transform-picker__header-actions {
+	display: flex;
+	flex: 0 0 auto;
 	align-items: center;
-	gap: 7px;
+	gap: 4px;
+}
+
+.transform-picker__search-control {
+	position: relative;
+	display: flex;
+}
+
+.transform-picker__search {
+	position: absolute;
+	z-index: 3;
+	top: 50%;
+	right: calc(100% + 4px);
+	display: block;
+	width: min(260px, calc(100vw - 120px));
 	min-width: 0;
-	color: #ffe6c0;
-	font-size: 82%;
-	font-weight: bold;
+	transform: translateY(-50%);
 }
 
 .transform-picker__search input {
 	width: 100%;
-	height: 32px;
+	height: 36px;
+	appearance: none;
+	font: inherit;
+}
+
+.transform-picker__search input::-webkit-search-cancel-button {
+	display: none;
 }
 
 .transform-picker {
@@ -3289,15 +3310,6 @@ body {
 
 	.blueprint-snap-grid-editor__row input[type='number'] {
 		width: 100%;
-	}
-
-	.transform-picker__header {
-		grid-template-columns: minmax(0, 1fr) 36px;
-	}
-
-	.transform-picker__search {
-		grid-column: 1 / -1;
-		grid-row: 2;
 	}
 
 	.transform-picker__body {

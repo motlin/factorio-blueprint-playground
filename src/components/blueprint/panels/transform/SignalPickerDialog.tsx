@@ -1,10 +1,17 @@
-import {useCallback, useId, useMemo, useRef, useState} from 'react';
+import {useCallback, useEffect, useId, useMemo, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 
 import gameUiSpec from '../../../../generated/game-ui-spec.json';
 import type {QualityComparator, SignalID, SignalType} from '../../../../parsing/types';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
-import {FactorioButton, FactorioButtonKind, FactorioInventorySlot, FactorioScrollFrame} from '../../../ui/FactorioUi';
+import {
+	FactorioButton,
+	FactorioButtonKind,
+	FactorioDialogBackdrop,
+	FactorioInventorySlot,
+	FactorioScrollFrame,
+	FactorioTitleBar,
+} from '../../../ui/FactorioUi';
 import {
 	initialUpgradeQualitySelection,
 	signalWithUpgradeQuality,
@@ -257,6 +264,7 @@ export function SignalPickerDialog({
 	const searchId = useId();
 	const gridId = useId();
 	const optionButtons = useRef<Array<HTMLButtonElement | null>>([]);
+	const searchReference = useRef<HTMLInputElement>(null);
 	const signalNameReference = useRef<HTMLDivElement>(null);
 	const visibleOptions = useMemo(
 		() =>
@@ -276,6 +284,7 @@ export function SignalPickerDialog({
 		visibleOptions.length === 0 ? undefined : categoryForSignal(initialSignal ?? visibleOptions[0]).id;
 	const [activeCategoryId, setActiveCategoryId] = useState<PickerCategoryId | undefined>(initialCategoryId);
 	const [search, setSearch] = useState(initialSearch);
+	const [searchVisible, setSearchVisible] = useState(initialSearch !== '');
 	const [selectedSignal, setSelectedSignal] = useState<PickerSignal | undefined>(
 		initialSignal === undefined ||
 			!visibleOptions.some((signal) => signalPrototypeIdentity(signal) === signalPrototypeIdentity(initialSignal))
@@ -369,10 +378,16 @@ export function SignalPickerDialog({
 	}, [confirmedSignal, onChoose, selectionAllowed]);
 	const dialogReference = useDialogFocus<HTMLElement>({
 		closeOnQ: true,
-		initialFocusSelector: 'input[type="search"]',
+		initialFocusSelector: initialSearch === '' ? '[data-picker-search-toggle]' : 'input[type="search"]',
 		onClose,
 		onEnter: confirmationMode === 'required' ? confirmSelection : undefined,
 	});
+	useEffect(() => {
+		if (searchVisible) {
+			searchReference.current?.focus();
+			searchReference.current?.select();
+		}
+	}, [searchVisible]);
 
 	const moveGridFocus = (event: React.KeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
 		let nextIndex: number | undefined;
@@ -432,38 +447,61 @@ export function SignalPickerDialog({
 	};
 
 	return createPortal(
-		<div className="transform-dialog-backdrop transform-picker__backdrop">
+		<FactorioDialogBackdrop nested className="transform-dialog-backdrop transform-picker__backdrop">
 			<section
 				ref={dialogReference}
-				className="factorio-frame factorio-frame--shallow transform-dialog transform-dialog--picker"
+				className="factorio-frame factorio-frame--shallow factorio-dialog transform-dialog transform-dialog--picker"
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby={headingId}
 			>
-				<header className="factorio-title-bar transform-dialog__header transform-picker__header">
+				<FactorioTitleBar className="transform-dialog__header transform-picker__header">
 					<h3 id={headingId}>{title}</h3>
-					<label className="transform-picker__search" htmlFor={searchId}>
-						<span>Search</span>
-						<input
-							id={searchId}
-							type="search"
-							value={search}
-							onChange={(event) => {
-								setSearch(event.currentTarget.value);
-								clearInspectedSignal();
+					<div className="transform-picker__header-actions">
+						<div className="transform-picker__search-control">
+							<FactorioButton
+								kind={FactorioButtonKind.Search}
+								data-picker-search-toggle
+								aria-controls={searchId}
+								aria-expanded={searchVisible}
+								aria-label="Search"
+								title="Search"
+								onClick={(event) => {
+									if (searchVisible) {
+										setSearchVisible(false);
+										setSearch('');
+										clearInspectedSignal();
+										event.currentTarget.focus();
+									} else {
+										setSearchVisible(true);
+									}
+								}}
+							/>
+							<label className="transform-picker__search" htmlFor={searchId} hidden={!searchVisible}>
+								<span className="transform-visually-hidden">Search</span>
+								<input
+									ref={searchReference}
+									id={searchId}
+									type="search"
+									value={search}
+									onChange={(event) => {
+										setSearch(event.currentTarget.value);
+										clearInspectedSignal();
+									}}
+								/>
+							</label>
+						</div>
+						<FactorioButton
+							kind={FactorioButtonKind.Close}
+							className="transform-dialog__close"
+							aria-label={`Close ${title}`}
+							title={`Close ${title}`}
+							onClick={() => {
+								onClose();
 							}}
 						/>
-					</label>
-					<FactorioButton
-						kind={FactorioButtonKind.Close}
-						className="transform-dialog__close"
-						aria-label={`Close ${title}`}
-						title={`Close ${title}`}
-						onClick={() => {
-							onClose();
-						}}
-					/>
-				</header>
+					</div>
+				</FactorioTitleBar>
 				<div className="panel-hole transform-picker">
 					<div className="transform-picker__body">
 						{availableCategories.length > 1 ? (
@@ -611,7 +649,7 @@ export function SignalPickerDialog({
 					</footer>
 				) : null}
 			</section>
-		</div>,
+		</FactorioDialogBackdrop>,
 		document.body,
 	);
 }
