@@ -56,6 +56,21 @@ const records: LibraryRecord[] = [
 
 const comparePosition = (left: LibraryRecord, right: LibraryRecord) => left.position - right.position;
 
+const gridRecords = Array.from(
+	{length: 8},
+	(_, index): LibraryRecord => ({
+		...records[1],
+		id: `grid-blueprint-${(index + 1).toString()}`,
+		createdOn: index,
+		updatedOn: index,
+		gameData: {
+			...records[1].gameData,
+			label: `Grid blueprint ${(index + 1).toString()}`,
+		},
+		position: index,
+	}),
+);
+
 const storedPreferences = new Map<string, string>();
 const localStorage = {
 	clear: () => {
@@ -301,6 +316,71 @@ describe('BlueprintRecordViews', () => {
 				{current: null, label: 'Open book Factory books'},
 			],
 			slotStyle: 'blueprint_record_selection_button',
+		});
+	});
+
+	test('renders six source-sized grid cards per row and moves focus by the generated column count', () => {
+		window.localStorage.setItem(BLUEPRINT_RECORD_VIEW_STORAGE_KEY, 'grid');
+		const {container} = render(
+			<BlueprintRecordViews
+				aria-label="Blueprint records"
+				records={gridRecords}
+				compareRecords={comparePosition}
+				onActivate={() => undefined}
+			/>,
+		);
+
+		const grid = screen.getByRole('list');
+		const firstRecord = screen.getByRole('button', {name: 'Grid blueprint 1'});
+		firstRecord.focus();
+		fireEvent.keyDown(firstRecord, {key: 'ArrowDown'});
+		const seventhRecord = screen.getByRole('button', {name: 'Grid blueprint 7'});
+		expect(document.activeElement).toBe(seventhRecord);
+		fireEvent.keyDown(seventhRecord, {key: 'ArrowRight'});
+		const eighthRecord = screen.getByRole('button', {name: 'Grid blueprint 8'});
+		expect(document.activeElement).toBe(eighthRecord);
+		fireEvent.keyDown(eighthRecord, {key: 'ArrowUp'});
+
+		expect({
+			activeRecord: document.activeElement?.getAttribute('aria-label'),
+			bookAffordances: container.querySelectorAll('.blueprint-record-item__open-book').length,
+			columns: grid.dataset.factorioColumns,
+			gridClass: grid.className,
+			gridVariables: {
+				columns: grid.style.getPropertyValue('--blueprint-record-grid-columns'),
+				horizontalSpacing: grid.style.getPropertyValue('--blueprint-record-grid-horizontal-spacing'),
+				labelBottomMargin: grid.style.getPropertyValue('--blueprint-record-label-bottom-margin'),
+				labelHeight: grid.style.getPropertyValue('--blueprint-record-label-height'),
+				labelTopMargin: grid.style.getPropertyValue('--blueprint-record-label-top-margin'),
+				slotPadding: grid.style.getPropertyValue('--blueprint-record-slot-padding'),
+				slotSize: grid.style.getPropertyValue('--blueprint-record-slot-size'),
+				verticalSpacing: grid.style.getPropertyValue('--blueprint-record-grid-vertical-spacing'),
+			},
+			items: [...grid.children].map((item) => ({
+				buttonClass: item.querySelector('button')?.className,
+				label: item.querySelector('strong')?.textContent,
+				slotStyle: item.querySelector('.blueprint-record-item__icons')?.getAttribute('data-factorio-style'),
+			})),
+		}).toStrictEqual({
+			activeRecord: 'Grid blueprint 2',
+			bookAffordances: 0,
+			columns: '6',
+			gridClass: 'blueprint-record-views__items blueprint-record-views__items--grid',
+			gridVariables: {
+				columns: '6',
+				horizontalSpacing: '4px',
+				labelBottomMargin: '4px',
+				labelHeight: '40px',
+				labelTopMargin: '-4px',
+				slotPadding: '4px',
+				slotSize: '80px',
+				verticalSpacing: '4px',
+			},
+			items: gridRecords.map((record) => ({
+				buttonClass: 'blueprint-record-item blueprint-record-item--grid',
+				label: record.gameData.label,
+				slotStyle: 'blueprint_record_selection_button',
+			})),
 		});
 	});
 

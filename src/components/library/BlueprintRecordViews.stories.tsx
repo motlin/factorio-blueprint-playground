@@ -174,6 +174,37 @@ export const SavedUpgradePlanners: Story = {
 	},
 };
 
+export const SixColumnGrid: Story = {
+	tags: ['visual-conformance'],
+	args: {
+		records: Array.from({length: 8}, (_, index) =>
+			record(`grid-blueprint-${(index + 1).toString()}`, index, {
+				type: 'blueprint',
+				label: `Grid blueprint ${(index + 1).toString()}`,
+				description: 'A record used to verify Factorio grid geometry.',
+				icons: [{type: 'item', name: index % 2 === 0 ? 'transport-belt' : 'assembling-machine-3'}],
+			}),
+		),
+	},
+	play: async ({canvasElement}) => {
+		const canvas = within(canvasElement);
+		await userEvent.click(canvas.getByRole('button', {name: 'Grid view'}));
+		const recordList = canvas.getByRole('list');
+		const firstRecord = canvas.getByRole('button', {name: 'Grid blueprint 1'});
+
+		await expect(recordList).toHaveClass('blueprint-record-views__items--grid');
+		await expect(recordList).toHaveAttribute('data-factorio-columns', '6');
+		await expect(recordList).toHaveStyle({
+			'--blueprint-record-grid-columns': '6',
+			'--blueprint-record-label-height': '40px',
+			'--blueprint-record-slot-size': '80px',
+		});
+		firstRecord.focus();
+		await userEvent.keyboard('{ArrowDown}');
+		await expect(canvas.getByRole('button', {name: 'Grid blueprint 7'})).toHaveFocus();
+	},
+};
+
 export const ViewModeToggles: Story = {
 	tags: ['visual-conformance'],
 	play: async ({canvasElement}) => {

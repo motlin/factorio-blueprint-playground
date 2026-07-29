@@ -7,11 +7,13 @@ import {
 	useRef,
 	useState,
 	useSyncExternalStore,
+	type CSSProperties,
 	type KeyboardEvent,
 	type MouseEvent,
 	type Ref,
 } from 'react';
 
+import gameUiSpec from '../../generated/game-ui-spec.json';
 import {FactorioIcon} from '../core/icons/FactorioIcon';
 import {RichText} from '../core/text/RichText';
 import {
@@ -76,6 +78,28 @@ const VIEW_OPTIONS = [
 	{icon: Grid2X2, label: 'Grid view', mode: BlueprintRecordViewMode.Grid, sprite: 'grid_view'},
 	{icon: Grid3X3, label: 'Slots view', mode: BlueprintRecordViewMode.Slots, sprite: 'slots_view'},
 ] as const;
+
+interface BlueprintGridStyle extends CSSProperties {
+	'--blueprint-record-grid-columns': number;
+	'--blueprint-record-grid-horizontal-spacing': string;
+	'--blueprint-record-grid-vertical-spacing': string;
+	'--blueprint-record-label-bottom-margin': string;
+	'--blueprint-record-label-height': string;
+	'--blueprint-record-label-top-margin': string;
+	'--blueprint-record-slot-padding': string;
+	'--blueprint-record-slot-size': string;
+}
+
+const blueprintGridStyle: BlueprintGridStyle = {
+	'--blueprint-record-grid-columns': gameUiSpec.utilityConstants.blueprintBigSlotsPerRow,
+	'--blueprint-record-grid-horizontal-spacing': `${gameUiSpec.styles.defaultTableHorizontalSpacing.toString()}px`,
+	'--blueprint-record-grid-vertical-spacing': `${gameUiSpec.styles.defaultTableVerticalSpacing.toString()}px`,
+	'--blueprint-record-label-bottom-margin': `${gameUiSpec.styles.labelUnderWidgetBottomMargin.toString()}px`,
+	'--blueprint-record-label-height': `${gameUiSpec.styles.labelUnderWidgetHeight.toString()}px`,
+	'--blueprint-record-label-top-margin': `${gameUiSpec.styles.labelUnderWidgetTopMargin.toString()}px`,
+	'--blueprint-record-slot-padding': `${gameUiSpec.styles.blueprintRecordSlotPadding.toString()}px`,
+	'--blueprint-record-slot-size': `${gameUiSpec.styles.blueprintRecordSlotSize.toString()}px`,
+};
 
 interface BlueprintViewStorage {
 	getItem: (key: string) => string | null;
@@ -262,7 +286,7 @@ function BlueprintRecordItem<RecordModel extends BlueprintRecordModel>({
 					</span>
 				) : null}
 			</span>
-			{record.gameData.type === 'blueprint_book' && actionable ? (
+			{viewMode === BlueprintRecordViewMode.List && record.gameData.type === 'blueprint_book' && actionable ? (
 				<ChevronRight className="blueprint-record-item__open-book" aria-hidden="true" />
 			) : null}
 			<BlueprintRecordTooltip record={record} tooltipId={tooltipId} />
@@ -355,6 +379,15 @@ export function BlueprintRecordViews<RecordModel extends BlueprintRecordModel>({
 		recordReferences.current.get(nextRecord.id)?.focus();
 	};
 
+	const moveFocusWithinGrid = (nextIndex: number): void => {
+		const nextRecord = visibleRecords.at(nextIndex);
+		if (nextRecord === undefined) {
+			return;
+		}
+		setActiveRecordId(nextRecord.id);
+		recordReferences.current.get(nextRecord.id)?.focus();
+	};
+
 	const handleRecordKeyDown = (event: KeyboardEvent<HTMLButtonElement>, recordIndex: number): void => {
 		const record = visibleRecords[recordIndex];
 		if (
@@ -368,10 +401,24 @@ export function BlueprintRecordViews<RecordModel extends BlueprintRecordModel>({
 		} else if ((event.key === 'Enter' || event.key === ' ') && isRecordActionable(record)) {
 			event.preventDefault();
 			onActivate(record);
-		} else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+		} else if (event.key === 'ArrowUp') {
+			event.preventDefault();
+			if (viewMode === BlueprintRecordViewMode.Grid) {
+				moveFocusWithinGrid(recordIndex - gameUiSpec.utilityConstants.blueprintBigSlotsPerRow);
+			} else {
+				moveFocus(recordIndex - 1);
+			}
+		} else if (event.key === 'ArrowDown') {
+			event.preventDefault();
+			if (viewMode === BlueprintRecordViewMode.Grid) {
+				moveFocusWithinGrid(recordIndex + gameUiSpec.utilityConstants.blueprintBigSlotsPerRow);
+			} else {
+				moveFocus(recordIndex + 1);
+			}
+		} else if (event.key === 'ArrowLeft') {
 			event.preventDefault();
 			moveFocus(recordIndex - 1);
-		} else if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+		} else if (event.key === 'ArrowRight') {
 			event.preventDefault();
 			moveFocus(recordIndex + 1);
 		} else if (event.key === 'Home') {
@@ -479,7 +526,15 @@ export function BlueprintRecordViews<RecordModel extends BlueprintRecordModel>({
 						No matching {searchResultNoun}.
 					</p>
 				) : (
-					<ul className={`blueprint-record-views__items blueprint-record-views__items--${viewMode}`}>
+					<ul
+						className={`blueprint-record-views__items blueprint-record-views__items--${viewMode}`}
+						data-factorio-columns={
+							viewMode === BlueprintRecordViewMode.Grid
+								? gameUiSpec.utilityConstants.blueprintBigSlotsPerRow
+								: undefined
+						}
+						style={viewMode === BlueprintRecordViewMode.Grid ? blueprintGridStyle : undefined}
+					>
 						{visibleRecords.map((record, index) => (
 							<li key={record.id}>
 								<BlueprintRecordItem

@@ -1686,16 +1686,24 @@
 		]
 	},
 	"utilityConstants": {
+		"blueprintBigSlotsPerRow": 6,
 		"selectGroupRowCount": 6,
 		"selectSlotRowCount": 10,
 		"qualitySelectorDropdownThreshold": 6
 	},
 	"styles": {
+		"blueprintRecordSlotPadding": 4,
+		"blueprintRecordSlotSize": 80,
+		"defaultTableHorizontalSpacing": 4,
+		"defaultTableVerticalSpacing": 4,
 		"slotSize": 40,
 		"filterGroupTabWidth": 71,
 		"filterGroupTabHeight": 72,
 		"filterSlotHorizontalSpacing": 0,
 		"filterSlotVerticalSpacing": 0,
+		"labelUnderWidgetBottomMargin": 4,
+		"labelUnderWidgetHeight": 40,
+		"labelUnderWidgetTopMargin": -4,
 		"signalsTableColumnCount": 10,
 		"signalsTableMinimumWidth": 400,
 		"bindings": {
