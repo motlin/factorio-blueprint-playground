@@ -1,7 +1,8 @@
 import {useLiveQuery} from 'dexie-react-hooks';
-import {useCallback, useEffect, useId, useMemo, useRef, useState} from 'react';
+import {useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties} from 'react';
 import {createPortal} from 'react-dom';
 
+import gameUiSpec from '../../../../generated/game-ui-spec.json';
 import {serializeBlueprint} from '../../../../parsing/blueprintParser';
 import type {BlueprintString, UpgradePlanner} from '../../../../parsing/types';
 import {findUpgradePlanners, parseUpgradePlanner, type UpgradeDirection} from '../../../../transform/upgradePlanner';
@@ -52,6 +53,28 @@ const DEFAULT_UPGRADE_RECORD: UpgradePlannerSelectorRecord = {
 	},
 };
 const DEFAULT_UPGRADE_RECORDS = [DEFAULT_UPGRADE_RECORD];
+
+interface UpgradePlannerTileGridStyle extends CSSProperties {
+	'--blueprint-record-grid-columns': number;
+	'--blueprint-record-grid-horizontal-spacing': string;
+	'--blueprint-record-grid-vertical-spacing': string;
+	'--blueprint-record-label-bottom-margin': string;
+	'--blueprint-record-label-height': string;
+	'--blueprint-record-label-top-margin': string;
+	'--blueprint-record-slot-padding': string;
+	'--blueprint-record-slot-size': string;
+}
+
+const upgradePlannerTileGridStyle: UpgradePlannerTileGridStyle = {
+	'--blueprint-record-grid-columns': gameUiSpec.utilityConstants.blueprintBigSlotsPerRow,
+	'--blueprint-record-grid-horizontal-spacing': `${gameUiSpec.styles.defaultTableHorizontalSpacing.toString()}px`,
+	'--blueprint-record-grid-vertical-spacing': `${gameUiSpec.styles.defaultTableVerticalSpacing.toString()}px`,
+	'--blueprint-record-label-bottom-margin': `${gameUiSpec.styles.labelUnderWidgetBottomMargin.toString()}px`,
+	'--blueprint-record-label-height': `${gameUiSpec.styles.labelUnderWidgetHeight.toString()}px`,
+	'--blueprint-record-label-top-margin': `${gameUiSpec.styles.labelUnderWidgetTopMargin.toString()}px`,
+	'--blueprint-record-slot-padding': `${gameUiSpec.styles.blueprintRecordSlotPadding.toString()}px`,
+	'--blueprint-record-slot-size': `${gameUiSpec.styles.blueprintRecordSlotSize.toString()}px`,
+};
 
 function serializedPlanner(planner: UpgradePlanner): string {
 	const cachedPlanner = serializedPlannerCache.get(planner);
@@ -317,7 +340,14 @@ export function UpgradePlannerSelectorDialog({
 						)}
 					</div>
 					{includeEditingChoices ? (
-						<div className="upgrade-planner-selector__grid" role="grid" aria-label="Upgrade planners">
+						<div
+							className="upgrade-planner-selector__grid"
+							role="grid"
+							aria-label="Upgrade planners"
+							data-factorio-columns={gameUiSpec.utilityConstants.blueprintBigSlotsPerRow}
+							data-factorio-source="BlueprintsList::addItem"
+							style={upgradePlannerTileGridStyle}
+						>
 							{choices.map((choice, index) => (
 								<UpgradePlannerSelectorItem
 									key={choice.source}

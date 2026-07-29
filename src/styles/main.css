@@ -2749,8 +2749,13 @@ body {
 	min-width: 0;
 	min-height: 0;
 	flex: 1 1 auto;
-	grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
-	gap: 8px;
+	grid-template-columns: repeat(
+		var(--blueprint-record-grid-columns),
+		calc(var(--blueprint-record-slot-size) * var(--factorio-ui-density))
+	);
+	align-content: start;
+	column-gap: calc(var(--blueprint-record-grid-horizontal-spacing) * var(--factorio-ui-density));
+	row-gap: calc(var(--blueprint-record-grid-vertical-spacing) * var(--factorio-ui-density));
 	max-height: min(520px, 65vh);
 	padding: calc(8px * var(--factorio-ui-density));
 	overflow: auto;
@@ -2758,52 +2763,50 @@ body {
 	box-shadow: inset 0 2px 5px #181818;
 }
 
-.upgrade-planner-selector__tile {
-	display: flex;
-	min-width: 0;
-	min-height: 126px;
-	flex-direction: column;
-	align-items: stretch;
-	gap: 6px;
-	padding: 7px;
-	border: 1px solid #171717;
-	background: #343334;
+.blueprint-record-item--grid.upgrade-planner-selector__tile[aria-pressed='true']
+	.upgrade-planner-selector__record-icon {
+	background: var(--factorio-ui-selected);
 	box-shadow:
-		inset 0 1px 1px #777,
-		inset 0 -2px 2px #181818;
-	color: #f1efed;
-	font: inherit;
-	cursor: pointer;
+		inset 1px 1px 0 #ffd37a,
+		inset -2px -2px 0 #5b320d;
 }
 
-.upgrade-planner-selector__tile:hover,
-.upgrade-planner-selector__tile:focus-visible,
-.upgrade-planner-selector__tile[aria-pressed='true'] {
-	background: #454445;
-	outline: 2px solid #e39827;
-	outline-offset: -2px;
+.upgrade-planner-selector__tile--default .upgrade-planner-selector__label strong {
+	color: var(--factorio-ui-accent);
 }
 
-.upgrade-planner-selector__icon {
+.upgrade-planner-selector__tile .upgrade-planner-selector__record-icon--website {
 	display: grid;
-	min-height: 78px;
 	place-items: center;
-	background:
-		linear-gradient(135deg, rgb(255 255 255 / 12%), transparent 50%),
-		repeating-linear-gradient(90deg, rgb(255 255 255 / 5%) 0 2px, transparent 2px 8px), #15972a;
+	background: #3a393a;
 	box-shadow:
-		inset 0 0 0 3px #45d554,
-		inset 0 0 12px #075b15;
+		inset 1px 1px 0 #6a696a,
+		inset -2px -2px 0 #202020,
+		inset 0 0 0 calc(4px * var(--factorio-ui-density)) #2a292a;
 }
 
-.upgrade-planner-selector__tile > span:last-child {
-	display: -webkit-box;
-	min-height: 2.5em;
-	overflow: hidden;
-	line-height: 1.25;
+.upgrade-planner-selector__website-icon {
+	width: calc(38px * var(--factorio-ui-density));
+	height: calc(38px * var(--factorio-ui-density));
+	color: #b9b7b4;
+	stroke-width: 1.8;
+}
+
+.upgrade-planner-selector__website-label {
+	position: absolute;
+	right: calc(4px * var(--factorio-ui-density));
+	bottom: calc(4px * var(--factorio-ui-density));
+	left: calc(4px * var(--factorio-ui-density));
+	padding: calc(2px * var(--factorio-ui-density)) 0;
+	background: rgb(30 29 30 / 92%);
+	color: var(--factorio-ui-accent);
+	font-size: calc(7px * var(--factorio-ui-density));
+	font-weight: 700;
+	letter-spacing: 0.03em;
+	line-height: calc(9px * var(--factorio-ui-density));
 	text-align: center;
-	-webkit-box-orient: vertical;
-	-webkit-line-clamp: 2;
+	text-transform: uppercase;
+	white-space: nowrap;
 }
 
 .upgrade-planner-editor__paste {

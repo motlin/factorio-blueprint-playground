@@ -11,6 +11,10 @@ const sessionPlanner: UpgradePlanner = {
 	version: 0,
 	settings: {
 		description: 'Upgrades assembling machines in the example factory.',
+		icons: [
+			{index: 100, signal: {type: 'entity', name: 'assembling-machine-3', quality: 'rare'}},
+			{index: 200, signal: {type: 'item', name: 'speed-module-3', quality: 'legendary'}},
+		],
 		mappers: [
 			{
 				index: 100,
@@ -64,7 +68,7 @@ const meta = {
 		},
 	},
 	parameters: transformStoryParameters,
-	tags: ['autodocs'],
+	tags: ['autodocs', 'visual-conformance'],
 } satisfies Meta<typeof UpgradePlannerSelectorDialog>;
 
 export default meta;
@@ -88,12 +92,127 @@ export const LoadPlanner: Story = {
 	play: async () => {
 		const page = within(document.body);
 		const dialog = page.getByRole('dialog', {name: 'Load an upgrade planner'});
+		const grid = page.getByRole('grid', {name: 'Upgrade planners'});
 
-		await expect(dialog).toBeVisible();
-		await expect(
-			page.getByText('Choose a planner to copy all of its mappings into the editable draft.'),
-		).toBeVisible();
-		await expect(page.getByRole('button', {name: 'Empty Planner'})).toBeVisible();
-		await expect(page.getByRole('button', {name: 'Paste upgrade planner…'})).toBeVisible();
+		await expect({
+			columns: grid.getAttribute('data-factorio-columns'),
+			dialogVisible: dialog.getClientRects().length > 0,
+			instructions: page.getByText('Choose a planner to copy all of its mappings into the editable draft.')
+				.textContent,
+			tiles: within(grid)
+				.getAllByRole('button')
+				.map((tile) => ({
+					choiceKind: tile.getAttribute('data-choice-kind'),
+					label: tile.getAttribute('aria-label'),
+					pressed: tile.getAttribute('aria-pressed'),
+					websiteExtension: tile.getAttribute('data-website-extension'),
+				})),
+		}).toStrictEqual({
+			columns: '6',
+			dialogVisible: true,
+			instructions: 'Choose a planner to copy all of its mappings into the editable draft.',
+			tiles: [
+				{choiceKind: 'default', label: 'Default Upgrade', pressed: 'true', websiteExtension: null},
+				{
+					choiceKind: 'saved',
+					label: "Alice's assembler planner",
+					pressed: 'false',
+					websiteExtension: null,
+				},
+				{
+					choiceKind: 'saved',
+					label: "Alice's belt planner",
+					pressed: 'false',
+					websiteExtension: null,
+				},
+				{
+					choiceKind: 'empty',
+					label: 'Empty Planner',
+					pressed: 'false',
+					websiteExtension: 'empty-upgrade-planner',
+				},
+				{
+					choiceKind: 'paste',
+					label: 'Paste upgrade planner…',
+					pressed: 'false',
+					websiteExtension: 'paste-upgrade-planner',
+				},
+			],
+		});
+	},
+};
+
+export const LoadSavedPlanner: Story = {
+	args: {includeEditingChoices: true, selectedSource: 'session:alice'},
+	play: async () => {
+		const page = within(document.body);
+		const tile = page.getByRole('button', {name: "Alice's assembler planner"});
+		const icon = tile.querySelector('.upgrade-planner-selector__record-icon');
+
+		await expect({
+			activeElement: document.activeElement?.getAttribute('aria-label'),
+			factorioSource: tile.getAttribute('data-factorio-source'),
+			images: Array.from(icon?.querySelectorAll('img') ?? []).map((image) => image.getAttribute('src')),
+			pressed: tile.getAttribute('aria-pressed'),
+			previewIconCount: icon?.getAttribute('data-preview-icon-count'),
+		}).toStrictEqual({
+			activeElement: "Alice's assembler planner",
+			factorioSource: 'BlueprintsList::addItem',
+			images: [
+				'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
+				'https://factorio-icon-cdn.pages.dev/entity/assembling-machine-3.webp',
+				'https://factorio-icon-cdn.pages.dev/quality/rare.webp',
+				'https://factorio-icon-cdn.pages.dev/item/speed-module-3.webp',
+				'https://factorio-icon-cdn.pages.dev/quality/legendary.webp',
+			],
+			pressed: 'true',
+			previewIconCount: '2',
+		});
+	},
+};
+
+export const LoadEmptyPlanner: Story = {
+	args: {includeEditingChoices: true, selectedSource: 'custom'},
+	play: async () => {
+		const page = within(document.body);
+		const tile = page.getByRole('button', {name: 'Empty Planner'});
+
+		await expect({
+			activeElement: document.activeElement?.getAttribute('aria-label'),
+			extension: tile.getAttribute('data-website-extension'),
+			label: within(tile).getByText('Website extension').textContent,
+			pressed: tile.getAttribute('aria-pressed'),
+			websiteAction: tile.querySelector('svg')?.getAttribute('data-website-action'),
+		}).toStrictEqual({
+			activeElement: 'Empty Planner',
+			extension: 'empty-upgrade-planner',
+			label: 'Website extension',
+			pressed: 'true',
+			websiteAction: 'empty',
+		});
+	},
+};
+
+export const LoadPastePlannerFocused: Story = {
+	args: {includeEditingChoices: true, selectedSource: 'custom'},
+	play: async () => {
+		const page = within(document.body);
+		const emptyTile = page.getByRole('button', {name: 'Empty Planner'});
+		const pasteTile = page.getByRole('button', {name: 'Paste upgrade planner…'});
+
+		pasteTile.focus();
+		await expect({
+			activeElement: document.activeElement?.getAttribute('aria-label'),
+			emptyPressed: emptyTile.getAttribute('aria-pressed'),
+			pasteExtension: pasteTile.getAttribute('data-website-extension'),
+			pastePressed: pasteTile.getAttribute('aria-pressed'),
+			websiteAction: pasteTile.querySelector('svg')?.getAttribute('data-website-action'),
+		}).toStrictEqual({
+			activeElement: 'Paste upgrade planner…',
+			emptyPressed: 'true',
+			pasteExtension: 'paste-upgrade-planner',
+			pastePressed: 'false',
+			websiteAction: 'paste',
+		});
 	},
 };
