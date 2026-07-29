@@ -78,12 +78,18 @@ const libraryRecords = [
 	},
 ] satisfies LibraryRecord[];
 
-function BlueprintLibraryStory({initialLocation}: {initialLocation?: BlueprintLibraryLocation}) {
+function BlueprintLibraryStory({
+	initialLocation,
+	records = libraryRecords,
+}: {
+	initialLocation?: BlueprintLibraryLocation;
+	records?: readonly LibraryRecord[];
+}) {
 	const [location, setLocation] = useState<BlueprintLibraryLocation>(initialLocation ?? {shelf: 'library'});
 	return (
 		<BlueprintLibrary
 			historyRecords={[]}
-			libraryRecords={libraryRecords}
+			libraryRecords={records}
 			location={location}
 			onLocationChange={setLocation}
 		/>
@@ -162,7 +168,7 @@ export const NestedBookNavigationAndFocusRestoration: Story = {
 		await expect(stationBookButton).toHaveAttribute('aria-pressed', 'true');
 		await expect(within(navigation).getByText('Current book')).toBeVisible();
 		await expect(canvas.getByRole('heading', {level: 2, name: 'Station plans'})).toBeVisible();
-		await expect(canvas.getByText('1 item in this book')).toBeVisible();
+		await expect(canvas.getByText('1 item')).toBeVisible();
 
 		rootButton.focus();
 		await userEvent.keyboard('{ArrowDown}');
@@ -185,5 +191,57 @@ export const NestedBookNavigationAndFocusRestoration: Story = {
 		stackerRecord.focus();
 		await userEvent.keyboard('{Escape}');
 		await expect(await canvas.findByRole('button', {name: 'Open book Station plans'})).toHaveFocus();
+	},
+};
+
+export const EmptyLibraryShelf: Story = {
+	tags: ['visual-conformance'],
+	args: {
+		records: [],
+	},
+	play: async ({canvasElement}) => {
+		const canvas = within(canvasElement);
+		const locationHeading = canvas.getByRole('heading', {level: 2, name: 'My blueprints'});
+		const emptyState = canvas.getByRole('status');
+		const recordsSurface = emptyState.parentElement;
+
+		await expect(locationHeading.parentElement?.parentElement).toHaveAttribute(
+			'data-factorio-source',
+			'BlueprintBookRecordWidget::BlueprintBookRecordWidget',
+		);
+		await expect(canvas.getByText('Blueprint shelf')).toBeVisible();
+		await expect(canvas.getByText('0 items')).toBeVisible();
+		await expect(emptyState).toHaveAttribute('data-factorio-source', 'BlueprintShelfWidget::updateRecords');
+		await expect(emptyState.querySelector('.blueprint-library__empty-copy')).toHaveAttribute(
+			'data-website-extension',
+			'empty-shelf-help',
+		);
+		await expect(emptyState.querySelectorAll('.blueprint-library__empty-slot')).toHaveLength(10);
+		await expect(recordsSurface).toHaveClass('blueprint-library__records-surface');
+	},
+};
+
+export const StaleBookRecovery: Story = {
+	tags: ['visual-conformance'],
+	args: {
+		initialLocation: {shelf: 'library', book: 'removed-book'},
+	},
+	play: async ({canvasElement}) => {
+		const canvas = within(canvasElement);
+		const staleState = canvas.getByRole('status');
+		const rootLocation = canvas.getByRole('heading', {level: 2, name: 'My blueprints'});
+
+		await expect(staleState).toHaveAttribute(
+			'data-factorio-source',
+			'BlueprintLibraryGui::updateOpenedBlueprintBook',
+		);
+		await expect(staleState).toHaveAttribute('data-website-extension', 'stale-book-recovery');
+		await expect(rootLocation).toBeVisible();
+		await expect(canvas.getByText('2 items')).toBeVisible();
+		await expect(canvasElement).not.toHaveTextContent('removed-book');
+
+		await userEvent.click(canvas.getByRole('button', {name: 'Show My blueprints'}));
+		await expect(canvas.queryByRole('status')).toBeNull();
+		await expect(canvas.getByRole('region', {name: 'Blueprint records'})).toBeVisible();
 	},
 };

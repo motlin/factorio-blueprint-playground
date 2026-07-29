@@ -122,7 +122,7 @@ function resolveBookLocation(records: readonly LibraryRecord[], activeBookId: st
 function bookNavigationEntries(bookLocation: BookLocation): BookNavigationEntry[] {
 	const rootEntry = {
 		bookId: undefined,
-		current: bookLocation.valid && bookLocation.book === undefined,
+		current: bookLocation.book === undefined,
 		depth: 0,
 		label: 'My blueprints',
 	};
@@ -149,16 +149,13 @@ export function BlueprintLibrary({historyRecords, libraryRecords, location, onLo
 		[libraryRecords, location.book],
 	);
 	const navigationEntries = useMemo(() => bookNavigationEntries(bookLocation), [bookLocation]);
-	const currentParentId = bookLocation.book?.id ?? LIBRARY_ROOT_ID;
+	const currentParentId = bookLocation.valid ? (bookLocation.book?.id ?? LIBRARY_ROOT_ID) : LIBRARY_ROOT_ID;
 	const currentRecords = useMemo(
-		() => (bookLocation.valid ? libraryRecords.filter((record) => record.parentId === currentParentId) : []),
-		[bookLocation.valid, currentParentId, libraryRecords],
+		() => libraryRecords.filter((record) => record.parentId === currentParentId),
+		[currentParentId, libraryRecords],
 	);
-	const currentLocationLabel = bookLocation.valid
-		? bookLocation.book === undefined
-			? 'Library shelf'
-			: recordLabel(bookLocation.book)
-		: 'Unavailable book';
+	const currentLocationLabel = bookLocation.book === undefined ? 'My blueprints' : recordLabel(bookLocation.book);
+	const currentLocationType = bookLocation.book === undefined ? 'Blueprint shelf' : 'Blueprint book';
 
 	useEffect(() => {
 		const priorLocation = previousBookLocation.current;
@@ -341,70 +338,105 @@ export function BlueprintLibrary({historyRecords, libraryRecords, location, onLo
 							))}
 						</nav>
 
-						<header className="blueprint-library__location-heading">
-							<h2
-								ref={recordsHeadingReference}
-								className="blueprint-library__location-title"
-								tabIndex={-1}
-							>
-								{currentLocationLabel}
-							</h2>
-							<span>
-								{currentRecords.length.toString()} {currentRecords.length === 1 ? 'item' : 'items'} in{' '}
-								{bookLocation.book === undefined ? 'this shelf' : 'this book'}
+						<header
+							className="blueprint-library__location-heading"
+							data-factorio-source="BlueprintBookRecordWidget::BlueprintBookRecordWidget"
+						>
+							<div className="blueprint-library__location-label">
+								<h2
+									ref={recordsHeadingReference}
+									className="blueprint-library__location-title"
+									tabIndex={-1}
+								>
+									{currentLocationLabel}
+								</h2>
+								<span>{currentLocationType}</span>
+							</div>
+							<span className="blueprint-library__location-count">
+								{currentRecords.length.toString()} {currentRecords.length === 1 ? 'item' : 'items'}
 							</span>
 						</header>
 
-						{bookLocation.valid ? (
-							currentRecords.length === 0 ? (
-								<div className="blueprint-library__empty" role="status">
-									<BookOpen aria-hidden="true" />
-									<strong>
-										{bookLocation.book === undefined
-											? 'Your library is empty.'
-											: 'This book is empty.'}
-									</strong>
-									<span>Saved blueprints and planners will appear here.</span>
-								</div>
+						<div className="blueprint-library__records-surface">
+							{bookLocation.valid ? (
+								currentRecords.length === 0 ? (
+									<div
+										className="blueprint-library__empty"
+										role="status"
+										data-factorio-source="BlueprintShelfWidget::updateRecords"
+									>
+										<div className="blueprint-library__empty-slots" aria-hidden="true">
+											{Array.from({length: 10}, (_, slotIndex) => (
+												<span
+													key={slotIndex}
+													className="factorio-inventory-slot blueprint-library__empty-slot"
+													data-factorio-style="slot_button"
+												/>
+											))}
+										</div>
+										<div
+											className="blueprint-library__empty-copy"
+											data-website-extension="empty-shelf-help"
+										>
+											<BookOpen aria-hidden="true" />
+											<strong>
+												{bookLocation.book === undefined
+													? 'No blueprints saved yet'
+													: 'This blueprint book is empty'}
+											</strong>
+											<span>Saved blueprints and planners will appear in these slots.</span>
+										</div>
+									</div>
+								) : (
+									<BlueprintRecordViews
+										ref={recordViewsReference}
+										aria-label="Blueprint records"
+										records={currentRecords}
+										compareRecords={compareLibraryPosition}
+										isRecordActionable={(record) => record.gameData.type === 'blueprint_book'}
+										onActivate={(record) => {
+											onLocationChange({shelf: 'library', book: record.id});
+										}}
+										onEscape={
+											bookLocation.book === undefined
+												? undefined
+												: () => {
+														onLocationChange({
+															shelf: 'library',
+															book:
+																bookLocation.book?.parentId === LIBRARY_ROOT_ID
+																	? undefined
+																	: bookLocation.book?.parentId,
+														});
+													}
+										}
+									/>
+								)
 							) : (
-								<BlueprintRecordViews
-									ref={recordViewsReference}
-									aria-label="Blueprint records"
-									records={currentRecords}
-									compareRecords={compareLibraryPosition}
-									isRecordActionable={(record) => record.gameData.type === 'blueprint_book'}
-									onActivate={(record) => {
-										onLocationChange({shelf: 'library', book: record.id});
-									}}
-									onEscape={
-										bookLocation.book === undefined
-											? undefined
-											: () => {
-													onLocationChange({
-														shelf: 'library',
-														book:
-															bookLocation.book?.parentId === LIBRARY_ROOT_ID
-																? undefined
-																: bookLocation.book?.parentId,
-													});
-												}
-									}
-								/>
-							)
-						) : (
-							<div className="blueprint-library__empty" role="status">
-								<BookOpen aria-hidden="true" />
-								<strong>This book is no longer in the library.</strong>
-								<span>It may have been moved or deleted in another tab.</span>
-								<FactorioButton
-									onClick={() => {
-										onLocationChange({shelf: 'library'});
-									}}
+								<div
+									className="blueprint-library__stale-book"
+									role="status"
+									data-factorio-source="BlueprintLibraryGui::updateOpenedBlueprintBook"
+									data-website-extension="stale-book-recovery"
 								>
-									Return to Library
-								</FactorioButton>
-							</div>
-						)}
+									<BookOpen aria-hidden="true" />
+									<div>
+										<strong>This blueprint book is no longer available.</strong>
+										<span>
+											It may have been moved or deleted in another tab. Your saved shelf is still
+											available.
+										</span>
+									</div>
+									<FactorioButton
+										onClick={() => {
+											onLocationChange({shelf: 'library'});
+										}}
+									>
+										Show My blueprints
+									</FactorioButton>
+								</div>
+							)}
+						</div>
 					</section>
 				) : (
 					<section

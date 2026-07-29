@@ -212,9 +212,25 @@ describe('BlueprintLibrary', () => {
 				onLocationChange={() => undefined}
 			/>,
 		);
-		expect(screen.getByRole('status').textContent).toBe(
-			'Your library is empty.Saved blueprints and planners will appear here.',
-		);
+		const emptyState = screen.getByRole('status');
+		expect({
+			emptySlotCount: emptyState.querySelectorAll('.blueprint-library__empty-slot').length,
+			factorioSource: emptyState.dataset.factorioSource,
+			heading: screen.getByRole('heading', {name: 'My blueprints'}).textContent,
+			itemCount: screen.getByText('0 items').textContent,
+			message: emptyState.textContent,
+			recordsSurfaceClass: emptyState.parentElement?.className,
+			websiteExtension: emptyState.querySelector<HTMLElement>('.blueprint-library__empty-copy')?.dataset
+				.websiteExtension,
+		}).toStrictEqual({
+			emptySlotCount: 10,
+			factorioSource: 'BlueprintShelfWidget::updateRecords',
+			heading: 'My blueprints',
+			itemCount: '0 items',
+			message: 'No blueprints saved yetSaved blueprints and planners will appear in these slots.',
+			recordsSurfaceClass: 'blueprint-library__records-surface',
+			websiteExtension: 'empty-shelf-help',
+		});
 
 		function StaleLibrary() {
 			const [location, setLocation] = useState<BlueprintLibraryLocation>({
@@ -231,8 +247,33 @@ describe('BlueprintLibrary', () => {
 			);
 		}
 		rerender(<StaleLibrary />);
+		const staleState = screen.getByRole('status');
 		expect(document.body.textContent).not.toContain('missing-database-id');
-		await user.click(screen.getByRole('button', {name: 'Return to Library'}));
-		expect(screen.getByRole('heading', {name: 'Library shelf'}).textContent).toBe('Library shelf');
+		expect({
+			factorioSource: staleState.dataset.factorioSource,
+			heading: screen.getByRole('heading', {name: 'My blueprints'}).textContent,
+			itemCount: screen.getByText('2 items').textContent,
+			message: staleState.textContent,
+			websiteExtension: staleState.dataset.websiteExtension,
+		}).toStrictEqual({
+			factorioSource: 'BlueprintLibraryGui::updateOpenedBlueprintBook',
+			heading: 'My blueprints',
+			itemCount: '2 items',
+			message:
+				'This blueprint book is no longer available.It may have been moved or deleted in another tab. Your saved shelf is still available.Show My blueprints',
+			websiteExtension: 'stale-book-recovery',
+		});
+		await user.click(screen.getByRole('button', {name: 'Show My blueprints'}));
+		expect({
+			heading: screen.getByRole('heading', {name: 'My blueprints'}).textContent,
+			records: within(screen.getByRole('region', {name: 'Blueprint records'}))
+				.getAllByRole('button')
+				.map((button) => button.getAttribute('aria-label')),
+			staleState: screen.queryByRole('status'),
+		}).toStrictEqual({
+			heading: 'My blueprints',
+			records: ['Open book Alice rail book', 'Main bus upgrades'],
+			staleState: null,
+		});
 	});
 });
