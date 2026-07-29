@@ -274,7 +274,6 @@ export function TransformPanel({
 					planner,
 					source: 'dropped',
 				},
-				direction: 'upgrade',
 			});
 			setEditorPlannerDropError(undefined);
 		} catch {

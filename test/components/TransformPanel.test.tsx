@@ -709,7 +709,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			toolbarActions: [
 				'Upgrade items and entities in the blueprint',
 				'Parametrise or reconfigure the blueprint',
-				'Choose upgrade planner for toolbar slot',
+				'Choose or drop an upgrade planner to hold',
 			],
 		});
 
@@ -797,7 +797,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		render(<TransformPanel blueprint={blueprint} />);
 
 		openBlueprintEditor();
-		const emptySlot = screen.getByRole('button', {name: 'Choose upgrade planner for toolbar slot'});
+		const emptySlot = screen.getByRole('button', {name: 'Choose or drop an upgrade planner to hold'});
 		emptySlot.focus();
 		await user.keyboard('{Enter}');
 		expect(
@@ -812,7 +812,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		});
 		expect({
 			error: screen.getByRole('alert').textContent,
-			slot: screen.getByRole('button', {name: 'Choose upgrade planner for toolbar slot'}).textContent,
+			slot: screen.getByRole('button', {name: 'Choose or drop an upgrade planner to hold'}).textContent,
 		}).toStrictEqual({
 			error: 'Drop an encoded or JSON upgrade planner.',
 			slot: '+',
@@ -824,7 +824,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			},
 		});
 		const placedSlot = screen.getByRole('button', {
-			name: "Change placed upgrade planner, currently Alice's dropped planner",
+			name: "Held upgrade planner Alice's dropped planner; click to replace",
 		});
 		expect({
 			apply: screen
@@ -840,24 +840,21 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			navigation: [],
 		});
 
-		const removeButton = screen.getByRole('button', {
-			name: "Remove Alice's dropped planner from toolbar slot",
-		});
-		removeButton.focus();
-		await user.keyboard('{Enter}');
+		placedSlot.focus();
+		await user.keyboard('{Delete}');
 		expect({
 			apply: screen
 				.getByRole('button', {
 					name: 'Upgrade items and entities in the blueprint',
 				})
 				.getAttribute('aria-expanded'),
-			remove: screen.queryByRole('button', {
-				name: "Remove Alice's dropped planner from toolbar slot",
+			heldPlanner: screen.queryByRole('button', {
+				name: "Held upgrade planner Alice's dropped planner; click to replace",
 			}),
-			slot: screen.getByRole('button', {name: 'Choose upgrade planner for toolbar slot'}).textContent,
+			slot: screen.getByRole('button', {name: 'Choose or drop an upgrade planner to hold'}).textContent,
 		}).toStrictEqual({
 			apply: 'false',
-			remove: null,
+			heldPlanner: null,
 			slot: '+',
 		});
 	});

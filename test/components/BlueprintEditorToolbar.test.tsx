@@ -33,7 +33,18 @@ test('renders the supported Factorio editor action with accessible states and a 
 	const button = screen.getByRole<HTMLButtonElement>('button', {
 		name: 'Upgrade items and entities in the blueprint',
 	});
+	const heldPlannerSlot = screen.getByRole<HTMLButtonElement>('button', {
+		name: 'Choose or drop an upgrade planner to hold',
+	});
 	const tooltip = screen.getByRole('tooltip');
+	const dataTransfer = {
+		dropEffect: 'none',
+		types: ['text/plain'],
+	};
+	fireEvent.dragEnter(heldPlannerSlot, {dataTransfer});
+	const readyDropState = heldPlannerSlot.dataset.dropState;
+	fireEvent.dragOver(heldPlannerSlot, {dataTransfer});
+	fireEvent.dragLeave(heldPlannerSlot, {dataTransfer, relatedTarget: document.body});
 	fireEvent.click(button);
 	const contextMenuAllowed = fireEvent.contextMenu(button);
 
@@ -44,6 +55,13 @@ test('renders the supported Factorio editor action with accessible states and a 
 		describedBy: button.getAttribute('aria-describedby'),
 		expanded: button.getAttribute('aria-expanded'),
 		hasPopup: button.getAttribute('aria-haspopup'),
+		heldPlannerSlot: {
+			dropEffect: dataTransfer.dropEffect,
+			dropState: heldPlannerSlot.dataset.dropState,
+			pressed: heldPlannerSlot.getAttribute('aria-pressed'),
+			readyDropState,
+			state: heldPlannerSlot.dataset.plannerState,
+		},
 		iconSize: button.querySelector('[data-factorio-icon-size]')?.getAttribute('data-factorio-icon-size'),
 		icon: button.querySelector('img')?.getAttribute('src'),
 		keyshortcuts: button.getAttribute('aria-keyshortcuts'),
@@ -72,6 +90,13 @@ test('renders the supported Factorio editor action with accessible states and a 
 		describedBy: tooltip.id,
 		expanded: 'false',
 		hasPopup: 'dialog',
+		heldPlannerSlot: {
+			dropEffect: 'copy',
+			dropState: 'idle',
+			pressed: 'false',
+			readyDropState: 'ready',
+			state: 'empty',
+		},
 		icon: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
 		iconSize: 'small',
 		keyshortcuts: 'Shift+Enter',
@@ -92,7 +117,7 @@ test('renders the supported Factorio editor action with accessible states and a 
 			widgetStyle: 'tool_button_green',
 		},
 		title: 'Upgrade items and entities in the blueprint.',
-		toolbarButtons: ['Upgrade items and entities in the blueprint', 'Choose upgrade planner for toolbar slot'],
+		toolbarButtons: ['Upgrade items and entities in the blueprint', 'Choose or drop an upgrade planner to hold'],
 		tooltip: {id: tooltip.id, text: 'Upgrade items and entities in the blueprint.'},
 	});
 
@@ -174,28 +199,29 @@ test('opens Blueprint parametrisation only when the current format supports it',
 		toolbarButtons: [
 			'Upgrade items and entities in the blueprint',
 			'Parametrise or reconfigure the blueprint',
-			'Choose upgrade planner for toolbar slot',
+			'Choose or drop an upgrade planner to hold',
 		],
 		tooltip: 'Parametrise/reconfigure the blueprint.',
 	});
 });
 
-test('uses left for upgrade and secondary activation for downgrade regardless of stored direction', () => {
+test('uses left and secondary activation for direction while the held planner clears from the slot', () => {
 	const onApplyPlacedPlanner = vi.fn<(direction: UpgradeDirection) => void>();
+	const onClearPlacedPlanner = vi.fn<() => void>();
+	const onOpenUpgradePlannerSelector = vi.fn<() => void>();
 	render(
 		<BlueprintEditorToolbar
 			dropError={undefined}
 			onApplyPlacedPlanner={onApplyPlacedPlanner}
-			onClearPlacedPlanner={vi.fn<() => void>()}
+			onClearPlacedPlanner={onClearPlacedPlanner}
 			onDropPlanner={vi.fn<(serializedPlanner: string) => void>()}
 			onOpenParameterization={vi.fn<() => void>()}
-			onOpenUpgradePlannerSelector={vi.fn<() => void>()}
+			onOpenUpgradePlannerSelector={onOpenUpgradePlannerSelector}
 			parameterizationAvailable={false}
 			parameterizationDialogId="blueprint-parameterization"
 			parameterizationOpen={false}
 			placedPlanner={{
 				choice: {label: 'Belt planner', source: 'book:1'},
-				direction: 'upgrade',
 			}}
 			selectorDialogId="upgrade-planner-selector"
 			selectorOpen={false}
@@ -203,39 +229,64 @@ test('uses left for upgrade and secondary activation for downgrade regardless of
 	);
 
 	const apply = screen.getByRole('button', {name: 'Upgrade items and entities in the blueprint'});
-	const change = screen.getByRole('button', {
-		name: 'Change placed upgrade planner, currently Belt planner',
+	const heldPlanner = screen.getByRole('button', {
+		name: 'Held upgrade planner Belt planner; click to replace',
 	});
-	const remove = screen.getByRole('button', {name: 'Remove Belt planner from toolbar slot'});
 	const gameActions = screen.getByRole('group', {name: 'Factorio blueprint actions'});
 	const websiteActions = screen.getByRole('group', {name: 'Website planner slot'});
 	fireEvent.click(apply);
 	const contextMenuAllowed = fireEvent.contextMenu(apply);
 	fireEvent.keyDown(apply, {key: 'Enter', shiftKey: true});
+	fireEvent.click(heldPlanner);
+	const clearContextMenuAllowed = fireEvent.contextMenu(heldPlanner);
+	fireEvent.keyDown(heldPlanner, {key: 'Delete'});
+	fireEvent.keyDown(heldPlanner, {key: 'Backspace'});
 
 	expect({
 		applyCalls: onApplyPlacedPlanner.mock.calls,
 		applyLabel: apply.getAttribute('aria-label'),
 		applyKeyshortcuts: apply.getAttribute('aria-keyshortcuts'),
 		applyTooltip: apply.getAttribute('title'),
-		changeTooltip: change.getAttribute('title'),
+		clearCalls: onClearPlacedPlanner.mock.calls,
+		clearContextMenuAllowed,
 		contextMenuAllowed,
+		heldPlanner: {
+			clearButton: screen.queryByRole('button', {name: /Remove Belt planner/}),
+			directionArrow: heldPlanner.querySelector('.blueprint-editor-toolbar__planner-direction'),
+			iconSize: heldPlanner.querySelector('[data-factorio-icon-size]')?.getAttribute('data-factorio-icon-size'),
+			keyshortcuts: heldPlanner.getAttribute('aria-keyshortcuts'),
+			pressed: heldPlanner.getAttribute('aria-pressed'),
+			plannerState: heldPlanner.dataset.plannerState,
+			source: heldPlanner.dataset.factorioSource,
+			title: heldPlanner.title,
+		},
 		groups: {
 			game: [...gameActions.querySelectorAll('button')].map((button) => button.getAttribute('aria-label')),
 			website: [...websiteActions.querySelectorAll('button')].map((button) => button.getAttribute('aria-label')),
 		},
-		removeTooltip: remove.getAttribute('title'),
+		openSelectorCalls: onOpenUpgradePlannerSelector.mock.calls,
 	}).toStrictEqual({
 		applyCalls: [['upgrade'], ['downgrade'], ['downgrade']],
 		applyLabel: 'Upgrade items and entities in the blueprint',
 		applyKeyshortcuts: 'Shift+Enter',
-		applyTooltip: 'Upgrade items and entities in the blueprint.',
-		changeTooltip: 'Change placed upgrade planner, currently Belt planner',
+		applyTooltip: 'Use Belt planner. Left-click to upgrade; right-click or press Shift+Enter to downgrade.',
+		clearCalls: [[], [], []],
+		clearContextMenuAllowed: false,
 		contextMenuAllowed: false,
+		heldPlanner: {
+			clearButton: null,
+			directionArrow: null,
+			iconSize: 'large',
+			keyshortcuts: 'Delete Backspace',
+			pressed: 'true',
+			plannerState: 'held',
+			source: 'PlayerInputSource::processClickOnUpgradeSlot',
+			title: 'Belt planner is held for the Upgrade button. Left-click to replace it. Right-click or press Delete to clear it.',
+		},
 		groups: {
 			game: ['Upgrade items and entities in the blueprint'],
-			website: ['Change placed upgrade planner, currently Belt planner', 'Remove Belt planner from toolbar slot'],
+			website: ['Held upgrade planner Belt planner; click to replace'],
 		},
-		removeTooltip: 'Remove Belt planner from toolbar slot',
+		openSelectorCalls: [[]],
 	});
 });

@@ -1,19 +1,12 @@
-import {useId} from 'react';
+import {useId, useState} from 'react';
 
 import type {UpgradeDirection} from '../../../../transform/upgradePlanner';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
-import {
-	FactorioButton,
-	FactorioButtonKind,
-	FactorioInventorySlot,
-	FactorioTooltip,
-	FactorioTooltipPlacement,
-} from '../../../ui/FactorioUi';
+import {FactorioButton, FactorioInventorySlot, FactorioTooltip, FactorioTooltipPlacement} from '../../../ui/FactorioUi';
 import type {UpgradePlannerChoice} from './UpgradePlannerSelectorItem';
 
 export interface PlacedUpgradePlanner {
 	choice: UpgradePlannerChoice;
-	direction: UpgradeDirection;
 }
 
 const upgradeBlueprintTooltip = 'Upgrade items and entities in the blueprint.';
@@ -38,14 +31,15 @@ interface BlueprintEditorToolbarProps {
  *
  * - The Upgrade Planner control is a launcher when empty. Choosing from the
  *   selector applies immediately in the chosen direction. Dropping a planner
- *   fills its tool slot; primary activation applies upgrade direction and
- *   secondary activation applies downgrade direction.
+ *   creates a website cursor proxy; the green control applies upgrade on
+ *   primary activation and downgrade on secondary activation.
  * - Parametrisation opens the BE-5 local child editor for blueprints. The child
  *   confirms back into the editor draft; it does not save the loaded root.
  * - The source subheader order is label, reassign, copy, upgrade, parametrise,
  *   export, then delete. Unsupported game actions are omitted instead of
- *   rendered as inert lookalikes. The website-only dropped-planner slot follows
- *   the game-action group behind a visible separator.
+ *   rendered as inert lookalikes. The website-only held-planner proxy follows
+ *   the game-action group behind a visible separator. Its secondary activation
+ *   and Delete/Backspace equivalent clear the held planner.
  *
  * `UpgradePlannerSelectorDialog`, `UpgradePlannerSelectorItem`, and
  * `BlueprintParameterizationDialog` implement the launcher children.
@@ -67,7 +61,17 @@ export function BlueprintEditorToolbar({
 	const tooltipId = useId();
 	const parameterizationTooltipId = useId();
 	const dropErrorId = useId();
+	const heldPlannerTooltipId = useId();
+	const [plannerDropReady, setPlannerDropReady] = useState(false);
 	const selectedPlannerLabel = placedPlanner?.choice.label;
+	const placedUpgradeBlueprintTooltip =
+		selectedPlannerLabel === undefined
+			? upgradeBlueprintTooltip
+			: `Use ${selectedPlannerLabel}. Left-click to upgrade; right-click or press Shift+Enter to downgrade.`;
+	const heldPlannerTooltip =
+		selectedPlannerLabel === undefined
+			? 'Choose or drop an upgrade planner to hold for the Upgrade button.'
+			: `${selectedPlannerLabel} is held for the Upgrade button. Left-click to replace it. Right-click or press Delete to clear it.`;
 	const activateUpgradePlanner = (direction: UpgradeDirection) => {
 		if (placedPlanner === undefined) {
 			onOpenUpgradePlannerSelector();
@@ -105,7 +109,8 @@ export function BlueprintEditorToolbar({
 						aria-expanded={selectedPlannerLabel === undefined ? selectorOpen : undefined}
 						aria-haspopup={selectedPlannerLabel === undefined ? 'dialog' : undefined}
 						data-factorio-widget-style="tool_button_green"
-						title={upgradeBlueprintTooltip}
+						data-factorio-source="PlayerInputSource::processClickOnUpgradeSlot"
+						title={placedUpgradeBlueprintTooltip}
 						onClick={() => {
 							activateUpgradePlanner('upgrade');
 						}}
@@ -127,7 +132,7 @@ export function BlueprintEditorToolbar({
 						className="factorio-toolbar-tooltip"
 						placement={FactorioTooltipPlacement.Below}
 					>
-						{upgradeBlueprintTooltip}
+						{placedUpgradeBlueprintTooltip}
 					</FactorioTooltip>
 				</div>
 				{parameterizationAvailable ? (
@@ -175,50 +180,75 @@ export function BlueprintEditorToolbar({
 					className="blueprint-editor-toolbar__planner-slot"
 					aria-label={
 						selectedPlannerLabel === undefined
-							? 'Choose upgrade planner for toolbar slot'
-							: `Change placed upgrade planner, currently ${selectedPlannerLabel}`
+							? 'Choose or drop an upgrade planner to hold'
+							: `Held upgrade planner ${selectedPlannerLabel}; click to replace`
 					}
 					aria-controls={selectorDialogId}
-					aria-describedby={dropError === undefined ? undefined : dropErrorId}
+					aria-describedby={
+						dropError === undefined ? heldPlannerTooltipId : `${heldPlannerTooltipId} ${dropErrorId}`
+					}
 					aria-expanded={selectorOpen}
 					aria-haspopup="dialog"
-					title={
-						selectedPlannerLabel === undefined
-							? 'Choose upgrade planner for toolbar slot'
-							: `Change placed upgrade planner, currently ${selectedPlannerLabel}`
-					}
-					onClick={onOpenUpgradePlannerSelector}
+					aria-keyshortcuts={selectedPlannerLabel === undefined ? undefined : 'Delete Backspace'}
+					selected={placedPlanner !== undefined}
+					data-drop-state={plannerDropReady ? 'ready' : 'idle'}
+					data-planner-state={selectedPlannerLabel === undefined ? 'empty' : 'held'}
+					data-factorio-source="PlayerInputSource::processClickOnUpgradeSlot"
+					title={heldPlannerTooltip}
+					onClick={() => {
+						onOpenUpgradePlannerSelector();
+					}}
+					onContextMenu={(event) => {
+						if (placedPlanner === undefined) {
+							return;
+						}
+						event.preventDefault();
+						onClearPlacedPlanner();
+					}}
+					onDragEnter={(event) => {
+						if (event.dataTransfer.types.includes('text/plain')) {
+							event.preventDefault();
+							setPlannerDropReady(true);
+						}
+					}}
+					onDragLeave={(event) => {
+						if (
+							!(event.relatedTarget instanceof Node) ||
+							!event.currentTarget.contains(event.relatedTarget)
+						) {
+							setPlannerDropReady(false);
+						}
+					}}
 					onDragOver={(event) => {
 						if (event.dataTransfer.types.includes('text/plain')) {
 							event.preventDefault();
 							event.dataTransfer.dropEffect = 'copy';
+							setPlannerDropReady(true);
 						}
 					}}
 					onDrop={(event) => {
 						event.preventDefault();
+						setPlannerDropReady(false);
 						onDropPlanner(event.dataTransfer.getData('text/plain'));
+					}}
+					onKeyDown={(event) => {
+						if (placedPlanner !== undefined && (event.key === 'Delete' || event.key === 'Backspace')) {
+							event.preventDefault();
+							onClearPlacedPlanner();
+						}
 					}}
 				>
 					{placedPlanner === undefined ? (
-						<span aria-hidden="true">+</span>
+						<span className="blueprint-editor-toolbar__planner-empty" aria-hidden="true">
+							+
+						</span>
 					) : (
-						<>
-							<FactorioIcon decorative icon={{type: 'item', name: 'upgrade-planner'}} size="small" />
-							<span className="blueprint-editor-toolbar__planner-direction" aria-hidden="true">
-								{placedPlanner.direction === 'upgrade' ? '↑' : '↓'}
-							</span>
-						</>
+						<FactorioIcon decorative icon={{type: 'item', name: 'upgrade-planner'}} size="large" />
 					)}
 				</FactorioInventorySlot>
-				{placedPlanner === undefined ? null : (
-					<FactorioButton
-						kind={FactorioButtonKind.Delete}
-						className="blueprint-editor-toolbar__planner-clear"
-						aria-label={`Remove ${selectedPlannerLabel} from toolbar slot`}
-						title={`Remove ${selectedPlannerLabel} from toolbar slot`}
-						onClick={onClearPlacedPlanner}
-					/>
-				)}
+				<span id={heldPlannerTooltipId} className="transform-visually-hidden">
+					{heldPlannerTooltip}
+				</span>
 				<p
 					id={dropErrorId}
 					className="blueprint-editor-toolbar__drop-error"

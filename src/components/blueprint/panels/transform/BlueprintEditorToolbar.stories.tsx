@@ -100,7 +100,7 @@ export const ParametrisationAvailable: Story = {
 			toolbarButtons: [
 				'Upgrade items and entities in the blueprint',
 				'Parametrise or reconfigure the blueprint',
-				'Choose upgrade planner for toolbar slot',
+				'Choose or drop an upgrade planner to hold',
 			],
 		});
 	},
@@ -124,7 +124,6 @@ export const Placed: Story = {
 				label: "Alice's belt planner",
 				source: 'book:2',
 			},
-			direction: 'upgrade',
 		},
 	},
 	play: async ({args, canvasElement}) => {
@@ -133,18 +132,55 @@ export const Placed: Story = {
 		const applyButton = canvas.getByRole('button', {
 			name: 'Upgrade items and entities in the blueprint',
 		});
-		await expect(
-			canvas.getByRole('button', {
-				name: "Change placed upgrade planner, currently Alice's belt planner",
-			}),
-		).toBeVisible();
+		const heldPlanner = canvas.getByRole('button', {
+			name: "Held upgrade planner Alice's belt planner; click to replace",
+		});
+		await expect({
+			clearButton: canvas.queryByRole('button', {name: /Remove Alice's belt planner/}),
+			directionArrow: heldPlanner.querySelector('.blueprint-editor-toolbar__planner-direction'),
+			iconSize: heldPlanner.querySelector('[data-factorio-icon-size]')?.getAttribute('data-factorio-icon-size'),
+			keyshortcuts: heldPlanner.getAttribute('aria-keyshortcuts'),
+			pressed: heldPlanner.getAttribute('aria-pressed'),
+			plannerState: heldPlanner.dataset.plannerState,
+		}).toStrictEqual({
+			clearButton: null,
+			directionArrow: null,
+			iconSize: 'large',
+			keyshortcuts: 'Delete Backspace',
+			pressed: 'true',
+			plannerState: 'held',
+		});
 		await userEvent.hover(applyButton);
-		await expect(page.getByRole('tooltip')).toHaveTextContent('Upgrade items and entities in the blueprint.');
+		await expect(page.getByRole('tooltip')).toHaveTextContent(
+			"Use Alice's belt planner. Left-click to upgrade; right-click or press Shift+Enter to downgrade.",
+		);
 		await userEvent.unhover(applyButton);
 		await userEvent.click(applyButton);
 		await userEvent.pointer({keys: '[MouseRight]', target: applyButton});
 		applyButton.focus();
 		await userEvent.keyboard('{Shift>}{Enter}{/Shift}');
+		await userEvent.pointer({keys: '[MouseRight]', target: heldPlanner});
 		await expect(args.onApplyPlacedPlanner.mock.calls).toStrictEqual([['upgrade'], ['downgrade'], ['downgrade']]);
+		await expect(args.onClearPlacedPlanner.mock.calls).toStrictEqual([[]]);
+	},
+};
+
+export const DropTarget: Story = {
+	play: async ({canvasElement}) => {
+		const canvas = within(canvasElement);
+		const slot = canvas.getByRole('button', {name: 'Choose or drop an upgrade planner to hold'});
+		slot.dataset.dropState = 'ready';
+
+		await expect({
+			dropState: slot.dataset.dropState,
+			plannerState: slot.dataset.plannerState,
+			pressed: slot.getAttribute('aria-pressed'),
+			title: slot.title,
+		}).toStrictEqual({
+			dropState: 'ready',
+			plannerState: 'empty',
+			pressed: 'false',
+			title: 'Choose or drop an upgrade planner to hold for the Upgrade button.',
+		});
 	},
 };
