@@ -350,6 +350,55 @@ describe('UpgradePlannerSelectorDialog golden apply-only source contracts', () =
 		});
 	});
 
+	test('inserts one Default Upgrade first with the source planner icon and empty description', () => {
+		renderApplySelector();
+
+		const records = screen.getByRole('list');
+		const recordButtons = within(records).getAllByRole('button');
+		const defaultUpgrade = screen.getByRole('button', {name: 'Default Upgrade'});
+		const icon = defaultUpgrade.querySelector('.blueprint-record-item__icons');
+		const tooltipId = defaultUpgrade.getAttribute('aria-describedby')?.split(' ')[0] ?? '';
+		const tooltip = document.getElementById(tooltipId);
+
+		expect({
+			defaultChoices: recordButtons
+				.map((button) => button.getAttribute('aria-label'))
+				.filter((label) => label?.includes('Default Upgrade') === true),
+			firstRecord: recordButtons[0]?.getAttribute('aria-label'),
+			identity: defaultUpgrade.getAttribute('data-blueprint-record-id'),
+			icon: {
+				factorioSource: icon?.getAttribute('data-factorio-source'),
+				factorioStyle: icon?.getAttribute('data-factorio-style'),
+				images: Array.from(icon?.querySelectorAll('img') ?? []).map((image) => image.getAttribute('src')),
+				previewIconCount: icon?.getAttribute('data-preview-icon-count'),
+				recordType: icon?.getAttribute('data-record-type'),
+			},
+			label: defaultUpgrade.querySelector('.blueprint-record-item__text strong')?.textContent,
+			recordSource: defaultUpgrade.getAttribute('data-factorio-source'),
+			tooltip: {
+				description: tooltip?.querySelector('.blueprint-record-item__tooltip-description')?.textContent,
+				type: tooltip?.querySelector('.blueprint-record-item__tooltip-type')?.textContent,
+			},
+		}).toStrictEqual({
+			defaultChoices: ['Default Upgrade'],
+			firstRecord: 'Default Upgrade',
+			identity: 'suggested',
+			icon: {
+				factorioSource: 'PreviewIcons::drawWithItemIcon',
+				factorioStyle: 'blueprint_record_selection_button',
+				images: ['https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp'],
+				previewIconCount: '0',
+				recordType: 'upgrade_planner',
+			},
+			label: 'Default Upgrade',
+			recordSource: 'BlueprintsList::addItem',
+			tooltip: {
+				description: 'No description.',
+				type: 'Upgrade planner',
+			},
+		});
+	});
+
 	test('reuses the persistent library list, grid, and slot presentations', async () => {
 		const user = userEvent.setup();
 		const {unmount} = renderApplySelector();

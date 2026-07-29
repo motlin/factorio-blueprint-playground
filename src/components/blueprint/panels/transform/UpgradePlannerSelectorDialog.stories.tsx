@@ -84,6 +84,37 @@ export const ApplyPlanner: Story = {
 		await expect(page.getByRole('button', {name: 'Close upgrade planner selector'})).toBeVisible();
 		await expect(page.getByRole('button', {name: 'List view'})).toHaveAttribute('aria-pressed', 'true');
 		await expect(page.getByRole('button', {name: "Alice's assembler planner"})).toBeVisible();
+		const records = page.getByRole('list');
+		const recordButtons = within(records).getAllByRole('button');
+		const defaultUpgrade = page.getByRole('button', {name: 'Default Upgrade'});
+		const defaultIcon = defaultUpgrade.querySelector('.blueprint-record-item__icons');
+		await expect({
+			defaultChoices: recordButtons
+				.map((button) => button.getAttribute('aria-label'))
+				.filter((label) => label?.includes('Default Upgrade') === true),
+			firstRecord: recordButtons[0]?.getAttribute('aria-label'),
+			identity: defaultUpgrade.getAttribute('data-blueprint-record-id'),
+			icon: {
+				images: Array.from(defaultIcon?.querySelectorAll('img') ?? []).map((image) =>
+					image.getAttribute('src'),
+				),
+				previewIconCount: defaultIcon?.getAttribute('data-preview-icon-count'),
+				recordType: defaultIcon?.getAttribute('data-record-type'),
+				style: defaultIcon?.getAttribute('data-factorio-style'),
+			},
+			label: defaultUpgrade.querySelector('strong')?.textContent,
+		}).toStrictEqual({
+			defaultChoices: ['Default Upgrade'],
+			firstRecord: 'Default Upgrade',
+			identity: 'suggested',
+			icon: {
+				images: ['https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp'],
+				previewIconCount: '0',
+				recordType: 'upgrade_planner',
+				style: 'blueprint_record_selection_button',
+			},
+			label: 'Default Upgrade',
+		});
 	},
 };
 

@@ -2744,6 +2744,13 @@ body {
 	flex: 1 1 auto;
 }
 
+.upgrade-planner-selector__records
+	.blueprint-record-item[data-blueprint-record-id='suggested']:not(.blueprint-record-item--slots)
+	.blueprint-record-item__text
+	strong {
+	color: var(--factorio-ui-accent);
+}
+
 .upgrade-planner-selector__grid {
 	display: grid;
 	min-width: 0;

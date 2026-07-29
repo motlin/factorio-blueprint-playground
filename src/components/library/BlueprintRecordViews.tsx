@@ -300,6 +300,7 @@ function BlueprintRecordItem<RecordModel extends BlueprintRecordModel>({
 		'aria-current': active ? ('true' as const) : undefined,
 		'aria-keyshortcuts': onAlternateActivate === undefined ? undefined : 'Shift+Enter',
 		'aria-label': recordAccessibleName(record, actionable),
+		'data-blueprint-record-id': record.id,
 		onClick: () => {
 			if (actionable) {
 				onActivate();

@@ -48,7 +48,7 @@ const DEFAULT_UPGRADE_RECORD: UpgradePlannerSelectorRecord = {
 	gameData: {
 		type: 'upgrade_planner',
 		label: DEFAULT_UPGRADE_CHOICE.label,
-		description: "Applies Factorio's automatic upgrade relationships.",
+		description: '',
 		icons: [],
 	},
 };
