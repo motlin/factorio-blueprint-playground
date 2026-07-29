@@ -1,4 +1,4 @@
-import {BookOpen, ChevronRight, Clock3, FolderOpen} from 'lucide-react';
+import {BookOpen, ChevronRight, Clock3} from 'lucide-react';
 import {useEffect, useId, useMemo, useRef} from 'react';
 
 import type {ImportHistoryRecord, LibraryRecord} from '../../storage/db';
@@ -19,6 +19,34 @@ export interface BlueprintLibraryLocation {
 	shelf: BlueprintLibraryShelf;
 	book?: string;
 }
+
+interface BlueprintLibraryShelfTab {
+	shelf: BlueprintLibraryShelf;
+	label: string;
+	panelId: string;
+	sourceShelf: string;
+	tabId: string;
+	websiteShelf: string;
+}
+
+const BLUEPRINT_LIBRARY_SHELF_TABS = [
+	{
+		shelf: 'library',
+		label: 'My blueprints',
+		panelId: 'blueprint-library-library-panel',
+		sourceShelf: 'private-shelf',
+		tabId: 'blueprint-library-library-tab',
+		websiteShelf: 'Library',
+	},
+	{
+		shelf: 'history',
+		label: 'Import history',
+		panelId: 'blueprint-library-history-panel',
+		sourceShelf: 'website-only',
+		tabId: 'blueprint-library-history-tab',
+		websiteShelf: 'History',
+	},
+] as const satisfies readonly BlueprintLibraryShelfTab[];
 
 interface BlueprintLibraryProps {
 	location: BlueprintLibraryLocation;
@@ -120,23 +148,22 @@ export function BlueprintLibrary({historyRecords, libraryRecords, location, onLo
 	};
 
 	const handleTabKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, tabIndex: number): void => {
-		const shelves: BlueprintLibraryShelf[] = ['library', 'history'];
 		let nextIndex: number | undefined;
 		if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
-			nextIndex = (tabIndex - 1 + shelves.length) % shelves.length;
+			nextIndex = (tabIndex - 1 + BLUEPRINT_LIBRARY_SHELF_TABS.length) % BLUEPRINT_LIBRARY_SHELF_TABS.length;
 		} else if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
-			nextIndex = (tabIndex + 1) % shelves.length;
+			nextIndex = (tabIndex + 1) % BLUEPRINT_LIBRARY_SHELF_TABS.length;
 		} else if (event.key === 'Home') {
 			nextIndex = 0;
 		} else if (event.key === 'End') {
-			nextIndex = shelves.length - 1;
+			nextIndex = BLUEPRINT_LIBRARY_SHELF_TABS.length - 1;
 		}
 		if (nextIndex === undefined) {
 			return;
 		}
 		event.preventDefault();
 		tabReferences.current[nextIndex]?.focus();
-		changeShelf(shelves[nextIndex]);
+		changeShelf(BLUEPRINT_LIBRARY_SHELF_TABS[nextIndex].shelf);
 	};
 
 	return (
@@ -156,45 +183,40 @@ export function BlueprintLibrary({historyRecords, libraryRecords, location, onLo
 				depth={FactorioFrameDepth.Deep}
 				data-factorio-style="inside_deep_frame"
 			>
-				<div className="blueprint-library__shelves" role="tablist" aria-label="Blueprint Library shelves">
-					<FactorioButton
-						ref={(button) => {
-							tabReferences.current[0] = button;
-						}}
-						className="blueprint-library__shelf"
-						role="tab"
-						aria-controls="blueprint-library-library-panel"
-						aria-selected={location.shelf === 'library'}
-						tabIndex={location.shelf === 'library' ? 0 : -1}
-						onClick={() => {
-							changeShelf('library');
-						}}
-						onKeyDown={(event) => {
-							handleTabKeyDown(event, 0);
-						}}
-					>
-						<FolderOpen aria-hidden="true" />
-						Library
-					</FactorioButton>
-					<FactorioButton
-						ref={(button) => {
-							tabReferences.current[1] = button;
-						}}
-						className="blueprint-library__shelf"
-						role="tab"
-						aria-controls="blueprint-library-history-panel"
-						aria-selected={location.shelf === 'history'}
-						tabIndex={location.shelf === 'history' ? 0 : -1}
-						onClick={() => {
-							changeShelf('history');
-						}}
-						onKeyDown={(event) => {
-							handleTabKeyDown(event, 1);
-						}}
-					>
-						<Clock3 aria-hidden="true" />
-						History
-					</FactorioButton>
+				<div
+					className="blueprint-library__shelves"
+					data-factorio-style="tabbed_pane_with_no_side_padding"
+					role="tablist"
+					aria-label="Blueprint Library shelves"
+					aria-orientation="horizontal"
+				>
+					{BLUEPRINT_LIBRARY_SHELF_TABS.map((shelfTab, tabIndex) => (
+						<button
+							key={shelfTab.shelf}
+							ref={(button) => {
+								tabReferences.current[tabIndex] = button;
+							}}
+							id={shelfTab.tabId}
+							type="button"
+							className="blueprint-library__shelf"
+							data-factorio-style="tab"
+							data-source-shelf={shelfTab.sourceShelf}
+							data-website-shelf={shelfTab.websiteShelf}
+							title={`${shelfTab.websiteShelf} shelf`}
+							role="tab"
+							aria-controls={shelfTab.panelId}
+							aria-selected={location.shelf === shelfTab.shelf}
+							tabIndex={location.shelf === shelfTab.shelf ? 0 : -1}
+							onClick={() => {
+								changeShelf(shelfTab.shelf);
+							}}
+							onKeyDown={(event) => {
+								handleTabKeyDown(event, tabIndex);
+							}}
+						>
+							{shelfTab.label}
+						</button>
+					))}
 				</div>
 
 				{location.shelf === 'library' ? (
@@ -202,7 +224,7 @@ export function BlueprintLibrary({historyRecords, libraryRecords, location, onLo
 						id="blueprint-library-library-panel"
 						className="blueprint-library__panel"
 						role="tabpanel"
-						aria-labelledby={headingId}
+						aria-labelledby="blueprint-library-library-tab"
 					>
 						<nav className="blueprint-library__breadcrumbs" aria-label="Current book">
 							<button
@@ -292,7 +314,7 @@ export function BlueprintLibrary({historyRecords, libraryRecords, location, onLo
 						id="blueprint-library-history-panel"
 						className="blueprint-library__panel"
 						role="tabpanel"
-						aria-labelledby={headingId}
+						aria-labelledby="blueprint-library-history-tab"
 					>
 						<div className="blueprint-library__history-heading">
 							<div>

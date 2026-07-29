@@ -71,17 +71,27 @@ export const OuterFrameAndTitleBar: Story = {
 		const libraryWindow = canvas.getByRole('region', {name: 'Blueprint Library'});
 		const title = within(libraryWindow).getByRole('heading', {level: 1, name: 'Blueprint Library'});
 		const deepFrame = libraryWindow.querySelector<HTMLElement>('.blueprint-library__inside');
-		const libraryTab = within(libraryWindow).getByRole('tab', {name: 'Library'});
+		const shelfTabList = within(libraryWindow).getByRole('tablist', {name: 'Blueprint Library shelves'});
+		const libraryTab = within(libraryWindow).getByRole('tab', {name: 'My blueprints'});
+		const historyTab = within(libraryWindow).getByRole('tab', {name: 'Import history'});
 
 		await expect(libraryWindow).toHaveAttribute('data-factorio-style', 'inset_frame_container_frame');
 		await expect(title.parentElement).toHaveAttribute('data-factorio-style', 'frame_header_flow');
 		await expect(title.parentElement?.querySelector('svg')).toBeNull();
 		await expect(deepFrame).toHaveAttribute('data-factorio-style', 'inside_deep_frame');
+		await expect(shelfTabList).toHaveAttribute('data-factorio-style', 'tabbed_pane_with_no_side_padding');
+		await expect(libraryTab).toHaveAttribute('data-factorio-style', 'tab');
+		await expect(libraryTab).toHaveAttribute('data-source-shelf', 'private-shelf');
+		await expect(libraryTab).toHaveAttribute('data-website-shelf', 'Library');
+		await expect(historyTab).toHaveAttribute('data-source-shelf', 'website-only');
+		await expect(historyTab).toHaveAttribute('data-website-shelf', 'History');
+		await expect(shelfTabList.querySelector('svg')).toBeNull();
 		await expect(libraryTab).toHaveAttribute('tabindex', '0');
 
 		libraryTab.focus();
 		await userEvent.keyboard('{ArrowRight}');
-		await expect(within(libraryWindow).getByRole('tab', {name: 'History'})).toHaveFocus();
+		await expect(historyTab).toHaveFocus();
+		await expect(historyTab).toHaveAttribute('aria-selected', 'true');
 		await expect(within(libraryWindow).getByRole('tabpanel')).toHaveTextContent('Import History');
 	},
 };

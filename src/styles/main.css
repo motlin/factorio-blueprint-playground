@@ -565,28 +565,72 @@ body {
 }
 
 .blueprint-library__shelves {
-	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: 2px;
-	padding: 10px 10px 0;
+	display: flex;
+	align-items: flex-end;
+	gap: 0;
+	padding: calc(12px * var(--factorio-ui-density)) calc(12px * var(--factorio-ui-density)) 0;
 	background: #292829;
 }
 
 .blueprint-library__shelf {
-	border-bottom: 0;
-	color: #171717;
+	position: relative;
+	display: inline-flex;
+	box-sizing: border-box;
+	min-width: calc(84px * var(--factorio-ui-density));
+	min-height: calc(32px * var(--factorio-ui-density));
+	flex: 0 0 auto;
+	align-items: center;
+	justify-content: center;
+	padding: calc(7px * var(--factorio-ui-density)) calc(8px * var(--factorio-ui-density))
+		calc(9px * var(--factorio-ui-density));
+	border: 0;
+	background: #646464;
+	box-shadow:
+		inset 1px 1px 0 #9d9d9d,
+		inset -1px -1px 0 #515151,
+		0 0 calc(5px * var(--factorio-ui-density)) rgb(0 0 0 / 50%);
+	color: var(--factorio-ui-text);
+	font: inherit;
+	font-weight: 700;
+	line-height: 1;
+	white-space: nowrap;
+	cursor: pointer;
 }
 
 .blueprint-library__shelf[aria-selected='true'] {
-	background: var(--factorio-ui-accent);
+	z-index: 1;
+	min-height: calc(36px * var(--factorio-ui-density));
+	margin-bottom: calc(-4px * var(--factorio-ui-density));
+	padding-bottom: calc(13px * var(--factorio-ui-density));
+	background: #383738;
 	box-shadow:
-		inset 1px 1px 0 #ffd37a,
-		inset -2px 0 0 #5b320d;
+		inset 1px 1px 0 #575557,
+		inset -1px 0 0 #242324,
+		0 0 calc(5px * var(--factorio-ui-density)) rgb(0 0 0 / 50%);
+	color: var(--factorio-ui-title);
 }
 
-.blueprint-library__shelf svg {
-	width: 18px;
-	height: 18px;
+.blueprint-library__shelf:hover:not([aria-selected='true']) {
+	background: #8b6745;
+	box-shadow:
+		inset 1px 1px 0 #9d9d9d,
+		inset -1px -1px 0 #515151,
+		0 0 calc(5px * var(--factorio-ui-density)) rgb(227 152 39 / 50%);
+	color: #fff;
+}
+
+.blueprint-library__shelf:active:not([aria-selected='true']) {
+	background: #b16925;
+	box-shadow:
+		inset 1px 1px 0 #914905,
+		inset -1px -1px 0 #cb833f;
+	color: #171717;
+}
+
+.blueprint-library__shelf:focus-visible {
+	z-index: 2;
+	outline: calc(2px * var(--factorio-ui-density)) solid var(--factorio-ui-accent);
+	outline-offset: calc(-2px * var(--factorio-ui-density));
 }
 
 .blueprint-library__panel {

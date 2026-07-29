@@ -58,7 +58,7 @@ function StatefulLibrary({initialLocation}: {initialLocation: BlueprintLibraryLo
 }
 
 describe('BlueprintLibrary', () => {
-	test('uses the Factorio library window frame and keyboard-reachable shelf chrome', () => {
+	test('maps website shelves onto Factorio tabs with source-style selection and roving focus', () => {
 		render(<StatefulLibrary initialLocation={{shelf: 'library'}} />);
 
 		const libraryWindow = screen.getByRole('region', {name: 'Blueprint Library'});
@@ -72,21 +72,43 @@ describe('BlueprintLibrary', () => {
 			deepFrameStyle: deepFrame?.dataset.factorioStyle,
 			libraryWindowClass: libraryWindow.className,
 			libraryWindowStyle: libraryWindow.dataset.factorioStyle,
-			selectedShelfTabIndex: shelfTabs[0]?.tabIndex,
+			shelfTabList: shelfTabs.map((tab) => ({
+				factorioStyle: tab.dataset.factorioStyle,
+				label: tab.textContent,
+				selected: tab.getAttribute('aria-selected'),
+				sourceShelf: tab.dataset.sourceShelf,
+				tabIndex: tab.tabIndex,
+				websiteShelf: tab.dataset.websiteShelf,
+			})),
 			titleBarClass: titleBar?.className,
 			titleBarStyle: titleBar?.dataset.factorioStyle,
 			titleGraphicCount: titleBar?.querySelectorAll('svg').length,
-			unselectedShelfTabIndex: shelfTabs[1]?.tabIndex,
 		}).toStrictEqual({
 			deepFrameClass: 'factorio-frame factorio-frame--deep blueprint-library__inside',
 			deepFrameStyle: 'inside_deep_frame',
 			libraryWindowClass: 'factorio-frame factorio-frame--shallow blueprint-library',
 			libraryWindowStyle: 'inset_frame_container_frame',
-			selectedShelfTabIndex: 0,
+			shelfTabList: [
+				{
+					factorioStyle: 'tab',
+					label: 'My blueprints',
+					selected: 'true',
+					sourceShelf: 'private-shelf',
+					tabIndex: 0,
+					websiteShelf: 'Library',
+				},
+				{
+					factorioStyle: 'tab',
+					label: 'Import history',
+					selected: 'false',
+					sourceShelf: 'website-only',
+					tabIndex: -1,
+					websiteShelf: 'History',
+				},
+			],
 			titleBarClass: 'factorio-title-bar blueprint-library__title-bar',
 			titleBarStyle: 'frame_header_flow',
 			titleGraphicCount: 0,
-			unselectedShelfTabIndex: -1,
 		});
 	});
 
@@ -126,19 +148,24 @@ describe('BlueprintLibrary', () => {
 	test('supports shelf and record keyboard navigation while preserving the current book', () => {
 		render(<StatefulLibrary initialLocation={{shelf: 'library', book: 'book-alice'}} />);
 
-		const libraryTab = screen.getByRole('tab', {name: 'Library'});
+		const libraryTab = screen.getByRole('tab', {name: 'My blueprints'});
 		libraryTab.focus();
 		fireEvent.keyDown(libraryTab, {key: 'ArrowRight'});
 		expect({
 			activeShelf: screen.getByRole('tab', {selected: true}).textContent,
 			focusedControl: document.activeElement?.textContent,
 		}).toStrictEqual({
-			activeShelf: 'History',
-			focusedControl: 'History',
+			activeShelf: 'Import history',
+			focusedControl: 'Import history',
 		});
 
 		fireEvent.keyDown(document.activeElement as HTMLElement, {key: 'ArrowLeft'});
 		expect(screen.getByRole('heading', {name: 'Alice rail book'}).textContent).toBe('Alice rail book');
+
+		fireEvent.keyDown(document.activeElement as HTMLElement, {key: 'End'});
+		expect(document.activeElement).toBe(screen.getByRole('tab', {name: 'Import history'}));
+		fireEvent.keyDown(document.activeElement as HTMLElement, {key: 'Home'});
+		expect(document.activeElement).toBe(screen.getByRole('tab', {name: 'My blueprints'}));
 
 		const nestedBook = screen.getByRole('button', {name: 'Open book Bob stations'});
 		nestedBook.focus();
