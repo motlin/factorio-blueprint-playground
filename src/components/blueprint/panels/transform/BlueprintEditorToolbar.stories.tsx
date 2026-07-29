@@ -22,7 +22,7 @@ const meta = {
 		selectorOpen: false,
 	},
 	parameters: transformStoryParameters,
-	tags: ['autodocs'],
+	tags: ['autodocs', 'visual-conformance'],
 } satisfies Meta<typeof BlueprintEditorToolbar>;
 
 export default meta;
@@ -31,15 +31,66 @@ type Story = StoryObj<typeof meta>;
 export const Available: Story = {
 	play: async ({args, canvasElement}) => {
 		const canvas = within(canvasElement);
+		const page = within(document.body);
+		const toolbar = canvas.getByRole('toolbar', {name: 'Blueprint editor actions'});
+		const gameActions = canvas.getByRole('group', {name: 'Factorio blueprint actions'});
+		const websiteActions = canvas.getByRole('group', {name: 'Website planner slot'});
 		const button = canvas.getByRole('button', {name: 'Upgrade items and entities in the blueprint'});
+		await expect({
+			actionOrder: toolbar.dataset.factorioActionOrder,
+			gameActions: [...gameActions.children].map((control) => control.getAttribute('data-factorio-action')),
+			toolbarChildren: [...toolbar.children].map((group) => group.className),
+			websiteExtension: websiteActions.dataset.websiteExtension,
+		}).toStrictEqual({
+			actionOrder: 'title,reassign,copy,upgrade,parametrise,export,delete',
+			gameActions: ['upgrade'],
+			toolbarChildren: ['blueprint-editor-toolbar__game-actions', 'blueprint-editor-toolbar__website-actions'],
+			websiteExtension: 'dropped-upgrade-planner-slot',
+		});
 		await userEvent.hover(button);
-		await expect(canvas.getByRole('tooltip')).toBeVisible();
+		const tooltip = page.getByRole('tooltip');
+		await expect({
+			open: tooltip.dataset.factorioTooltipOpen,
+			text: tooltip.textContent,
+		}).toStrictEqual({
+			open: 'true',
+			text: 'Upgrade items and entities in the blueprint.',
+		});
 		await userEvent.unhover(button);
 		await userEvent.tab();
 		await expect(button).toHaveFocus();
-		await expect(canvas.getByRole('tooltip')).toBeVisible();
+		await expect(tooltip.dataset.factorioTooltipOpen).toBe('true');
 		await userEvent.click(button);
 		await expect(args.onOpenUpgradePlannerSelector.mock.calls).toStrictEqual([[]]);
+	},
+};
+
+export const ParametrisationAvailable: Story = {
+	args: {
+		parameterizationAvailable: true,
+	},
+	play: async ({canvasElement}) => {
+		const canvas = within(canvasElement);
+		const toolbar = canvas.getByRole('toolbar', {name: 'Blueprint editor actions'});
+		const gameActions = canvas.getByRole('group', {name: 'Factorio blueprint actions'});
+
+		await expect({
+			gameActions: [...gameActions.children].map((control) => ({
+				action: control.getAttribute('data-factorio-action'),
+				order: control.getAttribute('data-factorio-action-order'),
+			})),
+			toolbarButtons: [...toolbar.querySelectorAll('button')].map((button) => button.getAttribute('aria-label')),
+		}).toStrictEqual({
+			gameActions: [
+				{action: 'upgrade', order: '3'},
+				{action: 'parametrise', order: '4'},
+			],
+			toolbarButtons: [
+				'Upgrade items and entities in the blueprint',
+				'Parametrise or reconfigure the blueprint',
+				'Choose upgrade planner for toolbar slot',
+			],
+		});
 	},
 };
 

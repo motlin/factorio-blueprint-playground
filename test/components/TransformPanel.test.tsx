@@ -704,8 +704,8 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			inTitleRow: true,
 			toolbarActions: [
 				'Upgrade items and entities in the blueprint',
-				'Choose upgrade planner for toolbar slot',
 				'Parametrise or reconfigure the blueprint',
+				'Choose upgrade planner for toolbar slot',
 			],
 		});
 

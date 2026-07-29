@@ -3712,20 +3712,26 @@ body {
 	display: flex;
 	flex: 0 0 auto;
 	align-items: center;
-	gap: 5px;
+	gap: calc(6px * var(--factorio-ui-density));
+}
+
+.blueprint-editor-toolbar__game-actions,
+.blueprint-editor-toolbar__website-actions {
+	display: flex;
+	align-items: center;
+	gap: calc(4px * var(--factorio-ui-density));
+}
+
+.blueprint-editor-toolbar__website-actions {
+	position: relative;
+	padding-left: calc(6px * var(--factorio-ui-density));
+	border-left: 1px solid #1b1a19;
+	box-shadow: -1px 0 0 rgb(255 255 255 / 12%);
 }
 
 .blueprint-editor-toolbar__button {
-	width: 36px;
-	height: 36px;
-}
-
-.blueprint-editor-toolbar__upgrade {
-	position: relative;
-	display: flex;
-	align-items: flex-end;
-	min-width: 62px;
-	padding-right: 26px;
+	width: calc(36px * var(--factorio-ui-density));
+	height: calc(36px * var(--factorio-ui-density));
 }
 
 .blueprint-editor-toolbar__button--upgrade {
@@ -3755,15 +3761,13 @@ body {
 }
 
 .blueprint-editor-toolbar__planner-slot {
-	position: absolute;
-	right: 0;
-	bottom: -4px;
-	width: 30px;
-	height: 30px;
-	padding: 3px;
+	position: relative;
+	width: calc(30px * var(--factorio-ui-density));
+	height: calc(30px * var(--factorio-ui-density));
+	padding: calc(3px * var(--factorio-ui-density));
 	border-color: #9d9892 #252321 #252321 #9d9892;
 	background: #4d4a46;
-	font-size: 22px;
+	font-size: calc(22px * var(--factorio-ui-density));
 	line-height: 1;
 }
 
@@ -3784,24 +3788,11 @@ body {
 }
 
 .blueprint-editor-toolbar__planner-clear {
-	position: absolute;
-	top: -8px;
-	right: -8px;
-	z-index: 1;
-	width: 18px;
-	height: 18px;
-	padding: 0;
-	border: 1px solid #1a1917;
-	border-radius: 50%;
-	background: #5b2521;
-	color: #f4ddd8;
-	font-weight: bold;
-	line-height: 15px;
-}
-
-.blueprint-editor-toolbar__planner-clear:hover,
-.blueprint-editor-toolbar__planner-clear:focus-visible {
-	background: #84332c;
+	width: calc(30px * var(--factorio-ui-density));
+	min-width: calc(30px * var(--factorio-ui-density));
+	height: calc(30px * var(--factorio-ui-density));
+	min-height: calc(30px * var(--factorio-ui-density));
+	padding: calc(5px * var(--factorio-ui-density));
 }
 
 .blueprint-editor-toolbar__drop-error {
