@@ -1,5 +1,5 @@
 import type {Meta, StoryObj} from '@storybook/react-vite';
-import {fn} from 'storybook/test';
+import {expect, fn, within} from 'storybook/test';
 
 import type {SignalID} from '../../../../parsing/types';
 import {SignalPickerDialog} from './SignalPickerDialog';
@@ -74,6 +74,45 @@ export const SourceOrderedCategoryRows: Story = {
 			{type: 'quality', name: 'rare'},
 			{type: 'technology', name: 'automation'},
 		],
+	},
+};
+
+export const CanonicalSubgroupRows: Story = {
+	args: {
+		title: 'Set the filter',
+		options: [
+			{type: 'entity', name: 'inserter'},
+			{type: 'entity', name: 'fast-splitter'},
+			{type: 'item', name: 'transport-belt'},
+			{type: 'entity', name: 'transport-belt'},
+			{type: 'entity', name: 'express-underground-belt'},
+			{type: 'entity', name: 'fast-transport-belt'},
+			{type: 'entity', name: 'underground-belt'},
+			{type: 'entity', name: 'splitter'},
+			{type: 'entity', name: 'express-transport-belt'},
+			{type: 'entity', name: 'fast-underground-belt'},
+			{type: 'entity', name: 'inserter'},
+		],
+	},
+	play: async ({canvasElement}) => {
+		const screen = within(canvasElement.ownerDocument.body);
+		const grid = screen.getByRole('region', {name: 'Logistics choices'});
+		await expect(grid.getAttribute('data-grid-columns')).toBe('10');
+		await expect(
+			within(grid)
+				.getAllByRole('button')
+				.map((button) => button.getAttribute('aria-label')),
+		).toStrictEqual([
+			'Choose Transport belt',
+			'Choose Fast transport belt',
+			'Choose Express transport belt',
+			'Choose Underground belt',
+			'Choose Fast underground belt',
+			'Choose Express underground belt',
+			'Choose Splitter',
+			'Choose Fast splitter',
+			'Choose Inserter',
+		]);
 	},
 };
 

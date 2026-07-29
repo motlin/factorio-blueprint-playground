@@ -19,7 +19,7 @@ import {
 	type UpgradeQualitySignal,
 } from './upgradeQuality';
 import {
-	comparePickerSignalOrder,
+	canonicalPickerOptions,
 	signalPickerGroup,
 	signalPickerHidden,
 	signalPickerSubgroup,
@@ -89,7 +89,7 @@ import {useDialogFocus} from './useDialogFocus';
  * 2.1.12; BE-6 and the July 23 Set the filter, comparator-menu, and restricted
  * Select upgrade captures.
  */
-const gridColumnCount = gameUiSpec.styles.signalsTableColumnCount;
+const gridColumnCount = gameUiSpec.utilityConstants.selectSlotRowCount;
 const categoryColumnCount = gameUiSpec.utilityConstants.selectGroupRowCount;
 const maximumVisibleGridRows = gameUiSpec.utilityConstants.selectSlotRowCount;
 const hiddenPrototypeNames = new Set([
@@ -276,10 +276,7 @@ export function SignalPickerDialog({
 	const searchReference = useRef<HTMLInputElement>(null);
 	const signalNameReference = useRef<HTMLDivElement>(null);
 	const visibleOptions = useMemo(
-		() =>
-			options
-				.filter((signal) => includeHiddenSignals || !isHiddenPrototype(signal))
-				.sort(comparePickerSignalOrder),
+		() => canonicalPickerOptions(options.filter((signal) => includeHiddenSignals || !isHiddenPrototype(signal))),
 		[includeHiddenSignals, options],
 	);
 	const availableCategories = useMemo(
@@ -606,8 +603,10 @@ export function SignalPickerDialog({
 								id={gridId}
 								className="transform-picker__grid"
 								aria-label={`${activeCategory?.label ?? 'Signal'} choices`}
+								data-grid-columns={gridColumnCount}
 								style={{
 									columnGap: gameUiSpec.styles.filterSlotHorizontalSpacing,
+									gridTemplateColumns: `repeat(${gridColumnCount.toString()}, ${gameUiSpec.styles.slotSize.toString()}px)`,
 									rowGap: gameUiSpec.styles.filterSlotVerticalSpacing,
 									height: stableGridRows * gameUiSpec.styles.slotSize,
 									width: gameUiSpec.styles.signalsTableMinimumWidth,
@@ -619,6 +618,7 @@ export function SignalPickerDialog({
 											<span
 												key={cell.key}
 												className="transform-picker__grid-padding"
+												data-picker-cell="padding"
 												aria-hidden="true"
 											/>
 										);
@@ -636,6 +636,7 @@ export function SignalPickerDialog({
 												optionButtons.current[optionIndex] = button;
 											}}
 											className="transform-picker__option"
+											data-picker-cell="signal"
 											aria-label={`Choose ${signalName(signal)}`}
 											disabled={!allowed}
 											selected={signalPrototypeIdentity(signal) === selectedIdentity}

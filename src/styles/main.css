@@ -2613,7 +2613,6 @@ body {
 
 .transform-picker__grid {
 	display: grid;
-	grid-template-columns: repeat(10, 40px);
 	align-content: start;
 	gap: 0;
 	min-width: 400px;
@@ -2625,8 +2624,8 @@ body {
 }
 
 .transform-picker__grid-padding {
-	width: 40px;
-	height: 40px;
+	width: calc(40px * var(--factorio-ui-density));
+	height: calc(40px * var(--factorio-ui-density));
 }
 
 .transform-picker__empty {

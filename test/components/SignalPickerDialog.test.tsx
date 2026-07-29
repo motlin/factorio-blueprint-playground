@@ -783,9 +783,13 @@ test('orders generated entities by subgroup and starts each subgroup on a new ga
 	const cells = [...screen.getByRole('region', {name: 'Logistics choices'}).children].map(
 		(cell) => cell.getAttribute('aria-label') ?? 'empty',
 	);
+	const grid = screen.getByRole('region', {name: 'Logistics choices'});
 	expect({
 		beltRows: cells.slice(10, 30),
+		cellKinds: [...grid.children].map((cell) => cell.getAttribute('data-picker-cell')),
 		firstRow: cells.slice(0, 10),
+		gridColumns: grid.getAttribute('data-grid-columns'),
+		gridTemplate: grid.style.gridTemplateColumns,
 		hiddenLoaders: screen.queryAllByRole('button', {name: /loader/i}).map((button) => button.textContent),
 		lastRow: cells.slice(30),
 	}).toStrictEqual({
@@ -811,6 +815,13 @@ test('orders generated entities by subgroup and starts each subgroup on a new ga
 			'empty',
 			'empty',
 		],
+		cellKinds: [
+			'signal',
+			...Array.from({length: 9}, () => 'padding'),
+			...Array.from({length: 12}, () => 'signal'),
+			...Array.from({length: 8}, () => 'padding'),
+			'signal',
+		],
 		firstRow: [
 			'Choose Iron chest',
 			'empty',
@@ -823,9 +834,48 @@ test('orders generated entities by subgroup and starts each subgroup on a new ga
 			'empty',
 			'empty',
 		],
+		gridColumns: '10',
+		gridTemplate: 'repeat(10, 40px)',
 		hiddenLoaders: [],
 		lastRow: ['Choose Inserter'],
 	});
+});
+
+test('keeps generated prototype order while search removes nonmatching prototypes', () => {
+	render(
+		<SignalPickerDialog
+			confirmationMode="required"
+			initialSearch="transport"
+			title="Search ordered signals"
+			options={[
+				{type: 'entity', name: 'fast-splitter'},
+				{type: 'entity', name: 'transport-belt'},
+				{type: 'item', name: 'transport-belt'},
+				{type: 'entity', name: 'express-underground-belt'},
+				{type: 'entity', name: 'fast-transport-belt'},
+				{type: 'entity', name: 'underground-belt'},
+				{type: 'entity', name: 'splitter'},
+				{type: 'entity', name: 'express-transport-belt'},
+				{type: 'entity', name: 'fast-underground-belt'},
+			]}
+			onChoose={vi.fn<SignalPickerDialogProps['onChoose']>()}
+			onClose={vi.fn<() => void>()}
+		/>,
+	);
+
+	const grid = screen.getByRole('region', {name: 'Logistics choices'});
+	expect(
+		within(grid)
+			.getAllByRole('button')
+			.map((button) => ({
+				label: button.getAttribute('aria-label'),
+				title: button.getAttribute('title'),
+			})),
+	).toStrictEqual([
+		{label: 'Choose Transport belt', title: 'Transport belt\nitem:transport-belt'},
+		{label: 'Choose Fast transport belt', title: 'Fast transport belt\nentity:fast-transport-belt'},
+		{label: 'Choose Express transport belt', title: 'Express transport belt\nentity:express-transport-belt'},
+	]);
 });
 
 test('renders disallowed signals disabled and exposes signal names on hover and focus', async () => {
