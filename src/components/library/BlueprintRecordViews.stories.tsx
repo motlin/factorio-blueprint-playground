@@ -205,6 +205,39 @@ export const SixColumnGrid: Story = {
 	},
 };
 
+export const TenColumnSlots: Story = {
+	tags: ['visual-conformance'],
+	args: {
+		records: Array.from({length: 12}, (_, index) =>
+			record(`slot-blueprint-${(index + 1).toString()}`, index, {
+				type: 'blueprint',
+				label: `Slot blueprint ${(index + 1).toString()}`,
+				description: 'Secondary record details stay in the compact slot tooltip.',
+				icons: [{type: 'item', name: index % 2 === 0 ? 'transport-belt' : 'assembling-machine-3'}],
+			}),
+		),
+	},
+	play: async ({canvasElement}) => {
+		const canvas = within(canvasElement);
+		await userEvent.click(canvas.getByRole('button', {name: 'Slots view'}));
+		const recordList = canvas.getByRole('list');
+		const firstRecord = canvas.getByRole('button', {name: 'Slot blueprint 1'});
+
+		await expect(recordList).toHaveClass('blueprint-record-views__items--slots');
+		await expect(recordList).toHaveAttribute('data-factorio-columns', '10');
+		await expect(recordList).toHaveStyle({
+			'--blueprint-record-small-slot-columns': '10',
+			'--blueprint-record-small-slot-size': '40px',
+		});
+		await expect(recordList.querySelectorAll('.blueprint-record-views__empty-slot')).toHaveLength(8);
+		await expect(firstRecord).toHaveAttribute('data-secondary-detail', 'tooltip');
+		await expect(firstRecord.querySelector('.blueprint-record-item__text')).toBeNull();
+		firstRecord.focus();
+		await userEvent.keyboard('{ArrowDown}');
+		await expect(canvas.getByRole('button', {name: 'Slot blueprint 11'})).toHaveFocus();
+	},
+};
+
 export const ViewModeToggles: Story = {
 	tags: ['visual-conformance'],
 	play: async ({canvasElement}) => {

@@ -91,6 +91,7 @@ const gameUiSpecSchema = z.object({
 	}),
 	utilityConstants: z.object({
 		blueprintBigSlotsPerRow: z.number().int().positive(),
+		blueprintSmallSlotsPerRow: z.number().int().positive(),
 		selectGroupRowCount: z.number().int().positive(),
 		selectSlotRowCount: z.number().int().positive(),
 		qualitySelectorDropdownThreshold: z.number().int().positive(),

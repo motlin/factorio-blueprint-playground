@@ -620,8 +620,10 @@ export function buildGameUiSpec(sourceLock: GameUiSourceLock, sources: ReadonlyM
 	const labelUnderWidget = styleBlock(styleSource, 'label_under_widget');
 	const slotTable = styleBlock(styleSource, 'slot_table');
 	const blueprintsListSource = requiredSource(sources, 'src/Gui/BlueprintsList.cpp');
-	if (!blueprintsListSource.includes('UtilityConstants::instance().blueprintBigSlotsPerRow')) {
-		throw new Error('Blueprint grid no longer uses the configured large-slot row count.');
+	for (const rowCount of ['blueprintBigSlotsPerRow', 'blueprintSmallSlotsPerRow']) {
+		if (!blueprintsListSource.includes(`UtilityConstants::instance().${rowCount}`)) {
+			throw new Error(`Blueprint list no longer uses the configured ${rowCount} row count.`);
+		}
 	}
 	const signalsTableSource = requiredSource(sources, 'src/Gui/SignalsTable.cpp');
 	const signalsTableConstructor = requiredMatch(
@@ -691,6 +693,7 @@ export function buildGameUiSpec(sourceLock: GameUiSourceLock, sources: ReadonlyM
 		upgrades: extractUpgrades(sources),
 		utilityConstants: {
 			blueprintBigSlotsPerRow: objectIntegerField(utilitySource, 'blueprint_big_slots_per_row'),
+			blueprintSmallSlotsPerRow: objectIntegerField(utilitySource, 'blueprint_small_slots_per_row'),
 			selectGroupRowCount: objectIntegerField(utilitySource, 'select_group_row_count'),
 			selectSlotRowCount: objectIntegerField(utilitySource, 'select_slot_row_count'),
 			qualitySelectorDropdownThreshold: objectIntegerField(utilitySource, 'quality_selector_dropdown_threshold'),

@@ -71,6 +71,21 @@ const gridRecords = Array.from(
 	}),
 );
 
+const slotRecords = Array.from(
+	{length: 12},
+	(_, index): LibraryRecord => ({
+		...records[1],
+		id: `slot-blueprint-${(index + 1).toString()}`,
+		createdOn: index,
+		updatedOn: index,
+		gameData: {
+			...records[1].gameData,
+			label: `Slot blueprint ${(index + 1).toString()}`,
+		},
+		position: index,
+	}),
+);
+
 const storedPreferences = new Map<string, string>();
 const localStorage = {
 	clear: () => {
@@ -382,6 +397,82 @@ describe('BlueprintRecordViews', () => {
 				slotStyle: 'blueprint_record_selection_button',
 			})),
 		});
+	});
+
+	test('renders compact records in padded ten-slot rows and moves focus by the generated column count', async () => {
+		window.localStorage.setItem(BLUEPRINT_RECORD_VIEW_STORAGE_KEY, 'slots');
+		const user = userEvent.setup();
+		render(
+			<BlueprintRecordViews
+				aria-label="Blueprint records"
+				records={slotRecords}
+				compareRecords={comparePosition}
+				onActivate={() => undefined}
+			/>,
+		);
+
+		const slots = screen.getByRole('list');
+		const firstRecord = screen.getByRole('button', {name: 'Slot blueprint 1'});
+		firstRecord.focus();
+		await user.keyboard('{ArrowDown}');
+		expect(document.activeElement).toBe(screen.getByRole('button', {name: 'Slot blueprint 11'}));
+		await user.keyboard('{ArrowRight}{ArrowUp}');
+
+		expect({
+			activeRecord: document.activeElement?.getAttribute('aria-label'),
+			columns: slots.dataset.factorioColumns,
+			emptySlots: [...slots.querySelectorAll('.blueprint-record-views__empty-slot')].map((slot) => ({
+				hidden: slot.getAttribute('aria-hidden'),
+				source: slot.getAttribute('data-factorio-source'),
+				style: slot.querySelector('.factorio-inventory-slot')?.getAttribute('data-factorio-style'),
+			})),
+			items: slotRecords.map((_, index) => {
+				const button = screen.getByRole('button', {name: `Slot blueprint ${(index + 1).toString()}`});
+				return {
+					detail: button.dataset.secondaryDetail,
+					height: button.style.height,
+					source: button.dataset.factorioSource,
+					text: button.querySelector('.blueprint-record-item__text'),
+					width: button.style.width,
+				};
+			}),
+			slotCount: slots.children.length,
+			slotVariables: {
+				columns: slots.style.getPropertyValue('--blueprint-record-small-slot-columns'),
+				horizontalSpacing: slots.style.getPropertyValue('--blueprint-record-small-slot-horizontal-spacing'),
+				size: slots.style.getPropertyValue('--blueprint-record-small-slot-size'),
+				verticalSpacing: slots.style.getPropertyValue('--blueprint-record-small-slot-vertical-spacing'),
+			},
+		}).toStrictEqual({
+			activeRecord: 'Slot blueprint 2',
+			columns: '10',
+			emptySlots: Array.from({length: 8}, () => ({
+				hidden: 'true',
+				source: 'BlueprintsList::getSquareSize',
+				style: 'slot_button',
+			})),
+			items: slotRecords.map(() => ({
+				detail: 'tooltip',
+				height: 'calc(40px * var(--factorio-ui-density, 1))',
+				source: 'BlueprintsList::addItem',
+				text: null,
+				width: 'calc(40px * var(--factorio-ui-density, 1))',
+			})),
+			slotCount: 20,
+			slotVariables: {
+				columns: '10',
+				horizontalSpacing: '0px',
+				size: '40px',
+				verticalSpacing: '0px',
+			},
+		});
+
+		await user.click(screen.getByRole('button', {name: 'Search blueprint records'}));
+		await user.type(screen.getByRole('searchbox', {name: 'Search blueprint records'}), 'Slot blueprint');
+		expect({
+			emptySlots: slots.querySelectorAll('.blueprint-record-views__empty-slot').length,
+			slotCount: slots.children.length,
+		}).toStrictEqual({emptySlots: 0, slotCount: 12});
 	});
 
 	test('shares one source-faithful view preference and supports roving keyboard selection', async () => {

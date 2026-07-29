@@ -90,6 +90,13 @@ interface BlueprintGridStyle extends CSSProperties {
 	'--blueprint-record-slot-size': string;
 }
 
+interface BlueprintSlotsStyle extends CSSProperties {
+	'--blueprint-record-small-slot-columns': number;
+	'--blueprint-record-small-slot-horizontal-spacing': string;
+	'--blueprint-record-small-slot-size': string;
+	'--blueprint-record-small-slot-vertical-spacing': string;
+}
+
 const blueprintGridStyle: BlueprintGridStyle = {
 	'--blueprint-record-grid-columns': gameUiSpec.utilityConstants.blueprintBigSlotsPerRow,
 	'--blueprint-record-grid-horizontal-spacing': `${gameUiSpec.styles.defaultTableHorizontalSpacing.toString()}px`,
@@ -99,6 +106,13 @@ const blueprintGridStyle: BlueprintGridStyle = {
 	'--blueprint-record-label-top-margin': `${gameUiSpec.styles.labelUnderWidgetTopMargin.toString()}px`,
 	'--blueprint-record-slot-padding': `${gameUiSpec.styles.blueprintRecordSlotPadding.toString()}px`,
 	'--blueprint-record-slot-size': `${gameUiSpec.styles.blueprintRecordSlotSize.toString()}px`,
+};
+
+const blueprintSlotsStyle: BlueprintSlotsStyle = {
+	'--blueprint-record-small-slot-columns': gameUiSpec.utilityConstants.blueprintSmallSlotsPerRow,
+	'--blueprint-record-small-slot-horizontal-spacing': `${gameUiSpec.styles.filterSlotHorizontalSpacing.toString()}px`,
+	'--blueprint-record-small-slot-size': `${gameUiSpec.styles.slotSize.toString()}px`,
+	'--blueprint-record-small-slot-vertical-spacing': `${gameUiSpec.styles.filterSlotVerticalSpacing.toString()}px`,
 };
 
 interface BlueprintViewStorage {
@@ -167,6 +181,22 @@ function persistViewMode(viewMode: BlueprintRecordViewMode): void {
 function recordAccessibleName(record: BlueprintRecordModel, actionable: boolean): string {
 	const label = blueprintRecordLabel(record);
 	return actionable && record.gameData.type === 'blueprint_book' ? `Open book ${label}` : label;
+}
+
+function slotPaddingCount(recordCount: number): number {
+	const slotsPerRow = gameUiSpec.utilityConstants.blueprintSmallSlotsPerRow;
+	const paddedSlotCount = Math.ceil((recordCount + 1) / slotsPerRow) * slotsPerRow;
+	return paddedSlotCount - recordCount;
+}
+
+function recordColumnCount(viewMode: BlueprintRecordViewMode): number {
+	if (viewMode === BlueprintRecordViewMode.Grid) {
+		return gameUiSpec.utilityConstants.blueprintBigSlotsPerRow;
+	}
+	if (viewMode === BlueprintRecordViewMode.Slots) {
+		return gameUiSpec.utilityConstants.blueprintSmallSlotsPerRow;
+	}
+	return 1;
 }
 
 function BlueprintRecordIcons({record}: {record: BlueprintRecordModel}) {
@@ -263,6 +293,8 @@ function BlueprintRecordItem<RecordModel extends BlueprintRecordModel>({
 			<FactorioInventorySlot
 				{...commonButtonProps}
 				className="blueprint-record-item blueprint-record-item--slots"
+				data-factorio-source="BlueprintsList::addItem"
+				data-secondary-detail="tooltip"
 			>
 				<BlueprintRecordIcons record={record} />
 				<BlueprintRecordTooltip record={record} tooltipId={tooltipId} />
@@ -326,6 +358,10 @@ export function BlueprintRecordViews<RecordModel extends BlueprintRecordModel>({
 	const [activeRecordId, setActiveRecordId] = useState<string | undefined>(() => initialVisibleRecordId);
 	const visibleActiveRecordId =
 		visibleRecords.find((record) => record.id === activeRecordId)?.id ?? initialVisibleRecordId;
+	const emptySlotCount =
+		viewMode === BlueprintRecordViewMode.Slots && searchText.trim() === ''
+			? slotPaddingCount(visibleRecords.length)
+			: 0;
 
 	useEffect(() => {
 		if (searchVisible) {
@@ -403,17 +439,17 @@ export function BlueprintRecordViews<RecordModel extends BlueprintRecordModel>({
 			onActivate(record);
 		} else if (event.key === 'ArrowUp') {
 			event.preventDefault();
-			if (viewMode === BlueprintRecordViewMode.Grid) {
-				moveFocusWithinGrid(recordIndex - gameUiSpec.utilityConstants.blueprintBigSlotsPerRow);
-			} else {
+			if (viewMode === BlueprintRecordViewMode.List) {
 				moveFocus(recordIndex - 1);
+			} else {
+				moveFocusWithinGrid(recordIndex - recordColumnCount(viewMode));
 			}
 		} else if (event.key === 'ArrowDown') {
 			event.preventDefault();
-			if (viewMode === BlueprintRecordViewMode.Grid) {
-				moveFocusWithinGrid(recordIndex + gameUiSpec.utilityConstants.blueprintBigSlotsPerRow);
-			} else {
+			if (viewMode === BlueprintRecordViewMode.List) {
 				moveFocus(recordIndex + 1);
+			} else {
+				moveFocusWithinGrid(recordIndex + recordColumnCount(viewMode));
 			}
 		} else if (event.key === 'ArrowLeft') {
 			event.preventDefault();
@@ -529,11 +565,15 @@ export function BlueprintRecordViews<RecordModel extends BlueprintRecordModel>({
 					<ul
 						className={`blueprint-record-views__items blueprint-record-views__items--${viewMode}`}
 						data-factorio-columns={
-							viewMode === BlueprintRecordViewMode.Grid
-								? gameUiSpec.utilityConstants.blueprintBigSlotsPerRow
-								: undefined
+							viewMode === BlueprintRecordViewMode.List ? undefined : recordColumnCount(viewMode)
 						}
-						style={viewMode === BlueprintRecordViewMode.Grid ? blueprintGridStyle : undefined}
+						style={
+							viewMode === BlueprintRecordViewMode.Grid
+								? blueprintGridStyle
+								: viewMode === BlueprintRecordViewMode.Slots
+									? blueprintSlotsStyle
+									: undefined
+						}
 					>
 						{visibleRecords.map((record, index) => (
 							<li key={record.id}>
@@ -566,6 +606,19 @@ export function BlueprintRecordViews<RecordModel extends BlueprintRecordModel>({
 									onKeyDown={(event) => {
 										handleRecordKeyDown(event, index);
 									}}
+								/>
+							</li>
+						))}
+						{Array.from({length: emptySlotCount}, (_, emptySlotIndex) => (
+							<li
+								key={`empty-slot-${emptySlotIndex.toString()}`}
+								className="blueprint-record-views__empty-slot"
+								aria-hidden="true"
+								data-factorio-source="BlueprintsList::getSquareSize"
+							>
+								<span
+									className="factorio-inventory-slot"
+									data-factorio-style={gameUiSpec.styles.bindings.slotButton}
 								/>
 							</li>
 						))}

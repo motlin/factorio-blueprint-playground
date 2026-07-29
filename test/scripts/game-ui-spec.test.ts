@@ -222,6 +222,7 @@ describe('generated game UI specification', () => {
 			nextUpgradeCount: 14,
 			utilityConstants: {
 				blueprintBigSlotsPerRow: 6,
+				blueprintSmallSlotsPerRow: 10,
 				selectGroupRowCount: 6,
 				selectSlotRowCount: 10,
 				qualitySelectorDropdownThreshold: 6,

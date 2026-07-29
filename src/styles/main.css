@@ -910,8 +910,13 @@ body {
 }
 
 .blueprint-record-views__items--slots {
-	grid-template-columns: repeat(auto-fill, calc(40px * var(--factorio-ui-density)));
-	gap: 1px;
+	width: max-content;
+	grid-template-columns: repeat(
+		var(--blueprint-record-small-slot-columns),
+		calc(var(--blueprint-record-small-slot-size) * var(--factorio-ui-density))
+	);
+	column-gap: calc(var(--blueprint-record-small-slot-horizontal-spacing) * var(--factorio-ui-density));
+	row-gap: calc(var(--blueprint-record-small-slot-vertical-spacing) * var(--factorio-ui-density));
 }
 
 .blueprint-record-item {
@@ -1146,9 +1151,21 @@ body {
 	overflow: visible;
 }
 
+.blueprint-record-item--slots,
+.blueprint-record-views__empty-slot,
+.blueprint-record-views__empty-slot > .factorio-inventory-slot {
+	width: calc(var(--blueprint-record-small-slot-size) * var(--factorio-ui-density));
+	height: calc(var(--blueprint-record-small-slot-size) * var(--factorio-ui-density));
+}
+
+.blueprint-record-views__empty-slot > .factorio-inventory-slot {
+	display: block;
+	cursor: default;
+}
+
 .blueprint-record-item--slots .blueprint-record-item__icons {
-	width: 34px;
-	height: 34px;
+	width: calc((var(--blueprint-record-small-slot-size) - 8px) * var(--factorio-ui-density));
+	height: calc((var(--blueprint-record-small-slot-size) - 8px) * var(--factorio-ui-density));
 	border: 0;
 	background: transparent;
 	box-shadow: none;
