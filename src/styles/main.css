@@ -2852,45 +2852,73 @@ body {
 
 .upgrade-quality-controls__menu-dialog {
 	position: fixed;
-	width: min(112px, calc(100vw - 16px));
+	box-sizing: border-box;
+	max-width: calc(100vw - 8px);
 	padding: 0;
+	border: 0;
+	background: transparent;
+	box-shadow: 0 calc(3px * var(--factorio-ui-density)) calc(8px * var(--factorio-ui-density)) #111;
 }
 
 .upgrade-quality-controls__comparator-menu {
 	display: grid;
 	grid-template-columns: 1fr;
 	padding: 0;
-	border: 2px solid #171717;
+	border: calc(2px * var(--factorio-ui-density)) solid #171717;
 	background: #1f1e1f;
-	box-shadow: 0 3px 8px #111;
 }
 
 .upgrade-quality-controls__comparator-menu button {
+	display: grid;
+	box-sizing: border-box;
 	width: 100%;
-	min-width: 72px;
-	height: 40px;
-	border-width: 0 0 1px;
+	min-width: 0;
+	height: calc(28px * var(--factorio-ui-density));
+	min-height: calc(28px * var(--factorio-ui-density));
+	place-items: center start;
+	padding: 0 calc(4px * var(--factorio-ui-density));
+	border: 0;
+	appearance: none;
 	background: #252425;
-	box-shadow: none;
-	font-size: 19px;
+	box-shadow:
+		inset 1px 1px 0 #424142,
+		inset -1px -1px 0 #151415;
+	color: var(--factorio-ui-text);
+	font: inherit;
+	font-size: calc(14px * var(--factorio-ui-density));
+	font-weight: normal;
+	line-height: 1;
+	cursor: pointer;
+}
+
+.upgrade-quality-controls__comparator-menu button:hover {
+	background: #8b6745;
+	color: #171717;
 }
 
 .upgrade-quality-controls__comparator-menu button[aria-checked='true'] {
-	background: #5b595b;
-	outline: 2px solid #e39827;
-	outline-offset: -2px;
+	background: var(--factorio-ui-selected);
+	box-shadow:
+		inset 1px 1px 0 #d49b45,
+		inset -1px -1px 0 #70440d;
+	color: #171717;
+}
+
+.upgrade-quality-controls__comparator-menu button:focus-visible {
+	position: relative;
+	z-index: 1;
+	outline: calc(2px * var(--factorio-ui-density)) solid var(--factorio-ui-accent);
+	outline-offset: calc(-2px * var(--factorio-ui-density));
 }
 
 .upgrade-quality-controls__comparator-menu .upgrade-quality-controls__any-icon {
-	display: inline-block;
-	width: 28px;
-	height: 28px;
-	margin-right: 4px;
-	vertical-align: middle;
+	width: calc(20px * var(--factorio-ui-density));
+	height: calc(20px * var(--factorio-ui-density));
 }
 
-.upgrade-quality-controls__comparator-menu button span:last-child {
-	font-size: 10px;
+.upgrade-quality-controls__comparator-menu .upgrade-quality-controls__any-icon img {
+	width: calc(12px * var(--factorio-ui-density));
+	height: calc(12px * var(--factorio-ui-density));
 }
 
 .upgrade-quality-controls__quality-dropdown {

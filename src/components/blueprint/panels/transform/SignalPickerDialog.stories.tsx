@@ -149,6 +149,27 @@ export const PlannerFromPicker: Story = {
 	},
 };
 
+export const QualityComparatorMenu: Story = {
+	tags: ['visual-conformance'],
+	args: {
+		...PlannerFromPicker.args,
+	},
+	play: async ({canvasElement}) => {
+		const screen = within(canvasElement.ownerDocument.body);
+		await userEvent.click(screen.getByRole('button', {name: 'Quality comparison: ≥'}));
+		const menu = screen.getByRole('menu', {name: 'Quality comparison'});
+		await expect(
+			within(menu)
+				.getAllByRole('menuitemradio')
+				.map((item) => item.getAttribute('aria-label') ?? item.textContent),
+		).toStrictEqual(['Any quality', '>', '<', '=', '≥', '≤', '≠']);
+		await expect(screen.queryByRole('menuitemradio', {name: 'Set as Source'})).not.toBeInTheDocument();
+		await expect(canvasElement.ownerDocument.activeElement).toBe(
+			within(menu).getByRole('menuitemradio', {name: '≥'}),
+		);
+	},
+};
+
 export const RestrictedToPicker: Story = {
 	args: {
 		title: 'Select upgrade',

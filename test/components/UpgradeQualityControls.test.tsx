@@ -91,6 +91,13 @@ describe('UpgradeQualityControls', () => {
 				.getAllByRole('menuitemradio')
 				.map((button) => button.getAttribute('aria-label') ?? button.textContent),
 		).toStrictEqual(['Any quality', '>', '<', '=', '≥', '≤', '≠']);
+		expect({
+			activeItem: document.activeElement?.getAttribute('aria-label') ?? document.activeElement?.textContent,
+			setAsSource: screen.queryByRole('menuitemradio', {name: 'Set as Source'}),
+		}).toStrictEqual({
+			activeItem: '>',
+			setAsSource: null,
+		});
 		await user.click(screen.getByRole('menuitemradio', {name: '≤'}));
 
 		expect({
@@ -158,7 +165,8 @@ describe('UpgradeQualityControls', () => {
 		);
 
 		const parentPicker = screen.getByRole('dialog', {name: 'Signal picker'});
-		await user.click(screen.getByRole('button', {name: 'Quality comparison: ='}));
+		const toggle = screen.getByRole('button', {name: 'Quality comparison: ='});
+		await user.click(toggle);
 		expect(parentPicker.inert).toBe(true);
 		fireEvent.keyDown(window, {key: 'Escape'});
 		await Promise.resolve();
@@ -168,11 +176,101 @@ describe('UpgradeQualityControls', () => {
 			menu: screen.queryByRole('dialog', {name: 'Quality comparison'}),
 			parentInert: parentPicker.inert,
 			qualityChanges: onQualityChange.mock.calls,
+			restoredFocus: document.activeElement === toggle,
 		}).toStrictEqual({
 			comparatorChanges: [],
 			menu: null,
 			parentInert: false,
 			qualityChanges: [],
+			restoredFocus: true,
+		});
+	});
+
+	test('matches pointer and keyboard selection while leaving navigation and cancellation uncommitted', async () => {
+		const user = userEvent.setup();
+		const onComparatorChange = vi.fn<(comparator: QualityComparator) => void>();
+		const onQualityChange = vi.fn<(selection: UpgradeQualitySelection) => void>();
+		render(
+			<UpgradeQualityControls
+				mode="source"
+				onComparatorChange={onComparatorChange}
+				onQualityChange={onQualityChange}
+				qualityComparator="="
+				qualitySelection="rare"
+			/>,
+		);
+
+		const toggle = screen.getByRole('button', {name: 'Quality comparison: ='});
+		vi.spyOn(toggle, 'getBoundingClientRect').mockReturnValue({
+			bottom: 728,
+			height: 28,
+			left: 24,
+			right: 68,
+			top: 700,
+			width: 44,
+			x: 24,
+			y: 700,
+			toJSON: () => undefined,
+		});
+		await user.click(toggle);
+		const comparisonDialog = screen.getByRole('dialog', {name: 'Quality comparison'});
+		const equals = screen.getByRole('menuitemradio', {name: '='});
+		expect({
+			activeItem: document.activeElement === equals,
+			bottom: comparisonDialog.style.bottom,
+			left: comparisonDialog.style.left,
+			placement: comparisonDialog.getAttribute('data-placement'),
+			width: comparisonDialog.style.width,
+		}).toStrictEqual({
+			activeItem: true,
+			bottom: '68px',
+			left: '24px',
+			placement: 'above',
+			width: '44px',
+		});
+
+		await user.keyboard('{ArrowDown}{Home}{End}{ArrowUp}');
+		expect({
+			activeItem: document.activeElement?.textContent,
+			comparatorChanges: onComparatorChange.mock.calls,
+			qualityChanges: onQualityChange.mock.calls,
+		}).toStrictEqual({
+			activeItem: '≤',
+			comparatorChanges: [],
+			qualityChanges: [],
+		});
+		await user.keyboard('{Enter}');
+		await Promise.resolve();
+		expect({
+			comparatorChanges: onComparatorChange.mock.calls,
+			menu: screen.queryByRole('menu', {name: 'Quality comparison'}),
+			qualityChanges: onQualityChange.mock.calls,
+			restoredFocus: document.activeElement === toggle,
+		}).toStrictEqual({
+			comparatorChanges: [['≤']],
+			menu: null,
+			qualityChanges: [],
+			restoredFocus: true,
+		});
+
+		await user.click(toggle);
+		const selectedComparator = screen.getByRole('menuitemradio', {name: '='});
+		await user.click(selectedComparator);
+		expect(onComparatorChange.mock.calls).toStrictEqual([['≤']]);
+
+		await user.click(toggle);
+		fireEvent.pointerDown(document.querySelector<HTMLElement>('.upgrade-quality-controls__menu-layer')!);
+		await Promise.resolve();
+		expect({
+			comparatorChanges: onComparatorChange.mock.calls,
+			menu: screen.queryByRole('menu', {name: 'Quality comparison'}),
+			qualityChanges: onQualityChange.mock.calls,
+			restoredFocus: document.activeElement === toggle,
+		}).toStrictEqual({
+			comparatorChanges: [['≤']],
+			menu: null,
+			qualityChanges: [],
+			restoredFocus: true,
 		});
 	});
 

@@ -466,7 +466,7 @@ describe('SignalPickerDialog golden quality and comparator source contracts', ()
 				},
 			],
 		}).toStrictEqual({
-			activeElement: 'Any quality',
+			activeElement: '=',
 			dialogStack: [
 				{ariaHidden: 'true', inert: true, name: 'Choose source signal'},
 				{ariaHidden: null, inert: false, name: 'Quality comparison'},
