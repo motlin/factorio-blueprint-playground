@@ -34,10 +34,52 @@ const libraryRecords = [
 		parentId: LIBRARY_ROOT_ID,
 		position: 1,
 	},
+	{
+		id: 'station-book',
+		createdOn: 3,
+		updatedOn: 3,
+		data: 'station-book-data',
+		gameData: {
+			type: 'blueprint_book',
+			label: 'Station plans',
+			description: 'Nested station books.',
+			icons: [{type: 'item', name: 'blueprint-book'}],
+		},
+		parentId: 'rail-book',
+		position: 0,
+	},
+	{
+		id: 'rail-junction',
+		createdOn: 4,
+		updatedOn: 4,
+		data: 'rail-junction-data',
+		gameData: {
+			type: 'blueprint',
+			label: 'Four-way junction',
+			description: 'A compact rail crossing.',
+			icons: [{type: 'item', name: 'blueprint'}],
+		},
+		parentId: 'rail-book',
+		position: 1,
+	},
+	{
+		id: 'stacker-book',
+		createdOn: 5,
+		updatedOn: 5,
+		data: 'stacker-book-data',
+		gameData: {
+			type: 'blueprint_book',
+			label: 'Stacker variants',
+			description: 'Train stackers grouped by size.',
+			icons: [{type: 'item', name: 'blueprint-book'}],
+		},
+		parentId: 'station-book',
+		position: 0,
+	},
 ] satisfies LibraryRecord[];
 
-function BlueprintLibraryStory() {
-	const [location, setLocation] = useState<BlueprintLibraryLocation>({shelf: 'library'});
+function BlueprintLibraryStory({initialLocation}: {initialLocation?: BlueprintLibraryLocation}) {
+	const [location, setLocation] = useState<BlueprintLibraryLocation>(initialLocation ?? {shelf: 'library'});
 	return (
 		<BlueprintLibrary
 			historyRecords={[]}
@@ -93,5 +135,55 @@ export const OuterFrameAndTitleBar: Story = {
 		await expect(historyTab).toHaveFocus();
 		await expect(historyTab).toHaveAttribute('aria-selected', 'true');
 		await expect(within(libraryWindow).getByRole('tabpanel')).toHaveTextContent('Import History');
+	},
+};
+
+export const NestedBookNavigationAndFocusRestoration: Story = {
+	tags: ['visual-conformance'],
+	args: {
+		initialLocation: {shelf: 'library', book: 'station-book'},
+	},
+	play: async ({canvasElement}) => {
+		const canvas = within(canvasElement);
+		const navigation = canvas.getByRole('navigation', {name: 'Current book'});
+		const rootButton = within(navigation).getByRole('button', {name: 'Go to book: My blueprints'});
+		const railBookButton = within(navigation).getByRole('button', {
+			name: 'Go to book: Rail network',
+		});
+		const stationBookButton = within(navigation).getByRole('button', {
+			name: 'Current book: Station plans',
+		});
+
+		await expect(navigation).toHaveAttribute('data-factorio-source', 'BlueprintBookGui::buildNavigationPart');
+		await expect(rootButton.parentElement).toHaveAttribute('data-book-depth', '0');
+		await expect(railBookButton.parentElement).toHaveAttribute('data-book-depth', '1');
+		await expect(stationBookButton.parentElement).toHaveAttribute('data-book-depth', '2');
+		await expect(stationBookButton).toHaveAttribute('aria-current', 'location');
+		await expect(stationBookButton).toHaveAttribute('aria-pressed', 'true');
+		await expect(within(navigation).getByText('Current book')).toBeVisible();
+		await expect(canvas.getByRole('heading', {level: 2, name: 'Station plans'})).toBeVisible();
+		await expect(canvas.getByText('1 item in this book')).toBeVisible();
+
+		rootButton.focus();
+		await userEvent.keyboard('{ArrowDown}');
+		await expect(railBookButton).toHaveFocus();
+		await userEvent.keyboard('{ArrowDown}');
+		await expect(stationBookButton).toHaveFocus();
+		await userEvent.keyboard('{Home}');
+		await expect(rootButton).toHaveFocus();
+		await userEvent.keyboard('{End}');
+		await expect(stationBookButton).toHaveFocus();
+
+		await userEvent.keyboard('{ArrowLeft}');
+		const stationRecord = await canvas.findByRole('button', {name: 'Open book Station plans'});
+		await expect(canvas.getByRole('heading', {level: 2, name: 'Rail network'})).toBeVisible();
+		await expect(stationRecord).toHaveFocus();
+
+		await userEvent.keyboard('{Enter}');
+		const stackerRecord = await canvas.findByRole('button', {name: 'Open book Stacker variants'});
+		await expect(canvas.getByRole('heading', {level: 2, name: 'Station plans'})).toHaveFocus();
+		stackerRecord.focus();
+		await userEvent.keyboard('{Escape}');
+		await expect(await canvas.findByRole('button', {name: 'Open book Station plans'})).toHaveFocus();
 	},
 };

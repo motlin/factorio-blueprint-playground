@@ -117,10 +117,31 @@ describe('BlueprintLibrary', () => {
 		render(<StatefulLibrary initialLocation={{shelf: 'library'}} />);
 
 		await user.click(screen.getByRole('button', {name: 'Open book Alice rail book'}));
-		expect(within(screen.getByRole('navigation', {name: 'Current book'})).getAllByRole('button')).toStrictEqual([
-			expect.objectContaining({textContent: 'Library'}),
-			expect.objectContaining({textContent: 'Alice rail book'}),
+		const pathButtons = within(screen.getByRole('navigation', {name: 'Current book'})).getAllByRole('button');
+		expect(
+			pathButtons.map((button) => ({
+				current: button.getAttribute('aria-current'),
+				factorioStyle: button.dataset.factorioStyle,
+				label: button.getAttribute('aria-label'),
+				pressed: button.getAttribute('aria-pressed'),
+			})),
+		).toStrictEqual([
+			{
+				current: null,
+				factorioStyle: 'mini_button_aligned_to_text_vertically',
+				label: 'Go to book: My blueprints',
+				pressed: 'false',
+			},
+			{
+				current: 'location',
+				factorioStyle: 'mini_button_aligned_to_text_vertically_when_centered',
+				label: 'Current book: Alice rail book',
+				pressed: 'true',
+			},
 		]);
+		pathButtons[0].focus();
+		fireEvent.keyDown(pathButtons[0], {key: 'ArrowDown'});
+		expect(document.activeElement).toBe(pathButtons[1]);
 
 		await user.click(screen.getByRole('button', {name: 'Open book Bob stations'}));
 		expect({
@@ -131,7 +152,7 @@ describe('BlueprintLibrary', () => {
 			locationHeading: 'Bob stations',
 		});
 
-		await user.click(screen.getByRole('button', {name: 'Alice rail book'}));
+		await user.click(screen.getByRole('button', {name: 'Go to book: Alice rail book'}));
 		expect({
 			focusedControl: document.activeElement?.getAttribute('aria-label'),
 			locationHeading: screen.getByRole('heading', {name: 'Alice rail book'}).textContent,

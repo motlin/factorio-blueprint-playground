@@ -639,60 +639,108 @@ body {
 	background: #313031;
 }
 
-.blueprint-library__breadcrumbs {
-	display: flex;
+.blueprint-library__book-navigation {
+	display: grid;
 	min-width: 0;
-	align-items: center;
-	flex-wrap: wrap;
-	gap: 3px;
-	margin-bottom: 10px;
-	color: var(--factorio-ui-muted);
+	gap: calc(2px * var(--factorio-ui-density));
+	margin-bottom: calc(10px * var(--factorio-ui-density));
+	padding: calc(6px * var(--factorio-ui-density));
+	border: 1px solid var(--factorio-ui-border);
+	background: var(--factorio-ui-dark);
+	box-shadow:
+		inset 1px 1px 0 #111,
+		inset -1px -1px 0 #505050;
 }
 
-.blueprint-library__breadcrumbs > span {
-	display: inline-flex;
+.blueprint-library__book-navigation-row {
+	display: grid;
 	min-width: 0;
+	min-height: calc(28px * var(--factorio-ui-density));
+	grid-template-columns: calc(24px * var(--factorio-ui-density)) minmax(0, 1fr) auto;
 	align-items: center;
-	gap: 3px;
+	gap: calc(6px * var(--factorio-ui-density));
 }
 
-.blueprint-library__breadcrumbs svg {
-	width: 15px;
-	height: 15px;
-	flex: 0 0 auto;
-}
-
-.blueprint-library__breadcrumbs button {
-	max-width: 240px;
-	padding: 3px 6px;
+.blueprint-library__book-navigation-button {
+	display: grid;
+	width: calc(24px * var(--factorio-ui-density));
+	height: calc(24px * var(--factorio-ui-density));
+	padding: calc(4px * var(--factorio-ui-density));
 	border: 0;
-	background: transparent;
-	color: #8fc9ff;
-	font: inherit;
-	text-decoration: underline;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-	overflow: hidden;
+	background: var(--factorio-ui-control-face);
+	box-shadow:
+		inset 1px 1px 0 #9d9d9d,
+		inset -1px -1px 0 #515151;
+	color: var(--factorio-ui-text);
 	cursor: pointer;
+	place-items: center;
 }
 
-.blueprint-library__breadcrumbs button[aria-current='location'] {
-	color: #ffe6c0;
-	text-decoration: none;
+.blueprint-library__book-navigation-button svg {
+	width: calc(15px * var(--factorio-ui-density));
+	height: calc(15px * var(--factorio-ui-density));
+}
+
+.blueprint-library__book-navigation-button:hover:not([aria-current='location']) {
+	background: #8b6745;
+	color: #fff;
+}
+
+.blueprint-library__book-navigation-button[aria-current='location'] {
+	background: var(--factorio-ui-selected);
+	box-shadow:
+		inset 1px 1px 0 #ffd37a,
+		inset -1px -1px 0 #5b320d;
+	color: #171717;
 	cursor: default;
 }
 
-.blueprint-library__breadcrumbs button:focus-visible {
-	outline: 2px solid var(--factorio-ui-accent);
-	outline-offset: 2px;
+.blueprint-library__book-navigation-button:focus-visible {
+	z-index: 1;
+	outline: calc(2px * var(--factorio-ui-density)) solid var(--factorio-ui-accent);
+	outline-offset: calc(1px * var(--factorio-ui-density));
+}
+
+.blueprint-library__book-navigation-label {
+	min-width: 0;
+	overflow: hidden;
+	color: var(--factorio-ui-text);
+	font-weight: 600;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.blueprint-library__book-navigation-current {
+	padding: calc(3px * var(--factorio-ui-density)) calc(6px * var(--factorio-ui-density));
+	border: 1px solid #151515;
+	background: #414041;
+	color: var(--factorio-ui-title);
+	font-size: 0.75rem;
+	line-height: 1;
+	white-space: nowrap;
+}
+
+.blueprint-library__location-heading {
+	display: flex;
+	min-width: 0;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: calc(12px * var(--factorio-ui-density));
+	margin-bottom: calc(10px * var(--factorio-ui-density));
+	color: var(--factorio-ui-muted);
+	font-size: 0.82rem;
 }
 
 .blueprint-library__location-title,
 .blueprint-library__history-heading h2 {
-	margin: 0 0 10px;
+	margin: 0;
 	color: #ffe6c0;
 	font-size: 1.15rem;
 	font-weight: 600;
+}
+
+.blueprint-library__history-heading h2 {
+	margin-bottom: 10px;
 }
 
 .blueprint-library__location-title:focus {
@@ -1053,6 +1101,16 @@ body {
 }
 
 @media (max-width: 620px) {
+	.blueprint-library__book-navigation-current {
+		display: none;
+	}
+
+	.blueprint-library__location-heading {
+		align-items: flex-start;
+		flex-direction: column;
+		gap: calc(3px * var(--factorio-ui-density));
+	}
+
 	.blueprint-record-views__toolbar {
 		flex-wrap: wrap;
 	}

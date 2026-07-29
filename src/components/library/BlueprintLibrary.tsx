@@ -1,4 +1,4 @@
-import {BookOpen, ChevronRight, Clock3} from 'lucide-react';
+import {BookOpen, Clock3, CornerUpLeft} from 'lucide-react';
 import {useEffect, useId, useMemo, useRef} from 'react';
 
 import type {ImportHistoryRecord, LibraryRecord} from '../../storage/db';
@@ -83,6 +83,13 @@ interface BookLocation {
 	valid: boolean;
 }
 
+interface BookNavigationEntry {
+	bookId: string | undefined;
+	current: boolean;
+	depth: number;
+	label: string;
+}
+
 function resolveBookLocation(records: readonly LibraryRecord[], activeBookId: string | undefined): BookLocation {
 	if (activeBookId === undefined) {
 		return {book: undefined, trail: [], valid: true};
@@ -112,36 +119,65 @@ function resolveBookLocation(records: readonly LibraryRecord[], activeBookId: st
 	return {book: undefined, trail: [], valid: false};
 }
 
+function bookNavigationEntries(bookLocation: BookLocation): BookNavigationEntry[] {
+	const rootEntry = {
+		bookId: undefined,
+		current: bookLocation.valid && bookLocation.book === undefined,
+		depth: 0,
+		label: 'My blueprints',
+	};
+	return [
+		rootEntry,
+		...bookLocation.trail.map((book, index) => ({
+			bookId: book.id,
+			current: book.id === bookLocation.book?.id,
+			depth: index + 1,
+			label: recordLabel(book),
+		})),
+	];
+}
+
 export function BlueprintLibrary({historyRecords, libraryRecords, location, onLocationChange}: BlueprintLibraryProps) {
 	const headingId = useId();
 	const tabReferences = useRef<Array<HTMLButtonElement | null>>([]);
+	const bookNavigationReferences = useRef<Array<HTMLButtonElement | null>>([]);
 	const recordViewsReference = useRef<BlueprintRecordViewsHandle>(null);
-	const previousBookId = useRef(location.book);
+	const previousBookLocation = useRef<BookLocation | undefined>(undefined);
 	const recordsHeadingReference = useRef<HTMLHeadingElement>(null);
 	const bookLocation = useMemo(
 		() => resolveBookLocation(libraryRecords, location.book),
 		[libraryRecords, location.book],
 	);
+	const navigationEntries = useMemo(() => bookNavigationEntries(bookLocation), [bookLocation]);
 	const currentParentId = bookLocation.book?.id ?? LIBRARY_ROOT_ID;
 	const currentRecords = useMemo(
 		() => (bookLocation.valid ? libraryRecords.filter((record) => record.parentId === currentParentId) : []),
 		[bookLocation.valid, currentParentId, libraryRecords],
 	);
+	const currentLocationLabel = bookLocation.valid
+		? bookLocation.book === undefined
+			? 'Library shelf'
+			: recordLabel(bookLocation.book)
+		: 'Unavailable book';
 
 	useEffect(() => {
-		const priorBookId = previousBookId.current;
-		previousBookId.current = location.book;
-		if (priorBookId === location.book || location.shelf !== 'library') {
+		const priorLocation = previousBookLocation.current;
+		previousBookLocation.current = bookLocation;
+		if (
+			priorLocation === undefined ||
+			priorLocation.book?.id === bookLocation.book?.id ||
+			location.shelf !== 'library'
+		) {
 			return;
 		}
 
-		const priorBook = libraryRecords.find((record) => record.id === priorBookId);
-		if (priorBook?.parentId === currentParentId) {
-			recordViewsReference.current?.focusRecord(priorBook.id);
+		const restoredChild = priorLocation.trail.find((book) => book.parentId === currentParentId);
+		if (restoredChild !== undefined) {
+			recordViewsReference.current?.focusRecord(restoredChild.id);
 			return;
 		}
 		recordsHeadingReference.current?.focus();
-	}, [currentParentId, libraryRecords, location.book, location.shelf]);
+	}, [bookLocation, currentParentId, location.shelf]);
 
 	const changeShelf = (shelf: BlueprintLibraryShelf): void => {
 		onLocationChange({...location, shelf});
@@ -164,6 +200,36 @@ export function BlueprintLibrary({historyRecords, libraryRecords, location, onLo
 		event.preventDefault();
 		tabReferences.current[nextIndex]?.focus();
 		changeShelf(BLUEPRINT_LIBRARY_SHELF_TABS[nextIndex].shelf);
+	};
+
+	const navigateToBook = (bookId: string | undefined): void => {
+		onLocationChange(bookId === undefined ? {shelf: 'library'} : {shelf: 'library', book: bookId});
+	};
+
+	const handleBookNavigationKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, entryIndex: number): void => {
+		let nextIndex: number | undefined;
+		if (event.key === 'ArrowUp') {
+			nextIndex = Math.max(0, entryIndex - 1);
+		} else if (event.key === 'ArrowDown') {
+			nextIndex = Math.min(navigationEntries.length - 1, entryIndex + 1);
+		} else if (event.key === 'Home') {
+			nextIndex = 0;
+		} else if (event.key === 'End') {
+			nextIndex = navigationEntries.length - 1;
+		} else if (event.key === 'ArrowLeft' || event.key === 'Escape') {
+			const parentEntry = navigationEntries[Math.max(0, navigationEntries.length - 2)];
+			if (!navigationEntries[entryIndex].current || parentEntry.current) {
+				return;
+			}
+			event.preventDefault();
+			navigateToBook(parentEntry.bookId);
+			return;
+		}
+		if (nextIndex === undefined || nextIndex === entryIndex) {
+			return;
+		}
+		event.preventDefault();
+		bookNavigationReferences.current[nextIndex]?.focus();
 	};
 
 	return (
@@ -226,37 +292,68 @@ export function BlueprintLibrary({historyRecords, libraryRecords, location, onLo
 						role="tabpanel"
 						aria-labelledby="blueprint-library-library-tab"
 					>
-						<nav className="blueprint-library__breadcrumbs" aria-label="Current book">
-							<button
-								type="button"
-								aria-current={
-									bookLocation.book === undefined && bookLocation.valid ? 'location' : undefined
-								}
-								onClick={() => {
-									onLocationChange({shelf: 'library'});
-								}}
-							>
-								Library
-							</button>
-							{bookLocation.trail.map((book) => (
-								<span key={book.id}>
-									<ChevronRight aria-hidden="true" />
+						<nav
+							className="blueprint-library__book-navigation"
+							aria-label="Current book"
+							data-factorio-source="BlueprintBookGui::buildNavigationPart"
+						>
+							{navigationEntries.map((entry, entryIndex) => (
+								<div
+									key={entry.bookId ?? LIBRARY_ROOT_ID}
+									className="blueprint-library__book-navigation-row"
+									data-book-depth={entry.depth}
+									style={{paddingInlineStart: Math.min(entry.depth, 6) * 18}}
+								>
 									<button
+										ref={(button) => {
+											bookNavigationReferences.current[entryIndex] = button;
+										}}
 										type="button"
-										aria-current={book.id === bookLocation.book?.id ? 'location' : undefined}
+										className="blueprint-library__book-navigation-button"
+										data-factorio-style={
+											entry.current
+												? 'mini_button_aligned_to_text_vertically_when_centered'
+												: 'mini_button_aligned_to_text_vertically'
+										}
+										aria-current={entry.current ? 'location' : undefined}
+										aria-label={
+											entry.current
+												? `Current book: ${entry.label}`
+												: `Go to book: ${entry.label}`
+										}
+										aria-pressed={entry.current}
 										onClick={() => {
-											onLocationChange({shelf: 'library', book: book.id});
+											if (!entry.current) {
+												navigateToBook(entry.bookId);
+											}
+										}}
+										onKeyDown={(event) => {
+											handleBookNavigationKeyDown(event, entryIndex);
 										}}
 									>
-										{recordLabel(book)}
+										<CornerUpLeft aria-hidden="true" />
 									</button>
-								</span>
+									<span className="blueprint-library__book-navigation-label">{entry.label}</span>
+									{entry.current ? (
+										<span className="blueprint-library__book-navigation-current">Current book</span>
+									) : null}
+								</div>
 							))}
 						</nav>
 
-						<h2 ref={recordsHeadingReference} className="blueprint-library__location-title" tabIndex={-1}>
-							{bookLocation.book === undefined ? 'Library shelf' : recordLabel(bookLocation.book)}
-						</h2>
+						<header className="blueprint-library__location-heading">
+							<h2
+								ref={recordsHeadingReference}
+								className="blueprint-library__location-title"
+								tabIndex={-1}
+							>
+								{currentLocationLabel}
+							</h2>
+							<span>
+								{currentRecords.length.toString()} {currentRecords.length === 1 ? 'item' : 'items'} in{' '}
+								{bookLocation.book === undefined ? 'this shelf' : 'this book'}
+							</span>
+						</header>
 
 						{bookLocation.valid ? (
 							currentRecords.length === 0 ? (
