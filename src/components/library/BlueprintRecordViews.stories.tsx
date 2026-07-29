@@ -157,6 +157,28 @@ export const SavedUpgradePlanners: Story = {
 	},
 };
 
+export const ViewModeToggles: Story = {
+	tags: ['visual-conformance'],
+	play: async ({canvasElement}) => {
+		const canvas = within(canvasElement);
+		const viewGroup = canvas.getByRole('group', {name: 'Record view'});
+		const listView = within(viewGroup).getByRole('button', {name: 'List view'});
+		const gridView = within(viewGroup).getByRole('button', {name: 'Grid view'});
+		const slotsView = within(viewGroup).getByRole('button', {name: 'Slots view'});
+
+		await userEvent.click(listView);
+		await expect(listView).toHaveAttribute('aria-pressed', 'true');
+		await expect(listView).toHaveAttribute('tabindex', '0');
+		await userEvent.click(gridView);
+		await expect(gridView).toHaveAttribute('aria-pressed', 'true');
+		await expect(canvas.getByRole('list')).toHaveClass('blueprint-record-views__items--grid');
+		slotsView.focus();
+		await userEvent.keyboard('{Enter}');
+		await expect(slotsView).toHaveAttribute('aria-pressed', 'true');
+		await expect(canvas.getByRole('list')).toHaveClass('blueprint-record-views__items--slots');
+	},
+};
+
 export const FilteredEmptyState: Story = {
 	tags: ['visual-conformance'],
 	play: async ({canvasElement}) => {

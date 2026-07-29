@@ -851,25 +851,32 @@ body {
 .blueprint-record-views__toggles {
 	display: flex;
 	flex: 0 0 auto;
-	gap: 2px;
+	gap: calc(2px * var(--factorio-ui-density));
 }
 
 .blueprint-record-views__toggle {
-	width: 38px;
-	min-width: 38px;
-	padding: 7px;
+	width: calc(28px * var(--factorio-ui-density));
+	min-width: calc(28px * var(--factorio-ui-density));
+	height: calc(28px * var(--factorio-ui-density));
+	min-height: calc(28px * var(--factorio-ui-density));
+	padding: calc(2px * var(--factorio-ui-density));
+	color: var(--factorio-ui-text);
 }
 
-.blueprint-record-views__toggle[aria-pressed='true'] {
-	background: var(--factorio-ui-accent);
+.blueprint-record-views__toggle[aria-pressed='true'],
+.blueprint-record-views__toggle[aria-pressed='true']:hover:not(:disabled),
+.blueprint-record-views__toggle[aria-pressed='true']:active:not(:disabled) {
+	background: var(--factorio-button-pressed);
 	box-shadow:
-		inset 1px 1px 0 #ffd37a,
-		inset -2px -2px 0 #5b320d;
+		inset 1px 1px 0 var(--factorio-button-pressed-light),
+		inset -1px -1px 0 var(--factorio-button-pressed-dark);
+	color: #171717;
 }
 
 .blueprint-record-views__toggle svg {
-	width: 19px;
-	height: 19px;
+	width: calc(16px * var(--factorio-ui-density));
+	height: calc(16px * var(--factorio-ui-density));
+	stroke-width: 2.5;
 }
 
 .blueprint-record-views__items {

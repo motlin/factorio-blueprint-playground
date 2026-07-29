@@ -245,13 +245,169 @@ describe('BlueprintRecordViews', () => {
 			recordName: 'Quality factory',
 		});
 
-		await user.click(screen.getByRole('button', {name: 'Slot view'}));
+		await user.click(screen.getByRole('button', {name: 'Slots view'}));
 		expect(
 			screen.getByRole('button', {name: 'Quality factory'}).querySelector('.blueprint-record-item__text'),
 		).toBeNull();
 		expect(
 			screen.getByRole('button', {name: 'Open book Factory books'}).getAttribute('aria-describedby'),
 		).not.toBeNull();
+	});
+
+	test('shares one source-faithful view preference and supports roving keyboard selection', async () => {
+		const user = userEvent.setup();
+		render(
+			<>
+				<BlueprintRecordViews
+					aria-label="Library records"
+					records={records}
+					compareRecords={comparePosition}
+					onActivate={() => undefined}
+				/>
+				<BlueprintRecordViews
+					aria-label="Planner records"
+					records={records}
+					compareRecords={comparePosition}
+					onActivate={() => undefined}
+				/>
+			</>,
+		);
+
+		const viewGroups = screen.getAllByRole('group', {name: 'Record view'});
+		const viewState = () =>
+			viewGroups.map((group) =>
+				within(group)
+					.getAllByRole('button')
+					.map((button) => ({
+						label: button.getAttribute('aria-label'),
+						pressed: button.getAttribute('aria-pressed'),
+						sourceStyle: button.dataset.factorioSourceStyle,
+						sprite: button.querySelector('svg')?.dataset.factorioUtilitySprite,
+						tabIndex: button.tabIndex,
+					})),
+			);
+		expect({
+			factorioSource: viewGroups.map((group) => group.dataset.factorioSource),
+			viewState: viewState(),
+		}).toStrictEqual({
+			factorioSource: ['BlueprintsList::viewButtons', 'BlueprintsList::viewButtons'],
+			viewState: [
+				[
+					{label: 'List view', pressed: 'true', sourceStyle: 'tool_button', sprite: 'list_view', tabIndex: 0},
+					{
+						label: 'Grid view',
+						pressed: 'false',
+						sourceStyle: 'tool_button',
+						sprite: 'grid_view',
+						tabIndex: -1,
+					},
+					{
+						label: 'Slots view',
+						pressed: 'false',
+						sourceStyle: 'tool_button',
+						sprite: 'slots_view',
+						tabIndex: -1,
+					},
+				],
+				[
+					{label: 'List view', pressed: 'true', sourceStyle: 'tool_button', sprite: 'list_view', tabIndex: 0},
+					{
+						label: 'Grid view',
+						pressed: 'false',
+						sourceStyle: 'tool_button',
+						sprite: 'grid_view',
+						tabIndex: -1,
+					},
+					{
+						label: 'Slots view',
+						pressed: 'false',
+						sourceStyle: 'tool_button',
+						sprite: 'slots_view',
+						tabIndex: -1,
+					},
+				],
+			],
+		});
+
+		const libraryListView = within(viewGroups[0]).getByRole('button', {name: 'List view'});
+		libraryListView.focus();
+		await user.keyboard('{ArrowLeft}');
+
+		expect({
+			focused: document.activeElement?.getAttribute('aria-label'),
+			persisted: window.localStorage.getItem(BLUEPRINT_RECORD_VIEW_STORAGE_KEY),
+			viewClasses: screen.getAllByRole('list').map((list) => list.className),
+			viewState: viewState(),
+		}).toStrictEqual({
+			focused: 'Slots view',
+			persisted: 'slots',
+			viewClasses: [
+				'blueprint-record-views__items blueprint-record-views__items--slots',
+				'blueprint-record-views__items blueprint-record-views__items--slots',
+			],
+			viewState: [
+				[
+					{
+						label: 'List view',
+						pressed: 'false',
+						sourceStyle: 'tool_button',
+						sprite: 'list_view',
+						tabIndex: -1,
+					},
+					{
+						label: 'Grid view',
+						pressed: 'false',
+						sourceStyle: 'tool_button',
+						sprite: 'grid_view',
+						tabIndex: -1,
+					},
+					{
+						label: 'Slots view',
+						pressed: 'true',
+						sourceStyle: 'tool_button',
+						sprite: 'slots_view',
+						tabIndex: 0,
+					},
+				],
+				[
+					{
+						label: 'List view',
+						pressed: 'false',
+						sourceStyle: 'tool_button',
+						sprite: 'list_view',
+						tabIndex: -1,
+					},
+					{
+						label: 'Grid view',
+						pressed: 'false',
+						sourceStyle: 'tool_button',
+						sprite: 'grid_view',
+						tabIndex: -1,
+					},
+					{
+						label: 'Slots view',
+						pressed: 'true',
+						sourceStyle: 'tool_button',
+						sprite: 'slots_view',
+						tabIndex: 0,
+					},
+				],
+			],
+		});
+
+		await user.keyboard('{Home}');
+		expect({
+			focused: document.activeElement?.getAttribute('aria-label'),
+			persisted: window.localStorage.getItem(BLUEPRINT_RECORD_VIEW_STORAGE_KEY),
+			viewClasses: screen.getAllByRole('list').map((list) => list.className),
+		}).toStrictEqual({
+			focused: 'List view',
+			persisted: 'list',
+			viewClasses: [
+				'blueprint-record-views__items blueprint-record-views__items--list',
+				'blueprint-record-views__items blueprint-record-views__items--list',
+			],
+		});
 	});
 
 	test('renders Factorio rich text inside record tooltips without leaving raw tags', () => {

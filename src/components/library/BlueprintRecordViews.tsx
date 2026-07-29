@@ -1,4 +1,4 @@
-import {ChevronRight, Grid2X2, LayoutGrid, List} from 'lucide-react';
+import {ChevronRight, Grid2X2, Grid3X3, List} from 'lucide-react';
 import {
 	useEffect,
 	useId,
@@ -6,6 +6,7 @@ import {
 	useMemo,
 	useRef,
 	useState,
+	useSyncExternalStore,
 	type KeyboardEvent,
 	type MouseEvent,
 	type Ref,
@@ -71,15 +72,17 @@ const RECORD_TYPE_ICON_NAMES: Record<BlueprintRecordModel['gameData']['type'], s
 };
 
 const VIEW_OPTIONS = [
-	{icon: List, label: 'List view', mode: BlueprintRecordViewMode.List},
-	{icon: Grid2X2, label: 'Grid view', mode: BlueprintRecordViewMode.Grid},
-	{icon: LayoutGrid, label: 'Slot view', mode: BlueprintRecordViewMode.Slots},
+	{icon: List, label: 'List view', mode: BlueprintRecordViewMode.List, sprite: 'list_view'},
+	{icon: Grid2X2, label: 'Grid view', mode: BlueprintRecordViewMode.Grid, sprite: 'grid_view'},
+	{icon: Grid3X3, label: 'Slots view', mode: BlueprintRecordViewMode.Slots, sprite: 'slots_view'},
 ] as const;
 
 interface BlueprintViewStorage {
 	getItem: (key: string) => string | null;
 	setItem: (key: string, value: string) => void;
 }
+
+const viewModeListeners = new Set<() => void>();
 
 function isBlueprintRecordViewMode(value: string | null): value is BlueprintRecordViewMode {
 	return Object.values(BlueprintRecordViewMode).some((mode) => mode === value);
@@ -96,7 +99,7 @@ function isBlueprintViewStorage(value: unknown): value is BlueprintViewStorage {
 	);
 }
 
-function initialViewMode(): BlueprintRecordViewMode {
+function storedViewMode(): BlueprintRecordViewMode {
 	const localStorage = getLocalStorage();
 	if (localStorage === undefined) {
 		return BlueprintRecordViewMode.List;
@@ -111,6 +114,30 @@ function getLocalStorage(): BlueprintViewStorage | undefined {
 	}
 	const localStorage: unknown = Reflect.get(window, 'localStorage');
 	return isBlueprintViewStorage(localStorage) ? localStorage : undefined;
+}
+
+function subscribeToViewMode(listener: () => void): () => void {
+	const handleStorage = (event: StorageEvent): void => {
+		if (event.key === null || event.key === BLUEPRINT_RECORD_VIEW_STORAGE_KEY) {
+			listener();
+		}
+	};
+	viewModeListeners.add(listener);
+	window.addEventListener('storage', handleStorage);
+	return () => {
+		viewModeListeners.delete(listener);
+		window.removeEventListener('storage', handleStorage);
+	};
+}
+
+function persistViewMode(viewMode: BlueprintRecordViewMode): void {
+	if (storedViewMode() === viewMode) {
+		return;
+	}
+	getLocalStorage()?.setItem(BLUEPRINT_RECORD_VIEW_STORAGE_KEY, viewMode);
+	for (const listener of viewModeListeners) {
+		listener();
+	}
 }
 
 function recordAccessibleName(record: BlueprintRecordModel, actionable: boolean): string {
@@ -254,10 +281,11 @@ export function BlueprintRecordViews<RecordModel extends BlueprintRecordModel>({
 }: BlueprintRecordViewsProps<RecordModel>) {
 	const [searchText, setSearchText] = useState('');
 	const [searchVisible, setSearchVisible] = useState(false);
-	const [viewMode, setViewMode] = useState(initialViewMode);
+	const viewMode = useSyncExternalStore(subscribeToViewMode, storedViewMode, () => BlueprintRecordViewMode.List);
 	const recordReferences = useRef(new Map<string, HTMLButtonElement>());
 	const searchInputReference = useRef<HTMLInputElement>(null);
 	const searchToggleReference = useRef<HTMLButtonElement>(null);
+	const viewButtonReferences = useRef<Array<HTMLButtonElement | null>>([]);
 	const searchInputId = useId();
 	const visibleRecords = useMemo(() => {
 		const filteredRecords = filterAndSortBlueprintRecords(records, searchText, compareRecords);
@@ -286,8 +314,29 @@ export function BlueprintRecordViews<RecordModel extends BlueprintRecordModel>({
 	);
 
 	const changeViewMode = (nextViewMode: BlueprintRecordViewMode): void => {
-		setViewMode(nextViewMode);
-		getLocalStorage()?.setItem(BLUEPRINT_RECORD_VIEW_STORAGE_KEY, nextViewMode);
+		persistViewMode(nextViewMode);
+	};
+
+	const moveViewMode = (nextIndex: number): void => {
+		const wrappedIndex = (nextIndex + VIEW_OPTIONS.length) % VIEW_OPTIONS.length;
+		changeViewMode(VIEW_OPTIONS[wrappedIndex].mode);
+		viewButtonReferences.current[wrappedIndex]?.focus();
+	};
+
+	const handleViewModeKeyDown = (event: KeyboardEvent<HTMLButtonElement>, viewOptionIndex: number): void => {
+		if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+			event.preventDefault();
+			moveViewMode(viewOptionIndex - 1);
+		} else if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+			event.preventDefault();
+			moveViewMode(viewOptionIndex + 1);
+		} else if (event.key === 'Home') {
+			event.preventDefault();
+			moveViewMode(0);
+		} else if (event.key === 'End') {
+			event.preventDefault();
+			moveViewMode(VIEW_OPTIONS.length - 1);
+		}
 	};
 
 	const moveFocus = (nextIndex: number): void => {
@@ -381,21 +430,34 @@ export function BlueprintRecordViews<RecordModel extends BlueprintRecordModel>({
 						}}
 					/>
 				</div>
-				<div className="blueprint-record-views__toggles" role="group" aria-label="Record view">
-					{VIEW_OPTIONS.map((option) => {
+				<div
+					className="blueprint-record-views__toggles"
+					role="group"
+					aria-label="Record view"
+					data-factorio-source="BlueprintsList::viewButtons"
+				>
+					{VIEW_OPTIONS.map((option, optionIndex) => {
 						const Icon = option.icon;
 						return (
 							<FactorioButton
 								key={option.mode}
+								ref={(button) => {
+									viewButtonReferences.current[optionIndex] = button;
+								}}
 								aria-label={option.label}
 								aria-pressed={viewMode === option.mode}
 								className="blueprint-record-views__toggle"
+								data-factorio-source-style="tool_button"
 								title={option.label}
+								tabIndex={viewMode === option.mode ? 0 : -1}
 								onClick={() => {
 									changeViewMode(option.mode);
 								}}
+								onKeyDown={(event) => {
+									handleViewModeKeyDown(event, optionIndex);
+								}}
 							>
-								<Icon aria-hidden="true" />
+								<Icon aria-hidden="true" data-factorio-utility-sprite={option.sprite} />
 							</FactorioButton>
 						);
 					})}

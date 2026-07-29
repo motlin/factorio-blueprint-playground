@@ -206,7 +206,7 @@ describe('UpgradePlannerSelectorDialog golden apply-only source contracts', () =
 		expect(screen.getByRole('list').className).toBe(
 			'blueprint-record-views__items blueprint-record-views__items--grid',
 		);
-		await user.click(screen.getByRole('button', {name: 'Slot view'}));
+		await user.click(screen.getByRole('button', {name: 'Slots view'}));
 		expect({
 			persisted: window.localStorage.getItem(BLUEPRINT_RECORD_VIEW_STORAGE_KEY),
 			slotListClass: screen.getByRole('list').className,
