@@ -30,37 +30,81 @@ function renderToolbelt() {
 describe('BlueprintToolbelt', () => {
 	test('renders the game tools in Factorio order without nested icon names or titles', () => {
 		renderToolbelt();
+		const toolbar = screen.getByRole('toolbar', {name: 'Blueprint tools'});
+		const slots = toolbar.firstElementChild;
+		if (!(slots instanceof HTMLElement)) {
+			throw new Error('Expected the Blueprint toolbelt to contain its shortcut slot panel.');
+		}
 
-		expect(
-			[...screen.getByRole('toolbar', {name: 'Blueprint tools'}).querySelectorAll('button')].map((button) => ({
+		expect({
+			shell: {
+				children: toolbar.children.length,
+				className: toolbar.className,
+				factorioSource: toolbar.dataset.factorioSource,
+				factorioStyle: toolbar.dataset.factorioStyle,
+				websiteExtension: toolbar.dataset.websiteExtension,
+			},
+			slots: {
+				children: slots.children.length,
+				className: slots.className,
+				factorioSource: slots.dataset.factorioSource,
+				factorioStyle: slots.dataset.factorioStyle,
+			},
+			tools: [...toolbar.querySelectorAll('button')].map((button) => ({
+				className: button.className,
 				expanded: button.getAttribute('aria-expanded'),
 				icon: button.querySelector('img')?.getAttribute('src'),
 				iconAlt: button.querySelector('img')?.getAttribute('alt'),
 				iconTitle: button.querySelector('img')?.getAttribute('title'),
 				label: button.getAttribute('aria-label'),
 				shortcut: button.getAttribute('aria-keyshortcuts'),
+				shortcutOrder: button.dataset.factorioShortcutOrder,
+				sourceStyle: button.dataset.factorioSourceStyle,
 				tooltip: document.getElementById(button.getAttribute('aria-describedby') ?? '')?.textContent.trim(),
 			})),
-		).toStrictEqual([
-			{
-				expanded: 'false',
-				icon: 'https://factorio-icon-cdn.pages.dev/item/blueprint.webp',
-				iconAlt: '',
-				iconTitle: null,
-				label: 'Open Blueprint Editor',
-				shortcut: 'B',
-				tooltip: 'Blueprint EditorEdit this blueprint or book. B',
+		}).toStrictEqual({
+			shell: {
+				children: 1,
+				className: 'transform-toolbelt',
+				factorioSource: 'BottomContainer::updateLocation',
+				factorioStyle: 'shortcut_bar_window_frame',
+				websiteExtension: 'blueprint-editor-tools',
 			},
-			{
-				expanded: 'true',
-				icon: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
-				iconAlt: '',
-				iconTitle: null,
-				label: 'Open Upgrade Planner',
-				shortcut: 'U',
-				tooltip: 'Upgrade PlannerCreate, edit, and apply upgrade mappings. U',
+			slots: {
+				children: 2,
+				className: 'transform-toolbelt__slots',
+				factorioSource: 'ShortcutBarGui::ShortcutBarGui',
+				factorioStyle: 'shortcut_bar_inner_panel',
 			},
-		]);
+			tools: [
+				{
+					className:
+						'factorio-button factorio-button--neutral transform-toolbelt__button transform-toolbelt__button--blueprint',
+					expanded: 'false',
+					icon: 'https://factorio-icon-cdn.pages.dev/item/blueprint.webp',
+					iconAlt: '',
+					iconTitle: null,
+					label: 'Open Blueprint Editor',
+					shortcut: 'B',
+					shortcutOrder: 'b[blueprints]-g[blueprint]',
+					sourceStyle: 'shortcut_bar_button_blue',
+					tooltip: 'Blueprint EditorEdit this blueprint or book. B',
+				},
+				{
+					className:
+						'factorio-button factorio-button--neutral transform-toolbelt__button transform-toolbelt__button--upgrade-planner',
+					expanded: 'true',
+					icon: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
+					iconAlt: '',
+					iconTitle: null,
+					label: 'Open Upgrade Planner',
+					shortcut: 'U',
+					shortcutOrder: 'b[blueprints]-j[upgrade-planner]',
+					sourceStyle: 'shortcut_bar_button_green',
+					tooltip: 'Upgrade PlannerCreate, edit, and apply upgrade mappings. U',
+				},
+			],
+		});
 	});
 
 	test('exposes the Upgrade Planner action tooltip on hover and keyboard focus', async () => {

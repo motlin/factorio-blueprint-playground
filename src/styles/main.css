@@ -2000,17 +2000,32 @@ body {
 .transform-toolbelt {
 	position: fixed;
 	z-index: 800;
-	bottom: 18px;
+	bottom: 0;
 	left: 50%;
-	display: flex;
-	gap: 2px;
-	padding: 4px;
+	display: block;
+	box-sizing: border-box;
+	padding: calc(4px * var(--factorio-ui-density)) 0 calc(4px * var(--factorio-ui-density))
+		calc(4px * var(--factorio-ui-density));
 	border: 1px solid #111;
-	background: #2d2c2d;
+	background: var(--factorio-ui-dialog-face);
 	box-shadow:
-		inset 0 1px 1px #6a696a,
-		0 5px 18px rgb(0 0 0 / 65%);
+		inset 1px 1px 0 #696969,
+		inset -1px -1px 0 #1d1d1d,
+		0 calc(3px * var(--factorio-ui-density)) calc(8px * var(--factorio-ui-density)) rgb(0 0 0 / 65%);
 	transform: translateX(-50%);
+	isolation: isolate;
+}
+
+.transform-toolbelt__slots {
+	display: grid;
+	grid-auto-columns: calc(40px * var(--factorio-ui-density));
+	grid-auto-flow: column;
+	gap: 0;
+	padding: 0;
+	background: var(--factorio-ui-dark);
+	box-shadow:
+		inset 0 0 calc(3px * var(--factorio-ui-density)) #111,
+		0 calc(2px * var(--factorio-ui-density)) calc(3px * var(--factorio-ui-density)) #111;
 }
 
 .factorio-toolbar-control {
@@ -2022,10 +2037,50 @@ body {
 }
 
 .transform-toolbelt__button {
-	width: 48px;
-	height: 48px;
+	width: calc(40px * var(--factorio-ui-density));
+	min-width: calc(40px * var(--factorio-ui-density));
+	max-width: calc(40px * var(--factorio-ui-density));
+	height: calc(40px * var(--factorio-ui-density));
+	min-height: calc(40px * var(--factorio-ui-density));
+	max-height: calc(40px * var(--factorio-ui-density));
+	margin: 0;
+	padding: calc(2px * var(--factorio-ui-density));
 	border: 0;
-	background: #3d3c3d;
+	line-height: 1;
+}
+
+.transform-toolbelt__button--blueprint {
+	--factorio-button-rest: #587487;
+	--factorio-button-rest-light: #9bb8c8;
+	--factorio-button-rest-dark: #293e49;
+	--factorio-button-hover: #7698aa;
+	--factorio-button-hover-light: #bfd3dd;
+	--factorio-button-hover-dark: #3e5966;
+	--factorio-button-pressed: #3f6172;
+	--factorio-button-pressed-light: #243f4c;
+	--factorio-button-pressed-dark: #7aa0b2;
+}
+
+.transform-toolbelt__button--upgrade-planner {
+	--factorio-button-rest: #5f8c59;
+	--factorio-button-rest-light: #9bc295;
+	--factorio-button-rest-dark: #2d4c29;
+	--factorio-button-hover: #79a873;
+	--factorio-button-hover-light: #c0daba;
+	--factorio-button-hover-dark: #42633d;
+	--factorio-button-pressed: #41683d;
+	--factorio-button-pressed-light: #294a26;
+	--factorio-button-pressed-dark: #82aa7c;
+}
+
+.transform-toolbelt__button[aria-expanded='true'],
+.transform-toolbelt__button[aria-expanded='true']:hover:not(:disabled),
+.transform-toolbelt__button[aria-expanded='true']:active:not(:disabled) {
+	background: var(--factorio-button-pressed);
+	box-shadow:
+		inset 1px 1px 0 var(--factorio-button-pressed-light),
+		inset -1px -1px 0 var(--factorio-button-pressed-dark);
+	color: #171717;
 }
 
 .transform-workbench-backdrop {

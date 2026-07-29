@@ -69,56 +69,73 @@ export function BlueprintToolbelt({
 	}, [blueprintEditorAvailable, onOpenBlueprintEditor, onOpenUpgradePlanner]);
 
 	return (
-		<div className="transform-toolbelt" role="toolbar" aria-label="Blueprint tools">
-			{blueprintEditorAvailable ? (
+		<div
+			className="transform-toolbelt"
+			role="toolbar"
+			aria-label="Blueprint tools"
+			data-factorio-source="BottomContainer::updateLocation"
+			data-factorio-style="shortcut_bar_window_frame"
+			data-website-extension="blueprint-editor-tools"
+		>
+			<div
+				className="transform-toolbelt__slots"
+				data-factorio-source="ShortcutBarGui::ShortcutBarGui"
+				data-factorio-style="shortcut_bar_inner_panel"
+			>
+				{blueprintEditorAvailable ? (
+					<div className="factorio-toolbar-control transform-toolbelt__control">
+						<FactorioButton
+							ref={blueprintEditorButtonReference}
+							className="transform-toolbelt__button transform-toolbelt__button--blueprint"
+							aria-label="Open Blueprint Editor"
+							aria-describedby={blueprintEditorTooltipId}
+							aria-keyshortcuts="B"
+							aria-expanded={blueprintEditorOpen}
+							data-factorio-shortcut-order="b[blueprints]-g[blueprint]"
+							data-factorio-source-style="shortcut_bar_button_blue"
+							onClick={(event) => {
+								event.currentTarget.focus();
+								onOpenBlueprintEditor();
+							}}
+						>
+							<FactorioIcon decorative icon={{type: 'item', name: 'blueprint'}} size="large" />
+						</FactorioButton>
+						<FactorioTooltip
+							id={blueprintEditorTooltipId}
+							className="factorio-toolbar-tooltip"
+							heading="Blueprint Editor"
+							placement={FactorioTooltipPlacement.Above}
+						>
+							Edit this blueprint or book. <span className="factorio-tooltip__shortcut">B</span>
+						</FactorioTooltip>
+					</div>
+				) : null}
 				<div className="factorio-toolbar-control transform-toolbelt__control">
 					<FactorioButton
-						ref={blueprintEditorButtonReference}
-						className="transform-toolbelt__button"
-						aria-label="Open Blueprint Editor"
-						aria-describedby={blueprintEditorTooltipId}
-						aria-keyshortcuts="B"
-						aria-expanded={blueprintEditorOpen}
+						ref={upgradePlannerButtonReference}
+						className="transform-toolbelt__button transform-toolbelt__button--upgrade-planner"
+						aria-label="Open Upgrade Planner"
+						aria-describedby={upgradePlannerTooltipId}
+						aria-keyshortcuts="U"
+						aria-expanded={upgradePlannerOpen}
+						data-factorio-shortcut-order="b[blueprints]-j[upgrade-planner]"
+						data-factorio-source-style="shortcut_bar_button_green"
 						onClick={(event) => {
 							event.currentTarget.focus();
-							onOpenBlueprintEditor();
+							onOpenUpgradePlanner();
 						}}
 					>
-						<FactorioIcon decorative icon={{type: 'item', name: 'blueprint'}} size="large" />
+						<FactorioIcon decorative icon={{type: 'item', name: 'upgrade-planner'}} size="large" />
 					</FactorioButton>
 					<FactorioTooltip
-						id={blueprintEditorTooltipId}
+						id={upgradePlannerTooltipId}
 						className="factorio-toolbar-tooltip"
-						heading="Blueprint Editor"
+						heading="Upgrade Planner"
 						placement={FactorioTooltipPlacement.Above}
 					>
-						Edit this blueprint or book. <span className="factorio-tooltip__shortcut">B</span>
+						Create, edit, and apply upgrade mappings. <span className="factorio-tooltip__shortcut">U</span>
 					</FactorioTooltip>
 				</div>
-			) : null}
-			<div className="factorio-toolbar-control transform-toolbelt__control">
-				<FactorioButton
-					ref={upgradePlannerButtonReference}
-					className="transform-toolbelt__button"
-					aria-label="Open Upgrade Planner"
-					aria-describedby={upgradePlannerTooltipId}
-					aria-keyshortcuts="U"
-					aria-expanded={upgradePlannerOpen}
-					onClick={(event) => {
-						event.currentTarget.focus();
-						onOpenUpgradePlanner();
-					}}
-				>
-					<FactorioIcon decorative icon={{type: 'item', name: 'upgrade-planner'}} size="large" />
-				</FactorioButton>
-				<FactorioTooltip
-					id={upgradePlannerTooltipId}
-					className="factorio-toolbar-tooltip"
-					heading="Upgrade Planner"
-					placement={FactorioTooltipPlacement.Above}
-				>
-					Create, edit, and apply upgrade mappings. <span className="factorio-tooltip__shortcut">U</span>
-				</FactorioTooltip>
 			</div>
 		</div>
 	);
