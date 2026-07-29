@@ -1,4 +1,4 @@
-import {useRef, useState, type CSSProperties, type KeyboardEvent} from 'react';
+import {useRef, useState, type ButtonHTMLAttributes, type CSSProperties, type KeyboardEvent, type Ref} from 'react';
 import {createPortal} from 'react-dom';
 
 import type {QualityComparator} from '../../../../parsing/types';
@@ -25,13 +25,49 @@ interface UpgradeQualityControlsProps {
 	qualitySelection: UpgradeQualitySelection;
 }
 
+const anyQualityIconSource = 'https://factorio-icon-cdn.pages.dev/virtual-signal/signal-any-quality.webp';
+
 function AnyQualityIcon() {
 	return (
 		<span className="upgrade-quality-controls__any-icon" aria-hidden="true">
-			{upgradeQualities.slice(1).map((quality) => (
-				<FactorioQualityBadge key={quality} quality={quality} />
-			))}
+			<img alt="" draggable={false} src={anyQualityIconSource} />
 		</span>
+	);
+}
+
+export interface AnyQualityPickerOptionProps extends Omit<
+	ButtonHTMLAttributes<HTMLButtonElement>,
+	'aria-checked' | 'aria-label' | 'children' | 'role'
+> {
+	ref?: Ref<HTMLButtonElement>;
+	selected: boolean;
+}
+
+export function AnyQualityPickerOption({
+	className,
+	ref,
+	selected,
+	title = anyQualityLabel,
+	type = 'button',
+	...buttonProps
+}: AnyQualityPickerOptionProps) {
+	const classes =
+		className === undefined
+			? 'upgrade-quality-controls__any-quality'
+			: `upgrade-quality-controls__any-quality ${className}`;
+	return (
+		<button
+			{...buttonProps}
+			ref={ref}
+			type={type}
+			className={classes}
+			role="menuitemradio"
+			aria-checked={selected}
+			aria-label={anyQualityLabel}
+			title={title}
+		>
+			<AnyQualityIcon />
+		</button>
 	);
 }
 
@@ -114,16 +150,12 @@ function QualityComparatorMenu({
 				style={menuStyle}
 			>
 				<div className="upgrade-quality-controls__comparator-menu" role="menu" aria-label="Quality comparison">
-					<button
+					<AnyQualityPickerOption
 						ref={(button) => {
 							menuItemReferences.current[0] = button;
 						}}
-						type="button"
-						role="menuitemradio"
-						aria-checked={qualitySelection === 'any'}
-						aria-label={anyQualityLabel}
+						selected={qualitySelection === 'any'}
 						tabIndex={activeIndex === 0 ? 0 : -1}
-						title={anyQualityLabel}
 						onClick={onAnyChoose}
 						onFocus={() => {
 							setActiveIndex(0);
@@ -131,9 +163,7 @@ function QualityComparatorMenu({
 						onKeyDown={(event) => {
 							handleMenuKeyDown(event, 0);
 						}}
-					>
-						<AnyQualityIcon />
-					</button>
+					/>
 					{upgradeQualityComparators.map((comparator, comparatorIndex) => (
 						<button
 							ref={(button) => {

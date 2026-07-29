@@ -2,7 +2,10 @@ import {fireEvent, render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {describe, expect, test, vi} from 'vite-plus/test';
 
-import {UpgradeQualityControls} from '../../src/components/blueprint/panels/transform/UpgradeQualityControls';
+import {
+	AnyQualityPickerOption,
+	UpgradeQualityControls,
+} from '../../src/components/blueprint/panels/transform/UpgradeQualityControls';
 import {
 	initialUpgradeQualitySelection,
 	qualitySelectorUsesDropdown,
@@ -12,6 +15,46 @@ import {
 import type {QualityComparator} from '../../src/parsing/types';
 
 const signal = {type: 'entity', name: 'transport-belt'} as const;
+
+describe('AnyQualityPickerOption', () => {
+	test('presents the Factorio Any-quality utility icon as one accessible choice', async () => {
+		const user = userEvent.setup();
+		const onClick = vi.fn<() => void>();
+		render(
+			<div role="menu" aria-label="Quality comparison">
+				<AnyQualityPickerOption
+					onClick={() => {
+						onClick();
+					}}
+					selected
+				/>
+			</div>,
+		);
+
+		const option = screen.getByRole('menuitemradio', {name: 'Any quality'});
+		const image = option.querySelector('img');
+		expect({
+			checked: option.getAttribute('aria-checked'),
+			image: {
+				alt: image?.getAttribute('alt'),
+				draggable: image?.getAttribute('draggable'),
+				source: image?.getAttribute('src'),
+			},
+			title: option.title,
+		}).toStrictEqual({
+			checked: 'true',
+			image: {
+				alt: '',
+				draggable: 'false',
+				source: 'https://factorio-icon-cdn.pages.dev/virtual-signal/signal-any-quality.webp',
+			},
+			title: 'Any quality',
+		});
+
+		await user.click(option);
+		expect(onClick.mock.calls).toStrictEqual([[]]);
+	});
+});
 
 describe('signalWithUpgradeQuality', () => {
 	test.each(['=', '≠', '<', '≤', '>', '≥'] as const)('serializes source quality comparator %s', (comparator) => {

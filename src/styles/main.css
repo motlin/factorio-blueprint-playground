@@ -2732,37 +2732,18 @@ body {
 }
 
 .upgrade-quality-controls__any-icon {
-	position: relative;
-	display: block;
-	width: 30px;
-	height: 30px;
+	display: grid;
+	width: calc(24px * var(--factorio-ui-density));
+	height: calc(24px * var(--factorio-ui-density));
+	place-items: center;
 }
 
 .upgrade-quality-controls__any-icon img {
-	position: absolute;
-	width: 17px;
-	height: 17px;
+	display: block;
+	width: 100%;
+	height: 100%;
 	object-fit: contain;
-}
-
-.upgrade-quality-controls__any-icon img:nth-child(1) {
-	top: 0;
-	left: 0;
-}
-
-.upgrade-quality-controls__any-icon img:nth-child(2) {
-	top: 0;
-	right: 0;
-}
-
-.upgrade-quality-controls__any-icon img:nth-child(3) {
-	bottom: 0;
-	left: 0;
-}
-
-.upgrade-quality-controls__any-icon img:nth-child(4) {
-	right: 0;
-	bottom: 0;
+	pointer-events: none;
 }
 
 .upgrade-quality-controls__comparator-toggle {
@@ -2828,11 +2809,6 @@ body {
 	height: calc(20px * var(--factorio-ui-density));
 }
 
-.upgrade-quality-controls__comparator-toggle .upgrade-quality-controls__any-icon img {
-	width: calc(12px * var(--factorio-ui-density));
-	height: calc(12px * var(--factorio-ui-density));
-}
-
 .upgrade-quality-controls__dropdown-arrow {
 	position: absolute;
 	top: 50%;
@@ -2896,6 +2872,11 @@ body {
 	color: #171717;
 }
 
+.upgrade-quality-controls__comparator-menu button[data-visual-state='hover'] {
+	background: #8b6745;
+	color: #171717;
+}
+
 .upgrade-quality-controls__comparator-menu button[aria-checked='true'] {
 	background: var(--factorio-ui-selected);
 	box-shadow:
@@ -2911,14 +2892,46 @@ body {
 	outline-offset: calc(-2px * var(--factorio-ui-density));
 }
 
+.upgrade-quality-controls__comparator-menu button[data-visual-state='focus'] {
+	position: relative;
+	z-index: 1;
+	outline: calc(2px * var(--factorio-ui-density)) solid var(--factorio-ui-accent);
+	outline-offset: calc(-2px * var(--factorio-ui-density));
+}
+
 .upgrade-quality-controls__comparator-menu .upgrade-quality-controls__any-icon {
 	width: calc(20px * var(--factorio-ui-density));
 	height: calc(20px * var(--factorio-ui-density));
 }
 
-.upgrade-quality-controls__comparator-menu .upgrade-quality-controls__any-icon img {
-	width: calc(12px * var(--factorio-ui-density));
-	height: calc(12px * var(--factorio-ui-density));
+.any-quality-picker-story {
+	box-sizing: border-box;
+	min-height: 100vh;
+	padding: 24px;
+	background: #242324;
+	color: var(--factorio-ui-text);
+}
+
+.any-quality-picker-story h2 {
+	margin: 0 0 16px;
+	color: var(--factorio-ui-title);
+}
+
+.any-quality-picker-story__states {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+}
+
+.any-quality-picker-story__state {
+	display: grid;
+	gap: 6px;
+	font-size: 12px;
+	font-weight: 700;
+}
+
+.any-quality-picker-story__state .upgrade-quality-controls__comparator-menu {
+	width: calc(44px * var(--factorio-ui-density));
 }
 
 .upgrade-quality-controls__quality-dropdown {
