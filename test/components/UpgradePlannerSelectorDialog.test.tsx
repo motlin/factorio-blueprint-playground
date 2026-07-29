@@ -129,6 +129,10 @@ describe('UpgradePlannerSelectorDialog golden apply-only source contracts', () =
 		const search = screen.getByRole('searchbox', {name: 'Search upgrade planners'});
 		const dialog = screen.getByRole('dialog', {name: 'Select the upgrade planner to apply'});
 		const instructions = document.getElementById(dialog.getAttribute('aria-describedby') ?? '');
+		const titleBar = dialog.querySelector('.upgrade-planner-selector__header');
+		const subheader = dialog.querySelector('.upgrade-planner-selector__subheader');
+		const searchButton = screen.getByRole('button', {name: 'Search upgrade planners'});
+		const viewControls = screen.getByRole('group', {name: 'Record view'});
 
 		expect({
 			editingChoices: {
@@ -137,11 +141,38 @@ describe('UpgradePlannerSelectorDialog golden apply-only source contracts', () =
 			},
 			initial: visiblePlannerNames(),
 			instructions: instructions?.textContent,
+			shell: {
+				dialogChildren: Array.from(dialog.children).map((child) => child.className),
+				headerButtons:
+					titleBar === null
+						? []
+						: within(titleBar as HTMLElement)
+								.getAllByRole('button')
+								.map((button) => button.getAttribute('aria-label')),
+				searchControlParent: searchButton.closest('.upgrade-planner-selector__header-actions')?.className,
+				source: dialog.getAttribute('data-factorio-source'),
+				subheaderStyle: subheader?.getAttribute('data-factorio-style'),
+				viewControlLabels: within(viewControls)
+					.getAllByRole('button')
+					.map((button) => button.getAttribute('aria-label')),
+				viewControlsParent: viewControls.parentElement?.className,
+			},
 		}).toStrictEqual({
 			editingChoices: {empty: null, paste: null},
 			initial: ['Default Upgrade', 'Nested belt planner', 'Zero-match library planner'],
-			instructions:
-				'Left-click to apply as upgrade. Right-click to apply as downgrade. Enter applies as upgrade; Shift+Enter applies as downgrade.',
+			instructions: 'Left-click to apply as upgrade, Right-click to apply as downgrade.',
+			shell: {
+				dialogChildren: [
+					'factorio-title-bar transform-dialog__header upgrade-planner-selector__header',
+					'factorio-frame factorio-frame--shallow upgrade-planner-selector__inside-frame',
+				],
+				headerButtons: ['Search upgrade planners', 'Close upgrade planner selector'],
+				searchControlParent: 'upgrade-planner-selector__header-actions',
+				source: 'SelectUpgradePlannerGui::SelectUpgradePlannerGui',
+				subheaderStyle: 'subheader_frame',
+				viewControlLabels: ['List view', 'Grid view', 'Slots view'],
+				viewControlsParent: 'upgrade-planner-selector__view-controls-target',
+			},
 		});
 
 		await user.type(search, 'transport belt');
@@ -332,19 +363,47 @@ describe('UpgradePlannerSelectorDialog golden apply-only source contracts', () =
 			/>,
 		);
 
+		const dialog = screen.getByRole('dialog', {name: 'Load an upgrade planner'});
+		const instructions = document.getElementById(dialog.getAttribute('aria-describedby') ?? '');
 		const tiles = within(screen.getByRole('grid', {name: 'Upgrade planners'})).getAllByRole('button');
-		expect(
-			tiles.map((tile) => ({
+		expect({
+			applicationControls: {
+				search: screen.queryByRole('button', {name: 'Search upgrade planners'}),
+				views: screen.queryByRole('group', {name: 'Record view'}),
+			},
+			instructions: instructions?.textContent,
+			shell: {
+				dialogChildren: Array.from(dialog.children).map((child) => child.className),
+				source: dialog.getAttribute('data-factorio-source'),
+				subheaderStyle: dialog
+					.querySelector('.upgrade-planner-selector__subheader')
+					?.getAttribute('data-factorio-style'),
+				websiteExtension: dialog.getAttribute('data-website-extension'),
+			},
+			tiles: tiles.map((tile) => ({
 				keyboardAlternative: tile.getAttribute('aria-keyshortcuts'),
 				label: tile.getAttribute('aria-label'),
 			})),
-		).toStrictEqual([
-			{keyboardAlternative: null, label: 'Default Upgrade'},
-			{keyboardAlternative: null, label: "Alice's fixture belt upgrades"},
-			{keyboardAlternative: null, label: 'Nested belt planner'},
-			{keyboardAlternative: null, label: 'Zero-match library planner'},
-			{keyboardAlternative: null, label: 'Empty Planner'},
-			{keyboardAlternative: null, label: 'Paste upgrade planner…'},
-		]);
+		}).toStrictEqual({
+			applicationControls: {search: null, views: null},
+			instructions: 'Choose a planner to copy all of its mappings into the editable draft.',
+			shell: {
+				dialogChildren: [
+					'factorio-title-bar transform-dialog__header upgrade-planner-selector__header',
+					'factorio-frame factorio-frame--shallow upgrade-planner-selector__inside-frame',
+				],
+				source: null,
+				subheaderStyle: 'subheader_frame',
+				websiteExtension: 'upgrade-planner-draft-loader',
+			},
+			tiles: [
+				{keyboardAlternative: null, label: 'Default Upgrade'},
+				{keyboardAlternative: null, label: "Alice's fixture belt upgrades"},
+				{keyboardAlternative: null, label: 'Nested belt planner'},
+				{keyboardAlternative: null, label: 'Zero-match library planner'},
+				{keyboardAlternative: null, label: 'Empty Planner'},
+				{keyboardAlternative: null, label: 'Paste upgrade planner…'},
+			],
+		});
 	});
 });

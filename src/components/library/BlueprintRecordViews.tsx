@@ -12,6 +12,7 @@ import {
 	type MouseEvent,
 	type Ref,
 } from 'react';
+import {createPortal} from 'react-dom';
 
 import gameUiSpec from '../../generated/game-ui-spec.json';
 import type {SignalID} from '../../parsing/types';
@@ -50,8 +51,10 @@ interface BlueprintRecordViewsProps<RecordModel extends BlueprintRecordModel> {
 	recordsWhenSearchEmpty?: readonly RecordModel[];
 	recordInstructionsId?: string;
 	ref?: Ref<BlueprintRecordViewsHandle>;
+	searchControlTarget?: HTMLElement;
 	searchLabel?: string;
 	searchResultNoun?: string;
+	viewControlsTarget?: HTMLElement;
 }
 
 interface BlueprintRecordItemProps<RecordModel extends BlueprintRecordModel> {
@@ -367,8 +370,10 @@ export function BlueprintRecordViews<RecordModel extends BlueprintRecordModel>({
 	recordsWhenSearchEmpty,
 	recordInstructionsId,
 	ref,
+	searchControlTarget,
 	searchLabel = 'Search blueprint records',
 	searchResultNoun = 'records',
+	viewControlsTarget,
 }: BlueprintRecordViewsProps<RecordModel>) {
 	const [searchText, setSearchText] = useState('');
 	const [searchVisible, setSearchVisible] = useState(false);
@@ -498,89 +503,105 @@ export function BlueprintRecordViews<RecordModel extends BlueprintRecordModel>({
 		}
 	};
 
+	const searchControl = (
+		<div className="blueprint-record-views__search-control" data-factorio-source="SearchBar::SearchBar">
+			<label
+				className="blueprint-record-views__search"
+				data-factorio-style="search_popup_frame"
+				htmlFor={searchInputId}
+				hidden={!searchVisible}
+			>
+				<span className="visually-hidden">{searchLabel}</span>
+				<input
+					ref={searchInputReference}
+					id={searchInputId}
+					type="search"
+					value={searchText}
+					data-factorio-style="search_popup_textfield"
+					onChange={(event) => {
+						setSearchText(event.currentTarget.value);
+					}}
+					onKeyDown={(event) => {
+						if (event.key === 'Escape') {
+							event.preventDefault();
+							event.stopPropagation();
+							setSearchVisible(false);
+							setSearchText('');
+							searchToggleReference.current?.focus();
+						}
+					}}
+				/>
+			</label>
+			<FactorioButton
+				ref={searchToggleReference}
+				kind={FactorioButtonKind.Search}
+				aria-controls={searchInputId}
+				aria-expanded={searchVisible}
+				aria-label={searchLabel}
+				className="blueprint-record-views__search-toggle"
+				title="Search"
+				onClick={(event) => {
+					if (searchVisible) {
+						setSearchVisible(false);
+						setSearchText('');
+						event.currentTarget.focus();
+					} else {
+						setSearchVisible(true);
+					}
+				}}
+			/>
+		</div>
+	);
+	const viewControls = (
+		<div
+			className="blueprint-record-views__toggles"
+			role="group"
+			aria-label="Record view"
+			data-factorio-source="BlueprintsList::viewButtons"
+		>
+			{VIEW_OPTIONS.map((option, optionIndex) => {
+				const Icon = option.icon;
+				return (
+					<FactorioButton
+						key={option.mode}
+						ref={(button) => {
+							viewButtonReferences.current[optionIndex] = button;
+						}}
+						aria-label={option.label}
+						aria-pressed={viewMode === option.mode}
+						className="blueprint-record-views__toggle"
+						data-factorio-source-style="tool_button"
+						title={option.label}
+						tabIndex={viewMode === option.mode ? 0 : -1}
+						onClick={() => {
+							changeViewMode(option.mode);
+						}}
+						onKeyDown={(event) => {
+							handleViewModeKeyDown(event, optionIndex);
+						}}
+					>
+						<Icon aria-hidden="true" data-factorio-utility-sprite={option.sprite} />
+					</FactorioButton>
+				);
+			})}
+		</div>
+	);
+	const hasInlineControls = searchControlTarget === undefined || viewControlsTarget === undefined;
+
 	return (
 		<div className="blueprint-record-views" data-factorio-source="BlueprintShelfWidget::passesFilter">
-			<div className="blueprint-record-views__toolbar">
-				<div className="blueprint-record-views__search-control" data-factorio-source="SearchBar::SearchBar">
-					<label
-						className="blueprint-record-views__search"
-						data-factorio-style="search_popup_frame"
-						htmlFor={searchInputId}
-						hidden={!searchVisible}
-					>
-						<span className="visually-hidden">{searchLabel}</span>
-						<input
-							ref={searchInputReference}
-							id={searchInputId}
-							type="search"
-							value={searchText}
-							data-factorio-style="search_popup_textfield"
-							onChange={(event) => {
-								setSearchText(event.currentTarget.value);
-							}}
-							onKeyDown={(event) => {
-								if (event.key === 'Escape') {
-									event.preventDefault();
-									event.stopPropagation();
-									setSearchVisible(false);
-									setSearchText('');
-									searchToggleReference.current?.focus();
-								}
-							}}
-						/>
-					</label>
-					<FactorioButton
-						ref={searchToggleReference}
-						kind={FactorioButtonKind.Search}
-						aria-controls={searchInputId}
-						aria-expanded={searchVisible}
-						aria-label={searchLabel}
-						className="blueprint-record-views__search-toggle"
-						title="Search"
-						onClick={(event) => {
-							if (searchVisible) {
-								setSearchVisible(false);
-								setSearchText('');
-								event.currentTarget.focus();
-							} else {
-								setSearchVisible(true);
-							}
-						}}
-					/>
+			{hasInlineControls ? (
+				<div className="blueprint-record-views__toolbar">
+					{searchControlTarget === undefined ? searchControl : null}
+					{viewControlsTarget === undefined ? viewControls : null}
 				</div>
-				<div
-					className="blueprint-record-views__toggles"
-					role="group"
-					aria-label="Record view"
-					data-factorio-source="BlueprintsList::viewButtons"
-				>
-					{VIEW_OPTIONS.map((option, optionIndex) => {
-						const Icon = option.icon;
-						return (
-							<FactorioButton
-								key={option.mode}
-								ref={(button) => {
-									viewButtonReferences.current[optionIndex] = button;
-								}}
-								aria-label={option.label}
-								aria-pressed={viewMode === option.mode}
-								className="blueprint-record-views__toggle"
-								data-factorio-source-style="tool_button"
-								title={option.label}
-								tabIndex={viewMode === option.mode ? 0 : -1}
-								onClick={() => {
-									changeViewMode(option.mode);
-								}}
-								onKeyDown={(event) => {
-									handleViewModeKeyDown(event, optionIndex);
-								}}
-							>
-								<Icon aria-hidden="true" data-factorio-utility-sprite={option.sprite} />
-							</FactorioButton>
-						);
-					})}
-				</div>
-			</div>
+			) : null}
+			{searchControlTarget === undefined
+				? null
+				: createPortal(searchControl, searchControlTarget, 'blueprint-record-search-control')}
+			{viewControlsTarget === undefined
+				? null
+				: createPortal(viewControls, viewControlsTarget, 'blueprint-record-view-controls')}
 			<FactorioScrollFrame aria-label={ariaLabel} className="blueprint-library__records">
 				{visibleRecords.length === 0 ? (
 					<p
