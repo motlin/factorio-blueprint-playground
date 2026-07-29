@@ -2698,21 +2698,32 @@ body {
 
 .transform-picker__footer {
 	display: flex;
+	box-sizing: border-box;
 	min-width: 0;
+	height: calc(36px * var(--factorio-ui-density));
+	min-height: calc(36px * var(--factorio-ui-density));
 	flex: 0 0 auto;
 	align-items: center;
 	justify-content: space-between;
-	gap: 12px;
-	min-height: 54px;
-	padding: 8px 10px;
-	border-top: 1px solid #171717;
-	background: repeating-linear-gradient(90deg, rgb(255 255 255 / 3%) 0 2px, transparent 2px 4px), #393839;
+	gap: 0;
+	padding: 0 calc(4px * var(--factorio-ui-density)) calc(4px * var(--factorio-ui-density))
+		calc(8px * var(--factorio-ui-density));
+	background: var(--factorio-ui-dialog-face);
+	box-shadow:
+		inset 0 calc(4px * var(--factorio-ui-density)) 0 #1f1f1f,
+		inset 0 calc(5px * var(--factorio-ui-density)) 0 rgb(255 255 255 / 6%);
 }
 
 .upgrade-quality-controls--picker {
 	display: flex;
 	align-items: center;
 	gap: 0;
+}
+
+.upgrade-quality-controls--picker .factorio-inventory-slot {
+	width: calc(28px * var(--factorio-ui-density)) !important;
+	height: calc(28px * var(--factorio-ui-density)) !important;
+	padding: calc(2px * var(--factorio-ui-density));
 }
 
 .upgrade-quality-controls__condition {
@@ -2833,14 +2844,22 @@ body {
 }
 
 .upgrade-quality-controls__quality > .factorio-quality-badge {
-	width: calc(32px * var(--factorio-ui-density));
-	height: calc(32px * var(--factorio-ui-density));
+	width: calc(24px * var(--factorio-ui-density));
+	height: calc(24px * var(--factorio-ui-density));
 }
 
-.transform-picker__footer > .factorio-button--confirm {
-	min-width: 48px;
+.transform-picker__confirm {
+	width: calc(28px * var(--factorio-ui-density));
+	min-width: calc(28px * var(--factorio-ui-density));
+	max-width: calc(28px * var(--factorio-ui-density));
+	height: calc(28px * var(--factorio-ui-density));
+	min-height: calc(28px * var(--factorio-ui-density));
+	max-height: calc(28px * var(--factorio-ui-density));
+	margin-left: auto;
+	padding: 0;
 	justify-content: center;
-	font-size: 24px;
+	font-size: calc(22px * var(--factorio-ui-density));
+	font-weight: 900;
 }
 
 .transform-picker__confirm-label {
@@ -3380,11 +3399,6 @@ body {
 	.transform-picker__body {
 		overflow-x: auto;
 		justify-content: flex-start;
-	}
-
-	.transform-picker__footer {
-		align-items: stretch;
-		flex-direction: column;
 	}
 
 	.transform-dialog-backdrop {

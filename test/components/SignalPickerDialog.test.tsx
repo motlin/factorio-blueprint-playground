@@ -62,13 +62,18 @@ test('groups only caller-supplied game signals and confirms a selected icon', as
 	const heading = screen.getByRole('heading', {name: 'Choose test signal'});
 	const searchToggle = screen.getByRole('button', {name: 'Search'});
 	const close = screen.getByRole('button', {name: 'Close Choose test signal'});
+	const confirm = screen.getByRole<HTMLButtonElement>('button', {name: 'Confirm'});
+	const footer = document.querySelector<HTMLElement>('.transform-picker__footer');
 	expect({
 		activeTab: within(tabs).getByRole('tab', {name: 'Logistics'}).getAttribute('aria-selected'),
 		backdropLayer: dialog.parentElement?.getAttribute('data-factorio-dialog-layer'),
 		closeTooltip: close.getAttribute('title'),
 		closeStyle: close.getAttribute('data-factorio-style'),
-		confirmDisabled: screen.getByRole<HTMLButtonElement>('button', {name: 'Confirm'}).disabled,
+		confirmControlStyle: confirm.getAttribute('data-factorio-control-style'),
+		confirmDisabled: confirm.disabled,
+		confirmStyle: confirm.getAttribute('data-factorio-style'),
 		dialogLabelledBy: dialog.getAttribute('aria-labelledby'),
+		footerStyle: footer?.getAttribute('data-factorio-style'),
 		headingId: heading.id,
 		initialFocusIsSearch: document.activeElement === searchToggle,
 		searchExpanded: searchToggle.getAttribute('aria-expanded'),
@@ -87,9 +92,12 @@ test('groups only caller-supplied game signals and confirms a selected icon', as
 		backdropLayer: 'nested',
 		closeTooltip: 'Close Choose test signal',
 		closeStyle: 'frame_action_button',
+		confirmControlStyle: 'item_and_count_select_confirm',
 		initialFocusIsSearch: true,
 		confirmDisabled: true,
+		confirmStyle: 'green_button',
 		dialogLabelledBy: heading.id,
+		footerStyle: 'subfooter_frame',
 		headingId: heading.id,
 		searchExpanded: 'false',
 		searchField: null,
@@ -1099,7 +1107,7 @@ test('exposes the complete long signal name while the fixed readout can truncate
 	});
 });
 
-test('chooses immediately without rendering a green confirmation when the context does not need one', async () => {
+test('chooses immediately with Enter without rendering a subfooter or green confirmation', async () => {
 	const user = userEvent.setup();
 	const onChoose = vi.fn<SignalPickerDialogProps['onChoose']>();
 	render(
@@ -1112,9 +1120,63 @@ test('chooses immediately without rendering a green confirmation when the contex
 		/>,
 	);
 
+	expect(document.querySelector('.transform-picker__footer')).toBe(null);
 	expect(screen.queryByRole('button', {name: 'Confirm'})).toBe(null);
-	await user.click(screen.getByRole('button', {name: 'Choose Test entity'}));
+	const option = screen.getByRole('button', {name: 'Choose Test entity'});
+	option.focus();
+	await user.keyboard('{Enter}');
 	expect(onChoose.mock.calls).toStrictEqual([[qualitySignal]]);
+});
+
+test('rejects quality controls in immediate-selection mode', () => {
+	expect(() => {
+		render(
+			<SignalPickerDialog
+				confirmationMode="immediate"
+				title="Invalid immediate quality picker"
+				options={[qualitySignal]}
+				qualityMode="target"
+				onChoose={vi.fn<SignalPickerDialogProps['onChoose']>()}
+				onClose={vi.fn<() => void>()}
+			/>,
+		);
+	}).toThrow('Immediate signal selection cannot include staged quality controls.');
+});
+
+test('keeps required confirmation disabled and ignores Enter until a valid signal is staged', () => {
+	const onChoose = vi.fn<SignalPickerDialogProps['onChoose']>();
+	render(
+		<SignalPickerDialog
+			confirmationMode="required"
+			title="Required confirmation"
+			options={[qualitySignal]}
+			onChoose={onChoose}
+			onClose={vi.fn<() => void>()}
+		/>,
+	);
+
+	const confirm = screen.getByRole<HTMLButtonElement>('button', {name: 'Confirm'});
+	const grid = screen.getByRole('region', {name: 'Logistics choices'});
+	grid.focus();
+	fireEvent.keyDown(grid, {key: 'Enter'});
+	expect({
+		chooseCalls: onChoose.mock.calls,
+		confirmDisabled: confirm.disabled,
+	}).toStrictEqual({
+		chooseCalls: [],
+		confirmDisabled: true,
+	});
+
+	fireEvent.click(screen.getByRole('button', {name: 'Choose Test entity'}));
+	grid.focus();
+	fireEvent.keyDown(grid, {key: 'Enter'});
+	expect({
+		chooseCalls: onChoose.mock.calls,
+		confirmDisabled: confirm.disabled,
+	}).toStrictEqual({
+		chooseCalls: [[qualitySignal]],
+		confirmDisabled: false,
+	});
 });
 
 function NestedPickerStack() {

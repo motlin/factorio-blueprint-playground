@@ -146,6 +146,46 @@ export const RestrictedToPicker: Story = {
 	},
 };
 
+export const RequiredConfirmationFooter: Story = {
+	tags: ['visual-conformance'],
+	args: {
+		title: 'Set the filter',
+		options: [
+			{type: 'entity', name: 'transport-belt'},
+			{type: 'entity', name: 'fast-transport-belt'},
+		],
+		qualityMode: 'source',
+	},
+	play: async ({args, canvasElement}) => {
+		const screen = within(canvasElement.ownerDocument.body);
+		const footer = canvasElement.ownerDocument.querySelector<HTMLElement>('.transform-picker__footer');
+		const confirm = screen.getByRole('button', {name: 'Confirm'});
+		await expect(footer).toHaveAttribute('data-factorio-style', 'subfooter_frame');
+		await expect(confirm).toHaveAttribute('data-factorio-control-style', 'item_and_count_select_confirm');
+		await expect(confirm).toBeDisabled();
+		await userEvent.click(screen.getByRole('button', {name: 'Choose Transport belt'}));
+		await expect(confirm).toBeEnabled();
+		await userEvent.click(confirm);
+		await expect(args.onChoose.mock.calls).toStrictEqual([[{type: 'entity', name: 'transport-belt'}]]);
+	},
+};
+
+export const ImmediateSelection: Story = {
+	args: {
+		confirmationMode: 'immediate',
+		title: 'Choose source icon used here',
+		options: [{type: 'virtual', name: 'signal-red'}],
+	},
+	play: async ({args, canvasElement}) => {
+		const screen = within(canvasElement.ownerDocument.body);
+		const option = screen.getByRole('button', {name: 'Choose Signal red'});
+		await expect(screen.queryByRole('button', {name: 'Confirm'})).not.toBeInTheDocument();
+		option.focus();
+		await userEvent.keyboard('{Enter}');
+		await expect(args.onChoose.mock.calls).toStrictEqual([[{type: 'virtual', name: 'signal-red'}]]);
+	},
+};
+
 export const SignalOptionStates: Story = {
 	tags: ['visual-conformance'],
 	args: {

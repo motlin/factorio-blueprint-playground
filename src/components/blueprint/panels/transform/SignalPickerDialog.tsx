@@ -526,6 +526,10 @@ export function SignalPickerDialog({
 		activateCategory(availableCategories[nextIndex], nextIndex);
 	};
 
+	if (confirmationMode === 'immediate' && qualityMode !== undefined) {
+		throw new Error('Immediate signal selection cannot include staged quality controls.');
+	}
+
 	return createPortal(
 		<FactorioDialogBackdrop nested className="transform-dialog-backdrop transform-picker__backdrop">
 			<section
@@ -735,11 +739,9 @@ export function SignalPickerDialog({
 						</div>
 					</div>
 				</div>
-				{qualityMode !== undefined || confirmationMode === 'required' ? (
-					<footer className="transform-picker__footer">
-						{qualityMode === undefined ? (
-							<span />
-						) : (
+				{confirmationMode === 'required' ? (
+					<footer className="transform-picker__footer" data-factorio-style="subfooter_frame">
+						{qualityMode === undefined ? null : (
 							<UpgradeQualityControls
 								mode={qualityMode}
 								qualityComparator={qualityComparator}
@@ -748,19 +750,20 @@ export function SignalPickerDialog({
 								onQualityChange={setQualitySelection}
 							/>
 						)}
-						{confirmationMode === 'required' ? (
-							<FactorioButton
-								kind={FactorioButtonKind.Confirm}
-								disabled={!selectionAllowed}
-								onClick={(event) => {
-									event.preventDefault();
-									confirmSelection();
-								}}
-							>
-								<span aria-hidden="true">✓</span>
-								<span className="transform-picker__confirm-label">Confirm</span>
-							</FactorioButton>
-						) : null}
+						<FactorioButton
+							kind={FactorioButtonKind.Confirm}
+							className="transform-picker__confirm"
+							data-factorio-control-style="item_and_count_select_confirm"
+							disabled={!selectionAllowed}
+							title="Confirm"
+							onClick={(event) => {
+								event.preventDefault();
+								confirmSelection();
+							}}
+						>
+							<span aria-hidden="true">✓</span>
+							<span className="transform-picker__confirm-label">Confirm</span>
+						</FactorioButton>
 					</footer>
 				) : null}
 			</section>
