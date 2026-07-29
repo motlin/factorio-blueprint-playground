@@ -1,10 +1,73 @@
-import {useId} from 'react';
+import {useEffect, useId, useState} from 'react';
 
 import type {BlueprintSnapGrid} from '../../../../transform/blueprintEditor';
 
 interface BlueprintSnapGridEditorProps {
 	onChange: (settings: BlueprintSnapGrid) => void;
 	settings: BlueprintSnapGrid;
+}
+
+interface SnapGridDimensionInputProps {
+	label: string;
+	onCommit: (value: number) => void;
+	value: number;
+}
+
+function positiveInteger(draft: string): number | undefined {
+	if (!/^\d+$/.test(draft)) {
+		return undefined;
+	}
+	const value = Number(draft);
+	return Number.isSafeInteger(value) && value > 0 ? value : undefined;
+}
+
+function SnapGridDimensionInput({label, onCommit, value}: SnapGridDimensionInputProps) {
+	const inputId = useId();
+	const [draft, setDraft] = useState(String(value));
+
+	useEffect(() => {
+		setDraft(String(value));
+	}, [value]);
+
+	const commit = () => {
+		const nextValue = positiveInteger(draft);
+		if (nextValue === undefined) {
+			setDraft(String(value));
+		} else if (nextValue !== value) {
+			onCommit(nextValue);
+		}
+	};
+
+	return (
+		<>
+			<label htmlFor={inputId}>{label}:</label>
+			<input
+				id={inputId}
+				type="number"
+				aria-label={label}
+				data-factorio-style="very_short_number_textfield"
+				inputMode="numeric"
+				min="1"
+				step="1"
+				value={draft}
+				onBlur={commit}
+				onChange={(event) => {
+					const nextDraft = event.currentTarget.value;
+					setDraft(nextDraft);
+					const nextValue = positiveInteger(nextDraft);
+					if (nextValue !== undefined && nextValue !== value) {
+						onCommit(nextValue);
+					}
+				}}
+				onKeyDown={(event) => {
+					if (event.key === 'Enter') {
+						event.preventDefault();
+						commit();
+					}
+				}}
+			/>
+		</>
+	);
 }
 
 export function BlueprintSnapGridEditor({onChange, settings}: BlueprintSnapGridEditorProps) {
@@ -42,32 +105,27 @@ export function BlueprintSnapGridEditor({onChange, settings}: BlueprintSnapGridE
 				data-factorio-source="BlueprintSettingsGui::updateEditabilityOfSnapToGrid"
 			>
 				<legend className="blueprint-snap-grid-editor__legend">Snap to grid settings</legend>
-				<div className="blueprint-snap-grid-editor__row">
+				<div
+					className="blueprint-snap-grid-editor__row blueprint-snap-grid-editor__dimensions"
+					data-factorio-columns="6"
+					data-factorio-source="BlueprintSettingsGui::makeSnappingsFrame"
+				>
 					<strong>Grid size</strong>
-					<label>
-						Width
-						<input
-							type="number"
-							min="1"
-							step="1"
-							value={settings.width}
-							onChange={(event) => {
-								update({width: event.currentTarget.valueAsNumber});
-							}}
-						/>
-					</label>
-					<label>
-						Height
-						<input
-							type="number"
-							min="1"
-							step="1"
-							value={settings.height}
-							onChange={(event) => {
-								update({height: event.currentTarget.valueAsNumber});
-							}}
-						/>
-					</label>
+					<span className="blueprint-snap-grid-editor__pusher" aria-hidden="true" />
+					<SnapGridDimensionInput
+						label="Width"
+						onCommit={(width) => {
+							update({width});
+						}}
+						value={settings.width}
+					/>
+					<SnapGridDimensionInput
+						label="Height"
+						onCommit={(height) => {
+							update({height});
+						}}
+						value={settings.height}
+					/>
 				</div>
 				<div className="blueprint-snap-grid-editor__row blueprint-snap-grid-editor__placement">
 					<strong>Placement</strong>

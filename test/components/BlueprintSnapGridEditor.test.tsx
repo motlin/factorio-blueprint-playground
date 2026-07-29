@@ -149,3 +149,146 @@ test('distinguishes relative placement while retaining the absolute position dra
 		relativeChecked: true,
 	});
 });
+
+test('commits positive integer dimensions without emitting invalid intermediate drafts', async () => {
+	const user = userEvent.setup();
+	const onChange = vi.fn<(settings: BlueprintSnapGrid) => void>();
+	render(
+		<EditorHarness
+			initialSettings={{
+				absolute: true,
+				enabled: true,
+				height: 64,
+				positionX: 0,
+				positionY: -16,
+				width: 32,
+			}}
+			onChange={onChange}
+		/>,
+	);
+
+	const width = screen.getByRole<HTMLInputElement>('spinbutton', {name: 'Width'});
+	const height = screen.getByRole<HTMLInputElement>('spinbutton', {name: 'Height'});
+	const dimensionRow = width.closest('.blueprint-snap-grid-editor__dimensions');
+	if (dimensionRow === null) {
+		throw new Error('Expected the six-column dimension row.');
+	}
+
+	await user.clear(width);
+	await user.type(width, '48');
+	expect({
+		calls: onChange.mock.calls,
+		dimensionCells: [...dimensionRow.children].map((cell) => cell.textContent),
+		dimensionColumns: dimensionRow.getAttribute('data-factorio-columns'),
+		heightContract: {
+			inputMode: height.inputMode,
+			min: height.min,
+			step: height.step,
+			style: height.dataset.factorioStyle,
+		},
+		widthContract: {
+			inputMode: width.inputMode,
+			min: width.min,
+			step: width.step,
+			style: width.dataset.factorioStyle,
+		},
+		widthValue: width.value,
+	}).toStrictEqual({
+		calls: [
+			[
+				{
+					absolute: true,
+					enabled: true,
+					height: 64,
+					positionX: 0,
+					positionY: -16,
+					width: 4,
+				},
+			],
+			[
+				{
+					absolute: true,
+					enabled: true,
+					height: 64,
+					positionX: 0,
+					positionY: -16,
+					width: 48,
+				},
+			],
+		],
+		dimensionCells: ['Grid size', '', 'Width:', '', 'Height:', ''],
+		dimensionColumns: '6',
+		heightContract: {
+			inputMode: 'numeric',
+			min: '1',
+			step: '1',
+			style: 'very_short_number_textfield',
+		},
+		widthContract: {
+			inputMode: 'numeric',
+			min: '1',
+			step: '1',
+			style: 'very_short_number_textfield',
+		},
+		widthValue: '48',
+	});
+
+	await user.keyboard('{Enter}');
+	await user.clear(width);
+	await user.type(width, '0');
+	await user.tab();
+	await user.clear(height);
+	await user.type(height, '96');
+	await user.tab();
+
+	expect({
+		activeElement: document.activeElement,
+		calls: onChange.mock.calls,
+		values: [width.value, height.value],
+	}).toStrictEqual({
+		activeElement: screen.getByRole('radio', {name: 'Absolute'}),
+		calls: [
+			[
+				{
+					absolute: true,
+					enabled: true,
+					height: 64,
+					positionX: 0,
+					positionY: -16,
+					width: 4,
+				},
+			],
+			[
+				{
+					absolute: true,
+					enabled: true,
+					height: 64,
+					positionX: 0,
+					positionY: -16,
+					width: 48,
+				},
+			],
+			[
+				{
+					absolute: true,
+					enabled: true,
+					height: 9,
+					positionX: 0,
+					positionY: -16,
+					width: 48,
+				},
+			],
+			[
+				{
+					absolute: true,
+					enabled: true,
+					height: 96,
+					positionX: 0,
+					positionY: -16,
+					width: 48,
+				},
+			],
+		],
+		values: ['48', '96'],
+	});
+});

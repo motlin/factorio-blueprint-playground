@@ -55,14 +55,38 @@ export const EnabledAbsolute: Story = {
 		const heading = canvas.getByRole('heading', {name: 'Snap to grid'});
 		const fieldset = canvas.getByRole('group', {name: 'Snap to grid settings'});
 		const width = canvas.getByRole<HTMLInputElement>('spinbutton', {name: 'Width'});
+		const height = canvas.getByRole<HTMLInputElement>('spinbutton', {name: 'Height'});
+		const dimensionRow = width.closest('.blueprint-snap-grid-editor__dimensions');
 		const positionX = canvas.getByRole<HTMLInputElement>('spinbutton', {name: 'X'});
 		const section = master.closest('section');
-		if (section === null) {
-			throw new Error('Expected the snap-to-grid bordered frame.');
+		if (section === null || dimensionRow === null) {
+			throw new Error('Expected the snap-to-grid bordered frame and dimension row.');
 		}
+		const dimensionGridTemplate =
+			section.getBoundingClientRect().width <= 400
+				? '45.3594px 40px 50.7031px 40px'
+				: '110px 81.9375px 45.3594px 40px 50.7031px 40px';
 
 		await expect({
 			controlCount: fieldset.querySelectorAll('input').length,
+			dimensions: {
+				cells: [...dimensionRow.children].map((cell) => cell.textContent),
+				columns: dimensionRow.getAttribute('data-factorio-columns'),
+				gridTemplate: getComputedStyle(dimensionRow).gridTemplateColumns,
+				height: {
+					inputMode: height.inputMode,
+					min: height.min,
+					step: height.step,
+					style: height.dataset.factorioStyle,
+				},
+				source: dimensionRow.getAttribute('data-factorio-source'),
+				width: {
+					inputMode: width.inputMode,
+					min: width.min,
+					step: width.step,
+					style: width.dataset.factorioStyle,
+				},
+			},
 			fieldsetControlledByMaster: master.getAttribute('aria-controls') === fieldset.id,
 			fieldsetSource: fieldset.dataset.factorioSource,
 			fieldsetStyle: {
@@ -76,6 +100,24 @@ export const EnabledAbsolute: Story = {
 			numberWidth: width.getBoundingClientRect().width,
 		}).toStrictEqual({
 			controlCount: 6,
+			dimensions: {
+				cells: ['Grid size', '', 'Width:', '', 'Height:', ''],
+				columns: '6',
+				gridTemplate: dimensionGridTemplate,
+				height: {
+					inputMode: 'numeric',
+					min: '1',
+					step: '1',
+					style: 'very_short_number_textfield',
+				},
+				source: 'BlueprintSettingsGui::makeSnappingsFrame',
+				width: {
+					inputMode: 'numeric',
+					min: '1',
+					step: '1',
+					style: 'very_short_number_textfield',
+				},
+			},
 			fieldsetControlledByMaster: true,
 			fieldsetSource: 'BlueprintSettingsGui::updateEditabilityOfSnapToGrid',
 			fieldsetStyle: {border: 'none', opacity: '1'},
@@ -112,6 +154,180 @@ export const EnabledAbsolute: Story = {
 				},
 			],
 		]);
+	},
+};
+
+export const KeyboardNumericEditing: Story = {
+	play: async ({args, canvasElement}) => {
+		const canvas = within(canvasElement);
+		const width = canvas.getByRole<HTMLInputElement>('spinbutton', {name: 'Width'});
+		const height = canvas.getByRole<HTMLInputElement>('spinbutton', {name: 'Height'});
+
+		await userEvent.clear(width);
+		await userEvent.type(width, '48');
+		await expect({
+			calls: args.onChange.mock.calls,
+			value: width.value,
+		}).toStrictEqual({
+			calls: [
+				[
+					{
+						absolute: true,
+						enabled: true,
+						height: 64,
+						positionX: 0,
+						positionY: -16,
+						width: 4,
+					},
+				],
+				[
+					{
+						absolute: true,
+						enabled: true,
+						height: 64,
+						positionX: 0,
+						positionY: -16,
+						width: 48,
+					},
+				],
+			],
+			value: '48',
+		});
+		await userEvent.keyboard('{Enter}');
+		await expect(args.onChange.mock.calls).toStrictEqual([
+			[
+				{
+					absolute: true,
+					enabled: true,
+					height: 64,
+					positionX: 0,
+					positionY: -16,
+					width: 4,
+				},
+			],
+			[
+				{
+					absolute: true,
+					enabled: true,
+					height: 64,
+					positionX: 0,
+					positionY: -16,
+					width: 48,
+				},
+			],
+		]);
+
+		await userEvent.clear(width);
+		await userEvent.type(width, '0');
+		await userEvent.tab();
+		await expect({
+			activeElement: document.activeElement,
+			calls: args.onChange.mock.calls,
+			width: width.value,
+		}).toStrictEqual({
+			activeElement: height,
+			calls: [
+				[
+					{
+						absolute: true,
+						enabled: true,
+						height: 64,
+						positionX: 0,
+						positionY: -16,
+						width: 4,
+					},
+				],
+				[
+					{
+						absolute: true,
+						enabled: true,
+						height: 64,
+						positionX: 0,
+						positionY: -16,
+						width: 48,
+					},
+				],
+			],
+			width: '48',
+		});
+
+		await userEvent.clear(height);
+		await userEvent.type(height, '96');
+		await userEvent.tab();
+		await expect(args.onChange.mock.calls).toStrictEqual([
+			[
+				{
+					absolute: true,
+					enabled: true,
+					height: 64,
+					positionX: 0,
+					positionY: -16,
+					width: 4,
+				},
+			],
+			[
+				{
+					absolute: true,
+					enabled: true,
+					height: 64,
+					positionX: 0,
+					positionY: -16,
+					width: 48,
+				},
+			],
+			[
+				{
+					absolute: true,
+					enabled: true,
+					height: 9,
+					positionX: 0,
+					positionY: -16,
+					width: 48,
+				},
+			],
+			[
+				{
+					absolute: true,
+					enabled: true,
+					height: 96,
+					positionX: 0,
+					positionY: -16,
+					width: 48,
+				},
+			],
+		]);
+	},
+};
+
+export const NarrowDimensions: Story = {
+	decorators: [
+		(StoryComponent) => (
+			<div style={{width: '280px'}}>
+				<StoryComponent />
+			</div>
+		),
+	],
+	play: async ({canvasElement}) => {
+		const canvas = within(canvasElement);
+		const width = canvas.getByRole<HTMLInputElement>('spinbutton', {name: 'Width'});
+		const dimensionRow = width.closest('.blueprint-snap-grid-editor__dimensions');
+		if (dimensionRow === null) {
+			throw new Error('Expected the dimension row.');
+		}
+		const height = canvas.getByRole<HTMLInputElement>('spinbutton', {name: 'Height'});
+		const rowBounds = dimensionRow.getBoundingClientRect();
+
+		await expect({
+			gridTemplate: getComputedStyle(dimensionRow).gridTemplateColumns,
+			heightBounds: height.getBoundingClientRect().right <= rowBounds.right,
+			pageOverflow: document.documentElement.scrollWidth - window.innerWidth,
+			width: width.getBoundingClientRect().width,
+		}).toStrictEqual({
+			gridTemplate: '45.3594px 40px 50.7031px 40px',
+			heightBounds: true,
+			pageOverflow: 0,
+			width: 40,
+		});
 	},
 };
 
