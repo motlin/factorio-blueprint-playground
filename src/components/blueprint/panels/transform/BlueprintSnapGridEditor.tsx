@@ -9,27 +9,39 @@ interface BlueprintSnapGridEditorProps {
 
 export function BlueprintSnapGridEditor({onChange, settings}: BlueprintSnapGridEditorProps) {
 	const headingId = useId();
+	const settingsId = useId();
 
 	const update = (changes: Partial<BlueprintSnapGrid>) => {
 		onChange({...settings, ...changes});
 	};
 
 	return (
-		<section className="transform-workflow__section blueprint-snap-grid-editor" aria-labelledby={headingId}>
-			<h4 id={headingId}>
-				<label>
+		<section
+			className="transform-workflow__section blueprint-snap-grid-editor"
+			aria-labelledby={headingId}
+			data-factorio-source="BlueprintSettingsGui::makeSnappingsFrame"
+			data-factorio-style="bordered_frame"
+		>
+			<h4 id={headingId} data-factorio-style="caption_checkbox">
+				<label className="blueprint-snap-grid-editor__master">
 					<input
 						type="checkbox"
+						aria-controls={settingsId}
 						checked={settings.enabled}
 						onChange={(event) => {
 							update({enabled: event.currentTarget.checked});
 						}}
-					/>{' '}
-					Snap to grid
+					/>
+					<span>Snap to grid</span>
 				</label>
 			</h4>
-			<fieldset disabled={!settings.enabled}>
-				<legend className="blueprint-snap-grid-editor__legend">Grid settings</legend>
+			<fieldset
+				id={settingsId}
+				className="blueprint-snap-grid-editor__settings"
+				disabled={!settings.enabled}
+				data-factorio-source="BlueprintSettingsGui::updateEditabilityOfSnapToGrid"
+			>
+				<legend className="blueprint-snap-grid-editor__legend">Snap to grid settings</legend>
 				<div className="blueprint-snap-grid-editor__row">
 					<strong>Grid size</strong>
 					<label>

@@ -45,30 +45,44 @@ test('enables every grid control while preserving zero and negative draft positi
 	const height = screen.getByRole<HTMLInputElement>('spinbutton', {name: 'Height'});
 	const positionX = screen.getByRole<HTMLInputElement>('spinbutton', {name: 'X'});
 	const positionY = screen.getByRole<HTMLInputElement>('spinbutton', {name: 'Y'});
+	const master = screen.getByRole<HTMLInputElement>('checkbox', {name: 'Snap to grid'});
+	const fieldset = screen.getByRole<HTMLFieldSetElement>('group', {name: 'Snap to grid settings'});
+	const controls = [...fieldset.querySelectorAll<HTMLInputElement>('input')];
+	const section = master.closest('section');
+	if (section === null) {
+		throw new Error('Expected the snap-to-grid bordered frame.');
+	}
 
 	expect({
-		disabled: [
-			width.matches(':disabled'),
-			height.matches(':disabled'),
-			positionX.matches(':disabled'),
-			positionY.matches(':disabled'),
-		],
+		controlDisabledStates: controls.map((control) => control.matches(':disabled')),
+		fieldsetControlledByMaster: master.getAttribute('aria-controls') === fieldset.id,
+		fieldsetDisabled: fieldset.disabled,
+		fieldsetSource: fieldset.dataset.factorioSource,
+		frameSource: section.dataset.factorioSource,
+		frameStyle: section.dataset.factorioStyle,
+		headingStyle: screen.getByRole('heading', {name: 'Snap to grid'}).dataset.factorioStyle,
+		masterDisabled: master.disabled,
+		masterOutsideFieldset: !fieldset.contains(master),
 		values: [width.value, height.value, positionX.value, positionY.value],
 	}).toStrictEqual({
-		disabled: [true, true, true, true],
+		controlDisabledStates: [true, true, true, true, true, true],
+		fieldsetControlledByMaster: true,
+		fieldsetDisabled: true,
+		fieldsetSource: 'BlueprintSettingsGui::updateEditabilityOfSnapToGrid',
+		frameSource: 'BlueprintSettingsGui::makeSnappingsFrame',
+		frameStyle: 'bordered_frame',
+		headingStyle: 'caption_checkbox',
+		masterDisabled: false,
+		masterOutsideFieldset: true,
 		values: ['32', '64', '0', '-16'],
 	});
 
-	await user.click(screen.getByRole('checkbox', {name: 'Snap to grid'}));
+	await user.click(master);
 
 	expect({
 		calls: onChange.mock.calls,
-		disabled: [
-			width.matches(':disabled'),
-			height.matches(':disabled'),
-			positionX.matches(':disabled'),
-			positionY.matches(':disabled'),
-		],
+		controlDisabledStates: controls.map((control) => control.matches(':disabled')),
+		fieldsetDisabled: fieldset.disabled,
 		values: [width.value, height.value, positionX.value, positionY.value],
 	}).toStrictEqual({
 		calls: [
@@ -83,7 +97,8 @@ test('enables every grid control while preserving zero and negative draft positi
 				},
 			],
 		],
-		disabled: [false, false, false, false],
+		controlDisabledStates: [false, false, false, false, false, false],
+		fieldsetDisabled: false,
 		values: ['32', '64', '0', '-16'],
 	});
 });
