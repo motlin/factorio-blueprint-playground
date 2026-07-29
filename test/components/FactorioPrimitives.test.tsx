@@ -11,6 +11,8 @@ import {
 	FactorioDialogBackdrop,
 	FactorioQualityBadge,
 	FactorioTitleBar,
+	FactorioTooltip,
+	FactorioTooltipPlacement,
 	factorioQualityLabel,
 } from '../../src/components/ui/FactorioUi';
 
@@ -268,4 +270,50 @@ test('uses one accessible name for quality icons while keeping overlay images de
 
 test('rejects qualities that are absent from the pinned game specification', () => {
 	expect(() => factorioQualityLabel('mythic')).toThrow('Unknown Factorio 2.1.12 quality: mythic');
+});
+
+test('renders a selectable portal tooltip and exposes it from pointer and keyboard triggers', async () => {
+	const user = userEvent.setup();
+	render(
+		<div data-testid="tooltip-trigger">
+			<FactorioButton aria-describedby="test-tooltip">Inspect item</FactorioButton>
+			<FactorioTooltip id="test-tooltip" heading="Transport belt" placement={FactorioTooltipPlacement.Below}>
+				Moves items.
+			</FactorioTooltip>
+		</div>,
+	);
+
+	const button = screen.getByRole('button', {name: 'Inspect item'});
+	const tooltip = screen.getByRole('tooltip');
+	await user.hover(button);
+	expect({
+		anchorMarker: screen.getByTestId('tooltip-trigger').querySelector('.factorio-tooltip__anchor-marker')
+			?.className,
+		body: tooltip.querySelector('.factorio-tooltip__body')?.textContent,
+		open: tooltip.dataset.factorioTooltipOpen,
+		parent: tooltip.parentElement,
+		placement: tooltip.dataset.factorioPlacement,
+		title: tooltip.querySelector('.factorio-tooltip__title')?.textContent,
+	}).toStrictEqual({
+		anchorMarker: 'factorio-tooltip__anchor-marker',
+		body: 'Moves items.',
+		open: 'true',
+		parent: document.body,
+		placement: 'below',
+		title: 'Transport belt',
+	});
+
+	await user.unhover(button);
+	button.focus();
+	expect({
+		description: button.getAttribute('aria-describedby'),
+		focused: document.activeElement,
+		open: tooltip.dataset.factorioTooltipOpen,
+		tooltip: tooltip.id,
+	}).toStrictEqual({
+		description: tooltip.id,
+		focused: button,
+		open: 'true',
+		tooltip: tooltip.id,
+	});
 });

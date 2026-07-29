@@ -36,13 +36,6 @@ afterAll(async () => {
 	if (browser) {
 		await browser.close();
 	}
-
-	const files = await fs.readdir(tempDir);
-	for (const file of files) {
-		if (file.endsWith('-temp.html') || file.endsWith('-temp.png')) {
-			await fs.unlink(path.join(tempDir, file));
-		}
-	}
 }, 30_000);
 
 async function renderToHtmlFile(html: string, testName: string): Promise<string> {
@@ -102,18 +95,28 @@ export async function compareScreenshots(testName: string, html: string, selecto
 	const snapshotPath = path.join(snapshotDir, `${testName}.png`);
 	const tempPath = path.join(tempDir, `${testName}-temp.png`);
 
-	await page.goto(fileUrl);
-	await page.waitForSelector(selector);
-
-	const element = await page.$(selector);
-	if (!element) {
-		throw new Error(`Element ${selector} not found`);
-	}
-
-	await element.screenshot({path: tempPath});
-
 	try {
-		const baselineBuffer = await fs.readFile(snapshotPath);
+		await page.goto(fileUrl);
+		await page.waitForSelector(selector);
+
+		const element = await page.$(selector);
+		if (!element) {
+			throw new Error(`Element ${selector} not found`);
+		}
+
+		await element.screenshot({path: tempPath});
+
+		let baselineBuffer: Buffer;
+		try {
+			baselineBuffer = await fs.readFile(snapshotPath);
+		} catch (error: unknown) {
+			if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+				await fs.rename(tempPath, snapshotPath);
+				console.warn(`Created new baseline for ${testName}`);
+				return;
+			}
+			throw error;
+		}
 		const currentBuffer = await fs.readFile(tempPath);
 
 		const baseline = PNG.sync.read(baselineBuffer);
@@ -143,16 +146,8 @@ export async function compareScreenshots(testName: string, html: string, selecto
 					`Diff saved to ${diffPath}`,
 			);
 		}
-
-		await fs.unlink(tempPath);
-	} catch (error: unknown) {
-		if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
-			// No baseline exists, create it
-			await fs.rename(tempPath, snapshotPath);
-			console.warn(`Created new baseline for ${testName}`);
-		} else {
-			throw error;
-		}
+	} finally {
+		await Promise.all([fs.rm(htmlPath, {force: true}), fs.rm(tempPath, {force: true})]);
 	}
 }
 
@@ -180,11 +175,11 @@ export async function inspectDialogViewport(
 	}
 
 	const viewportPage = await browser.newPage({viewport});
+	const htmlPath = await renderToHtmlFile(
+		html,
+		`${testName}-${viewport.width.toString()}x${viewport.height.toString()}`,
+	);
 	try {
-		const htmlPath = await renderToHtmlFile(
-			html,
-			`${testName}-${viewport.width.toString()}x${viewport.height.toString()}`,
-		);
 		await viewportPage.goto(`file://${htmlPath}`);
 		await viewportPage.waitForSelector('.upgrade-planner-dialog');
 
@@ -253,6 +248,6 @@ export async function inspectDialogViewport(
 			};
 		});
 	} finally {
-		await viewportPage.close();
+		await Promise.all([viewportPage.close(), fs.rm(htmlPath, {force: true})]);
 	}
 }

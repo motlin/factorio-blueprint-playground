@@ -32,6 +32,10 @@
 		{
 			"id": "ui-factorio-primitives--scroll-frame-states",
 			"requiredStates": ["rest", "focus", "filled"]
+		},
+		{
+			"id": "ui-factorio-primitives--tooltip-states",
+			"requiredStates": ["hover", "focus", "filled"]
 		}
 	]
 }

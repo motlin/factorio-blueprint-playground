@@ -2,7 +2,13 @@ import {useId} from 'react';
 
 import type {UpgradeDirection} from '../../../../transform/upgradePlanner';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
-import {FactorioButton, FactorioButtonKind, FactorioInventorySlot, FactorioTooltip} from '../../../ui/FactorioUi';
+import {
+	FactorioButton,
+	FactorioButtonKind,
+	FactorioInventorySlot,
+	FactorioTooltip,
+	FactorioTooltipPlacement,
+} from '../../../ui/FactorioUi';
 import type {UpgradePlannerChoice} from './UpgradePlannerSelectorItem';
 
 export interface PlacedUpgradePlanner {
@@ -149,7 +155,11 @@ export function BlueprintEditorToolbar({
 						/>
 					)}
 				</div>
-				<FactorioTooltip id={tooltipId} className="factorio-toolbar-tooltip">
+				<FactorioTooltip
+					id={tooltipId}
+					className="factorio-toolbar-tooltip"
+					placement={FactorioTooltipPlacement.Below}
+				>
 					{placedPlanner === undefined
 						? 'Upgrade items and entities in the blueprint.'
 						: `Apply ${selectedPlannerLabel}. Shift+Enter or right-click applies the opposite direction.`}
@@ -178,7 +188,11 @@ export function BlueprintEditorToolbar({
 					>
 						<FactorioIcon icon={{type: 'virtual-signal', name: 'signal-item-parameter'}} size="large" />
 					</FactorioButton>
-					<FactorioTooltip id={parameterizationTooltipId} className="factorio-toolbar-tooltip">
+					<FactorioTooltip
+						id={parameterizationTooltipId}
+						className="factorio-toolbar-tooltip"
+						placement={FactorioTooltipPlacement.Below}
+					>
 						Parametrise/reconfigure the blueprint.
 					</FactorioTooltip>
 				</div>

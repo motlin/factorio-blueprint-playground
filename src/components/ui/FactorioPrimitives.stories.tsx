@@ -1,7 +1,8 @@
 import type {Meta, StoryObj} from '@storybook/react-vite';
 import type React from 'react';
-import {expect, within} from 'storybook/test';
+import {expect, waitFor, within} from 'storybook/test';
 
+import {RichText} from '../core/text/RichText';
 import {
 	FactorioButton,
 	FactorioDialog,
@@ -14,6 +15,7 @@ import {
 	FactorioTooltip,
 	FactorioButtonKind,
 	FactorioFrameDepth,
+	FactorioTooltipPlacement,
 } from './FactorioUi';
 
 const meta: Meta = {
@@ -297,6 +299,86 @@ export const ButtonStates: Story = {
 				height: '36px',
 				square: true,
 				style: 'frame_action_button',
+			},
+		]);
+	},
+};
+
+function TooltipExample() {
+	return (
+		<main className="factorio-tooltip-story">
+			<div className="factorio-tooltip-story__anchor factorio-tooltip-story__anchor--top">
+				<FactorioButton aria-describedby="below-tooltip">Hover or focus</FactorioButton>
+				<FactorioTooltip
+					id="below-tooltip"
+					heading="Fast transport belt"
+					open
+					placement={FactorioTooltipPlacement.Above}
+				>
+					<RichText
+						text="Moves [item=iron-plate] and [item=copper-plate] through this compact factory."
+						iconSize="small"
+					/>
+				</FactorioTooltip>
+			</div>
+			<div className="factorio-tooltip-story__anchor factorio-tooltip-story__anchor--bottom">
+				<FactorioButton aria-describedby="above-tooltip">Keyboard focus</FactorioButton>
+				<FactorioTooltip
+					id="above-tooltip"
+					heading="Upgrade Planner"
+					open
+					placement={FactorioTooltipPlacement.Below}
+				>
+					Applies the selected mappings. <span className="factorio-tooltip__shortcut">U</span>
+				</FactorioTooltip>
+			</div>
+		</main>
+	);
+}
+
+export const TooltipStates: Story = {
+	tags: ['visual-conformance'],
+	render: () => <TooltipExample />,
+	play: async ({canvasElement}) => {
+		const documentBody = within(canvasElement.ownerDocument.body);
+		await waitFor(async () => {
+			await expect(documentBody.getAllByRole('tooltip')).toHaveLength(2);
+		});
+		const tooltips = documentBody.getAllByRole('tooltip');
+		await expect(
+			tooltips.map((tooltip) => {
+				const bounds = tooltip.getBoundingClientRect();
+				return {
+					backgroundColor: getComputedStyle(tooltip).backgroundColor,
+					bottomInsideViewport: bounds.bottom <= window.innerHeight - 10,
+					leftInsideViewport: bounds.left >= 10,
+					open: tooltip.dataset.factorioTooltipOpen,
+					padding: getComputedStyle(tooltip).padding,
+					rightInsideViewport: bounds.right <= window.innerWidth - 10,
+					selectable: getComputedStyle(tooltip).userSelect,
+					topInsideViewport: bounds.top >= 10,
+				};
+			}),
+		).toStrictEqual([
+			{
+				backgroundColor: 'rgba(49, 48, 49, 0.94)',
+				bottomInsideViewport: true,
+				leftInsideViewport: true,
+				open: 'true',
+				padding: '0px 4px',
+				rightInsideViewport: true,
+				selectable: 'text',
+				topInsideViewport: true,
+			},
+			{
+				backgroundColor: 'rgba(49, 48, 49, 0.94)',
+				bottomInsideViewport: true,
+				leftInsideViewport: true,
+				open: 'true',
+				padding: '0px 4px',
+				rightInsideViewport: true,
+				selectable: 'text',
+				topInsideViewport: true,
 			},
 		]);
 	},

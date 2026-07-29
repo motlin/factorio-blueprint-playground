@@ -13,6 +13,11 @@ export enum FactorioFrameDepth {
 	Deep = 'deep',
 }
 
+export enum FactorioTooltipPlacement {
+	Above = 'above',
+	Below = 'below',
+}
+
 export function factorioQualityLabel(quality: string): string {
 	const definition = gameUiSpec.qualities.find((candidate) => candidate.name === quality);
 	if (definition === undefined) {

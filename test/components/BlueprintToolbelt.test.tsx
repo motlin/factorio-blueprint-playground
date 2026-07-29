@@ -1,4 +1,4 @@
-import {fireEvent, render, screen, within} from '@testing-library/react';
+import {fireEvent, render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {describe, expect, test, vi} from 'vite-plus/test';
 
@@ -49,7 +49,7 @@ describe('BlueprintToolbelt', () => {
 				iconTitle: null,
 				label: 'Open Blueprint Editor',
 				shortcut: 'B',
-				tooltip: 'Open the Blueprint Editor. (B)',
+				tooltip: 'Blueprint EditorEdit this blueprint or book. B',
 			},
 			{
 				expanded: 'true',
@@ -58,7 +58,7 @@ describe('BlueprintToolbelt', () => {
 				iconTitle: null,
 				label: 'Open Upgrade Planner',
 				shortcut: 'U',
-				tooltip: 'Upgrade items and entities in the blueprint. (U)',
+				tooltip: 'Upgrade PlannerCreate, edit, and apply upgrade mappings. U',
 			},
 		]);
 	});
@@ -73,21 +73,31 @@ describe('BlueprintToolbelt', () => {
 		}
 
 		await user.hover(button);
-		expect(within(control).getByRole('tooltip').textContent).toBe(
-			'Upgrade items and entities in the blueprint. (U)',
-		);
+		const tooltipId = button.getAttribute('aria-describedby');
+		const tooltip = document.getElementById(tooltipId ?? '');
+		if (tooltip === null) {
+			throw new Error('Expected the Upgrade Planner button to reference its tooltip.');
+		}
+		expect({
+			open: tooltip.dataset.factorioTooltipOpen,
+			text: tooltip.textContent,
+		}).toStrictEqual({
+			open: 'true',
+			text: 'Upgrade PlannerCreate, edit, and apply upgrade mappings. U',
+		});
 
 		await user.unhover(button);
 		await user.tab();
 		await user.tab();
-		const tooltip = within(control).getByRole('tooltip');
 		expect({
 			description: button.getAttribute('aria-describedby'),
 			focused: document.activeElement,
+			open: tooltip.dataset.factorioTooltipOpen,
 			tooltip: tooltip.id,
 		}).toStrictEqual({
 			description: tooltip.id,
 			focused: button,
+			open: 'true',
 			tooltip: tooltip.id,
 		});
 	});

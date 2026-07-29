@@ -1,8 +1,15 @@
 import {Search, Trash2, X} from 'lucide-react';
+import {useLayoutEffect, useRef, type PointerEvent as ReactPointerEvent} from 'react';
+import {createPortal} from 'react-dom';
 import type React from 'react';
 
 import gameUiSpec from '../../generated/game-ui-spec.json';
-import {FactorioButtonKind, FactorioFrameDepth, factorioQualityLabel} from './factorioPrimitiveTypes';
+import {
+	FactorioButtonKind,
+	FactorioFrameDepth,
+	FactorioTooltipPlacement,
+	factorioQualityLabel,
+} from './factorioPrimitiveTypes';
 
 function classes(...values: Array<string | undefined>): string {
 	return values.filter((value) => value !== undefined && value !== '').join(' ');
@@ -188,11 +195,193 @@ export function FactorioScrollFrame({children, className, ref, tabIndex = 0, ...
 	);
 }
 
-export function FactorioTooltip({children, className, ...tooltipProps}: React.HTMLAttributes<HTMLSpanElement>) {
-	return (
-		<span {...tooltipProps} className={classes('factorio-tooltip', className)} role="tooltip">
-			{children}
+interface FactorioTooltipPosition {
+	left: number;
+	top: number;
+}
+
+export interface FactorioTooltipProps extends React.HTMLAttributes<HTMLSpanElement> {
+	heading?: React.ReactNode;
+	open?: boolean;
+	placement?: FactorioTooltipPlacement;
+	ref?: React.Ref<HTMLSpanElement>;
+}
+
+const TOOLTIP_EDGE_MARGIN = 10;
+const TOOLTIP_ANCHOR_OFFSET = 8;
+const TOOLTIP_CLOSE_GRACE_PERIOD = 100;
+
+function clampedTooltipPosition(
+	anchorBounds: DOMRect,
+	tooltipBounds: DOMRect,
+	placement: FactorioTooltipPlacement,
+): FactorioTooltipPosition {
+	const maximumLeft = Math.max(TOOLTIP_EDGE_MARGIN, window.innerWidth - tooltipBounds.width - TOOLTIP_EDGE_MARGIN);
+	const left = Math.min(
+		Math.max(TOOLTIP_EDGE_MARGIN, anchorBounds.left + (anchorBounds.width - tooltipBounds.width) / 2),
+		maximumLeft,
+	);
+	const above = anchorBounds.top - tooltipBounds.height - TOOLTIP_ANCHOR_OFFSET;
+	const below = anchorBounds.bottom + TOOLTIP_ANCHOR_OFFSET;
+	const preferredTop = placement === FactorioTooltipPlacement.Above ? above : below;
+	const fallbackTop = placement === FactorioTooltipPlacement.Above ? below : above;
+	const preferredFits =
+		preferredTop >= TOOLTIP_EDGE_MARGIN &&
+		preferredTop + tooltipBounds.height <= window.innerHeight - TOOLTIP_EDGE_MARGIN;
+	const unclampedTop = preferredFits ? preferredTop : fallbackTop;
+	const maximumTop = Math.max(TOOLTIP_EDGE_MARGIN, window.innerHeight - tooltipBounds.height - TOOLTIP_EDGE_MARGIN);
+	return {
+		left,
+		top: Math.min(Math.max(TOOLTIP_EDGE_MARGIN, unclampedTop), maximumTop),
+	};
+}
+
+function assignTooltipReference(
+	reference: React.Ref<HTMLSpanElement> | undefined,
+	element: HTMLSpanElement | null,
+): void {
+	if (typeof reference === 'function') {
+		reference(element);
+	} else if (reference !== null && reference !== undefined) {
+		reference.current = element;
+	}
+}
+
+export function FactorioTooltip({
+	children,
+	className,
+	heading,
+	onPointerEnter,
+	onPointerLeave,
+	open,
+	placement = FactorioTooltipPlacement.Above,
+	ref,
+	style,
+	...tooltipProps
+}: FactorioTooltipProps) {
+	const markerReference = useRef<HTMLSpanElement>(null);
+	const tooltipReference = useRef<HTMLSpanElement>(null);
+	const showReference = useRef<() => void>(() => undefined);
+	const scheduleCloseReference = useRef<() => void>(() => undefined);
+
+	useLayoutEffect(() => {
+		const anchor = markerReference.current?.parentElement;
+		const tooltip = tooltipReference.current;
+		if (anchor === null || anchor === undefined || tooltip === null) {
+			throw new Error('FactorioTooltip must be a direct child of its tooltip trigger.');
+		}
+		let closeTimer = 0;
+		let trackingPosition = false;
+		let disconnectResizeObserver = (): void => undefined;
+		const updatePosition = (): void => {
+			const nextPosition = clampedTooltipPosition(
+				anchor.getBoundingClientRect(),
+				tooltip.getBoundingClientRect(),
+				placement,
+			);
+			tooltip.style.left = `${nextPosition.left.toString()}px`;
+			tooltip.style.top = `${nextPosition.top.toString()}px`;
+		};
+		const stopTrackingPosition = (): void => {
+			if (!trackingPosition) {
+				return;
+			}
+			trackingPosition = false;
+			disconnectResizeObserver();
+			window.removeEventListener('resize', updatePosition);
+			window.removeEventListener('scroll', updatePosition, true);
+		};
+		const startTrackingPosition = (): void => {
+			updatePosition();
+			if (trackingPosition) {
+				return;
+			}
+			trackingPosition = true;
+			if (typeof ResizeObserver === 'function') {
+				const resizeObserver = new ResizeObserver(updatePosition);
+				resizeObserver.observe(anchor);
+				resizeObserver.observe(tooltip);
+				disconnectResizeObserver = () => {
+					resizeObserver.disconnect();
+				};
+			}
+			window.addEventListener('resize', updatePosition);
+			window.addEventListener('scroll', updatePosition, true);
+		};
+		const cancelClose = (): void => {
+			window.clearTimeout(closeTimer);
+			closeTimer = 0;
+		};
+		const setTooltipOpen = (nextOpen: boolean): void => {
+			const visible = open ?? nextOpen;
+			tooltip.dataset.factorioTooltipOpen = visible.toString();
+			if (visible) {
+				startTrackingPosition();
+			} else {
+				stopTrackingPosition();
+			}
+		};
+		const show = (): void => {
+			cancelClose();
+			setTooltipOpen(true);
+		};
+		const scheduleClose = (): void => {
+			cancelClose();
+			closeTimer = window.setTimeout(() => {
+				setTooltipOpen(false);
+				closeTimer = 0;
+			}, TOOLTIP_CLOSE_GRACE_PERIOD);
+		};
+		showReference.current = show;
+		scheduleCloseReference.current = scheduleClose;
+		anchor.addEventListener('pointerenter', show);
+		anchor.addEventListener('pointerleave', scheduleClose);
+		anchor.addEventListener('focusin', show);
+		anchor.addEventListener('focusout', scheduleClose);
+		setTooltipOpen(false);
+		return () => {
+			cancelClose();
+			stopTrackingPosition();
+			showReference.current = () => undefined;
+			scheduleCloseReference.current = () => undefined;
+			anchor.removeEventListener('pointerenter', show);
+			anchor.removeEventListener('pointerleave', scheduleClose);
+			anchor.removeEventListener('focusin', show);
+			anchor.removeEventListener('focusout', scheduleClose);
+		};
+	}, [open, placement]);
+
+	const tooltip = (
+		<span
+			{...tooltipProps}
+			ref={(element) => {
+				tooltipReference.current = element;
+				assignTooltipReference(ref, element);
+			}}
+			className={classes('factorio-tooltip', className)}
+			data-factorio-placement={placement}
+			data-factorio-tooltip-open={open ?? false}
+			role="tooltip"
+			style={{...style, left: TOOLTIP_EDGE_MARGIN, top: TOOLTIP_EDGE_MARGIN}}
+			onPointerEnter={(event: ReactPointerEvent<HTMLSpanElement>) => {
+				showReference.current();
+				onPointerEnter?.(event);
+			}}
+			onPointerLeave={(event: ReactPointerEvent<HTMLSpanElement>) => {
+				scheduleCloseReference.current();
+				onPointerLeave?.(event);
+			}}
+		>
+			{heading === undefined ? null : <strong className="factorio-tooltip__title">{heading}</strong>}
+			<span className="factorio-tooltip__body">{children}</span>
 		</span>
+	);
+
+	return (
+		<>
+			<span ref={markerReference} className="factorio-tooltip__anchor-marker" aria-hidden="true" />
+			{typeof document === 'undefined' ? tooltip : createPortal(tooltip, document.body)}
+		</>
 	);
 }
 
