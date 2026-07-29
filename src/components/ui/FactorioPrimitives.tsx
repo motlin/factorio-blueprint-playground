@@ -169,14 +169,17 @@ export function FactorioTitleBar({children, className, ...headerProps}: React.HT
 
 export interface FactorioScrollFrameProps extends React.HTMLAttributes<HTMLDivElement> {
 	'aria-label': string;
+	ref?: React.Ref<HTMLDivElement>;
 }
 
-export function FactorioScrollFrame({children, className, tabIndex = 0, ...frameProps}: FactorioScrollFrameProps) {
+export function FactorioScrollFrame({children, className, ref, tabIndex = 0, ...frameProps}: FactorioScrollFrameProps) {
 	return (
 		<div
 			{...frameProps}
+			ref={ref}
 			className={classes('factorio-frame', 'factorio-frame--deep', 'factorio-scroll-frame', className)}
 			data-factorio-style={gameUiSpec.styles.bindings.deepSlotsScrollPane}
+			data-factorio-scroll-owner="true"
 			role="region"
 			tabIndex={tabIndex}
 		>

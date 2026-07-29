@@ -376,3 +376,75 @@ export const NestedDialogChrome: Story = {
 		);
 	},
 };
+
+function ScrollFrameExample() {
+	const rows = Array.from({length: 12}, (_, index) => `Inventory row ${(index + 1).toString()}`);
+	return (
+		<main className="factorio-scroll-frame-story">
+			<FactorioDialog aria-label="Scrollable inventory" className="factorio-scroll-frame-story__dialog">
+				<FactorioTitleBar>
+					<h2>Inventory</h2>
+					<FactorioButton kind={FactorioButtonKind.Close} aria-label="Close scroll example" />
+				</FactorioTitleBar>
+				<FactorioScrollFrame
+					aria-label="Inventory contents"
+					className="factorio-scroll-frame-story__body"
+					data-testid="scroll-owner"
+					data-visual-state="focus"
+				>
+					{rows.map((row) => (
+						<p key={row}>{row}</p>
+					))}
+				</FactorioScrollFrame>
+				<footer className="factorio-scroll-frame-story__footer">
+					<span>12 rows</span>
+					<FactorioButton kind={FactorioButtonKind.Confirm}>Confirm</FactorioButton>
+				</footer>
+			</FactorioDialog>
+		</main>
+	);
+}
+
+export const ScrollFrameStates: Story = {
+	tags: ['visual-conformance'],
+	render: () => <ScrollFrameExample />,
+	play: async ({canvasElement}) => {
+		const canvas = within(canvasElement);
+		const dialog = canvas.getByRole('dialog', {name: 'Scrollable inventory'});
+		const scrollOwner = canvas.getByTestId('scroll-owner');
+		const header = dialog.querySelector<HTMLElement>(':scope > .factorio-title-bar');
+		const footer = dialog.querySelector<HTMLElement>(':scope > .factorio-scroll-frame-story__footer');
+		if (header === null || footer === null) {
+			throw new Error('Expected the scroll example header and footer.');
+		}
+		scrollOwner.focus();
+		await expect(scrollOwner).toHaveFocus();
+		await expect({
+			dialogOverflow: getComputedStyle(dialog).overflow,
+			focusOutlineColor: getComputedStyle(scrollOwner).outlineColor,
+			focusOutlineOffset: getComputedStyle(scrollOwner).outlineOffset,
+			headerInsideDialog: header.getBoundingClientRect().top >= dialog.getBoundingClientRect().top,
+			footerInsideDialog: footer.getBoundingClientRect().bottom <= dialog.getBoundingClientRect().bottom,
+			horizontalOverflow: getComputedStyle(scrollOwner).overflowX,
+			isScrollable: scrollOwner.scrollHeight > scrollOwner.clientHeight,
+			ownerCount: dialog.querySelectorAll('[data-factorio-scroll-owner="true"]').length,
+			scrollbarColor: getComputedStyle(scrollOwner).scrollbarColor,
+			scrollbarGutter: getComputedStyle(scrollOwner).scrollbarGutter,
+			style: scrollOwner.getAttribute('data-factorio-style'),
+			verticalOverflow: getComputedStyle(scrollOwner).overflowY,
+		}).toStrictEqual({
+			dialogOverflow: 'hidden',
+			focusOutlineColor: 'rgb(227, 152, 39)',
+			focusOutlineOffset: '-3px',
+			headerInsideDialog: true,
+			footerInsideDialog: true,
+			horizontalOverflow: 'hidden',
+			isScrollable: true,
+			ownerCount: 1,
+			scrollbarColor: 'rgb(111, 109, 111) rgb(36, 35, 36)',
+			scrollbarGutter: 'stable',
+			style: 'deep_slots_scroll_pane',
+			verticalOverflow: 'auto',
+		});
+	},
+};
