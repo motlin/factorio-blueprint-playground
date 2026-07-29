@@ -16,18 +16,11 @@ interface BlueprintEditorActionsProps {
 }
 
 interface BlueprintEditorCloseConfirmationProps {
-	commitDisabled: boolean;
-	onCommit: () => void;
 	onDiscard: () => void;
 	onKeepEditing: () => void;
 }
 
-function BlueprintEditorCloseConfirmation({
-	commitDisabled,
-	onCommit,
-	onDiscard,
-	onKeepEditing,
-}: BlueprintEditorCloseConfirmationProps) {
+function BlueprintEditorCloseConfirmation({onDiscard, onKeepEditing}: BlueprintEditorCloseConfirmationProps) {
 	const confirmationHeadingId = useId();
 	const confirmationReference = useDialogFocus<HTMLElement>({
 		initialFocusSelector: '[data-dialog-initial-focus="true"]',
@@ -46,7 +39,7 @@ function BlueprintEditorCloseConfirmation({
 				<header className="factorio-title-bar transform-dialog__header">
 					<h3 id={confirmationHeadingId}>There are uncommitted changes</h3>
 				</header>
-				<p>Commit the draft, discard it, or return to editing.</p>
+				<p>Closing now will discard this draft. Keep editing to save it first.</p>
 				<div className="transform-dialog__actions">
 					<FactorioButton
 						data-dialog-initial-focus="true"
@@ -64,16 +57,7 @@ function BlueprintEditorCloseConfirmation({
 							onDiscard();
 						}}
 					>
-						Discard
-					</FactorioButton>
-					<FactorioButton
-						kind={FactorioButtonKind.Confirm}
-						disabled={commitDisabled}
-						onClick={() => {
-							onCommit();
-						}}
-					>
-						Commit
+						Discard Changes
 					</FactorioButton>
 				</div>
 			</section>
@@ -86,8 +70,9 @@ function BlueprintEditorCloseConfirmation({
  * Factorio 2.1.12 `BlueprintSetupGui` commit contract:
  *
  * - `getConfirmCaption` supplies one green context-aware action.
- * - Both the footer action and dirty-close Commit invoke the same callback, so
- *   draft validation, root reinsertion, and serialization cannot diverge.
+ * - `confirmClose` closes an unchanged draft directly and otherwise offers only
+ *   cancellation or an explicit destructive discard. Saving remains the green
+ *   footer action, so X and Escape cannot imply a commit.
  * - Export and navigation are consumers of the committed root. They do not live
  *   in this editor action component.
  *
@@ -125,12 +110,7 @@ export function BlueprintEditorActions({
 				</FactorioButton>
 			</footer>
 			{closeConfirmationOpen ? (
-				<BlueprintEditorCloseConfirmation
-					commitDisabled={commitDisabled}
-					onCommit={onCommit}
-					onDiscard={onDiscard}
-					onKeepEditing={onKeepEditing}
-				/>
+				<BlueprintEditorCloseConfirmation onDiscard={onDiscard} onKeepEditing={onKeepEditing} />
 			) : null}
 		</>
 	);

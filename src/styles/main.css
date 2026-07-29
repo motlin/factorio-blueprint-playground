@@ -2227,6 +2227,29 @@ body {
 	font-size: 78%;
 }
 
+.blueprint-editor__context {
+	display: flex;
+	min-width: 0;
+	align-items: center;
+	gap: calc(5px * var(--factorio-ui-density));
+	color: var(--factorio-ui-muted);
+	font-size: 78%;
+	line-height: 1.25;
+}
+
+.blueprint-editor__context-label {
+	flex: 0 0 auto;
+	color: #d6d1cb;
+	font-weight: 600;
+}
+
+.blueprint-editor__breadcrumb {
+	overflow: hidden;
+	min-width: 0;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
 .transform-workbench__status {
 	margin-left: auto;
 	align-items: flex-end;
@@ -4185,6 +4208,15 @@ body {
 	.transform-workbench__title span,
 	.transform-workbench__status {
 		display: none;
+	}
+
+	.blueprint-editor__context,
+	.blueprint-editor__context span {
+		display: flex;
+	}
+
+	.blueprint-editor__breadcrumb {
+		display: block;
 	}
 
 	.transform-workbench__footer {

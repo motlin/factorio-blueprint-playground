@@ -41,6 +41,40 @@ export interface BlueprintEditorCommitAction {
 	scopeDescription: string;
 }
 
+export interface BlueprintEditorContext {
+	caption: string;
+	contextLabel: string;
+}
+
+function blueprintEditorContext(
+	blueprint: BlueprintString | undefined,
+	selectedPath: string,
+	sourceMode: BlueprintEditorSourceMode,
+): BlueprintEditorContext {
+	if (selectedPath !== '') {
+		return {
+			caption: 'Blueprint in the blueprint library',
+			contextLabel: 'Child blueprint record',
+		};
+	}
+	if (sourceMode === BlueprintEditorSourceMode.CapturedDraft) {
+		return {
+			caption: 'Set up new blueprint',
+			contextLabel: 'New blueprint',
+		};
+	}
+	if (blueprint?.blueprint_book !== undefined) {
+		return {
+			caption: 'Blueprint book in the blueprint library',
+			contextLabel: 'Blueprint library record',
+		};
+	}
+	return {
+		caption: 'Blueprint item',
+		contextLabel: 'Existing blueprint',
+	};
+}
+
 function blueprintEditorCommitAction(
 	selectedPath: string,
 	sourceMode: BlueprintEditorSourceMode,
@@ -201,6 +235,10 @@ export function useBlueprintEditorDraft({
 		() => blueprintEditorCommitAction(selectedPath, sourceMode),
 		[selectedPath, sourceMode],
 	);
+	const editorContext = useMemo(
+		() => blueprintEditorContext(blueprint, selectedPath, sourceMode),
+		[blueprint, selectedPath, sourceMode],
+	);
 
 	const editorDraft = useMemo(() => {
 		if (blueprint === undefined || rootBlueprint === undefined) {
@@ -302,6 +340,7 @@ export function useBlueprintEditorDraft({
 		editorCommitDisabled:
 			editorDraft.rootBlueprint === undefined ||
 			(sourceMode === BlueprintEditorSourceMode.ExistingRecord && !editorDirty),
+		editorContext,
 		editorDescription,
 		editorDirty,
 		editorDraft,

@@ -100,6 +100,7 @@ export function TransformPanel({
 		discardBlueprintEditorDraft,
 		editorCommitAction,
 		editorCommitDisabled,
+		editorContext,
 		editorDescription,
 		editorDirty,
 		editorDraft,
@@ -358,6 +359,7 @@ export function TransformPanel({
 					breadcrumb={editorBreadcrumb}
 					commitAction={editorCommitAction}
 					commitDisabled={editorCommitDisabled}
+					context={editorContext}
 					description={editorDescription}
 					closeConfirmationOpen={blueprintCloseConfirmationOpen}
 					filterAnalysis={editorFilterAnalysis}

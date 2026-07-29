@@ -42,6 +42,10 @@ function renderBlueprintEditorHtml(): string {
 				scopeDescription: 'Commits changes to the existing blueprint record.',
 			}}
 			commitDisabled={false}
+			context={{
+				caption: 'Blueprint item',
+				contextLabel: 'Existing blueprint',
+			}}
 			description="A deterministic Blueprint Editor viewport fixture."
 			filterAnalysis={blueprintFilterAnalysis(rootBlueprint, BlueprintEditorSourceMode.ExistingRecord)}
 			flattenBookSelected={false}

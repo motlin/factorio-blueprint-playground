@@ -15,7 +15,7 @@ import {BlueprintParameterizationDialog} from './BlueprintParameterizationDialog
 import {BlueprintSnapGridEditor} from './BlueprintSnapGridEditor';
 import {BlueprintTitleEditor} from './BlueprintTitleEditor';
 import {UpgradePlannerSelectorDialog, type UpgradePlannerChoice} from './UpgradePlannerSelectorDialog';
-import type {BlueprintEditorCommitAction} from './useBlueprintEditorDraft';
+import type {BlueprintEditorCommitAction, BlueprintEditorContext} from './useBlueprintEditorDraft';
 import {useDialogFocus} from './useDialogFocus';
 
 /**
@@ -53,6 +53,7 @@ interface BlueprintEditorDialogProps {
 	closeConfirmationOpen: boolean;
 	commitAction: BlueprintEditorCommitAction;
 	commitDisabled: boolean;
+	context: BlueprintEditorContext;
 	description: string;
 	filterAnalysis: BlueprintFilterAnalysis;
 	flattenBookSelected: boolean;
@@ -106,6 +107,7 @@ export function BlueprintEditorDialog({
 	closeConfirmationOpen,
 	commitAction,
 	commitDisabled,
+	context,
 	description,
 	filterAnalysis,
 	flattenBookSelected,
@@ -154,6 +156,8 @@ export function BlueprintEditorDialog({
 	const [parameterizationOpen, setParameterizationOpen] = useState(false);
 	const upgradePlannerSelectorId = useId();
 	const parameterizationDialogId = useId();
+	const contextId = useId();
+	const closeDescriptionId = useId();
 	const dialogReference = useDialogFocus<HTMLElement>({
 		initialFocusSelector: '.blueprint-editor__settings button',
 		onClose,
@@ -168,25 +172,39 @@ export function BlueprintEditorDialog({
 				role="dialog"
 				aria-modal="true"
 				aria-label="Blueprint Editor"
+				aria-describedby={contextId}
 			>
 				<header className="factorio-title-bar transform-dialog__header transform-workbench__header">
 					<div className="transform-workbench__title">
 						<div>
-							<h3>
-								{book
-									? 'Blueprint book in the blueprint library'
-									: 'Blueprint in the blueprint library'}
-							</h3>
-							<span>{breadcrumb}</span>
+							<h3 data-factorio-source="BlueprintSetupGui::getTitle">{context.caption}</h3>
+							<nav
+								id={contextId}
+								className="blueprint-editor__context"
+								aria-label="Blueprint context"
+								data-website-extension="record-context"
+							>
+								<span className="blueprint-editor__context-label">{context.contextLabel}</span>
+								<span aria-hidden="true">›</span>
+								<span className="blueprint-editor__breadcrumb" aria-current="page">
+									{breadcrumb}
+								</span>
+							</nav>
 						</div>
 					</div>
 					<FactorioButton
 						kind={FactorioButtonKind.Close}
 						className="transform-dialog__close"
 						aria-label="Close Blueprint Editor"
-						title="Close Blueprint Editor"
+						aria-describedby={closeDescriptionId}
+						data-factorio-source="BlueprintSetupGui::confirmClose"
+						data-factorio-close-action="request-close"
+						title="Close Blueprint Editor (asks before discarding changes)"
 						onClick={onClose}
 					/>
+					<span id={closeDescriptionId} className="transform-visually-hidden">
+						Uncommitted changes require confirmation before they are discarded.
+					</span>
 				</header>
 
 				<div

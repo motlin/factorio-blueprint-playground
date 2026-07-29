@@ -37,6 +37,10 @@ const meta = {
 			scopeDescription: 'Commits changes to the existing blueprint record.',
 		},
 		commitDisabled: true,
+		context: {
+			caption: 'Blueprint item',
+			contextLabel: 'Existing blueprint',
+		},
 		description: blueprint.blueprint?.description ?? '',
 		filterAnalysis: blueprintFilterAnalysis(blueprint, BlueprintEditorSourceMode.ExistingRecord),
 		flattenBookSelected: false,
@@ -101,6 +105,23 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+async function expectContext(
+	canvasElement: HTMLElement,
+	expected: {breadcrumb: string; caption: string; contextLabel: string},
+) {
+	const canvas = within(canvasElement);
+	const context = canvas.getByRole('navigation', {name: 'Blueprint context'});
+	await expect({
+		breadcrumb: within(context).getByText(expected.breadcrumb).textContent,
+		caption: canvas.getByRole('heading', {name: expected.caption}).textContent,
+		context: [...context.children].map((part) => part.textContent),
+	}).toStrictEqual({
+		breadcrumb: expected.breadcrumb,
+		caption: expected.caption,
+		context: [expected.contextLabel, '›', expected.breadcrumb],
+	});
+}
+
 export const Blueprint: Story = {
 	play: async ({canvasElement}) => {
 		const canvas = within(canvasElement);
@@ -112,6 +133,17 @@ export const Blueprint: Story = {
 		}
 
 		await expect(dialog).toHaveAttribute('data-factorio-source', 'BlueprintSetupGui::BlueprintSetupGui');
+		await expect({
+			breadcrumb: canvas.getByText('Root blueprint').textContent,
+			caption: canvas.getByRole('heading', {name: 'Blueprint item'}).textContent,
+			close: canvas.getByRole('button', {name: 'Close Blueprint Editor'}).getAttribute('title'),
+			context: canvas.getByText('Existing blueprint').textContent,
+		}).toStrictEqual({
+			breadcrumb: 'Root blueprint',
+			caption: 'Blueprint item',
+			close: 'Close Blueprint Editor (asks before discarding changes)',
+			context: 'Existing blueprint',
+		});
 		await expect(settings).toHaveAttribute('data-factorio-source', 'BlueprintSettingsGui::BlueprintSettingsGui');
 		await expect(settingsScroll).toHaveAttribute('data-factorio-style', 'scroll_pane_under_subheader');
 		await expect(
@@ -119,5 +151,87 @@ export const Blueprint: Story = {
 		).toStrictEqual(['Icon', 'Description', 'Snap to grid', 'Components', 'Filters']);
 		await expect(canvas.queryByRole('heading', {name: 'Preview'})).not.toBeInTheDocument();
 		await expect(dialog.querySelector('[data-blueprint-preview]')).toBeNull();
+	},
+};
+
+export const NewBlueprint: Story = {
+	args: {
+		breadcrumb: "Alice's reactor block",
+		commitAction: {
+			caption: 'Create Blueprint',
+			scopeDescription: 'Creates this newly captured draft as the committed root blueprint.',
+		},
+		commitDisabled: false,
+		context: {
+			caption: 'Set up new blueprint',
+			contextLabel: 'New blueprint',
+		},
+	},
+	play: async ({canvasElement}) => {
+		await expectContext(canvasElement, {
+			breadcrumb: "Alice's reactor block",
+			caption: 'Set up new blueprint',
+			contextLabel: 'New blueprint',
+		});
+	},
+};
+
+export const BlueprintLibraryBook: Story = {
+	args: {
+		book: true,
+		breadcrumb: "Alice's blueprint book",
+		context: {
+			caption: 'Blueprint book in the blueprint library',
+			contextLabel: 'Blueprint library record',
+		},
+	},
+	play: async ({canvasElement}) => {
+		await expectContext(canvasElement, {
+			breadcrumb: "Alice's blueprint book",
+			caption: 'Blueprint book in the blueprint library',
+			contextLabel: 'Blueprint library record',
+		});
+	},
+};
+
+export const ChildBlueprint: Story = {
+	args: {
+		breadcrumb: "Alice's blueprint book › Reactor block",
+		commitAction: {
+			caption: 'Save to Book',
+			scopeDescription: 'Commits this selection into its containing root book.',
+		},
+		commitDisabled: false,
+		context: {
+			caption: 'Blueprint in the blueprint library',
+			contextLabel: 'Child blueprint record',
+		},
+	},
+	play: async ({canvasElement}) => {
+		await expectContext(canvasElement, {
+			breadcrumb: "Alice's blueprint book › Reactor block",
+			caption: 'Blueprint in the blueprint library',
+			contextLabel: 'Child blueprint record',
+		});
+	},
+};
+
+export const DirtyCloseConfirmation: Story = {
+	args: {
+		closeConfirmationOpen: true,
+		commitDisabled: false,
+	},
+	play: async ({canvasElement}) => {
+		const canvas = within(canvasElement);
+		const confirmation = within(document.body).getByRole('alertdialog', {
+			name: 'There are uncommitted changes',
+		});
+
+		await expect(
+			within(confirmation)
+				.getAllByRole('button')
+				.map((button) => button.textContent),
+		).toStrictEqual(['Keep Editing', 'Discard Changes']);
+		await expect(canvas.getByRole('button', {hidden: true, name: 'Save Blueprint'})).toBeInTheDocument();
 	},
 };

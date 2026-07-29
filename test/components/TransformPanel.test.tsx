@@ -1522,6 +1522,138 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		}).toStrictEqual({confirmation: null, dialog: null, navigation: []});
 	});
 
+	test.each([
+		{
+			blueprint: {
+				blueprint: {item: 'blueprint', label: "Alice's new blueprint", version: 0},
+			} satisfies BlueprintString,
+			expected: {
+				breadcrumb: "Alice's new blueprint",
+				caption: 'Set up new blueprint',
+				contextLabel: 'New blueprint',
+			},
+			name: 'new root blueprint',
+			rootBlueprint: undefined,
+			selectedPath: '',
+			sourceMode: BlueprintEditorSourceMode.CapturedDraft,
+		},
+		{
+			blueprint: {
+				blueprint: {item: 'blueprint', label: "Alice's existing blueprint", version: 0},
+			} satisfies BlueprintString,
+			expected: {
+				breadcrumb: "Alice's existing blueprint",
+				caption: 'Blueprint item',
+				contextLabel: 'Existing blueprint',
+			},
+			name: 'existing blueprint item',
+			rootBlueprint: undefined,
+			selectedPath: '',
+			sourceMode: BlueprintEditorSourceMode.ExistingRecord,
+		},
+		{
+			blueprint: {
+				blueprint_book: {
+					item: 'blueprint-book',
+					label: "Alice's library book",
+					version: 0,
+					blueprints: [],
+				},
+			} satisfies BlueprintString,
+			expected: {
+				breadcrumb: "Alice's library book",
+				caption: 'Blueprint book in the blueprint library',
+				contextLabel: 'Blueprint library record',
+			},
+			name: 'blueprint library book',
+			rootBlueprint: undefined,
+			selectedPath: '',
+			sourceMode: BlueprintEditorSourceMode.ExistingRecord,
+		},
+		{
+			blueprint: {
+				blueprint: {item: 'blueprint', label: "Bob's child blueprint", version: 0},
+			} satisfies BlueprintString,
+			expected: {
+				breadcrumb: "Alice's library book › Bob's child blueprint",
+				caption: 'Blueprint in the blueprint library',
+				contextLabel: 'Child blueprint record',
+			},
+			name: 'child blueprint record',
+			rootBlueprint: {
+				blueprint_book: {
+					item: 'blueprint-book',
+					label: "Alice's library book",
+					version: 0,
+					blueprints: [
+						{
+							index: 100,
+							blueprint: {item: 'blueprint', label: "Bob's child blueprint", version: 0},
+						},
+					],
+				},
+			} satisfies BlueprintString,
+			selectedPath: '1',
+			sourceMode: BlueprintEditorSourceMode.ExistingRecord,
+		},
+	])(
+		'labels the $name context and routes X through confirmClose',
+		({blueprint: contextBlueprint, expected, rootBlueprint, selectedPath, sourceMode}) => {
+			render(
+				<TransformPanel
+					blueprint={contextBlueprint}
+					blueprintEditorSourceMode={sourceMode}
+					rootBlueprint={rootBlueprint}
+					selectedPath={selectedPath}
+				/>,
+			);
+
+			openBlueprintEditor();
+			const dialog = screen.getByRole('dialog', {name: 'Blueprint Editor'});
+			const context = within(dialog).getByRole('navigation', {name: 'Blueprint context'});
+			const close = within(dialog).getByRole('button', {name: 'Close Blueprint Editor'});
+			const closeDescription = document.getElementById(close.getAttribute('aria-describedby') ?? '');
+			const caption = within(dialog).getByRole('heading', {name: expected.caption});
+
+			expect({
+				caption: {
+					source: caption.dataset.factorioSource,
+					text: caption.textContent,
+				},
+				close: {
+					action: close.dataset.factorioCloseAction,
+					description: closeDescription?.textContent.trim(),
+					source: close.dataset.factorioSource,
+					title: close.title,
+				},
+				context: [...context.children].map((part) => ({
+					current: part.getAttribute('aria-current'),
+					text: part.textContent,
+				})),
+				contextExtension: context.dataset.websiteExtension,
+				dialogDescription: dialog.getAttribute('aria-describedby'),
+			}).toStrictEqual({
+				caption: {
+					source: 'BlueprintSetupGui::getTitle',
+					text: expected.caption,
+				},
+				close: {
+					action: 'request-close',
+					description: 'Uncommitted changes require confirmation before they are discarded.',
+					source: 'BlueprintSetupGui::confirmClose',
+					title: 'Close Blueprint Editor (asks before discarding changes)',
+				},
+				context: [
+					{current: null, text: expected.contextLabel},
+					{current: null, text: '›'},
+					{current: 'page', text: expected.breadcrumb},
+				],
+				contextExtension: 'record-context',
+				dialogDescription: context.id,
+			});
+		},
+	);
+
 	test('keeps or discards dirty title, icon, description, and filter drafts on every close path', async () => {
 		const user = userEvent.setup();
 		const sourceBlueprint: BlueprintString = {
@@ -1573,7 +1705,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 				dialogState: interactionState(),
 				navigation: navigate.mock.calls,
 			}).toStrictEqual({
-				buttons: ['Keep Editing', 'Discard', 'Commit'],
+				buttons: ['Keep Editing', 'Discard Changes'],
 				dialogState: {
 					activeElement: {name: 'Keep Editing', tagName: 'BUTTON'},
 					dialogStack: [
@@ -1628,7 +1760,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 
 		await user.click(screen.getByRole('button', {name: 'Close Blueprint Editor'}));
 		const secondConfirmation = screen.getByRole('alertdialog', {name: 'There are uncommitted changes'});
-		await user.click(within(secondConfirmation).getByRole('button', {name: 'Discard'}));
+		await user.click(within(secondConfirmation).getByRole('button', {name: 'Discard Changes'}));
 		await Promise.resolve();
 		expect({
 			dialogState: interactionState(),
@@ -2706,7 +2838,8 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			});
 		});
 
-		await user.click(screen.getByRole('button', {name: 'Commit'}));
+		await user.click(screen.getByRole('button', {name: 'Keep Editing'}));
+		await user.click(screen.getByRole('button', {name: 'Save to Book'}));
 		await Promise.resolve();
 
 		expect({

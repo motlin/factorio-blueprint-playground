@@ -102,7 +102,7 @@ test('uses Save to Book for a child commit whose root scope needs clarification'
 	expect(onCommit).toHaveBeenCalledExactlyOnceWith();
 });
 
-test('offers Commit, Discard, and Keep Editing and routes Escape back to the same draft', async () => {
+test('offers explicit discard or continued editing and routes Escape back to the same draft', async () => {
 	const user = userEvent.setup();
 	const onCommit = vi.fn<() => void>();
 	const onDiscard = vi.fn<() => void>();
@@ -110,14 +110,18 @@ test('offers Commit, Discard, and Keep Editing and routes Escape back to the sam
 	renderActions({closeConfirmationOpen: true, onCommit, onDiscard, onKeepEditing});
 	const confirmation = screen.getByRole('alertdialog', {name: 'There are uncommitted changes'});
 
-	expect(
-		within(confirmation)
+	expect({
+		actions: within(confirmation)
 			.getAllByRole('button')
 			.map((button) => button.textContent),
-	).toStrictEqual(['Keep Editing', 'Discard', 'Commit']);
+		message: within(confirmation).getByText('Closing now will discard this draft. Keep editing to save it first.')
+			.textContent,
+	}).toStrictEqual({
+		actions: ['Keep Editing', 'Discard Changes'],
+		message: 'Closing now will discard this draft. Keep editing to save it first.',
+	});
 
-	await user.click(within(confirmation).getByRole('button', {name: 'Commit'}));
-	await user.click(within(confirmation).getByRole('button', {name: 'Discard'}));
+	await user.click(within(confirmation).getByRole('button', {name: 'Discard Changes'}));
 	fireEvent.keyDown(window, {key: 'Escape'});
 
 	expect({
@@ -125,7 +129,7 @@ test('offers Commit, Discard, and Keep Editing and routes Escape back to the sam
 		onDiscard: onDiscard.mock.calls,
 		onKeepEditing: onKeepEditing.mock.calls,
 	}).toStrictEqual({
-		onCommit: [[]],
+		onCommit: [],
 		onDiscard: [[]],
 		onKeepEditing: [[]],
 	});
