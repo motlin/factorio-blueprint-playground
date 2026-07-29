@@ -131,6 +131,72 @@ export const EmptyLabels: Story = {
 	},
 };
 
+export const RecordIconComposition: Story = {
+	tags: ['visual-conformance'],
+	args: {
+		records: [
+			record('fallback-blueprint', 0, {
+				type: 'blueprint',
+				label: 'Blueprint fallback',
+				description: 'The blueprint item remains visible when no preview icons are configured.',
+				icons: [],
+			}),
+			record('preview-book', 1, {
+				type: 'blueprint_book',
+				label: 'Book with preview',
+				description: 'The preview is scaled and shifted inside the blueprint book item.',
+				icons: [{type: 'item', name: 'rail', quality: 'rare'}],
+			}),
+			record('preview-planner', 2, {
+				type: 'upgrade_planner',
+				label: 'Planner with two previews',
+				description: 'Two preview icons share a horizontal row over the planner item.',
+				icons: [
+					{type: 'item', name: 'transport-belt', quality: 'uncommon'},
+					{type: 'item', name: 'express-transport-belt', quality: 'legendary'},
+				],
+			}),
+			record('preview-deconstruction', 3, {
+				type: 'deconstruction_planner',
+				label: 'Deconstruction with four previews',
+				description: 'Four preview icons occupy the source-faithful two by two arrangement.',
+				icons: [
+					{type: 'item', name: 'wood'},
+					{type: 'item', name: 'stone'},
+					{type: 'item', name: 'cliff-explosives', quality: 'epic'},
+					{type: 'virtual', name: 'signal-skull'},
+				],
+			}),
+		],
+	},
+	play: async ({canvasElement}) => {
+		const canvas = within(canvasElement);
+		await userEvent.click(canvas.getByRole('button', {name: 'List view'}));
+		const planner = canvas.getByRole('button', {name: 'Planner with two previews'});
+		const composition = planner.querySelector('.blueprint-record-item__icons');
+		const tooltipId = planner.getAttribute('aria-describedby');
+		const tooltip = tooltipId === null ? null : canvasElement.ownerDocument.getElementById(tooltipId);
+
+		await expect({
+			compositionSource: composition?.getAttribute('data-factorio-source'),
+			previewIconCount: composition?.getAttribute('data-preview-icon-count'),
+			previewIcons: composition?.querySelectorAll('.blueprint-record-item__preview-icon').length,
+			qualityBadges: composition?.querySelectorAll('[data-testid="quality"]').length,
+			recordType: composition?.getAttribute('data-record-type'),
+			tooltipStyle: tooltip?.getAttribute('data-factorio-style'),
+			typeIcons: composition?.querySelectorAll('.blueprint-record-item__type-icon img').length,
+		}).toStrictEqual({
+			compositionSource: 'PreviewIcons::drawWithItemIcon',
+			previewIconCount: '2',
+			previewIcons: 2,
+			qualityBadges: 2,
+			recordType: 'upgrade_planner',
+			tooltipStyle: 'blueprint_tooltip_description_frame',
+			typeIcons: 1,
+		});
+	},
+};
+
 export const NestedBooks: Story = {
 	args: {
 		records: [

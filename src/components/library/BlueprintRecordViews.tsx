@@ -14,6 +14,7 @@ import {
 } from 'react';
 
 import gameUiSpec from '../../generated/game-ui-spec.json';
+import type {SignalID} from '../../parsing/types';
 import {FactorioIcon} from '../core/icons/FactorioIcon';
 import {RichText} from '../core/text/RichText';
 import {
@@ -199,24 +200,49 @@ function recordColumnCount(viewMode: BlueprintRecordViewMode): number {
 	return 1;
 }
 
+function BlueprintRecordPreviewIcon({icon, index}: {icon: SignalID; index: number}) {
+	const [assetFailed, setAssetFailed] = useState(false);
+	if (assetFailed) {
+		return null;
+	}
+	return (
+		<span
+			className="blueprint-record-item__preview-icon"
+			data-preview-icon-index={index}
+			onError={() => {
+				setAssetFailed(true);
+			}}
+		>
+			<FactorioIcon decorative icon={icon} size="large" />
+		</span>
+	);
+}
+
 function BlueprintRecordIcons({record}: {record: BlueprintRecordModel}) {
-	const icons =
-		record.gameData.icons.length === 0
-			? [{name: RECORD_TYPE_ICON_NAMES[record.gameData.type], type: 'item' as const}]
-			: record.gameData.icons;
+	const itemIcon: SignalID = {name: RECORD_TYPE_ICON_NAMES[record.gameData.type], type: 'item'};
 	return (
 		<span
 			className="blueprint-record-item__icons"
 			aria-hidden="true"
 			data-factorio-style="blueprint_record_selection_button"
+			data-factorio-source="PreviewIcons::drawWithItemIcon"
+			data-preview-icon-count={record.gameData.icons.length}
+			data-record-type={record.gameData.type}
 		>
-			{icons.map((icon, index) => (
-				<FactorioIcon
-					key={`${icon.type ?? 'item'}:${icon.name}:${icon.quality ?? 'normal'}:${index.toString()}`}
-					icon={icon}
-					size="large"
-				/>
-			))}
+			<span className="blueprint-record-item__icon-composition">
+				<span className="blueprint-record-item__type-icon">
+					<FactorioIcon decorative icon={itemIcon} size="large" />
+				</span>
+				<span className="blueprint-record-item__preview-icons">
+					{record.gameData.icons.map((icon, index) => (
+						<BlueprintRecordPreviewIcon
+							key={`${icon.type ?? 'item'}:${icon.name}:${icon.quality ?? 'normal'}:${index.toString()}`}
+							icon={icon}
+							index={index}
+						/>
+					))}
+				</span>
+			</span>
 		</span>
 	);
 }
@@ -227,16 +253,19 @@ function BlueprintRecordTooltip({record, tooltipId}: {record: BlueprintRecordMod
 		<FactorioTooltip
 			id={tooltipId}
 			className="blueprint-record-item__tooltip"
+			data-factorio-style="blueprint_tooltip_description_frame"
 			heading={<RichText text={blueprintRecordLabel(record)} iconSize="small" />}
 			placement={FactorioTooltipPlacement.Above}
 		>
 			<span className="blueprint-record-item__tooltip-type">
 				{BLUEPRINT_RECORD_TYPE_LABELS[record.gameData.type]}
 			</span>
-			<RichText
-				text={description === undefined || description === '' ? 'No description.' : description}
-				iconSize="small"
-			/>
+			<span className="blueprint-record-item__tooltip-description">
+				<RichText
+					text={description === undefined || description === '' ? 'No description.' : description}
+					iconSize="small"
+				/>
+			</span>
 		</FactorioTooltip>
 	);
 }

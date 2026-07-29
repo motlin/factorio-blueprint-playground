@@ -263,16 +263,31 @@ describe('BlueprintRecordViews', () => {
 
 		const blueprintButton = screen.getByRole('button', {name: 'Quality factory'});
 		const tooltipId = blueprintButton.getAttribute('aria-describedby');
+		const iconComposition = blueprintButton.querySelector('.blueprint-record-item__icons');
 		expect({
+			baseIcon: iconComposition?.querySelector('.blueprint-record-item__type-icon img')?.getAttribute('src'),
+			compositionSource: iconComposition?.getAttribute('data-factorio-source'),
 			description: document.getElementById(tooltipId ?? '')?.textContent,
 			listDescription: blueprintButton.textContent,
+			previewIcon: iconComposition
+				?.querySelector('.blueprint-record-item__preview-icon img')
+				?.getAttribute('src'),
+			previewIconCount: iconComposition?.getAttribute('data-preview-icon-count'),
 			quality: within(blueprintButton).getByTestId('quality').getAttribute('src'),
 			recordName: blueprintButton.getAttribute('aria-label'),
+			recordType: iconComposition?.getAttribute('data-record-type'),
+			tooltipStyle: document.getElementById(tooltipId ?? '')?.getAttribute('data-factorio-style'),
 		}).toStrictEqual({
+			baseIcon: 'https://factorio-icon-cdn.pages.dev/item/blueprint.webp',
+			compositionSource: 'PreviewIcons::drawWithItemIcon',
 			description: 'Quality factoryBlueprintBuilds modules.',
 			listDescription: 'Quality factoryBuilds modules.',
+			previewIcon: 'https://factorio-icon-cdn.pages.dev/item/assembling-machine-3.webp',
+			previewIconCount: '1',
 			quality: 'https://factorio-icon-cdn.pages.dev/quality/legendary.webp',
 			recordName: 'Quality factory',
+			recordType: 'blueprint',
+			tooltipStyle: 'blueprint_tooltip_description_frame',
 		});
 
 		await user.click(screen.getByRole('button', {name: 'Slots view'}));
@@ -282,6 +297,128 @@ describe('BlueprintRecordViews', () => {
 		expect(
 			screen.getByRole('button', {name: 'Open book Factory books'}).getAttribute('aria-describedby'),
 		).not.toBeNull();
+	});
+
+	test('keeps record type fallbacks visible and removes failed preview assets', () => {
+		const fallbackRecords: LibraryRecord[] = [
+			{
+				...records[1],
+				id: 'fallback-blueprint',
+				gameData: {...records[1].gameData, icons: [], label: 'Blueprint fallback', type: 'blueprint'},
+			},
+			{
+				...records[1],
+				id: 'fallback-book',
+				gameData: {...records[1].gameData, icons: [], label: 'Book fallback', type: 'blueprint_book'},
+			},
+			{
+				...records[1],
+				id: 'fallback-upgrade-planner',
+				gameData: {...records[1].gameData, icons: [], label: 'Upgrade fallback', type: 'upgrade_planner'},
+			},
+			{
+				...records[1],
+				id: 'fallback-deconstruction-planner',
+				gameData: {
+					...records[1].gameData,
+					icons: [],
+					label: 'Deconstruction fallback',
+					type: 'deconstruction_planner',
+				},
+			},
+			{
+				...records[1],
+				id: 'missing-preview',
+				gameData: {
+					...records[1].gameData,
+					description: '',
+					icons: [{type: 'item', name: 'missing-mod-icon', quality: 'rare'}],
+					label: 'Missing preview asset',
+					type: 'blueprint',
+				},
+			},
+		];
+		render(
+			<BlueprintRecordViews
+				aria-label="Blueprint records"
+				records={fallbackRecords}
+				compareRecords={comparePosition}
+				onActivate={() => undefined}
+			/>,
+		);
+
+		const recordButtons = [
+			screen.getByRole('button', {name: 'Blueprint fallback'}),
+			screen.getByRole('button', {name: 'Open book Book fallback'}),
+			screen.getByRole('button', {name: 'Upgrade fallback'}),
+			screen.getByRole('button', {name: 'Deconstruction fallback'}),
+		];
+		const missingPreviewButton = screen.getByRole('button', {name: 'Missing preview asset'});
+		const missingPreviewImages = within(missingPreviewButton).getAllByTestId('icon');
+		const failedPreviewSource = missingPreviewImages[1].getAttribute('src');
+		fireEvent.error(missingPreviewImages[1]);
+		const missingTooltip = document.getElementById(missingPreviewButton.getAttribute('aria-describedby') ?? '');
+
+		expect({
+			failedPreviewSource,
+			fallbacks: recordButtons.map((button) => {
+				const composition = button.querySelector('.blueprint-record-item__icons');
+				return {
+					baseIcon: composition?.querySelector('.blueprint-record-item__type-icon img')?.getAttribute('src'),
+					previewIconCount: composition?.getAttribute('data-preview-icon-count'),
+					previewNodes: composition?.querySelectorAll('.blueprint-record-item__preview-icon').length,
+					recordType: composition?.getAttribute('data-record-type'),
+				};
+			}),
+			missingPreview: {
+				baseIcon: missingPreviewButton
+					.querySelector('.blueprint-record-item__type-icon img')
+					?.getAttribute('src'),
+				previewNodes: missingPreviewButton.querySelectorAll('.blueprint-record-item__preview-icon').length,
+			},
+			tooltip: {
+				description: missingTooltip?.querySelector('.blueprint-record-item__tooltip-description')?.textContent,
+				style: missingTooltip?.getAttribute('data-factorio-style'),
+				type: missingTooltip?.querySelector('.blueprint-record-item__tooltip-type')?.textContent,
+			},
+		}).toStrictEqual({
+			failedPreviewSource: 'https://factorio-icon-cdn.pages.dev/item/missing-mod-icon.webp',
+			fallbacks: [
+				{
+					baseIcon: 'https://factorio-icon-cdn.pages.dev/item/blueprint.webp',
+					previewIconCount: '0',
+					previewNodes: 0,
+					recordType: 'blueprint',
+				},
+				{
+					baseIcon: 'https://factorio-icon-cdn.pages.dev/item/blueprint-book.webp',
+					previewIconCount: '0',
+					previewNodes: 0,
+					recordType: 'blueprint_book',
+				},
+				{
+					baseIcon: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
+					previewIconCount: '0',
+					previewNodes: 0,
+					recordType: 'upgrade_planner',
+				},
+				{
+					baseIcon: 'https://factorio-icon-cdn.pages.dev/item/deconstruction-planner.webp',
+					previewIconCount: '0',
+					previewNodes: 0,
+					recordType: 'deconstruction_planner',
+				},
+			],
+			missingPreview: {
+				baseIcon: 'https://factorio-icon-cdn.pages.dev/item/blueprint.webp',
+				previewNodes: 0,
+			},
+			tooltip: {
+				description: 'No description.',
+				style: 'blueprint_tooltip_description_frame',
+				type: 'Blueprint',
+			},
+		});
 	});
 
 	test('renders list records with the source slot, complete metadata, book affordance, and roving selection', () => {
