@@ -146,11 +146,13 @@ describe('BlueprintRecordViews', () => {
 		expect({
 			description: document.getElementById(tooltipId ?? '')?.textContent,
 			listDescription: blueprintButton.textContent,
-			quality: within(blueprintButton).getByAltText('Legendary quality').getAttribute('src'),
+			quality: within(blueprintButton).getByTestId('quality').getAttribute('src'),
+			recordName: blueprintButton.getAttribute('aria-label'),
 		}).toStrictEqual({
 			description: 'Quality factoryBlueprintBuilds modules.',
 			listDescription: 'Quality factoryBuilds modules.Quality factoryBlueprintBuilds modules.',
 			quality: 'https://factorio-icon-cdn.pages.dev/quality/legendary.webp',
+			recordName: 'Quality factory',
 		});
 
 		await user.click(screen.getByRole('button', {name: 'Slot view'}));

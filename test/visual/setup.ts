@@ -69,7 +69,7 @@ async function renderToHtmlFile(html: string, testName: string): Promise<string>
         </style>
         <style>
             /* Transform CSS module classes to match runtime behavior */
-            ${factorioIconCss.replace(/\.[a-zA-Z0-9_]+/g, (match) => {
+            ${factorioIconCss.replace(/\.[a-zA-Z_][a-zA-Z0-9_-]*/g, (match) => {
 				// Keep the CSS selectors but use data-attribute selectors to match the HTML
 				return `[class*="${match.slice(1)}"]`;
 			})}

@@ -2,7 +2,7 @@ import {Search, Trash2, X} from 'lucide-react';
 import type React from 'react';
 
 import gameUiSpec from '../../generated/game-ui-spec.json';
-import {FactorioButtonKind, FactorioFrameDepth} from './factorioPrimitiveTypes';
+import {FactorioButtonKind, FactorioFrameDepth, factorioQualityLabel} from './factorioPrimitiveTypes';
 
 function classes(...values: Array<string | undefined>): string {
 	return values.filter((value) => value !== undefined && value !== '').join(' ');
@@ -198,17 +198,15 @@ export interface FactorioQualityBadgeProps extends Omit<React.ImgHTMLAttributes<
 }
 
 export function FactorioQualityBadge({className, quality, ...imageProps}: FactorioQualityBadgeProps) {
-	const definition = gameUiSpec.qualities.find((candidate) => candidate.name === quality);
-	if (definition === undefined) {
-		throw new Error(`Unknown Factorio ${gameUiSpec.sourceVersion} quality: ${quality}`);
-	}
+	const label = factorioQualityLabel(quality);
+	const decorative = imageProps['aria-hidden'] === true || imageProps['aria-hidden'] === 'true';
 	return (
 		<img
 			{...imageProps}
 			className={classes('factorio-quality-badge', className)}
-			src={`https://factorio-icon-cdn.pages.dev/quality/${definition.name}.webp`}
-			alt={`${definition.label} quality`}
-			title={`${definition.label} quality`}
+			src={`https://factorio-icon-cdn.pages.dev/quality/${quality}.webp`}
+			alt={decorative ? '' : label}
+			title={label}
 		/>
 	);
 }

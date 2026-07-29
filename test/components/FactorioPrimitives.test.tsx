@@ -3,12 +3,15 @@ import userEvent from '@testing-library/user-event';
 import type {MouseEvent} from 'react';
 import {expect, test, vi} from 'vite-plus/test';
 
+import {FactorioIcon} from '../../src/components/core/icons/FactorioIcon';
 import {
 	FactorioButton,
 	FactorioButtonKind,
 	FactorioDialog,
 	FactorioDialogBackdrop,
+	FactorioQualityBadge,
 	FactorioTitleBar,
+	factorioQualityLabel,
 } from '../../src/components/ui/FactorioUi';
 
 test('exposes named modal chrome and an operable close control', async () => {
@@ -178,4 +181,91 @@ test('keeps native keyboard activation and disabled behavior for every button va
 			{ariaDisabled: 'true', disabled: true},
 		],
 	});
+});
+
+test('uses one accessible name for quality icons while keeping overlay images decorative', () => {
+	const {container} = render(
+		<>
+			<FactorioIcon
+				id="legendary-item"
+				icon={{type: 'item', name: 'assembling-machine-3', quality: 'legendary'}}
+				size="large"
+			/>
+			<FactorioIcon
+				id="normal-entity"
+				icon={{type: 'entity', name: 'small-biter', quality: 'normal'}}
+				size="small"
+			/>
+			<FactorioIcon
+				decorative
+				id="decorative-item"
+				icon={{type: 'item', name: 'transport-belt', quality: 'rare'}}
+				size="large"
+			/>
+			<FactorioQualityBadge quality="rare" />
+			<FactorioQualityBadge quality="epic" aria-hidden="true" />
+		</>,
+	);
+
+	const legendaryIcon = screen.getByRole('img', {
+		name: 'item: assembling-machine-3, Legendary quality',
+	});
+	const normalIcon = screen.getByRole('img', {name: 'entity: small-biter'});
+	const legendaryArtwork = legendaryIcon.querySelector<HTMLImageElement>('[data-testid="icon"]');
+	const legendaryQuality = legendaryIcon.querySelector<HTMLImageElement>('[data-testid="quality"]');
+	const decorativeIcon = container.querySelector<HTMLElement>('#decorative-item');
+	const standaloneQuality = screen.getByRole('img', {name: 'Rare quality'});
+	expect({
+		decorative: {
+			ariaHidden: decorativeIcon?.getAttribute('aria-hidden'),
+			ariaLabel: decorativeIcon?.getAttribute('aria-label'),
+			role: decorativeIcon?.getAttribute('role'),
+		},
+		helperLabel: factorioQualityLabel('legendary'),
+		legendary: {
+			ariaLabel: legendaryIcon.getAttribute('aria-label'),
+			artworkAlt: legendaryArtwork?.getAttribute('alt'),
+			artworkAriaHidden: legendaryArtwork?.getAttribute('aria-hidden'),
+			qualityAlt: legendaryQuality?.getAttribute('alt'),
+			qualityAriaHidden: legendaryQuality?.getAttribute('aria-hidden'),
+			size: legendaryIcon.dataset.factorioIconSize,
+		},
+		normal: {
+			qualityCount: normalIcon.querySelectorAll('[data-testid="quality"]').length,
+			size: normalIcon.dataset.factorioIconSize,
+		},
+		standalone: {
+			alt: standaloneQuality.getAttribute('alt'),
+			src: standaloneQuality.getAttribute('src'),
+			title: standaloneQuality.getAttribute('title'),
+		},
+	}).toStrictEqual({
+		decorative: {
+			ariaHidden: 'true',
+			ariaLabel: null,
+			role: null,
+		},
+		helperLabel: 'Legendary quality',
+		legendary: {
+			ariaLabel: 'item: assembling-machine-3, Legendary quality',
+			artworkAlt: '',
+			artworkAriaHidden: 'true',
+			qualityAlt: '',
+			qualityAriaHidden: 'true',
+			size: 'large',
+		},
+		normal: {
+			qualityCount: 0,
+			size: 'small',
+		},
+		standalone: {
+			alt: 'Rare quality',
+			src: 'https://factorio-icon-cdn.pages.dev/quality/rare.webp',
+			title: 'Rare quality',
+		},
+	});
+});
+
+test('rejects qualities that are absent from the pinned game specification', () => {
+	expect(() => factorioQualityLabel('mythic')).toThrow('Unknown Factorio 2.1.12 quality: mythic');
 });
