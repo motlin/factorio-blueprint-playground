@@ -98,6 +98,7 @@ describe('BlueprintRecordViews', () => {
 			/>,
 		);
 
+		await user.click(screen.getByRole('button', {name: 'Search blueprint records'}));
 		await user.type(screen.getByRole('searchbox', {name: 'Search blueprint records'}), 'transport');
 		await user.click(screen.getByRole('button', {name: 'Grid view'}));
 		expect({
@@ -122,11 +123,100 @@ describe('BlueprintRecordViews', () => {
 			/>,
 		);
 		expect({
-			search: screen.getByRole('searchbox', {name: 'Search blueprint records'}).getAttribute('value'),
+			search: screen.queryByRole('searchbox'),
+			searchExpanded: screen
+				.getByRole('button', {name: 'Search blueprint records'})
+				.getAttribute('aria-expanded'),
 			viewClass: screen.getByRole('list').className,
 		}).toStrictEqual({
-			search: '',
+			search: null,
+			searchExpanded: 'false',
 			viewClass: 'blueprint-record-views__items blueprint-record-views__items--grid',
+		});
+	});
+
+	test('uses a source-faithful search popup while preserving matching record identity and focus', async () => {
+		const user = userEvent.setup();
+		const {container} = render(
+			<BlueprintRecordViews
+				aria-label="Blueprint records"
+				records={records}
+				compareRecords={comparePosition}
+				onActivate={() => undefined}
+			/>,
+		);
+
+		const searchToggle = screen.getByRole('button', {name: 'Search blueprint records'});
+		const plannerBeforeSearch = screen.getByRole('button', {name: 'Tier changes'});
+		plannerBeforeSearch.focus();
+		expect({
+			expanded: searchToggle.getAttribute('aria-expanded'),
+			factorioSource: container.querySelector('.blueprint-record-views')?.getAttribute('data-factorio-source'),
+			factorioStyle: searchToggle.dataset.factorioStyle,
+			searchSource: searchToggle.parentElement?.dataset.factorioSource,
+			searchbox: screen.queryByRole('searchbox'),
+		}).toStrictEqual({
+			expanded: 'false',
+			factorioSource: 'BlueprintShelfWidget::passesFilter',
+			factorioStyle: 'frame_action_button',
+			searchSource: 'SearchBar::SearchBar',
+			searchbox: null,
+		});
+
+		await user.click(searchToggle);
+		const searchbox = screen.getByRole('searchbox', {name: 'Search blueprint records'});
+		expect({
+			expanded: searchToggle.getAttribute('aria-expanded'),
+			factorioStyle: searchbox.dataset.factorioStyle,
+			focused: document.activeElement === searchbox,
+			popupStyle: searchbox.closest('label')?.dataset.factorioStyle,
+		}).toStrictEqual({
+			expanded: 'true',
+			factorioStyle: 'search_popup_textfield',
+			focused: true,
+			popupStyle: 'search_popup_frame',
+		});
+
+		await user.type(searchbox, 'transport');
+		const plannerAfterSearch = screen.getByRole('button', {name: 'Tier changes'});
+		expect({
+			identityPreserved: plannerAfterSearch === plannerBeforeSearch,
+			tabIndex: plannerAfterSearch.tabIndex,
+			visibleRecords: within(screen.getByRole('region', {name: 'Blueprint records'}))
+				.getAllByRole('button')
+				.map((button) => button.getAttribute('aria-label')),
+		}).toStrictEqual({
+			identityPreserved: true,
+			tabIndex: 0,
+			visibleRecords: ['Tier changes'],
+		});
+
+		await user.clear(searchbox);
+		await user.type(searchbox, 'no matching blueprint');
+		const emptyState = screen.getByRole('status');
+		expect({
+			message: emptyState.textContent,
+			recordButtons: within(screen.getByRole('region', {name: 'Blueprint records'})).queryAllByRole('button'),
+			websiteExtension: emptyState.dataset.websiteExtension,
+		}).toStrictEqual({
+			message: 'No matching records.',
+			recordButtons: [],
+			websiteExtension: 'filtered-empty-message',
+		});
+
+		await user.keyboard('{Escape}');
+		expect({
+			expanded: searchToggle.getAttribute('aria-expanded'),
+			focused: document.activeElement === searchToggle,
+			restoredRecords: within(screen.getByRole('region', {name: 'Blueprint records'}))
+				.getAllByRole('button')
+				.map((button) => button.getAttribute('aria-label')),
+			searchbox: screen.queryByRole('searchbox'),
+		}).toStrictEqual({
+			expanded: 'false',
+			focused: true,
+			restoredRecords: ['Quality factory', 'Tier changes', 'Open book Factory books'],
+			searchbox: null,
 		});
 	});
 

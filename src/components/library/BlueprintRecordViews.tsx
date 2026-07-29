@@ -1,4 +1,4 @@
-import {ChevronRight, Grid2X2, LayoutGrid, List, Search} from 'lucide-react';
+import {ChevronRight, Grid2X2, LayoutGrid, List} from 'lucide-react';
 import {
 	useEffect,
 	useId,
@@ -15,6 +15,7 @@ import {FactorioIcon} from '../core/icons/FactorioIcon';
 import {RichText} from '../core/text/RichText';
 import {
 	FactorioButton,
+	FactorioButtonKind,
 	FactorioInventorySlot,
 	FactorioScrollFrame,
 	FactorioTooltip,
@@ -252,22 +253,27 @@ export function BlueprintRecordViews<RecordModel extends BlueprintRecordModel>({
 	searchResultNoun = 'records',
 }: BlueprintRecordViewsProps<RecordModel>) {
 	const [searchText, setSearchText] = useState('');
+	const [searchVisible, setSearchVisible] = useState(false);
 	const [viewMode, setViewMode] = useState(initialViewMode);
 	const recordReferences = useRef(new Map<string, HTMLButtonElement>());
+	const searchInputReference = useRef<HTMLInputElement>(null);
+	const searchToggleReference = useRef<HTMLButtonElement>(null);
+	const searchInputId = useId();
 	const visibleRecords = useMemo(() => {
 		const filteredRecords = filterAndSortBlueprintRecords(records, searchText, compareRecords);
 		return searchText.trim() === '' ? [...(recordsWhenSearchEmpty ?? []), ...filteredRecords] : filteredRecords;
 	}, [compareRecords, records, recordsWhenSearchEmpty, searchText]);
-	const initialActiveRecordIndex = Math.max(
-		0,
-		visibleRecords.findIndex((record) => record.id === initialActiveRecordId),
-	);
-	const [activeRecordIndex, setActiveRecordIndex] = useState(() => initialActiveRecordIndex);
-	const visibleRecordIds = visibleRecords.map((record) => record.id).join('\u0000');
+	const initialVisibleRecordId =
+		visibleRecords.find((record) => record.id === initialActiveRecordId)?.id ?? visibleRecords.at(0)?.id;
+	const [activeRecordId, setActiveRecordId] = useState<string | undefined>(() => initialVisibleRecordId);
+	const visibleActiveRecordId =
+		visibleRecords.find((record) => record.id === activeRecordId)?.id ?? initialVisibleRecordId;
 
 	useEffect(() => {
-		setActiveRecordIndex(initialActiveRecordIndex);
-	}, [initialActiveRecordIndex, searchText, visibleRecordIds]);
+		if (searchVisible) {
+			searchInputReference.current?.focus();
+		}
+	}, [searchVisible]);
 
 	useImperativeHandle(
 		ref,
@@ -289,8 +295,9 @@ export function BlueprintRecordViews<RecordModel extends BlueprintRecordModel>({
 			return;
 		}
 		const wrappedIndex = (nextIndex + visibleRecords.length) % visibleRecords.length;
-		setActiveRecordIndex(wrappedIndex);
-		recordReferences.current.get(visibleRecords[wrappedIndex].id)?.focus();
+		const nextRecord = visibleRecords[wrappedIndex];
+		setActiveRecordId(nextRecord.id);
+		recordReferences.current.get(nextRecord.id)?.focus();
 	};
 
 	const handleRecordKeyDown = (event: KeyboardEvent<HTMLButtonElement>, recordIndex: number): void => {
@@ -325,20 +332,55 @@ export function BlueprintRecordViews<RecordModel extends BlueprintRecordModel>({
 	};
 
 	return (
-		<div className="blueprint-record-views">
+		<div className="blueprint-record-views" data-factorio-source="BlueprintShelfWidget::passesFilter">
 			<div className="blueprint-record-views__toolbar">
-				<label className="blueprint-record-views__search">
-					<Search aria-hidden="true" />
-					<span className="visually-hidden">{searchLabel}</span>
-					<input
-						type="search"
-						value={searchText}
-						placeholder="Search labels and descriptions"
-						onChange={(event) => {
-							setSearchText(event.currentTarget.value);
+				<div className="blueprint-record-views__search-control" data-factorio-source="SearchBar::SearchBar">
+					<label
+						className="blueprint-record-views__search"
+						data-factorio-style="search_popup_frame"
+						htmlFor={searchInputId}
+						hidden={!searchVisible}
+					>
+						<span className="visually-hidden">{searchLabel}</span>
+						<input
+							ref={searchInputReference}
+							id={searchInputId}
+							type="search"
+							value={searchText}
+							data-factorio-style="search_popup_textfield"
+							onChange={(event) => {
+								setSearchText(event.currentTarget.value);
+							}}
+							onKeyDown={(event) => {
+								if (event.key === 'Escape') {
+									event.preventDefault();
+									event.stopPropagation();
+									setSearchVisible(false);
+									setSearchText('');
+									searchToggleReference.current?.focus();
+								}
+							}}
+						/>
+					</label>
+					<FactorioButton
+						ref={searchToggleReference}
+						kind={FactorioButtonKind.Search}
+						aria-controls={searchInputId}
+						aria-expanded={searchVisible}
+						aria-label={searchLabel}
+						className="blueprint-record-views__search-toggle"
+						title="Search"
+						onClick={(event) => {
+							if (searchVisible) {
+								setSearchVisible(false);
+								setSearchText('');
+								event.currentTarget.focus();
+							} else {
+								setSearchVisible(true);
+							}
 						}}
 					/>
-				</label>
+				</div>
 				<div className="blueprint-record-views__toggles" role="group" aria-label="Record view">
 					{VIEW_OPTIONS.map((option) => {
 						const Icon = option.icon;
@@ -361,15 +403,19 @@ export function BlueprintRecordViews<RecordModel extends BlueprintRecordModel>({
 			</div>
 			<FactorioScrollFrame aria-label={ariaLabel} className="blueprint-library__records">
 				{visibleRecords.length === 0 ? (
-					<p className="blueprint-record-views__no-results" role="status">
-						No {searchResultNoun} match “{searchText.trim()}”.
+					<p
+						className="blueprint-record-views__no-results"
+						role="status"
+						data-website-extension="filtered-empty-message"
+					>
+						No matching {searchResultNoun}.
 					</p>
 				) : (
 					<ul className={`blueprint-record-views__items blueprint-record-views__items--${viewMode}`}>
 						{visibleRecords.map((record, index) => (
 							<li key={record.id}>
 								<BlueprintRecordItem
-									active={index === activeRecordIndex}
+									active={record.id === visibleActiveRecordId}
 									actionable={isRecordActionable(record)}
 									buttonRef={(button) => {
 										if (button === null) {
@@ -392,7 +438,7 @@ export function BlueprintRecordViews<RecordModel extends BlueprintRecordModel>({
 												}
 									}
 									onFocus={() => {
-										setActiveRecordIndex(index);
+										setActiveRecordId(record.id);
 									}}
 									onKeyDown={(event) => {
 										handleRecordKeyDown(event, index);

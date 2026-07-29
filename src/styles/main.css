@@ -785,50 +785,67 @@ body {
 
 .blueprint-record-views__toolbar {
 	display: flex;
-	align-items: stretch;
-	justify-content: space-between;
-	gap: 7px;
+	align-items: center;
+	justify-content: flex-end;
+	gap: calc(4px * var(--factorio-ui-density));
+}
+
+.blueprint-record-views__search-control {
+	position: relative;
+	display: flex;
+	align-items: center;
 }
 
 .blueprint-record-views__search {
-	display: flex;
-	min-width: 0;
-	flex: 1 1 320px;
-	align-items: center;
-	gap: 7px;
-	padding: 0 9px;
-	border: 1px solid #171717;
-	background: #242324;
+	position: absolute;
+	z-index: 4;
+	top: 50%;
+	right: calc(100% + 4px * var(--factorio-ui-density));
+	display: block;
+	padding: calc(4px * var(--factorio-ui-density));
+	transform: translateY(-50%);
+	background: #303030;
 	box-shadow:
-		inset 1px 1px 0 #111,
-		inset -1px -1px 0 #666;
-	color: var(--factorio-ui-muted);
+		inset 1px 1px 0 #5e5d5e,
+		inset -1px -1px 0 #171717;
 }
 
-.blueprint-record-views__search:focus-within {
-	outline: 2px solid var(--factorio-ui-accent);
-	outline-offset: 1px;
+.blueprint-record-views__search[hidden] {
+	display: none;
 }
 
-.blueprint-record-views__search svg {
-	width: 18px;
-	height: 18px;
-	flex: 0 0 auto;
+.blueprint-record-views__search-toggle[aria-expanded='true'] {
+	background: var(--factorio-ui-selected);
+	box-shadow:
+		inset 1px 1px 0 #ffd37a,
+		inset -2px -2px 0 #5b320d;
 }
 
 .blueprint-record-views__search input {
-	width: 100%;
+	box-sizing: border-box;
+	width: calc(104px * var(--factorio-ui-density));
+	height: calc(28px * var(--factorio-ui-density));
 	min-width: 0;
-	padding: 8px 0;
-	border: 0;
-	outline: 0;
-	background: transparent;
-	color: var(--factorio-ui-text);
+	padding: 0 calc(3px * var(--factorio-ui-density));
+	border: 1px solid #cbcee0;
+	border-radius: 1px;
+	appearance: none;
+	background: #e2e2e2;
+	color: #000;
 	font: inherit;
+	font-size: calc(14px * var(--factorio-ui-density));
+	font-weight: 500;
 }
 
-.blueprint-record-views__search input::placeholder {
-	color: #8e8984;
+.blueprint-record-views__search input:focus {
+	border-color: #abafc6;
+	outline: 2px solid var(--factorio-ui-accent);
+	outline-offset: 1px;
+	background: #eee;
+}
+
+.blueprint-record-views__search input::-webkit-search-cancel-button {
+	display: none;
 }
 
 .blueprint-record-views__toggles {

@@ -125,6 +125,7 @@ describe('UpgradePlannerSelectorDialog golden apply-only source contracts', () =
 	test('searches saved planner labels and descriptions while hiding Default Upgrade', async () => {
 		const user = userEvent.setup();
 		renderApplySelector();
+		await user.click(screen.getByRole('button', {name: 'Search upgrade planners'}));
 		const search = screen.getByRole('searchbox', {name: 'Search upgrade planners'});
 		const dialog = screen.getByRole('dialog', {name: 'Select the upgrade planner to apply'});
 		const instructions = document.getElementById(dialog.getAttribute('aria-describedby') ?? '');
@@ -157,7 +158,7 @@ describe('UpgradePlannerSelectorDialog golden apply-only source contracts', () =
 			status: screen.getByRole('status').textContent,
 		}).toStrictEqual({
 			defaultPlanner: null,
-			status: 'No upgrade planners match “Default Upgrade”.',
+			status: 'No matching upgrade planners.',
 		});
 	});
 

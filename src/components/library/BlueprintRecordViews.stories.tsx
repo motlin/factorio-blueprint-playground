@@ -1,5 +1,5 @@
 import type {Meta, StoryObj} from '@storybook/react-vite';
-import {fn} from 'storybook/test';
+import {expect, fn, userEvent, within} from 'storybook/test';
 
 import {LIBRARY_ROOT_ID, type LibraryRecord} from '../../storage/db';
 import {BlueprintRecordViews} from './BlueprintRecordViews';
@@ -154,5 +154,26 @@ export const SavedUpgradePlanners: Story = {
 				icons: [{type: 'item', name: 'assembling-machine-3', quality: 'legendary'}],
 			}),
 		],
+	},
+};
+
+export const FilteredEmptyState: Story = {
+	tags: ['visual-conformance'],
+	play: async ({canvasElement}) => {
+		const canvas = within(canvasElement);
+		const searchToggle = canvas.getByRole('button', {name: 'Search blueprint records'});
+
+		await expect(canvas.queryByRole('searchbox')).toBeNull();
+		await userEvent.click(searchToggle);
+		const searchbox = canvas.getByRole('searchbox', {name: 'Search blueprint records'});
+		await expect(searchbox).toHaveFocus();
+		await expect(searchbox).toHaveAttribute('data-factorio-style', 'search_popup_textfield');
+		await expect(searchbox.closest('label')).toHaveAttribute('data-factorio-style', 'search_popup_frame');
+
+		await userEvent.type(searchbox, 'nuclear reactor');
+		const emptyState = canvas.getByRole('status');
+		await expect(emptyState).toHaveTextContent('No matching records.');
+		await expect(emptyState).toHaveAttribute('data-website-extension', 'filtered-empty-message');
+		await expect(canvas.queryByRole('list')).toBeNull();
 	},
 };
