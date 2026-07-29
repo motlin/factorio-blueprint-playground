@@ -58,6 +58,38 @@ function StatefulLibrary({initialLocation}: {initialLocation: BlueprintLibraryLo
 }
 
 describe('BlueprintLibrary', () => {
+	test('uses the Factorio library window frame and keyboard-reachable shelf chrome', () => {
+		render(<StatefulLibrary initialLocation={{shelf: 'library'}} />);
+
+		const libraryWindow = screen.getByRole('region', {name: 'Blueprint Library'});
+		const title = within(libraryWindow).getByRole('heading', {level: 1, name: 'Blueprint Library'});
+		const titleBar = title.parentElement;
+		const deepFrame = libraryWindow.querySelector<HTMLElement>('.blueprint-library__inside');
+		const shelfTabs = within(libraryWindow).getAllByRole('tab');
+
+		expect({
+			deepFrameClass: deepFrame?.className,
+			deepFrameStyle: deepFrame?.dataset.factorioStyle,
+			libraryWindowClass: libraryWindow.className,
+			libraryWindowStyle: libraryWindow.dataset.factorioStyle,
+			selectedShelfTabIndex: shelfTabs[0]?.tabIndex,
+			titleBarClass: titleBar?.className,
+			titleBarStyle: titleBar?.dataset.factorioStyle,
+			titleGraphicCount: titleBar?.querySelectorAll('svg').length,
+			unselectedShelfTabIndex: shelfTabs[1]?.tabIndex,
+		}).toStrictEqual({
+			deepFrameClass: 'factorio-frame factorio-frame--deep blueprint-library__inside',
+			deepFrameStyle: 'inside_deep_frame',
+			libraryWindowClass: 'factorio-frame factorio-frame--shallow blueprint-library',
+			libraryWindowStyle: 'inset_frame_container_frame',
+			selectedShelfTabIndex: 0,
+			titleBarClass: 'factorio-title-bar blueprint-library__title-bar',
+			titleBarStyle: 'frame_header_flow',
+			titleGraphicCount: 0,
+			unselectedShelfTabIndex: -1,
+		});
+	});
+
 	test('navigates nested books and restores focus when returning to a parent', async () => {
 		const user = userEvent.setup();
 		render(<StatefulLibrary initialLocation={{shelf: 'library'}} />);

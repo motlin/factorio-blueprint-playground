@@ -14,6 +14,7 @@ export default mergeConfig(
 						name: 'unit',
 						globals: true,
 						environment: 'jsdom',
+						maxWorkers: 2,
 						setupFiles: ['./test/setup.ts'],
 						exclude: ['.llm/**', 'node_modules/**'],
 					},

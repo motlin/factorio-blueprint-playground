@@ -523,28 +523,45 @@ body {
 }
 
 .blueprint-library {
+	display: flex;
 	width: min(900px, 100%);
+	min-width: 0;
 	margin: 0 auto;
 	padding: 0;
+	flex-direction: column;
 	overflow: hidden;
 	color: var(--factorio-ui-text);
 }
 
 .blueprint-library__title-bar {
-	gap: 10px;
+	flex: 0 0 auto;
 }
 
-.blueprint-library__title-bar svg {
-	width: 24px;
-	height: 24px;
-	color: var(--factorio-ui-accent);
+.blueprint-library__title-bar::after {
+	height: calc(24px * var(--factorio-ui-density));
+	min-width: calc(48px * var(--factorio-ui-density));
+	flex: 1 1 auto;
+	margin-left: calc(12px * var(--factorio-ui-density));
+	background: repeating-linear-gradient(
+		90deg,
+		rgb(0 0 0 / 16%) 0 calc(2px * var(--factorio-ui-density)),
+		rgb(255 255 255 / 4%) calc(2px * var(--factorio-ui-density)) calc(4px * var(--factorio-ui-density))
+	);
+	content: '';
 }
 
 .blueprint-library__title-bar h1 {
-	margin: 0;
-	color: #ffe6c0;
-	font-size: 1.35rem;
-	font-weight: 600;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.blueprint-library__inside {
+	min-width: 0;
+	min-height: 360px;
+	margin: 0 calc(8px * var(--factorio-ui-density)) calc(8px * var(--factorio-ui-density));
+	overflow: hidden;
 }
 
 .blueprint-library__shelves {

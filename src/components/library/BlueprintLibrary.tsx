@@ -1,4 +1,4 @@
-import {BookOpen, ChevronRight, Clock3, FolderOpen, Library} from 'lucide-react';
+import {BookOpen, ChevronRight, Clock3, FolderOpen} from 'lucide-react';
 import {useEffect, useId, useMemo, useRef} from 'react';
 
 import type {ImportHistoryRecord, LibraryRecord} from '../../storage/db';
@@ -140,180 +140,193 @@ export function BlueprintLibrary({historyRecords, libraryRecords, location, onLo
 	};
 
 	return (
-		<FactorioFrame className="blueprint-library" depth={FactorioFrameDepth.Shallow}>
-			<FactorioTitleBar className="blueprint-library__title-bar">
-				<Library aria-hidden="true" />
+		<FactorioFrame
+			className="blueprint-library"
+			depth={FactorioFrameDepth.Shallow}
+			data-factorio-style="inset_frame_container_frame"
+			role="region"
+			aria-labelledby={headingId}
+		>
+			<FactorioTitleBar className="blueprint-library__title-bar" data-factorio-style="frame_header_flow">
 				<h1 id={headingId}>Blueprint Library</h1>
 			</FactorioTitleBar>
 
-			<div className="blueprint-library__shelves" role="tablist" aria-label="Blueprint Library shelves">
-				<FactorioButton
-					ref={(button) => {
-						tabReferences.current[0] = button;
-					}}
-					className="blueprint-library__shelf"
-					role="tab"
-					aria-controls="blueprint-library-library-panel"
-					aria-selected={location.shelf === 'library'}
-					tabIndex={location.shelf === 'library' ? 0 : -1}
-					onClick={() => {
-						changeShelf('library');
-					}}
-					onKeyDown={(event) => {
-						handleTabKeyDown(event, 0);
-					}}
-				>
-					<FolderOpen aria-hidden="true" />
-					Library
-				</FactorioButton>
-				<FactorioButton
-					ref={(button) => {
-						tabReferences.current[1] = button;
-					}}
-					className="blueprint-library__shelf"
-					role="tab"
-					aria-controls="blueprint-library-history-panel"
-					aria-selected={location.shelf === 'history'}
-					tabIndex={location.shelf === 'history' ? 0 : -1}
-					onClick={() => {
-						changeShelf('history');
-					}}
-					onKeyDown={(event) => {
-						handleTabKeyDown(event, 1);
-					}}
-				>
-					<Clock3 aria-hidden="true" />
-					History
-				</FactorioButton>
-			</div>
+			<FactorioFrame
+				className="blueprint-library__inside"
+				depth={FactorioFrameDepth.Deep}
+				data-factorio-style="inside_deep_frame"
+			>
+				<div className="blueprint-library__shelves" role="tablist" aria-label="Blueprint Library shelves">
+					<FactorioButton
+						ref={(button) => {
+							tabReferences.current[0] = button;
+						}}
+						className="blueprint-library__shelf"
+						role="tab"
+						aria-controls="blueprint-library-library-panel"
+						aria-selected={location.shelf === 'library'}
+						tabIndex={location.shelf === 'library' ? 0 : -1}
+						onClick={() => {
+							changeShelf('library');
+						}}
+						onKeyDown={(event) => {
+							handleTabKeyDown(event, 0);
+						}}
+					>
+						<FolderOpen aria-hidden="true" />
+						Library
+					</FactorioButton>
+					<FactorioButton
+						ref={(button) => {
+							tabReferences.current[1] = button;
+						}}
+						className="blueprint-library__shelf"
+						role="tab"
+						aria-controls="blueprint-library-history-panel"
+						aria-selected={location.shelf === 'history'}
+						tabIndex={location.shelf === 'history' ? 0 : -1}
+						onClick={() => {
+							changeShelf('history');
+						}}
+						onKeyDown={(event) => {
+							handleTabKeyDown(event, 1);
+						}}
+					>
+						<Clock3 aria-hidden="true" />
+						History
+					</FactorioButton>
+				</div>
 
-			{location.shelf === 'library' ? (
-				<section
-					id="blueprint-library-library-panel"
-					className="blueprint-library__panel"
-					role="tabpanel"
-					aria-labelledby={headingId}
-				>
-					<nav className="blueprint-library__breadcrumbs" aria-label="Current book">
-						<button
-							type="button"
-							aria-current={
-								bookLocation.book === undefined && bookLocation.valid ? 'location' : undefined
-							}
-							onClick={() => {
-								onLocationChange({shelf: 'library'});
-							}}
-						>
-							Library
-						</button>
-						{bookLocation.trail.map((book) => (
-							<span key={book.id}>
-								<ChevronRight aria-hidden="true" />
-								<button
-									type="button"
-									aria-current={book.id === bookLocation.book?.id ? 'location' : undefined}
-									onClick={() => {
-										onLocationChange({shelf: 'library', book: book.id});
-									}}
-								>
-									{recordLabel(book)}
-								</button>
-							</span>
-						))}
-					</nav>
-
-					<h2 ref={recordsHeadingReference} className="blueprint-library__location-title" tabIndex={-1}>
-						{bookLocation.book === undefined ? 'Library shelf' : recordLabel(bookLocation.book)}
-					</h2>
-
-					{bookLocation.valid ? (
-						currentRecords.length === 0 ? (
-							<div className="blueprint-library__empty" role="status">
-								<BookOpen aria-hidden="true" />
-								<strong>
-									{bookLocation.book === undefined ? 'Your library is empty.' : 'This book is empty.'}
-								</strong>
-								<span>Saved blueprints and planners will appear here.</span>
-							</div>
-						) : (
-							<BlueprintRecordViews
-								ref={recordViewsReference}
-								aria-label="Blueprint records"
-								records={currentRecords}
-								compareRecords={compareLibraryPosition}
-								isRecordActionable={(record) => record.gameData.type === 'blueprint_book'}
-								onActivate={(record) => {
-									onLocationChange({shelf: 'library', book: record.id});
-								}}
-								onEscape={
-									bookLocation.book === undefined
-										? undefined
-										: () => {
-												onLocationChange({
-													shelf: 'library',
-													book:
-														bookLocation.book?.parentId === LIBRARY_ROOT_ID
-															? undefined
-															: bookLocation.book?.parentId,
-												});
-											}
+				{location.shelf === 'library' ? (
+					<section
+						id="blueprint-library-library-panel"
+						className="blueprint-library__panel"
+						role="tabpanel"
+						aria-labelledby={headingId}
+					>
+						<nav className="blueprint-library__breadcrumbs" aria-label="Current book">
+							<button
+								type="button"
+								aria-current={
+									bookLocation.book === undefined && bookLocation.valid ? 'location' : undefined
 								}
-							/>
-						)
-					) : (
-						<div className="blueprint-library__empty" role="status">
-							<BookOpen aria-hidden="true" />
-							<strong>This book is no longer in the library.</strong>
-							<span>It may have been moved or deleted in another tab.</span>
-							<FactorioButton
 								onClick={() => {
 									onLocationChange({shelf: 'library'});
 								}}
 							>
-								Return to Library
-							</FactorioButton>
+								Library
+							</button>
+							{bookLocation.trail.map((book) => (
+								<span key={book.id}>
+									<ChevronRight aria-hidden="true" />
+									<button
+										type="button"
+										aria-current={book.id === bookLocation.book?.id ? 'location' : undefined}
+										onClick={() => {
+											onLocationChange({shelf: 'library', book: book.id});
+										}}
+									>
+										{recordLabel(book)}
+									</button>
+								</span>
+							))}
+						</nav>
+
+						<h2 ref={recordsHeadingReference} className="blueprint-library__location-title" tabIndex={-1}>
+							{bookLocation.book === undefined ? 'Library shelf' : recordLabel(bookLocation.book)}
+						</h2>
+
+						{bookLocation.valid ? (
+							currentRecords.length === 0 ? (
+								<div className="blueprint-library__empty" role="status">
+									<BookOpen aria-hidden="true" />
+									<strong>
+										{bookLocation.book === undefined
+											? 'Your library is empty.'
+											: 'This book is empty.'}
+									</strong>
+									<span>Saved blueprints and planners will appear here.</span>
+								</div>
+							) : (
+								<BlueprintRecordViews
+									ref={recordViewsReference}
+									aria-label="Blueprint records"
+									records={currentRecords}
+									compareRecords={compareLibraryPosition}
+									isRecordActionable={(record) => record.gameData.type === 'blueprint_book'}
+									onActivate={(record) => {
+										onLocationChange({shelf: 'library', book: record.id});
+									}}
+									onEscape={
+										bookLocation.book === undefined
+											? undefined
+											: () => {
+													onLocationChange({
+														shelf: 'library',
+														book:
+															bookLocation.book?.parentId === LIBRARY_ROOT_ID
+																? undefined
+																: bookLocation.book?.parentId,
+													});
+												}
+									}
+								/>
+							)
+						) : (
+							<div className="blueprint-library__empty" role="status">
+								<BookOpen aria-hidden="true" />
+								<strong>This book is no longer in the library.</strong>
+								<span>It may have been moved or deleted in another tab.</span>
+								<FactorioButton
+									onClick={() => {
+										onLocationChange({shelf: 'library'});
+									}}
+								>
+									Return to Library
+								</FactorioButton>
+							</div>
+						)}
+					</section>
+				) : (
+					<section
+						id="blueprint-library-history-panel"
+						className="blueprint-library__panel"
+						role="tabpanel"
+						aria-labelledby={headingId}
+					>
+						<div className="blueprint-library__history-heading">
+							<div>
+								<h2>Import History</h2>
+								<p>Chronological imports are separate from items explicitly saved to your Library.</p>
+							</div>
+							<a className="factorio-button blueprint-library__history-link" href="/history">
+								Open full history tools
+							</a>
 						</div>
-					)}
-				</section>
-			) : (
-				<section
-					id="blueprint-library-history-panel"
-					className="blueprint-library__panel"
-					role="tabpanel"
-					aria-labelledby={headingId}
-				>
-					<div className="blueprint-library__history-heading">
-						<div>
-							<h2>Import History</h2>
-							<p>Chronological imports are separate from items explicitly saved to your Library.</p>
-						</div>
-						<a className="factorio-button blueprint-library__history-link" href="/history">
-							Open full history tools
-						</a>
-					</div>
-					{historyRecords.length === 0 ? (
-						<div className="blueprint-library__empty" role="status">
-							<Clock3 aria-hidden="true" />
-							<strong>No blueprints in history yet.</strong>
-							<span>Paste a blueprint in the playground to capture it here.</span>
-						</div>
-					) : (
-						<FactorioScrollFrame aria-label="Recent imports" className="blueprint-library__history">
-							<ul>
-								{historyRecords.map((record) => (
-									<li key={record.id}>
-										<strong>{historyLabel(record)}</strong>
-										<span>{RECORD_TYPE_LABELS[record.gameData.type]}</span>
-										<time dateTime={new Date(record.importedOn).toISOString()}>
-											{new Date(record.importedOn).toLocaleString()}
-										</time>
-									</li>
-								))}
-							</ul>
-						</FactorioScrollFrame>
-					)}
-				</section>
-			)}
+						{historyRecords.length === 0 ? (
+							<div className="blueprint-library__empty" role="status">
+								<Clock3 aria-hidden="true" />
+								<strong>No blueprints in history yet.</strong>
+								<span>Paste a blueprint in the playground to capture it here.</span>
+							</div>
+						) : (
+							<FactorioScrollFrame aria-label="Recent imports" className="blueprint-library__history">
+								<ul>
+									{historyRecords.map((record) => (
+										<li key={record.id}>
+											<strong>{historyLabel(record)}</strong>
+											<span>{RECORD_TYPE_LABELS[record.gameData.type]}</span>
+											<time dateTime={new Date(record.importedOn).toISOString()}>
+												{new Date(record.importedOn).toLocaleString()}
+											</time>
+										</li>
+									))}
+								</ul>
+							</FactorioScrollFrame>
+						)}
+					</section>
+				)}
+			</FactorioFrame>
 		</FactorioFrame>
 	);
 }
