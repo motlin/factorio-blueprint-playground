@@ -164,6 +164,7 @@ export function BlueprintEditorDialog({
 			<section
 				ref={dialogReference}
 				className="factorio-frame factorio-frame--shallow transform-dialog transform-workbench transform-workbench--blueprint"
+				data-factorio-source="BlueprintSetupGui::BlueprintSetupGui"
 				role="dialog"
 				aria-modal="true"
 				aria-label="Blueprint Editor"
@@ -188,8 +189,16 @@ export function BlueprintEditorDialog({
 					/>
 				</header>
 
-				<div className="transform-workbench__body blueprint-editor__layout">
-					<div className="panel-hole transform-workflow blueprint-editor__settings">
+				<div
+					className="transform-workbench__body blueprint-editor__layout"
+					data-factorio-source="BlueprintSetupGui::insetFrameContainerHorizontalFlow"
+				>
+					<div
+						className="panel-hole transform-workflow blueprint-editor__settings"
+						data-factorio-source="BlueprintSettingsGui::BlueprintSettingsGui"
+						role="region"
+						aria-label="Blueprint settings"
+					>
 						<div className="panel-hole-inner blueprint-editor__title-row">
 							<BlueprintTitleEditor label={label} onLabelChange={onLabelChange} />
 							<BlueprintEditorToolbar
@@ -212,80 +221,85 @@ export function BlueprintEditorDialog({
 							/>
 						</div>
 
-						<section
-							className="transform-workflow__section blueprint-editor__icons"
-							aria-labelledby="blueprint-editor-icons-heading"
+						<div
+							className="blueprint-editor__settings-scroll"
+							data-factorio-style="scroll_pane_under_subheader"
 						>
-							<h4 id="blueprint-editor-icons-heading">Icon</h4>
-							<div>{icons}</div>
-							<small>Left-click or press Enter to edit. Right-click or press Delete to remove.</small>
-						</section>
-
-						<BlueprintDescriptionEditor
-							description={description}
-							onDescriptionChange={onDescriptionChange}
-						/>
-
-						{snapGrid === undefined ? null : (
-							<BlueprintSnapGridEditor settings={snapGrid} onChange={onSnapGridChange} />
-						)}
-
-						<BlueprintComponentsGrid
-							blueprint={blueprint}
-							onComponentRemovedChange={onComponentRemovedChange}
-							removedComponents={removedComponents}
-						/>
-
-						<BlueprintContentFilters
-							analysis={filterAnalysis}
-							entitiesIncluded={!stripEntitiesSelected}
-							fuelIncluded={!stripFuelSelected}
-							modulesIncluded={!stripModulesSelected}
-							onEntitiesIncludedChange={onEntitiesIncludedChange}
-							onFuelIncludedChange={onFuelIncludedChange}
-							onModulesIncludedChange={onModulesIncludedChange}
-							onStationNamesIncludedChange={onStationNamesIncludedChange}
-							onTilesIncludedChange={onTilesIncludedChange}
-							onTrainsIncludedChange={onTrainsIncludedChange}
-							onVehiclesIncludedChange={onVehiclesIncludedChange}
-							stationNamesIncluded={!stripStationNamesSelected}
-							tilesIncluded={!stripTilesSelected}
-							trainsIncluded={!stripTrainsSelected}
-							vehiclesIncluded={!stripVehiclesSelected}
-						/>
-
-						{book ? (
 							<section
-								className="transform-workflow__section"
-								aria-labelledby="transform-book-operations-heading"
+								className="transform-workflow__section blueprint-editor__icons"
+								aria-labelledby="blueprint-editor-icons-heading"
 							>
-								<h4 id="transform-book-operations-heading">
-									Book operations{bookOperationSelected ? ' · selected' : ''}
-								</h4>
-								<div className="transform-workflow__checks">
-									<label>
-										<input
-											type="checkbox"
-											checked={flattenBookSelected}
-											onChange={(event) => {
-												onFlattenBookSelectedChange(event.currentTarget.checked);
-											}}
-										/>{' '}
-										Flatten nested books
-									</label>
-									<label>
-										<input
-											type="checkbox"
-											checked={sortBookSelected}
-											onChange={(event) => {
-												onSortBookSelectedChange(event.currentTarget.checked);
-											}}
-										/>{' '}
-										Sort entries by label
-									</label>
-								</div>
+								<h4 id="blueprint-editor-icons-heading">Icon</h4>
+								<div>{icons}</div>
+								<small>Left-click or press Enter to edit. Right-click or press Delete to remove.</small>
 							</section>
-						) : null}
+
+							<BlueprintDescriptionEditor
+								description={description}
+								onDescriptionChange={onDescriptionChange}
+							/>
+
+							{snapGrid === undefined ? null : (
+								<BlueprintSnapGridEditor settings={snapGrid} onChange={onSnapGridChange} />
+							)}
+
+							<BlueprintComponentsGrid
+								blueprint={blueprint}
+								onComponentRemovedChange={onComponentRemovedChange}
+								removedComponents={removedComponents}
+							/>
+
+							<BlueprintContentFilters
+								analysis={filterAnalysis}
+								entitiesIncluded={!stripEntitiesSelected}
+								fuelIncluded={!stripFuelSelected}
+								modulesIncluded={!stripModulesSelected}
+								onEntitiesIncludedChange={onEntitiesIncludedChange}
+								onFuelIncludedChange={onFuelIncludedChange}
+								onModulesIncludedChange={onModulesIncludedChange}
+								onStationNamesIncludedChange={onStationNamesIncludedChange}
+								onTilesIncludedChange={onTilesIncludedChange}
+								onTrainsIncludedChange={onTrainsIncludedChange}
+								onVehiclesIncludedChange={onVehiclesIncludedChange}
+								stationNamesIncluded={!stripStationNamesSelected}
+								tilesIncluded={!stripTilesSelected}
+								trainsIncluded={!stripTrainsSelected}
+								vehiclesIncluded={!stripVehiclesSelected}
+							/>
+
+							{book ? (
+								<section
+									className="transform-workflow__section"
+									aria-labelledby="transform-book-operations-heading"
+								>
+									<h4 id="transform-book-operations-heading">
+										Book operations{bookOperationSelected ? ' · selected' : ''}
+									</h4>
+									<div className="transform-workflow__checks">
+										<label>
+											<input
+												type="checkbox"
+												checked={flattenBookSelected}
+												onChange={(event) => {
+													onFlattenBookSelectedChange(event.currentTarget.checked);
+												}}
+											/>{' '}
+											Flatten nested books
+										</label>
+										<label>
+											<input
+												type="checkbox"
+												checked={sortBookSelected}
+												onChange={(event) => {
+													onSortBookSelectedChange(event.currentTarget.checked);
+												}}
+											/>{' '}
+											Sort entries by label
+										</label>
+									</div>
+								</section>
+							) : null}
+						</div>
 					</div>
 				</div>
 

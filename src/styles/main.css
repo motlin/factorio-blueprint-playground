@@ -2106,7 +2106,16 @@ body {
 }
 
 .transform-workbench--blueprint {
-	width: min(1120px, 100%);
+	/* BlueprintSettingsGui::BlueprintSettingsGui uses a 16 + 400 + 16 source minimum. */
+	--blueprint-settings-source-width: 432px;
+	--blueprint-settings-frame-space: 8px;
+	width: min(
+		calc(
+			var(--blueprint-settings-source-width) + var(--transform-content-space) + var(--transform-content-space) +
+				var(--blueprint-settings-frame-space)
+		),
+		100%
+	);
 }
 
 .transform-dialog.transform-workbench--planner {
@@ -2583,7 +2592,13 @@ body {
 }
 
 .transform-dialog.transform-workbench--blueprint {
-	width: min(720px, 100%);
+	width: min(
+		calc(
+			var(--blueprint-settings-source-width) + var(--transform-content-space) + var(--transform-content-space) +
+				var(--blueprint-settings-frame-space)
+		),
+		100%
+	);
 	padding: 0;
 	overflow: hidden;
 }
@@ -2596,6 +2611,7 @@ body {
 
 .transform-workbench--blueprint > .transform-workbench__body {
 	min-height: 0;
+	overflow: hidden;
 }
 
 .transform-dialog--picker {
@@ -3930,7 +3946,40 @@ body {
 }
 
 .blueprint-editor__layout {
-	display: block;
+	display: flex;
+	align-items: stretch;
+	justify-content: center;
+}
+
+.blueprint-editor__settings {
+	display: flex;
+	width: min(var(--blueprint-settings-source-width), 100%);
+	min-width: 0;
+	min-height: 0;
+	flex: 1 1 auto;
+	flex-direction: column;
+	padding: var(--transform-frame-gap);
+	overflow: hidden;
+}
+
+.blueprint-editor__settings > .blueprint-editor__title-row {
+	flex: 0 0 auto;
+}
+
+.blueprint-editor__settings-scroll {
+	min-width: 0;
+	min-height: 0;
+	flex: 1 1 auto;
+	overflow-x: hidden;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	scrollbar-gutter: stable;
+	scrollbar-width: auto;
+}
+
+.blueprint-editor__settings-scroll:focus-visible {
+	outline: 2px solid var(--factorio-ui-accent);
+	outline-offset: -3px;
 }
 
 .blueprint-parameterization__backdrop {

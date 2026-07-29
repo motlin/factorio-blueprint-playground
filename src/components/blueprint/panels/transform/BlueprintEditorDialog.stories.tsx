@@ -1,5 +1,5 @@
 import type {Meta, StoryObj} from '@storybook/react-vite';
-import {fn} from 'storybook/test';
+import {expect, fn, within} from 'storybook/test';
 
 import type {BlueprintString} from '../../../../parsing/types';
 import {BlueprintEditorSourceMode} from '../../../../transform/blueprintEditor';
@@ -77,7 +77,14 @@ const meta = {
 		removedComponents: new Set(),
 		rootBlueprint: blueprint,
 		signalOptions: [{type: 'item', name: 'iron-plate'}],
-		snapGrid: undefined,
+		snapGrid: {
+			absolute: false,
+			enabled: true,
+			height: 2,
+			positionX: 0,
+			positionY: 0,
+			width: 2,
+		},
 		sortBookSelected: false,
 		stripEntitiesSelected: false,
 		stripFuelSelected: false,
@@ -88,10 +95,29 @@ const meta = {
 		stripVehiclesSelected: false,
 	},
 	parameters: transformStoryParameters,
-	tags: ['autodocs'],
+	tags: ['autodocs', 'visual-conformance'],
 } satisfies Meta<typeof BlueprintEditorDialog>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Blueprint: Story = {};
+export const Blueprint: Story = {
+	play: async ({canvasElement}) => {
+		const canvas = within(canvasElement);
+		const dialog = canvas.getByRole('dialog', {name: 'Blueprint Editor'});
+		const settings = canvas.getByLabelText('Blueprint settings');
+		const settingsScroll = settings.querySelector('.blueprint-editor__settings-scroll');
+		if (settingsScroll === null) {
+			throw new Error('Expected the BlueprintSettingsGui scroll pane.');
+		}
+
+		await expect(dialog).toHaveAttribute('data-factorio-source', 'BlueprintSetupGui::BlueprintSetupGui');
+		await expect(settings).toHaveAttribute('data-factorio-source', 'BlueprintSettingsGui::BlueprintSettingsGui');
+		await expect(settingsScroll).toHaveAttribute('data-factorio-style', 'scroll_pane_under_subheader');
+		await expect(
+			[...settingsScroll.querySelectorAll('h4')].map((heading) => heading.textContent.trim()),
+		).toStrictEqual(['Icon', 'Description', 'Snap to grid', 'Components', 'Filters']);
+		await expect(canvas.queryByRole('heading', {name: 'Preview'})).not.toBeInTheDocument();
+		await expect(dialog.querySelector('[data-blueprint-preview]')).toBeNull();
+	},
+};

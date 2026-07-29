@@ -621,13 +621,17 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 
 		openBlueprintEditor();
 		const dialog = screen.getByRole('dialog', {name: 'Blueprint Editor'});
+		const settings = screen.getByRole('region', {name: 'Blueprint settings'});
+		const settingsScroll = settings.querySelector('.blueprint-editor__settings-scroll');
 		expect({
 			bookWideReplacements: screen.queryByRole('heading', {name: 'Book-wide replacements'}),
 			bodyClass: dialog.querySelector('.transform-workbench__body')?.className,
+			bodySource: dialog.querySelector('.transform-workbench__body')?.getAttribute('data-factorio-source'),
 			cleanup: screen.queryByRole('heading', {name: 'Cleanup'}),
 			components: screen.getByRole('heading', {name: 'Components'}).textContent,
 			description: screen.getByRole('textbox', {name: 'Blueprint description'}).textContent,
 			dialog: dialog.getAttribute('aria-modal'),
+			dialogSource: dialog.getAttribute('data-factorio-source'),
 			footerElement: dialog.lastElementChild?.tagName,
 			filters: ['Modules', 'Entities', 'Trains', 'Tiles'].map(
 				(name) => screen.getByRole<HTMLInputElement>('checkbox', {name}).checked,
@@ -640,15 +644,23 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			title: dialog.querySelector('.blueprint-editor__title')?.textContent,
 			plannerMappings: screen.queryByRole('group', {name: 'Planner operation'}),
 			preview: screen.queryByRole('heading', {name: 'Preview'}),
+			previewRegion: dialog.querySelector('[data-blueprint-preview]'),
 			saveDestination: screen.queryByLabelText('Save destination'),
+			settingsHeadings: [...(settingsScroll?.querySelectorAll('h4') ?? [])].map((heading) =>
+				heading.textContent.trim(),
+			),
+			settingsScrollStyle: settingsScroll?.getAttribute('data-factorio-style'),
+			settingsSource: settings.getAttribute('data-factorio-source'),
 			textReplacement: screen.queryByRole('checkbox', {name: /Text replacement/}),
 		}).toStrictEqual({
 			bookWideReplacements: null,
 			bodyClass: 'transform-workbench__body blueprint-editor__layout',
+			bodySource: 'BlueprintSetupGui::insetFrameContainerHorizontalFlow',
 			cleanup: null,
 			components: 'Components',
 			description: '',
 			dialog: 'true',
+			dialogSource: 'BlueprintSetupGui::BlueprintSetupGui',
 			footerElement: 'FOOTER',
 			filters: [true, true, true, true],
 			headerElement: 'HEADER',
@@ -657,7 +669,11 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			title: 'Untitled blueprint',
 			plannerMappings: null,
 			preview: null,
+			previewRegion: null,
 			saveDestination: null,
+			settingsHeadings: ['Icon', 'Description', 'Snap to grid', 'Components', 'Filters'],
+			settingsScrollStyle: 'scroll_pane_under_subheader',
+			settingsSource: 'BlueprintSettingsGui::BlueprintSettingsGui',
 			textReplacement: null,
 		});
 	});
