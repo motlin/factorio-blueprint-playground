@@ -36,16 +36,26 @@ export const Available: Story = {
 		const gameActions = canvas.getByRole('group', {name: 'Factorio blueprint actions'});
 		const websiteActions = canvas.getByRole('group', {name: 'Website planner slot'});
 		const button = canvas.getByRole('button', {name: 'Upgrade items and entities in the blueprint'});
+		const buttonBounds = button.getBoundingClientRect();
 		await expect({
 			actionOrder: toolbar.dataset.factorioActionOrder,
-			gameActions: [...gameActions.children].map((control) => control.getAttribute('data-factorio-action')),
+			gameActions: [...gameActions.children].map((control) => ({
+				action: control.getAttribute('data-factorio-action'),
+				mouseButtons: control.getAttribute('data-factorio-mouse-buttons'),
+			})),
+			geometry: {height: buttonBounds.height, width: buttonBounds.width},
+			iconSize: button.querySelector('[data-factorio-icon-size]')?.getAttribute('data-factorio-icon-size'),
 			toolbarChildren: [...toolbar.children].map((group) => group.className),
 			websiteExtension: websiteActions.dataset.websiteExtension,
+			widgetStyle: button.dataset.factorioWidgetStyle,
 		}).toStrictEqual({
 			actionOrder: 'title,reassign,copy,upgrade,parametrise,export,delete',
-			gameActions: ['upgrade'],
+			gameActions: [{action: 'upgrade', mouseButtons: 'left,right'}],
+			geometry: {height: 28, width: 28},
+			iconSize: 'small',
 			toolbarChildren: ['blueprint-editor-toolbar__game-actions', 'blueprint-editor-toolbar__website-actions'],
 			websiteExtension: 'dropped-upgrade-planner-slot',
+			widgetStyle: 'tool_button_green',
 		});
 		await userEvent.hover(button);
 		const tooltip = page.getByRole('tooltip');
@@ -61,7 +71,9 @@ export const Available: Story = {
 		await expect(button).toHaveFocus();
 		await expect(tooltip.dataset.factorioTooltipOpen).toBe('true');
 		await userEvent.click(button);
-		await expect(args.onOpenUpgradePlannerSelector.mock.calls).toStrictEqual([[]]);
+		await userEvent.pointer({keys: '[MouseRight]', target: button});
+		await expect(args.onOpenUpgradePlannerSelector.mock.calls).toStrictEqual([[], []]);
+		await expect(args.onApplyPlacedPlanner.mock.calls).toStrictEqual([]);
 	},
 };
 
@@ -117,13 +129,22 @@ export const Placed: Story = {
 	},
 	play: async ({args, canvasElement}) => {
 		const canvas = within(canvasElement);
-		const applyButton = canvas.getByRole('button', {name: "Apply Alice's belt planner as upgrade"});
+		const page = within(document.body);
+		const applyButton = canvas.getByRole('button', {
+			name: 'Upgrade items and entities in the blueprint',
+		});
 		await expect(
 			canvas.getByRole('button', {
 				name: "Change placed upgrade planner, currently Alice's belt planner",
 			}),
 		).toBeVisible();
+		await userEvent.hover(applyButton);
+		await expect(page.getByRole('tooltip')).toHaveTextContent('Upgrade items and entities in the blueprint.');
+		await userEvent.unhover(applyButton);
 		await userEvent.click(applyButton);
-		await expect(args.onApplyPlacedPlanner.mock.calls).toStrictEqual([['upgrade']]);
+		await userEvent.pointer({keys: '[MouseRight]', target: applyButton});
+		applyButton.focus();
+		await userEvent.keyboard('{Shift>}{Enter}{/Shift}');
+		await expect(args.onApplyPlacedPlanner.mock.calls).toStrictEqual([['upgrade'], ['downgrade'], ['downgrade']]);
 	},
 };

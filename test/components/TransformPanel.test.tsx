@@ -692,7 +692,9 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			disabled: upgradeButton.disabled,
 			expanded: upgradeButton.getAttribute('aria-expanded'),
 			icon: upgradeButton.querySelector('img')?.getAttribute('src'),
+			iconSize: upgradeButton.querySelector('[data-factorio-icon-size]')?.getAttribute('data-factorio-icon-size'),
 			inTitleRow: upgradeButton.closest('.blueprint-editor__title-row') !== null,
+			title: upgradeButton.title,
 			toolbarActions: [
 				...screen.getByRole('toolbar', {name: 'Blueprint editor actions'}).querySelectorAll('button'),
 			].map((button) => button.getAttribute('aria-label')),
@@ -701,7 +703,9 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			disabled: false,
 			expanded: 'false',
 			icon: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
+			iconSize: 'small',
 			inTitleRow: true,
+			title: 'Upgrade items and entities in the blueprint.',
 			toolbarActions: [
 				'Upgrade items and entities in the blueprint',
 				'Parametrise or reconfigure the blueprint',
@@ -709,7 +713,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			],
 		});
 
-		await user.click(upgradeButton);
+		expect(fireEvent.contextMenu(upgradeButton)).toBe(false);
 		const selector = screen.getByRole('dialog', {name: 'Select the upgrade planner to apply'});
 		expect({
 			blueprintEditorAriaHidden: blueprintEditor.getAttribute('aria-hidden'),
@@ -824,7 +828,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		});
 		expect({
 			apply: screen
-				.getByRole('button', {name: "Apply Alice's dropped planner as upgrade"})
+				.getByRole('button', {name: 'Upgrade items and entities in the blueprint'})
 				.getAttribute('aria-controls'),
 			error: screen.queryByRole('alert'),
 			icon: placedSlot.querySelector('img')?.getAttribute('src'),

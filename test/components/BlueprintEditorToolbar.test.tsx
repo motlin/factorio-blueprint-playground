@@ -35,28 +35,37 @@ test('renders the supported Factorio editor action with accessible states and a 
 	});
 	const tooltip = screen.getByRole('tooltip');
 	fireEvent.click(button);
+	const contextMenuAllowed = fireEvent.contextMenu(button);
 
 	expect({
+		applyCalls: onApplyPlacedPlanner.mock.calls,
 		buttonClass: button.className,
 		controls: button.getAttribute('aria-controls'),
 		describedBy: button.getAttribute('aria-describedby'),
 		expanded: button.getAttribute('aria-expanded'),
 		hasPopup: button.getAttribute('aria-haspopup'),
+		iconSize: button.querySelector('[data-factorio-icon-size]')?.getAttribute('data-factorio-icon-size'),
 		icon: button.querySelector('img')?.getAttribute('src'),
+		keyshortcuts: button.getAttribute('aria-keyshortcuts'),
+		contextMenuAllowed,
 		onOpenUpgradePlannerSelectorCalls: onOpenUpgradePlannerSelector.mock.calls,
 		sourceContract: {
 			actionOrder: toolbar.dataset.factorioActionOrder,
 			gameActions: [...gameActions.children].map((control) => ({
 				action: control.getAttribute('data-factorio-action'),
+				mouseButtons: control.getAttribute('data-factorio-mouse-buttons'),
 				order: control.getAttribute('data-factorio-action-order'),
 				source: control.getAttribute('data-factorio-source'),
 			})),
 			source: toolbar.dataset.factorioSource,
 			websiteExtension: websiteActions.dataset.websiteExtension,
+			widgetStyle: button.dataset.factorioWidgetStyle,
 		},
+		title: button.title,
 		toolbarButtons: [...toolbar.querySelectorAll('button')].map((control) => control.getAttribute('aria-label')),
 		tooltip: {id: tooltip.id, text: tooltip.textContent},
 	}).toStrictEqual({
+		applyCalls: [],
 		buttonClass:
 			'factorio-button factorio-button--neutral blueprint-editor-toolbar__button blueprint-editor-toolbar__button--upgrade',
 		controls: 'upgrade-planner-selector',
@@ -64,19 +73,25 @@ test('renders the supported Factorio editor action with accessible states and a 
 		expanded: 'false',
 		hasPopup: 'dialog',
 		icon: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
-		onOpenUpgradePlannerSelectorCalls: [[]],
+		iconSize: 'small',
+		keyshortcuts: 'Shift+Enter',
+		contextMenuAllowed: false,
+		onOpenUpgradePlannerSelectorCalls: [[], []],
 		sourceContract: {
 			actionOrder: 'title,reassign,copy,upgrade,parametrise,export,delete',
 			gameActions: [
 				{
 					action: 'upgrade',
+					mouseButtons: 'left,right',
 					order: '3',
 					source: 'BlueprintSettingsGui::makeUpgradeButton',
 				},
 			],
 			source: 'BlueprintSettingsGui::subheader',
 			websiteExtension: 'dropped-upgrade-planner-slot',
+			widgetStyle: 'tool_button_green',
 		},
+		title: 'Upgrade items and entities in the blueprint.',
 		toolbarButtons: ['Upgrade items and entities in the blueprint', 'Choose upgrade planner for toolbar slot'],
 		tooltip: {id: tooltip.id, text: 'Upgrade items and entities in the blueprint.'},
 	});
@@ -105,7 +120,7 @@ test('renders the supported Factorio editor action with accessible states and a 
 		tooltip: screen.getByRole('tooltip').textContent,
 	}).toStrictEqual({
 		expanded: 'true',
-		onOpenUpgradePlannerSelectorCalls: [[]],
+		onOpenUpgradePlannerSelectorCalls: [[], []],
 		tooltip: 'Upgrade items and entities in the blueprint.',
 	});
 });
@@ -165,7 +180,7 @@ test('opens Blueprint parametrisation only when the current format supports it',
 	});
 });
 
-test('names the Change control and provides a keyboard alternative for the opposite direction', () => {
+test('uses left for upgrade and secondary activation for downgrade regardless of stored direction', () => {
 	const onApplyPlacedPlanner = vi.fn<(direction: UpgradeDirection) => void>();
 	render(
 		<BlueprintEditorToolbar
@@ -187,18 +202,20 @@ test('names the Change control and provides a keyboard alternative for the oppos
 		/>,
 	);
 
-	const apply = screen.getByRole('button', {name: 'Apply Belt planner as upgrade'});
+	const apply = screen.getByRole('button', {name: 'Upgrade items and entities in the blueprint'});
 	const change = screen.getByRole('button', {
 		name: 'Change placed upgrade planner, currently Belt planner',
 	});
 	const remove = screen.getByRole('button', {name: 'Remove Belt planner from toolbar slot'});
 	const gameActions = screen.getByRole('group', {name: 'Factorio blueprint actions'});
 	const websiteActions = screen.getByRole('group', {name: 'Website planner slot'});
+	fireEvent.click(apply);
 	const contextMenuAllowed = fireEvent.contextMenu(apply);
 	fireEvent.keyDown(apply, {key: 'Enter', shiftKey: true});
 
 	expect({
 		applyCalls: onApplyPlacedPlanner.mock.calls,
+		applyLabel: apply.getAttribute('aria-label'),
 		applyKeyshortcuts: apply.getAttribute('aria-keyshortcuts'),
 		applyTooltip: apply.getAttribute('title'),
 		changeTooltip: change.getAttribute('title'),
@@ -209,13 +226,14 @@ test('names the Change control and provides a keyboard alternative for the oppos
 		},
 		removeTooltip: remove.getAttribute('title'),
 	}).toStrictEqual({
-		applyCalls: [['downgrade'], ['downgrade']],
+		applyCalls: [['upgrade'], ['downgrade'], ['downgrade']],
+		applyLabel: 'Upgrade items and entities in the blueprint',
 		applyKeyshortcuts: 'Shift+Enter',
-		applyTooltip: 'Apply Belt planner as upgrade',
+		applyTooltip: 'Upgrade items and entities in the blueprint.',
 		changeTooltip: 'Change placed upgrade planner, currently Belt planner',
 		contextMenuAllowed: false,
 		groups: {
-			game: ['Apply Belt planner as upgrade'],
+			game: ['Upgrade items and entities in the blueprint'],
 			website: ['Change placed upgrade planner, currently Belt planner', 'Remove Belt planner from toolbar slot'],
 		},
 		removeTooltip: 'Remove Belt planner from toolbar slot',

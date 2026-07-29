@@ -16,6 +16,8 @@ export interface PlacedUpgradePlanner {
 	direction: UpgradeDirection;
 }
 
+const upgradeBlueprintTooltip = 'Upgrade items and entities in the blueprint.';
+
 interface BlueprintEditorToolbarProps {
 	dropError: string | undefined;
 	onApplyPlacedPlanner: (direction: UpgradeDirection) => void;
@@ -66,6 +68,13 @@ export function BlueprintEditorToolbar({
 	const parameterizationTooltipId = useId();
 	const dropErrorId = useId();
 	const selectedPlannerLabel = placedPlanner?.choice.label;
+	const activateUpgradePlanner = (direction: UpgradeDirection) => {
+		if (placedPlanner === undefined) {
+			onOpenUpgradePlannerSelector();
+		} else {
+			onApplyPlacedPlanner(direction);
+		}
+	};
 
 	return (
 		<div
@@ -84,55 +93,41 @@ export function BlueprintEditorToolbar({
 					className="factorio-toolbar-control"
 					data-factorio-action="upgrade"
 					data-factorio-action-order="3"
+					data-factorio-mouse-buttons="left,right"
 					data-factorio-source="BlueprintSettingsGui::makeUpgradeButton"
 				>
 					<FactorioButton
 						className="blueprint-editor-toolbar__button blueprint-editor-toolbar__button--upgrade"
-						aria-label={
-							placedPlanner === undefined
-								? 'Upgrade items and entities in the blueprint'
-								: `Apply ${selectedPlannerLabel} as ${placedPlanner.direction}`
-						}
+						aria-label="Upgrade items and entities in the blueprint"
 						aria-describedby={tooltipId}
-						aria-keyshortcuts={placedPlanner === undefined ? undefined : 'Shift+Enter'}
+						aria-keyshortcuts="Shift+Enter"
 						aria-controls={selectedPlannerLabel === undefined ? selectorDialogId : undefined}
 						aria-expanded={selectedPlannerLabel === undefined ? selectorOpen : undefined}
 						aria-haspopup={selectedPlannerLabel === undefined ? 'dialog' : undefined}
-						title={
-							placedPlanner === undefined
-								? 'Upgrade items and entities in the blueprint'
-								: `Apply ${selectedPlannerLabel} as ${placedPlanner.direction}`
-						}
+						data-factorio-widget-style="tool_button_green"
+						title={upgradeBlueprintTooltip}
 						onClick={() => {
-							if (placedPlanner === undefined) {
-								onOpenUpgradePlannerSelector();
-							} else {
-								onApplyPlacedPlanner(placedPlanner.direction);
-							}
+							activateUpgradePlanner('upgrade');
 						}}
 						onContextMenu={(event) => {
-							if (placedPlanner !== undefined) {
-								event.preventDefault();
-								onApplyPlacedPlanner(placedPlanner.direction === 'upgrade' ? 'downgrade' : 'upgrade');
-							}
+							event.preventDefault();
+							activateUpgradePlanner('downgrade');
 						}}
 						onKeyDown={(event) => {
-							if (placedPlanner !== undefined && event.key === 'Enter' && event.shiftKey) {
+							if (event.key === 'Enter' && event.shiftKey) {
 								event.preventDefault();
-								onApplyPlacedPlanner(placedPlanner.direction === 'upgrade' ? 'downgrade' : 'upgrade');
+								activateUpgradePlanner('downgrade');
 							}
 						}}
 					>
-						<FactorioIcon decorative icon={{type: 'item', name: 'upgrade-planner'}} size="large" />
+						<FactorioIcon decorative icon={{type: 'item', name: 'upgrade-planner'}} size="small" />
 					</FactorioButton>
 					<FactorioTooltip
 						id={tooltipId}
 						className="factorio-toolbar-tooltip"
 						placement={FactorioTooltipPlacement.Below}
 					>
-						{placedPlanner === undefined
-							? 'Upgrade items and entities in the blueprint.'
-							: `Apply ${selectedPlannerLabel}. Shift+Enter or right-click applies the opposite direction.`}
+						{upgradeBlueprintTooltip}
 					</FactorioTooltip>
 				</div>
 				{parameterizationAvailable ? (

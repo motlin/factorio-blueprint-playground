@@ -3735,16 +3735,30 @@ body {
 }
 
 .blueprint-editor-toolbar__button--upgrade {
-	background: #65a95d;
-	box-shadow:
-		inset 0 1px 1px #a6d69d,
-		inset 0 -2px 2px #294c25;
+	/* Factorio 2.1.12 tool_button_green: 28px tool button with 2px padding. */
+	--factorio-button-rest: #65a95d;
+	--factorio-button-rest-light: #a6d69d;
+	--factorio-button-rest-dark: #294c25;
+	--factorio-button-hover: #78bd70;
+	--factorio-button-hover-light: #b9e5b2;
+	--factorio-button-hover-dark: #365c31;
+	--factorio-button-pressed: #41683d;
+	--factorio-button-pressed-light: #294a26;
+	--factorio-button-pressed-dark: #82aa7c;
+	width: calc(28px * var(--factorio-ui-density));
+	min-width: calc(28px * var(--factorio-ui-density));
+	max-width: calc(28px * var(--factorio-ui-density));
+	height: calc(28px * var(--factorio-ui-density));
+	min-height: calc(28px * var(--factorio-ui-density));
+	max-height: calc(28px * var(--factorio-ui-density));
+	padding: calc(2px * var(--factorio-ui-density));
 }
 
-.blueprint-editor-toolbar__button--upgrade:hover:not(:disabled),
-.blueprint-editor-toolbar__button--upgrade:focus-visible,
 .blueprint-editor-toolbar__button--upgrade[aria-expanded='true'] {
-	background: #78bd70;
+	background: var(--factorio-button-pressed);
+	box-shadow:
+		inset 1px 1px 0 var(--factorio-button-pressed-light),
+		inset -1px -1px 0 var(--factorio-button-pressed-dark);
 }
 
 .blueprint-editor-toolbar__button--parameterization {
