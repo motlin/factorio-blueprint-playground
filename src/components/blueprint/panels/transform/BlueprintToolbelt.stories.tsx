@@ -105,4 +105,50 @@ export const UpgradePlannerOnly: Story = {
 		blueprintEditorAvailable: false,
 		upgradePlannerOpen: true,
 	},
+	play: async ({args, canvasElement}) => {
+		const canvas = within(canvasElement);
+		const button = canvas.getByRole('button', {name: 'Open Upgrade Planner'});
+		const tooltip = document.getElementById(button.getAttribute('aria-describedby') ?? '');
+		if (tooltip === null) {
+			throw new Error('Expected the Upgrade Planner shortcut to reference its tooltip.');
+		}
+
+		await expect({
+			controlInput: button.dataset.factorioControlInput,
+			icon: button.querySelector('img')?.getAttribute('src'),
+			shortcut: button.getAttribute('aria-keyshortcuts'),
+			shortcutAction: button.dataset.factorioShortcutAction,
+			shortcutOrder: button.dataset.factorioShortcutOrder,
+			sourceStyle: button.dataset.factorioSourceStyle,
+		}).toStrictEqual({
+			controlInput: 'give-upgrade-planner',
+			icon: 'https://factorio-icon-cdn.pages.dev/shortcut/give-upgrade-planner.webp',
+			shortcut: 'U',
+			shortcutAction: 'spawn-item',
+			shortcutOrder: 'b[blueprints]-j[upgrade-planner]',
+			sourceStyle: 'shortcut_bar_button_green',
+		});
+
+		await userEvent.hover(button);
+		await expect({
+			open: tooltip.dataset.factorioTooltipOpen,
+			text: tooltip.textContent,
+		}).toStrictEqual({
+			open: 'true',
+			text: 'Upgrade PlannerOpen the Upgrade Planner to create and edit upgrade mappings. U',
+		});
+
+		await userEvent.unhover(button);
+		await userEvent.tab();
+		await expect({
+			focused: document.activeElement,
+			open: tooltip.dataset.factorioTooltipOpen,
+		}).toStrictEqual({
+			focused: button,
+			open: 'true',
+		});
+
+		await userEvent.keyboard('u');
+		await expect(args.onOpenUpgradePlanner.mock.calls).toStrictEqual([[]]);
+	},
 };

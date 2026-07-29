@@ -97,17 +97,17 @@ describe('BlueprintToolbelt', () => {
 				{
 					className:
 						'factorio-button factorio-button--neutral transform-toolbelt__button transform-toolbelt__button--upgrade-planner',
-					controlInput: undefined,
+					controlInput: 'give-upgrade-planner',
 					expanded: 'true',
-					icon: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
+					icon: 'https://factorio-icon-cdn.pages.dev/shortcut/give-upgrade-planner.webp',
 					iconAlt: '',
 					iconTitle: null,
 					label: 'Open Upgrade Planner',
 					shortcut: 'U',
-					shortcutAction: undefined,
+					shortcutAction: 'spawn-item',
 					shortcutOrder: 'b[blueprints]-j[upgrade-planner]',
 					sourceStyle: 'shortcut_bar_button_green',
-					tooltip: 'Upgrade PlannerCreate, edit, and apply upgrade mappings. U',
+					tooltip: 'Upgrade PlannerOpen the Upgrade Planner to create and edit upgrade mappings. U',
 				},
 			],
 		});
@@ -171,7 +171,7 @@ describe('BlueprintToolbelt', () => {
 			text: tooltip.textContent,
 		}).toStrictEqual({
 			open: 'true',
-			text: 'Upgrade PlannerCreate, edit, and apply upgrade mappings. U',
+			text: 'Upgrade PlannerOpen the Upgrade Planner to create and edit upgrade mappings. U',
 		});
 
 		await user.unhover(button);
@@ -246,13 +246,14 @@ describe('BlueprintToolbelt', () => {
 		}).toStrictEqual({blueprintEditorCalls: [], upgradePlannerCalls: []});
 	});
 
-	test('ignores the Blueprint shortcut when a declared nested Factorio dialog owns the keyboard', () => {
+	test('ignores tool shortcuts when a declared nested Factorio dialog owns the keyboard', () => {
 		const {onOpenBlueprintEditor, onOpenUpgradePlanner} = renderToolbelt();
 		render(
 			<section data-factorio-dialog-layer="nested" role="dialog" aria-modal="true" aria-label="Signal picker" />,
 		);
 
 		fireEvent.keyDown(window, {code: 'KeyB'});
+		fireEvent.keyDown(window, {code: 'KeyU'});
 
 		expect({
 			blueprintEditorCalls: onOpenBlueprintEditor.mock.calls,

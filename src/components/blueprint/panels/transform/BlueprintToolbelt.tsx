@@ -1,9 +1,9 @@
 import {useEffect, useId, useRef} from 'react';
 
-import {FactorioIcon} from '../../../core/icons/FactorioIcon';
 import {FactorioButton, FactorioTooltip, FactorioTooltipPlacement} from '../../../ui/FactorioUi';
 
 const BLUEPRINT_SHORTCUT_ICON_SOURCE = 'https://factorio-icon-cdn.pages.dev/shortcut/give-blueprint.webp';
+const UPGRADE_PLANNER_SHORTCUT_ICON_SOURCE = 'https://factorio-icon-cdn.pages.dev/shortcut/give-upgrade-planner.webp';
 
 interface BlueprintToolbeltProps {
 	blueprintEditorAvailable: boolean;
@@ -131,6 +131,8 @@ export function BlueprintToolbelt({
 						aria-describedby={upgradePlannerTooltipId}
 						aria-keyshortcuts="U"
 						aria-expanded={upgradePlannerOpen}
+						data-factorio-control-input="give-upgrade-planner"
+						data-factorio-shortcut-action="spawn-item"
 						data-factorio-shortcut-order="b[blueprints]-j[upgrade-planner]"
 						data-factorio-source-style="shortcut_bar_button_green"
 						onClick={(event) => {
@@ -138,7 +140,12 @@ export function BlueprintToolbelt({
 							onOpenUpgradePlanner();
 						}}
 					>
-						<FactorioIcon decorative icon={{type: 'item', name: 'upgrade-planner'}} size="large" />
+						<img
+							className="transform-toolbelt__shortcut-icon"
+							src={UPGRADE_PLANNER_SHORTCUT_ICON_SOURCE}
+							alt=""
+							aria-hidden="true"
+						/>
 					</FactorioButton>
 					<FactorioTooltip
 						id={upgradePlannerTooltipId}
@@ -146,7 +153,8 @@ export function BlueprintToolbelt({
 						heading="Upgrade Planner"
 						placement={FactorioTooltipPlacement.Above}
 					>
-						Create, edit, and apply upgrade mappings. <span className="factorio-tooltip__shortcut">U</span>
+						Open the Upgrade Planner to create and edit upgrade mappings.{' '}
+						<span className="factorio-tooltip__shortcut">U</span>
 					</FactorioTooltip>
 				</div>
 			</div>
