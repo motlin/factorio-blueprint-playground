@@ -276,6 +276,10 @@ export function SignalPickerDialog({
 	const optionButtons = useRef<Array<HTMLButtonElement | null>>([]);
 	const searchReference = useRef<HTMLInputElement>(null);
 	const signalNameReference = useRef<HTMLDivElement>(null);
+	const inspectedSignalsReference = useRef<{
+		focused: SignalID | undefined;
+		hovered: SignalID | undefined;
+	}>({focused: undefined, hovered: undefined});
 	const visibleOptions = useMemo(
 		() => canonicalPickerOptions(options.filter((signal) => includeHiddenSignals || !isHiddenPrototype(signal))),
 		[includeHiddenSignals, options],
@@ -381,15 +385,26 @@ export function SignalPickerDialog({
 		},
 		[isSelectionAllowed, onChoose, qualityComparator, qualityMode, qualitySelection],
 	);
-	const clearInspectedSignal = () => {
-		if (signalNameReference.current !== null) {
-			signalNameReference.current.textContent = '\u00a0';
+	const updateInspectedSignal = () => {
+		const readout = signalNameReference.current;
+		if (readout === null) {
+			return;
 		}
+		const inspectedSignal = inspectedSignalsReference.current.hovered ?? inspectedSignalsReference.current.focused;
+		if (inspectedSignal === undefined) {
+			readout.textContent = '\u00a0';
+			readout.removeAttribute('aria-label');
+			readout.removeAttribute('title');
+			return;
+		}
+		const inspectedSignalName = signalName(inspectedSignal);
+		readout.textContent = inspectedSignalName;
+		readout.setAttribute('aria-label', `Inspected signal: ${inspectedSignalName}`);
+		readout.title = inspectedSignalName;
 	};
-	const showInspectedSignal = (signal: SignalID) => {
-		if (signalNameReference.current !== null) {
-			signalNameReference.current.textContent = signalName(signal);
-		}
+	const clearInspectedSignal = () => {
+		inspectedSignalsReference.current = {focused: undefined, hovered: undefined};
+		updateInspectedSignal();
 	};
 
 	const confirmSelection = useCallback(() => {
@@ -471,6 +486,7 @@ export function SignalPickerDialog({
 		if ((categoryOptions.get(category.id)?.length ?? 0) === 0) {
 			return;
 		}
+		clearInspectedSignal();
 		setActiveCategoryId(category.id);
 		categoryButtons.current[categoryIndex]?.focus();
 	};
@@ -601,6 +617,7 @@ export function SignalPickerDialog({
 												height: gameUiSpec.styles.filterGroupTabHeight,
 											}}
 											onClick={() => {
+												clearInspectedSignal();
 												setActiveCategoryId(category.id);
 											}}
 											onKeyDown={(event) => {
@@ -658,7 +675,10 @@ export function SignalPickerDialog({
 											selected={signalPrototypeIdentity(signal) === selectedIdentity}
 											tabIndex={optionIndex === tabbableOptionIndex ? 0 : -1}
 											title={signalTitle(signal)}
-											onBlur={clearInspectedSignal}
+											onBlur={() => {
+												inspectedSignalsReference.current.focused = undefined;
+												updateInspectedSignal();
+											}}
 											onClick={() => {
 												if (confirmationMode === 'immediate') {
 													chooseSignal(signal);
@@ -672,25 +692,44 @@ export function SignalPickerDialog({
 												}
 											}}
 											onFocus={() => {
-												showInspectedSignal(signal);
+												inspectedSignalsReference.current.focused = signal;
+												updateInspectedSignal();
 											}}
 											onKeyDown={(event) => {
 												moveGridFocus(event, optionIndex);
 											}}
 											onMouseEnter={() => {
-												showInspectedSignal(signal);
+												inspectedSignalsReference.current.hovered = signal;
+												updateInspectedSignal();
 											}}
-											onMouseLeave={clearInspectedSignal}
+											onMouseLeave={() => {
+												inspectedSignalsReference.current.hovered = undefined;
+												updateInspectedSignal();
+											}}
 										>
 											<FactorioIcon decorative icon={signal} size="large" />
 										</FactorioInventorySlot>
 									);
 								})}
 								{filteredOptions.length === 0 ? (
-									<p className="transform-picker__empty">No matching signals.</p>
+									<p
+										className="transform-picker__empty"
+										role="status"
+										aria-atomic="true"
+										aria-label="Nothing found"
+										aria-live="polite"
+									>
+										Nothing found
+									</p>
 								) : null}
 							</FactorioScrollFrame>
-							<div ref={signalNameReference} className="transform-picker__signal-name" aria-live="polite">
+							<div
+								ref={signalNameReference}
+								className="transform-picker__signal-name"
+								role="status"
+								aria-atomic="true"
+								aria-live="polite"
+							>
 								{'\u00a0'}
 							</div>
 						</div>

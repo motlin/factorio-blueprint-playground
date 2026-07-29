@@ -2660,22 +2660,39 @@ body {
 }
 
 .transform-picker__empty {
+	display: flex;
+	box-sizing: border-box;
+	min-height: calc(36px * var(--factorio-ui-density));
+	align-items: center;
+	justify-content: center;
 	grid-column: 1 / -1;
 	margin: 0;
-	padding: 18px;
-	color: #b7b2ad;
+	padding: calc(8px * var(--factorio-ui-density)) calc(12px * var(--factorio-ui-density));
+	border-bottom: 1px solid #171717;
+	background: #3b3030;
+	box-shadow:
+		inset 0 1px 0 rgb(255 255 255 / 9%),
+		0 2px 4px rgb(0 0 0 / 45%);
+	color: #f1c4be;
+	font-weight: bold;
 	text-align: center;
+	user-select: text;
 }
 
 .transform-picker__signal-name {
-	min-height: 28px;
-	padding: 5px 10px;
+	box-sizing: border-box;
+	width: 100%;
+	height: calc(28px * var(--factorio-ui-density));
+	min-height: calc(28px * var(--factorio-ui-density));
+	padding: calc(5px * var(--factorio-ui-density)) calc(10px * var(--factorio-ui-density));
 	overflow: hidden;
 	border-top: 1px solid #171717;
 	color: #ffe6c0;
-	font-size: 13px;
+	font-size: calc(13px * var(--factorio-ui-density));
 	font-weight: bold;
+	line-height: calc(17px * var(--factorio-ui-density));
 	text-overflow: ellipsis;
+	user-select: text;
 	white-space: nowrap;
 }
 

@@ -147,6 +147,7 @@ export const RestrictedToPicker: Story = {
 };
 
 export const SignalOptionStates: Story = {
+	tags: ['visual-conformance'],
 	args: {
 		title: 'Signal option states',
 		initialSignal: {type: 'item', name: 'advanced-circuit', quality: 'rare'},
@@ -175,6 +176,32 @@ export const SignalOptionStates: Story = {
 		);
 		await expect(screen.getByRole('button', {name: 'Choose Processing unit'})).toBeDisabled();
 		await expect(screen.getAllByTestId('quality')).toHaveLength(2);
+		await expect(screen.getByRole('status', {name: 'Inspected signal: Copper plate'})).toHaveTextContent(
+			'Copper plate',
+		);
+		await userEvent.unhover(hovered);
+		await expect(screen.getByRole('status', {name: 'Inspected signal: Electronic circuit'})).toHaveTextContent(
+			'Electronic circuit',
+		);
+	},
+};
+
+const longSignalName = 'This is an extraordinarily long signal name that must not resize the picker';
+
+export const LongNameReadout: Story = {
+	tags: ['visual-conformance'],
+	args: {
+		title: 'Select a signal',
+		options: [{type: 'item', name: 'this-is-an-extraordinarily-long-signal-name-that-must-not-resize-the-picker'}],
+	},
+	play: async ({canvasElement}) => {
+		const screen = within(canvasElement.ownerDocument.body);
+		screen.getByRole('button', {name: `Choose ${longSignalName}`}).focus();
+		const readout = screen.getByRole('status', {name: `Inspected signal: ${longSignalName}`});
+		await expect(readout).toHaveTextContent(longSignalName);
+		await expect(readout).toHaveAttribute('title', longSignalName);
+		await expect(readout.offsetHeight).toBe(28);
+		await expect(readout.scrollWidth).toBeGreaterThan(readout.clientWidth);
 	},
 };
 
@@ -187,9 +214,19 @@ export const SearchResults: Story = {
 };
 
 export const EmptyResults: Story = {
+	tags: ['visual-conformance'],
 	args: {
 		title: 'Select a signal',
 		initialSearch: 'spidertron',
 		options: catalog,
+	},
+	play: async ({canvasElement}) => {
+		const screen = within(canvasElement.ownerDocument.body);
+		const emptyMessage = screen.getByRole('status', {name: 'Nothing found'});
+		await expect(emptyMessage).toHaveTextContent('Nothing found');
+		await expect(screen.getAllByRole('tab').every((tab) => tab.getAttribute('aria-selected') === 'false')).toBe(
+			true,
+		);
+		await expect(screen.queryByRole('button', {name: /^Choose /})).not.toBeInTheDocument();
 	},
 };

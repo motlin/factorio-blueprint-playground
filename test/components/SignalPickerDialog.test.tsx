@@ -285,12 +285,46 @@ test('keeps an empty constrained picker usable without offering an excluded init
 
 	expect({
 		confirmDisabled: screen.getByRole<HTMLButtonElement>('button', {name: 'Confirm'}).disabled,
-		emptyMessage: screen.getByText('No matching signals.').textContent,
+		emptyMessage: screen.getByRole('status', {name: 'Nothing found'}).textContent,
+		inspectedSignal: document.querySelector('.transform-picker__signal-name')?.textContent,
 		tabs: screen.queryAllByRole('tab').map((tab) => tab.textContent),
 	}).toStrictEqual({
 		confirmDisabled: true,
-		emptyMessage: 'No matching signals.',
+		emptyMessage: 'Nothing found',
+		inspectedSignal: '\u00a0',
 		tabs: [],
+	});
+});
+
+test('shows an explicit empty search without activating a guessed category or choice', () => {
+	render(
+		<SignalPickerDialog
+			confirmationMode="required"
+			title="Search without matches"
+			initialSearch="spidertron"
+			initialSignal={{type: 'item', name: 'iron-plate'}}
+			options={[
+				{type: 'item', name: 'iron-plate'},
+				{type: 'fluid', name: 'water'},
+			]}
+			onChoose={vi.fn<SignalPickerDialogProps['onChoose']>()}
+			onClose={vi.fn<() => void>()}
+		/>,
+	);
+
+	const grid = screen.getByRole('region', {name: 'Signal choices'});
+	expect({
+		choices: within(grid)
+			.queryAllByRole('button')
+			.map((button) => button.getAttribute('aria-label')),
+		emptyMessage: within(grid).getByRole('status', {name: 'Nothing found'}).textContent,
+		selectedTabs: screen.getAllByRole('tab').map((tab) => tab.getAttribute('aria-selected')),
+		stagedSelectionStillConfirmable: screen.getByRole<HTMLButtonElement>('button', {name: 'Confirm'}).disabled,
+	}).toStrictEqual({
+		choices: [],
+		emptyMessage: 'Nothing found',
+		selectedTabs: ['false', 'false'],
+		stagedSelectionStillConfirmable: false,
 	});
 });
 
@@ -1000,7 +1034,7 @@ test('keeps generated prototype order while search removes nonmatching prototype
 	]);
 });
 
-test('renders disallowed signals disabled and exposes signal names on hover and focus', async () => {
+test('renders disallowed signals disabled and keeps the hovered or focused signal name readable', async () => {
 	const user = userEvent.setup();
 	render(
 		<SignalPickerDialog
@@ -1009,26 +1043,59 @@ test('renders disallowed signals disabled and exposes signal names on hover and 
 			options={[
 				{type: 'item', name: 'iron-plate'},
 				{type: 'item', name: 'copper-plate'},
+				{type: 'item', name: 'processing-unit'},
 			]}
-			isSelectionAllowed={(signal) => signal.name === 'iron-plate'}
+			isSelectionAllowed={(signal) => signal.name !== 'processing-unit'}
 			onChoose={vi.fn<SignalPickerDialogProps['onChoose']>()}
 			onClose={vi.fn<() => void>()}
 		/>,
 	);
 
 	const iron = screen.getByRole('button', {name: 'Choose Iron plate'});
-	const copper = screen.getByRole<HTMLButtonElement>('button', {name: 'Choose Copper plate'});
-	await user.hover(iron);
-	expect(screen.getByText('Iron plate').className).toBe('transform-picker__signal-name');
-	await user.unhover(iron);
+	const copper = screen.getByRole('button', {name: 'Choose Copper plate'});
+	const processingUnit = screen.getByRole<HTMLButtonElement>('button', {name: 'Choose Processing unit'});
+
 	fireEvent.focus(iron);
-	expect(screen.getByText('Iron plate').className).toBe('transform-picker__signal-name');
+	expect(screen.getByRole('status', {name: 'Inspected signal: Iron plate'}).textContent).toBe('Iron plate');
+	await user.hover(copper);
+	expect(screen.getByRole('status', {name: 'Inspected signal: Copper plate'}).textContent).toBe('Copper plate');
+	await user.unhover(copper);
+	expect(screen.getByRole('status', {name: 'Inspected signal: Iron plate'}).textContent).toBe('Iron plate');
+	fireEvent.blur(iron);
+	expect(document.querySelector('.transform-picker__signal-name')?.textContent).toBe('\u00a0');
 	expect({
-		copperDisabled: copper.disabled,
-		copperTabIndex: copper.tabIndex,
+		processingUnitDisabled: processingUnit.disabled,
+		processingUnitTabIndex: processingUnit.tabIndex,
 	}).toStrictEqual({
-		copperDisabled: true,
-		copperTabIndex: -1,
+		processingUnitDisabled: true,
+		processingUnitTabIndex: -1,
+	});
+});
+
+test('exposes the complete long signal name while the fixed readout can truncate it visually', () => {
+	const longSignalName = 'This is an extraordinarily long signal name that must not resize the picker';
+	render(
+		<SignalPickerDialog
+			confirmationMode="required"
+			title="Long signal name"
+			options={[
+				{type: 'item', name: 'this-is-an-extraordinarily-long-signal-name-that-must-not-resize-the-picker'},
+			]}
+			onChoose={vi.fn<SignalPickerDialogProps['onChoose']>()}
+			onClose={vi.fn<() => void>()}
+		/>,
+	);
+
+	fireEvent.focus(screen.getByRole('button', {name: `Choose ${longSignalName}`}));
+	const readout = screen.getByRole('status', {name: `Inspected signal: ${longSignalName}`});
+	expect({
+		accessibleName: readout.getAttribute('aria-label'),
+		fullText: readout.textContent,
+		title: readout.getAttribute('title'),
+	}).toStrictEqual({
+		accessibleName: `Inspected signal: ${longSignalName}`,
+		fullText: longSignalName,
+		title: longSignalName,
 	});
 });
 
