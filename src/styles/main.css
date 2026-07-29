@@ -3925,25 +3925,41 @@ body {
 	color: #b7b2ad;
 }
 
+.blueprint-description-editor {
+	min-width: 0;
+}
+
+.transform-workflow__section .blueprint-description-editor__heading {
+	padding: calc(6px * var(--factorio-ui-density)) calc(8px * var(--factorio-ui-density))
+		calc(4px * var(--factorio-ui-density));
+	user-select: text;
+}
+
+.blueprint-description-editor__heading label {
+	display: block;
+	width: fit-content;
+	cursor: text;
+}
+
 .blueprint-description-editor__field {
-	margin: 0 12px 12px;
-	padding: 3px;
-	background: #242324;
-	box-shadow:
-		inset 0 2px 4px #111,
-		0 1px 0 #686868;
+	min-width: 0;
+	margin: 0 calc(8px * var(--factorio-ui-density)) calc(8px * var(--factorio-ui-density));
 }
 
 .blueprint-description-editor textarea {
 	display: block;
 	box-sizing: border-box;
 	width: 100%;
-	height: 132px;
-	min-height: 132px;
+	min-width: 0;
+	max-width: none;
+	height: calc(120px * var(--factorio-ui-density));
+	min-height: calc(120px * var(--factorio-ui-density));
+	max-height: calc(120px * var(--factorio-ui-density));
 	margin: 0;
-	padding: 9px 10px;
+	padding: 0 calc(2px * var(--factorio-ui-density)) 0 calc(3px * var(--factorio-ui-density));
+	overflow-x: hidden;
+	overflow-y: auto;
 	border: 0;
-	border-radius: 2px;
 	background: #8e8e8e;
 	box-shadow:
 		inset 0 3px 2px -1px #111,
@@ -3951,7 +3967,18 @@ body {
 		inset 2px 0 1px #5f5f5f,
 		inset -2px 0 1px #5f5f5f;
 	color: #1f1f1f;
-	resize: vertical;
+	font: inherit;
+	line-height: 1.25;
+	overflow-wrap: break-word;
+	resize: none;
+	scrollbar-gutter: stable;
+	white-space: pre-wrap;
+	word-break: normal;
+}
+
+.blueprint-description-editor textarea::selection {
+	background: #f1be64;
+	color: #1f1f1f;
 }
 
 .blueprint-description-editor textarea:focus {
