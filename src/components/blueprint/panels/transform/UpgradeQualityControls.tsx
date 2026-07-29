@@ -121,16 +121,19 @@ function QualityComparatorControl({
 	const [menuAnchor, setMenuAnchor] = useState({bottom: 0, left: 0});
 	const toggleReference = useRef<HTMLButtonElement>(null);
 	const comparisonLabel = qualitySelection === 'any' ? anyQualityLabel : `Quality comparison: ${qualityComparator}`;
+	const qualityCondition = qualitySelection === 'any' ? 'any' : `${qualityComparator} ${qualitySelection}`;
 
 	return (
 		<div className="upgrade-quality-controls__condition">
-			<FactorioInventorySlot
+			<button
 				ref={toggleReference}
+				type="button"
 				className="upgrade-quality-controls__comparator-toggle"
 				aria-label={comparisonLabel}
 				aria-expanded={menuOpen}
 				aria-haspopup="dialog"
-				selected={qualitySelection === 'any'}
+				data-factorio-control-style="train_schedule_circuit_condition_comparator_dropdown"
+				data-quality-condition={qualityCondition}
 				title={comparisonLabel}
 				onClick={() => {
 					const bounds = toggleReference.current?.getBoundingClientRect();
@@ -143,11 +146,13 @@ function QualityComparatorControl({
 					setMenuOpen(true);
 				}}
 			>
-				{qualitySelection === 'any' ? <AnyQualityIcon /> : <span aria-hidden="true">{qualityComparator}</span>}
+				<span className="upgrade-quality-controls__comparator-value" aria-hidden="true">
+					{qualitySelection === 'any' ? <AnyQualityIcon /> : qualityComparator}
+				</span>
 				<span className="upgrade-quality-controls__dropdown-arrow" aria-hidden="true">
 					▾
 				</span>
-			</FactorioInventorySlot>
+			</button>
 			{menuOpen ? (
 				<QualityComparatorMenu
 					anchorBottom={menuAnchor.bottom}

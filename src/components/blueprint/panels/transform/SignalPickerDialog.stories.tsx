@@ -117,6 +117,7 @@ export const CanonicalSubgroupRows: Story = {
 };
 
 export const PlannerFromPicker: Story = {
+	tags: ['visual-conformance'],
 	args: {
 		title: 'Set the filter',
 		initialSignal: {
@@ -127,6 +128,24 @@ export const PlannerFromPicker: Story = {
 		},
 		options: catalog.filter(({type}) => type === 'entity'),
 		qualityMode: 'source',
+	},
+	play: async ({canvasElement}) => {
+		const screen = within(canvasElement.ownerDocument.body);
+		const qualityControls = screen.getByRole('group', {name: 'Source quality'});
+		const comparator = within(qualityControls).getByRole('button', {
+			name: 'Quality comparison: ≥',
+		});
+		await expect(comparator).toHaveAttribute(
+			'data-factorio-control-style',
+			'train_schedule_circuit_condition_comparator_dropdown',
+		);
+		await expect(comparator).toHaveAttribute('data-quality-condition', '≥ rare');
+		await expect(comparator).toHaveAttribute('aria-expanded', 'false');
+		await expect(comparator).not.toHaveAttribute('aria-pressed');
+		await expect(within(qualityControls).getByRole('button', {name: 'Rare quality'})).toHaveAttribute(
+			'aria-pressed',
+			'true',
+		);
 	},
 };
 

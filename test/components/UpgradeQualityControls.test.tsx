@@ -94,6 +94,18 @@ describe('UpgradeQualityControls', () => {
 		await user.click(screen.getByRole('menuitemradio', {name: '≤'}));
 
 		expect({
+			comparatorControl: {
+				condition: screen
+					.getByRole('button', {name: 'Quality comparison: >'})
+					.getAttribute('data-quality-condition'),
+				controlStyle: screen
+					.getByRole('button', {name: 'Quality comparison: >'})
+					.getAttribute('data-factorio-control-style'),
+				displayedValue: screen
+					.getByRole('button', {name: 'Quality comparison: >'})
+					.querySelector('.upgrade-quality-controls__comparator-value')?.textContent,
+				pressed: screen.getByRole('button', {name: 'Quality comparison: >'}).getAttribute('aria-pressed'),
+			},
 			buttons: screen.getAllByRole('button').map((button) => ({
 				expanded: button.getAttribute('aria-expanded'),
 				label: button.getAttribute('aria-label'),
@@ -104,8 +116,19 @@ describe('UpgradeQualityControls', () => {
 			menu: screen.queryByRole('menu', {name: 'Quality comparison'}),
 			qualityChanges: onQualityChange.mock.calls,
 		}).toStrictEqual({
+			comparatorControl: {
+				condition: '> rare',
+				controlStyle: 'train_schedule_circuit_condition_comparator_dropdown',
+				displayedValue: '>',
+				pressed: null,
+			},
 			buttons: [
-				{expanded: 'false', label: 'Quality comparison: >', pressed: 'false', title: 'Quality comparison: >'},
+				{
+					expanded: 'false',
+					label: 'Quality comparison: >',
+					pressed: null,
+					title: 'Quality comparison: >',
+				},
 				{expanded: null, label: 'Normal quality', pressed: 'false', title: 'Normal quality'},
 				{expanded: null, label: 'Uncommon quality', pressed: 'false', title: 'Uncommon quality'},
 				{expanded: null, label: 'Rare quality', pressed: 'true', title: 'Rare quality'},
@@ -167,7 +190,17 @@ describe('UpgradeQualityControls', () => {
 			/>,
 		);
 
-		await user.click(screen.getByRole('button', {name: 'Any quality'}));
+		const anyQuality = screen.getByRole('button', {name: 'Any quality'});
+		expect({
+			condition: anyQuality.getAttribute('data-quality-condition'),
+			controlStyle: anyQuality.getAttribute('data-factorio-control-style'),
+			pressed: anyQuality.getAttribute('aria-pressed'),
+		}).toStrictEqual({
+			condition: 'any',
+			controlStyle: 'train_schedule_circuit_condition_comparator_dropdown',
+			pressed: null,
+		});
+		await user.click(anyQuality);
 		await user.click(screen.getByRole('menuitemradio', {name: '>'}));
 
 		expect({

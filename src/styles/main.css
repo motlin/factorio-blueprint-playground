@@ -2767,17 +2767,81 @@ body {
 
 .upgrade-quality-controls__comparator-toggle {
 	position: relative;
-	font-size: 19px;
+	display: inline-flex;
+	box-sizing: border-box;
+	width: calc(44px * var(--factorio-ui-density));
+	min-width: calc(44px * var(--factorio-ui-density));
+	height: calc(28px * var(--factorio-ui-density));
+	min-height: calc(28px * var(--factorio-ui-density));
+	flex: 0 0 auto;
+	align-items: center;
+	justify-content: flex-start;
+	padding: 0 calc(15px * var(--factorio-ui-density)) 0 calc(4px * var(--factorio-ui-density));
+	border: 1px solid var(--factorio-ui-border);
+	appearance: none;
+	background: #414041;
+	box-shadow:
+		inset 1px 1px 0 #777,
+		inset -2px -2px 0 #1c1b1c;
+	color: var(--factorio-ui-text);
+	font: inherit;
+	font-size: calc(18px * var(--factorio-ui-density));
 	font-weight: bold;
+	line-height: 1;
+	cursor: pointer;
+}
+
+.upgrade-quality-controls__comparator-toggle:hover,
+.upgrade-quality-controls__comparator-toggle[data-visual-state='hover'] {
+	background: #8b6745;
+	box-shadow:
+		inset 1px 1px 0 #9d9d9d,
+		inset -2px -2px 0 #515151,
+		0 0 calc(5px * var(--factorio-ui-density)) rgb(227 152 39 / 50%);
+}
+
+.upgrade-quality-controls__comparator-toggle:focus-visible,
+.upgrade-quality-controls__comparator-toggle[data-visual-state='focus'] {
+	z-index: 1;
+	outline: 2px solid var(--factorio-ui-accent);
+	outline-offset: 2px;
+}
+
+.upgrade-quality-controls__comparator-toggle:active,
+.upgrade-quality-controls__comparator-toggle[aria-expanded='true'] {
+	background: var(--factorio-ui-selected);
+	box-shadow:
+		inset 1px 1px 0 #914905,
+		inset -2px -2px 0 #cb833f;
+	color: #171717;
+}
+
+.upgrade-quality-controls__comparator-value {
+	display: grid;
+	width: calc(22px * var(--factorio-ui-density));
+	height: calc(24px * var(--factorio-ui-density));
+	place-items: center;
+}
+
+.upgrade-quality-controls__comparator-toggle .upgrade-quality-controls__any-icon {
+	width: calc(20px * var(--factorio-ui-density));
+	height: calc(20px * var(--factorio-ui-density));
+}
+
+.upgrade-quality-controls__comparator-toggle .upgrade-quality-controls__any-icon img {
+	width: calc(12px * var(--factorio-ui-density));
+	height: calc(12px * var(--factorio-ui-density));
 }
 
 .upgrade-quality-controls__dropdown-arrow {
 	position: absolute;
-	right: 1px;
-	bottom: -2px;
-	color: #fff;
-	font-size: 11px;
+	top: 50%;
+	right: calc(2px * var(--factorio-ui-density));
+	color: currentcolor;
+	font-size: calc(12px * var(--factorio-ui-density));
+	line-height: 1;
 	text-shadow: 0 1px 1px #111;
+	transform: translateY(-50%);
 }
 
 .upgrade-quality-controls__menu-layer {
