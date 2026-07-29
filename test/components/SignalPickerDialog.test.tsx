@@ -764,6 +764,7 @@ describe('SignalPickerDialog golden cancellation and focus source contracts', ()
 		const invokingSlot = screen.getByRole('button', {name: 'Choose Iron plate'});
 		await user.click(invokingSlot);
 		const innerDialog = screen.getByRole('dialog', {name: 'Inner picker'});
+		opener.focus();
 		expect({
 			activeElement: accessibleName(document.activeElement),
 			dialogStack: [

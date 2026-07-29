@@ -449,6 +449,62 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		});
 	});
 
+	test('isolates the dirty-close confirmation and restores focus through the planner stack', async () => {
+		const user = userEvent.setup();
+		render(<TransformPanel blueprint={blueprint} />);
+		const tool = screen.getByRole('button', {name: 'Open Upgrade Planner'});
+
+		await user.click(tool);
+		await user.click(screen.getByRole('button', {name: 'Edit planner name'}));
+		const plannerName = screen.getByRole('textbox', {name: 'Planner name'});
+		await user.clear(plannerName);
+		await user.type(plannerName, 'Dirty planner{Enter}');
+		const closePlanner = screen.getByRole('button', {name: 'Close Upgrade Planner'});
+		await user.click(closePlanner);
+
+		const confirmation = screen.getByRole('alertdialog', {name: 'Discard unsaved changes?'});
+		expect(interactionState()).toStrictEqual({
+			activeElement: {name: 'Keep editing', tagName: 'BUTTON'},
+			dialogStack: [
+				{
+					ariaHidden: 'true',
+					inert: true,
+					modal: 'true',
+					name: 'Upgrade Planner',
+					role: 'dialog',
+				},
+				{
+					ariaHidden: null,
+					inert: false,
+					modal: 'true',
+					name: 'Discard unsaved changes?',
+					role: 'alertdialog',
+				},
+			],
+		});
+
+		tool.focus();
+		expect(document.activeElement).toBe(within(confirmation).getByRole('button', {name: 'Keep editing'}));
+
+		fireEvent.keyDown(window, {key: 'Escape'});
+		await waitFor(() => {
+			expect(screen.queryByRole('alertdialog', {name: 'Discard unsaved changes?'})).toBeNull();
+			expect(document.activeElement).toBe(closePlanner);
+		});
+		expect(screen.getByRole('dialog', {name: 'Upgrade Planner'}).inert).toBe(false);
+
+		await user.click(closePlanner);
+		await user.click(
+			within(screen.getByRole('alertdialog', {name: 'Discard unsaved changes?'})).getByRole('button', {
+				name: 'Discard changes',
+			}),
+		);
+		await waitFor(() => {
+			expect(screen.queryByRole('dialog', {name: 'Upgrade Planner'})).toBeNull();
+			expect(document.activeElement).toBe(tool);
+		});
+	});
+
 	test('bounds renders and analysis while editing mappings and icons in a large nested book', async () => {
 		const user = userEvent.setup();
 		const {rootBlueprint, selectedBlueprint} = largeNestedBookFixture();
