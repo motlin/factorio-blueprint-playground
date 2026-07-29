@@ -3,6 +3,8 @@ import {useEffect, useId, useRef} from 'react';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
 import {FactorioButton, FactorioTooltip, FactorioTooltipPlacement} from '../../../ui/FactorioUi';
 
+const BLUEPRINT_SHORTCUT_ICON_SOURCE = 'https://factorio-icon-cdn.pages.dev/shortcut/give-blueprint.webp';
+
 interface BlueprintToolbeltProps {
 	blueprintEditorAvailable: boolean;
 	blueprintEditorOpen: boolean;
@@ -22,6 +24,9 @@ function isTextEditingTarget(target: EventTarget | null): boolean {
 }
 
 function hasNestedModal(): boolean {
+	if (document.querySelector('[data-factorio-dialog-layer="nested"]') !== null) {
+		return true;
+	}
 	return (
 		document.querySelectorAll('[aria-modal="true"][role="dialog"], [aria-modal="true"][role="alertdialog"]')
 			.length > 1
@@ -91,6 +96,8 @@ export function BlueprintToolbelt({
 							aria-describedby={blueprintEditorTooltipId}
 							aria-keyshortcuts="B"
 							aria-expanded={blueprintEditorOpen}
+							data-factorio-control-input="give-blueprint"
+							data-factorio-shortcut-action="spawn-item"
 							data-factorio-shortcut-order="b[blueprints]-g[blueprint]"
 							data-factorio-source-style="shortcut_bar_button_blue"
 							onClick={(event) => {
@@ -98,7 +105,12 @@ export function BlueprintToolbelt({
 								onOpenBlueprintEditor();
 							}}
 						>
-							<FactorioIcon decorative icon={{type: 'item', name: 'blueprint'}} size="large" />
+							<img
+								className="transform-toolbelt__shortcut-icon"
+								src={BLUEPRINT_SHORTCUT_ICON_SOURCE}
+								alt=""
+								aria-hidden="true"
+							/>
 						</FactorioButton>
 						<FactorioTooltip
 							id={blueprintEditorTooltipId}
@@ -106,7 +118,8 @@ export function BlueprintToolbelt({
 							heading="Blueprint Editor"
 							placement={FactorioTooltipPlacement.Above}
 						>
-							Edit this blueprint or book. <span className="factorio-tooltip__shortcut">B</span>
+							Open this blueprint or book to edit its settings and contents.{' '}
+							<span className="factorio-tooltip__shortcut">B</span>
 						</FactorioTooltip>
 					</div>
 				) : null}

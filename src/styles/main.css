@@ -2049,6 +2049,15 @@ body {
 	line-height: 1;
 }
 
+.transform-toolbelt__shortcut-icon {
+	display: block;
+	width: calc(28px * var(--factorio-ui-density));
+	height: calc(28px * var(--factorio-ui-density));
+	object-fit: contain;
+	pointer-events: none;
+	user-select: none;
+}
+
 .transform-toolbelt__button--blueprint {
 	--factorio-button-rest: #587487;
 	--factorio-button-rest-light: #9bb8c8;

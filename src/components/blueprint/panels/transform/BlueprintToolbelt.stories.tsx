@@ -15,7 +15,7 @@ const meta = {
 		upgradePlannerOpen: false,
 	},
 	parameters: transformStoryParameters,
-	tags: ['autodocs'],
+	tags: ['autodocs', 'visual-conformance'],
 } satisfies Meta<typeof BlueprintToolbelt>;
 
 export default meta;
@@ -25,8 +25,16 @@ export const BlueprintTools: Story = {
 	play: async ({args, canvasElement}) => {
 		const canvas = within(canvasElement);
 		const toolbar = canvas.getByRole('toolbar', {name: 'Blueprint tools'});
+		const blueprintEditorButton = canvas.getByRole('button', {name: 'Open Blueprint Editor'});
+		const blueprintEditorTooltip = document.getElementById(
+			blueprintEditorButton.getAttribute('aria-describedby') ?? '',
+		);
+		if (blueprintEditorTooltip === null) {
+			throw new Error('Expected the Blueprint Editor shortcut to reference its tooltip.');
+		}
 
 		await expect({
+			blueprintEditorIcon: blueprintEditorButton.querySelector('img')?.getAttribute('src'),
 			factorioSource: toolbar.dataset.factorioSource,
 			factorioStyle: toolbar.dataset.factorioStyle,
 			tools: within(toolbar)
@@ -39,6 +47,7 @@ export const BlueprintTools: Story = {
 					sourceStyle: button.dataset.factorioSourceStyle,
 				})),
 		}).toStrictEqual({
+			blueprintEditorIcon: 'https://factorio-icon-cdn.pages.dev/shortcut/give-blueprint.webp',
 			factorioSource: 'BottomContainer::updateLocation',
 			factorioStyle: 'shortcut_bar_window_frame',
 			tools: [
@@ -59,13 +68,33 @@ export const BlueprintTools: Story = {
 			],
 		});
 
-		await userEvent.click(canvas.getByRole('button', {name: 'Open Blueprint Editor'}));
+		await userEvent.hover(blueprintEditorButton);
+		await expect({
+			open: blueprintEditorTooltip.dataset.factorioTooltipOpen,
+			text: blueprintEditorTooltip.textContent,
+		}).toStrictEqual({
+			open: 'true',
+			text: 'Blueprint EditorOpen this blueprint or book to edit its settings and contents. B',
+		});
+
+		await userEvent.unhover(blueprintEditorButton);
+		await userEvent.tab();
+		await expect({
+			focused: document.activeElement,
+			open: blueprintEditorTooltip.dataset.factorioTooltipOpen,
+		}).toStrictEqual({
+			focused: blueprintEditorButton,
+			open: 'true',
+		});
+
+		await userEvent.click(blueprintEditorButton);
+		await userEvent.keyboard('b');
 		await userEvent.click(canvas.getByRole('button', {name: 'Open Upgrade Planner'}));
 		await expect({
 			blueprintEditorCalls: args.onOpenBlueprintEditor.mock.calls,
 			upgradePlannerCalls: args.onOpenUpgradePlanner.mock.calls,
 		}).toStrictEqual({
-			blueprintEditorCalls: [[]],
+			blueprintEditorCalls: [[], []],
 			upgradePlannerCalls: [[]],
 		});
 	},

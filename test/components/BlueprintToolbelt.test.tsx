@@ -52,12 +52,14 @@ describe('BlueprintToolbelt', () => {
 			},
 			tools: [...toolbar.querySelectorAll('button')].map((button) => ({
 				className: button.className,
+				controlInput: button.dataset.factorioControlInput,
 				expanded: button.getAttribute('aria-expanded'),
 				icon: button.querySelector('img')?.getAttribute('src'),
 				iconAlt: button.querySelector('img')?.getAttribute('alt'),
 				iconTitle: button.querySelector('img')?.getAttribute('title'),
 				label: button.getAttribute('aria-label'),
 				shortcut: button.getAttribute('aria-keyshortcuts'),
+				shortcutAction: button.dataset.factorioShortcutAction,
 				shortcutOrder: button.dataset.factorioShortcutOrder,
 				sourceStyle: button.dataset.factorioSourceStyle,
 				tooltip: document.getElementById(button.getAttribute('aria-describedby') ?? '')?.textContent.trim(),
@@ -80,30 +82,72 @@ describe('BlueprintToolbelt', () => {
 				{
 					className:
 						'factorio-button factorio-button--neutral transform-toolbelt__button transform-toolbelt__button--blueprint',
+					controlInput: 'give-blueprint',
 					expanded: 'false',
-					icon: 'https://factorio-icon-cdn.pages.dev/item/blueprint.webp',
+					icon: 'https://factorio-icon-cdn.pages.dev/shortcut/give-blueprint.webp',
 					iconAlt: '',
 					iconTitle: null,
 					label: 'Open Blueprint Editor',
 					shortcut: 'B',
+					shortcutAction: 'spawn-item',
 					shortcutOrder: 'b[blueprints]-g[blueprint]',
 					sourceStyle: 'shortcut_bar_button_blue',
-					tooltip: 'Blueprint EditorEdit this blueprint or book. B',
+					tooltip: 'Blueprint EditorOpen this blueprint or book to edit its settings and contents. B',
 				},
 				{
 					className:
 						'factorio-button factorio-button--neutral transform-toolbelt__button transform-toolbelt__button--upgrade-planner',
+					controlInput: undefined,
 					expanded: 'true',
 					icon: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
 					iconAlt: '',
 					iconTitle: null,
 					label: 'Open Upgrade Planner',
 					shortcut: 'U',
+					shortcutAction: undefined,
 					shortcutOrder: 'b[blueprints]-j[upgrade-planner]',
 					sourceStyle: 'shortcut_bar_button_green',
 					tooltip: 'Upgrade PlannerCreate, edit, and apply upgrade mappings. U',
 				},
 			],
+		});
+	});
+
+	test('exposes the Blueprint Editor action tooltip on hover and keyboard focus', async () => {
+		const user = userEvent.setup();
+		renderToolbelt();
+		const button = screen.getByRole('button', {name: 'Open Blueprint Editor'});
+		const control = button.closest('.factorio-toolbar-control');
+		if (!(control instanceof HTMLElement)) {
+			throw new Error('Expected the Blueprint Editor control to wrap its Factorio tooltip.');
+		}
+
+		await user.hover(button);
+		const tooltipId = button.getAttribute('aria-describedby');
+		const tooltip = document.getElementById(tooltipId ?? '');
+		if (tooltip === null) {
+			throw new Error('Expected the Blueprint Editor button to reference its tooltip.');
+		}
+		expect({
+			open: tooltip.dataset.factorioTooltipOpen,
+			text: tooltip.textContent,
+		}).toStrictEqual({
+			open: 'true',
+			text: 'Blueprint EditorOpen this blueprint or book to edit its settings and contents. B',
+		});
+
+		await user.unhover(button);
+		await user.tab();
+		expect({
+			description: button.getAttribute('aria-describedby'),
+			focused: document.activeElement,
+			open: tooltip.dataset.factorioTooltipOpen,
+			tooltip: tooltip.id,
+		}).toStrictEqual({
+			description: tooltip.id,
+			focused: button,
+			open: 'true',
+			tooltip: tooltip.id,
 		});
 	});
 
@@ -195,6 +239,20 @@ describe('BlueprintToolbelt', () => {
 
 		fireEvent.keyDown(window, {code: 'KeyB'});
 		fireEvent.keyDown(window, {code: 'KeyU'});
+
+		expect({
+			blueprintEditorCalls: onOpenBlueprintEditor.mock.calls,
+			upgradePlannerCalls: onOpenUpgradePlanner.mock.calls,
+		}).toStrictEqual({blueprintEditorCalls: [], upgradePlannerCalls: []});
+	});
+
+	test('ignores the Blueprint shortcut when a declared nested Factorio dialog owns the keyboard', () => {
+		const {onOpenBlueprintEditor, onOpenUpgradePlanner} = renderToolbelt();
+		render(
+			<section data-factorio-dialog-layer="nested" role="dialog" aria-modal="true" aria-label="Signal picker" />,
+		);
+
+		fireEvent.keyDown(window, {code: 'KeyB'});
 
 		expect({
 			blueprintEditorCalls: onOpenBlueprintEditor.mock.calls,
