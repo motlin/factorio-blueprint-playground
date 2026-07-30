@@ -1,5 +1,5 @@
 import type {Meta, StoryObj} from '@storybook/react-vite';
-import {expect, fn, within} from 'storybook/test';
+import {expect, fn, userEvent, within} from 'storybook/test';
 
 import type {BlueprintString} from '../../../../parsing/types';
 import {BlueprintEditorSourceMode} from '../../../../transform/blueprintEditor';
@@ -150,6 +150,7 @@ export const Blueprint: Story = {
 		await expect(
 			[...settingsScroll.querySelectorAll('h4')].map((heading) => heading.textContent.trim()),
 		).toStrictEqual(['Icon', 'Description', 'Snap to grid', 'Components', 'Filters']);
+		await expect(settingsScroll.querySelector('[data-website-extension="book-operations"]')).toBeNull();
 		await expect(canvas.queryByRole('heading', {name: 'Preview'})).not.toBeInTheDocument();
 		await expect(dialog.querySelector('[data-blueprint-preview]')).toBeNull();
 	},
@@ -192,6 +193,71 @@ export const BlueprintLibraryBook: Story = {
 			caption: 'Blueprint book in the blueprint library',
 			contextLabel: 'Blueprint library record',
 		});
+		const canvas = within(canvasElement);
+		const operations = canvas.getByRole('region', {name: 'Book operations'});
+		const flatten = canvas.getByRole<HTMLInputElement>('checkbox', {name: 'Flatten nested books'});
+		const sort = canvas.getByRole<HTMLInputElement>('checkbox', {name: 'Sort entries by label'});
+		const flattenDescriptionId = flatten.getAttribute('aria-describedby');
+		if (flattenDescriptionId === null) {
+			throw new Error('Expected the flatten operation to describe its website-only effect.');
+		}
+		await expect({
+			extension: operations.dataset.websiteExtension,
+			factorioSource: operations.dataset.factorioSource,
+			factorioStyle: operations.dataset.factorioStyle,
+			flattenChecked: flatten.checked,
+			flattenDescription: document.getElementById(flattenDescriptionId)?.textContent,
+			sortChecked: sort.checked,
+			state: operations.dataset.operationState,
+			status: within(operations).getByText('0 of 2 enabled').textContent,
+		}).toStrictEqual({
+			extension: 'book-operations',
+			factorioSource: undefined,
+			factorioStyle: undefined,
+			flattenChecked: false,
+			flattenDescription: 'Move nested blueprints into this book as one flat list.',
+			sortChecked: false,
+			state: 'available',
+			status: '0 of 2 enabled',
+		});
+	},
+};
+
+export const BookOperationsEnabledAndDisabled: Story = {
+	args: {
+		book: true,
+		bookOperationSelected: true,
+		breadcrumb: "Alice's blueprint book",
+		context: {
+			caption: 'Blueprint book in the blueprint library',
+			contextLabel: 'Blueprint library record',
+		},
+		flattenBookSelected: true,
+	},
+	play: async ({args, canvasElement}) => {
+		const canvas = within(canvasElement);
+		const operations = canvas.getByRole('region', {name: 'Book operations'});
+		const flatten = canvas.getByRole<HTMLInputElement>('checkbox', {name: 'Flatten nested books'});
+		const sort = canvas.getByRole<HTMLInputElement>('checkbox', {name: 'Sort entries by label'});
+
+		await expect({
+			flattenChecked: flatten.checked,
+			flattenDescription: canvas.getByText('Move nested blueprints into this book as one flat list.').textContent,
+			sortChecked: sort.checked,
+			sortDescription: canvas.getByText("Order this book's entries by label.").textContent,
+			state: operations.dataset.operationState,
+			status: within(operations).getByText('1 of 2 enabled').textContent,
+		}).toStrictEqual({
+			flattenChecked: true,
+			flattenDescription: 'Move nested blueprints into this book as one flat list.',
+			sortChecked: false,
+			sortDescription: "Order this book's entries by label.",
+			state: 'enabled',
+			status: '1 of 2 enabled',
+		});
+
+		await userEvent.click(sort);
+		await expect(args.onSortBookSelectedChange.mock.calls).toStrictEqual([[true]]);
 	},
 };
 

@@ -158,6 +158,11 @@ export function BlueprintEditorDialog({
 	const parameterizationDialogId = useId();
 	const contextId = useId();
 	const closeDescriptionId = useId();
+	const bookOperationsHeadingId = useId();
+	const bookOperationsDescriptionId = useId();
+	const flattenBookDescriptionId = useId();
+	const sortBookDescriptionId = useId();
+	const enabledBookOperationCount = Number(flattenBookSelected) + Number(sortBookSelected);
 	const dialogReference = useDialogFocus<HTMLElement>({
 		initialFocusSelector: '.blueprint-editor__settings button',
 		onClose,
@@ -287,32 +292,79 @@ export function BlueprintEditorDialog({
 
 							{book ? (
 								<section
-									className="transform-workflow__section"
-									aria-labelledby="transform-book-operations-heading"
+									className="blueprint-editor-book-operations"
+									aria-labelledby={bookOperationsHeadingId}
+									aria-describedby={bookOperationsDescriptionId}
+									data-operation-state={bookOperationSelected ? 'enabled' : 'available'}
+									data-website-extension="book-operations"
 								>
-									<h4 id="transform-book-operations-heading">
-										Book operations{bookOperationSelected ? ' · selected' : ''}
-									</h4>
-									<div className="transform-workflow__checks">
-										<label>
+									<header className="blueprint-editor-book-operations__header">
+										<div>
+											<span className="blueprint-editor-book-operations__eyebrow">
+												Website extension
+											</span>
+											<h4 id={bookOperationsHeadingId}>Book operations</h4>
+										</div>
+										<span className="blueprint-editor-book-operations__status">
+											{enabledBookOperationCount} of 2 enabled
+										</span>
+									</header>
+									<p
+										id={bookOperationsDescriptionId}
+										className="blueprint-editor-book-operations__description"
+									>
+										Optional whole-book tools. Changes apply when you save this blueprint book.
+									</p>
+									<div className="blueprint-editor-book-operations__options">
+										<label
+											className="checkbox-label blueprint-editor-book-operations__option"
+											data-enabled={flattenBookSelected ? 'true' : 'false'}
+										>
 											<input
 												type="checkbox"
+												aria-label="Flatten nested books"
+												aria-describedby={flattenBookDescriptionId}
 												checked={flattenBookSelected}
+												data-website-control="flatten-book"
 												onChange={(event) => {
 													onFlattenBookSelectedChange(event.currentTarget.checked);
 												}}
-											/>{' '}
-											Flatten nested books
+											/>
+											<span
+												className="checkbox blueprint-editor-book-operations__checkbox"
+												aria-hidden="true"
+											/>
+											<span className="blueprint-editor-book-operations__option-copy">
+												<strong>Flatten nested books</strong>
+												<small id={flattenBookDescriptionId}>
+													Move nested blueprints into this book as one flat list.
+												</small>
+											</span>
 										</label>
-										<label>
+										<label
+											className="checkbox-label blueprint-editor-book-operations__option"
+											data-enabled={sortBookSelected ? 'true' : 'false'}
+										>
 											<input
 												type="checkbox"
+												aria-label="Sort entries by label"
+												aria-describedby={sortBookDescriptionId}
 												checked={sortBookSelected}
+												data-website-control="sort-book"
 												onChange={(event) => {
 													onSortBookSelectedChange(event.currentTarget.checked);
 												}}
-											/>{' '}
-											Sort entries by label
+											/>
+											<span
+												className="checkbox blueprint-editor-book-operations__checkbox"
+												aria-hidden="true"
+											/>
+											<span className="blueprint-editor-book-operations__option-copy">
+												<strong>Sort entries by label</strong>
+												<small id={sortBookDescriptionId}>
+													Order this book's entries by label.
+												</small>
+											</span>
 										</label>
 									</div>
 								</section>
