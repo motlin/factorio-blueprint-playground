@@ -19,6 +19,18 @@ function StatefulBlueprintSnapGridEditor(args: ComponentProps<typeof BlueprintSn
 	);
 }
 
+function accessibleDescription(control: HTMLElement): string {
+	const descriptionId = control.getAttribute('aria-describedby');
+	if (descriptionId === null) {
+		throw new Error('Expected the control to reference an accessible description.');
+	}
+	const description = control.ownerDocument.getElementById(descriptionId);
+	if (description === null) {
+		throw new Error(`Expected accessible description ${descriptionId}.`);
+	}
+	return description.textContent;
+}
+
 const meta = {
 	title: 'Blueprint/Panels/Transform/BlueprintSnapGridEditor',
 	component: BlueprintSnapGridEditor,
@@ -57,15 +69,17 @@ export const EnabledAbsolute: Story = {
 		const width = canvas.getByRole<HTMLInputElement>('spinbutton', {name: 'Width'});
 		const height = canvas.getByRole<HTMLInputElement>('spinbutton', {name: 'Height'});
 		const dimensionRow = width.closest('.blueprint-snap-grid-editor__dimensions');
-		const positionX = canvas.getByRole<HTMLInputElement>('spinbutton', {name: 'X'});
+		const positionX = canvas.getByRole<HTMLInputElement>('spinbutton', {name: 'Grid position X'});
+		const positionY = canvas.getByRole<HTMLInputElement>('spinbutton', {name: 'Grid position Y'});
+		const positionRow = positionX.closest('.blueprint-snap-grid-editor__position');
+		const absolute = canvas.getByRole<HTMLInputElement>('radio', {name: 'Absolute'});
+		const placement = absolute.closest('.blueprint-snap-grid-editor__placement');
 		const section = master.closest('section');
-		if (section === null || dimensionRow === null) {
-			throw new Error('Expected the snap-to-grid bordered frame and dimension row.');
+		if (section === null || dimensionRow === null || !(placement instanceof HTMLElement) || positionRow === null) {
+			throw new Error('Expected the snap-to-grid frame, six-column rows, and radio group.');
 		}
 		const dimensionGridTemplate =
-			section.getBoundingClientRect().width <= 400
-				? '45.3594px 40px 50.7031px 40px'
-				: '110px 81.9375px 45.3594px 40px 50.7031px 40px';
+			section.getBoundingClientRect().width <= 400 ? '46px 40px 51px 40px' : '110px 101px 46px 40px 51px 40px';
 
 		await expect({
 			controlCount: fieldset.querySelectorAll('input').length,
@@ -87,6 +101,14 @@ export const EnabledAbsolute: Story = {
 					style: width.dataset.factorioStyle,
 				},
 			},
+			gridPosition: {
+				cells: [...positionRow.children].map((cell) => cell.textContent),
+				columns: positionRow.getAttribute('data-factorio-columns'),
+				disabled: [positionX.disabled, positionY.disabled],
+				gridTemplate: getComputedStyle(positionRow).gridTemplateColumns,
+				source: positionRow.getAttribute('data-factorio-source'),
+				styles: [positionX.dataset.factorioStyle, positionY.dataset.factorioStyle],
+			},
 			fieldsetControlledByMaster: master.getAttribute('aria-controls') === fieldset.id,
 			fieldsetSource: fieldset.dataset.factorioSource,
 			fieldsetStyle: {
@@ -96,8 +118,16 @@ export const EnabledAbsolute: Story = {
 			frameSource: section.dataset.factorioSource,
 			frameStyle: section.dataset.factorioStyle,
 			headingStyle: heading.dataset.factorioStyle,
+			masterSize: [master.getBoundingClientRect().width, master.getBoundingClientRect().height],
 			masterOutsideFieldset: !fieldset.contains(master),
 			numberWidth: width.getBoundingClientRect().width,
+			placement: {
+				direction: getComputedStyle(placement).display,
+				gap: getComputedStyle(placement).gap,
+				labelCount: placement.querySelectorAll('label').length,
+				radioSize: [absolute.getBoundingClientRect().width, absolute.getBoundingClientRect().height],
+				source: placement.dataset.factorioSource,
+			},
 		}).toStrictEqual({
 			controlCount: 6,
 			dimensions: {
@@ -118,14 +148,30 @@ export const EnabledAbsolute: Story = {
 					style: 'very_short_number_textfield',
 				},
 			},
+			gridPosition: {
+				cells: ['Grid positioni', '', 'X:Grid position X', '', 'Y:Grid position Y', ''],
+				columns: '6',
+				disabled: [false, false],
+				gridTemplate: dimensionGridTemplate,
+				source: 'BlueprintSettingsGui::makeSnappingsFrame',
+				styles: ['very_short_number_textfield', 'very_short_number_textfield'],
+			},
 			fieldsetControlledByMaster: true,
 			fieldsetSource: 'BlueprintSettingsGui::updateEditabilityOfSnapToGrid',
 			fieldsetStyle: {border: 'none', opacity: '1'},
 			frameSource: 'BlueprintSettingsGui::makeSnappingsFrame',
 			frameStyle: 'bordered_frame',
 			headingStyle: 'caption_checkbox',
+			masterSize: [28, 28],
 			masterOutsideFieldset: true,
 			numberWidth: 40,
+			placement: {
+				direction: 'grid',
+				gap: '4px',
+				labelCount: 2,
+				radioSize: [24, 24],
+				source: 'BlueprintSettingsGui::makeSnappingsFrame',
+			},
 		});
 
 		await userEvent.click(canvas.getByRole('radio', {name: 'Relative'}));
@@ -154,6 +200,55 @@ export const EnabledAbsolute: Story = {
 				},
 			],
 		]);
+	},
+};
+
+export const EnabledRelative: Story = {
+	args: {
+		settings: {
+			absolute: false,
+			enabled: true,
+			height: 64,
+			positionX: 0,
+			positionY: -16,
+			width: 32,
+		},
+	},
+	play: async ({canvasElement}) => {
+		const canvas = within(canvasElement);
+		const absolute = canvas.getByRole<HTMLInputElement>('radio', {name: 'Absolute'});
+		const relative = canvas.getByRole<HTMLInputElement>('radio', {name: 'Relative'});
+		const positionX = canvas.getByRole<HTMLInputElement>('spinbutton', {name: 'Grid position X'});
+		const positionY = canvas.getByRole<HTMLInputElement>('spinbutton', {name: 'Grid position Y'});
+
+		await expect({
+			absolute: {
+				checked: absolute.checked,
+				description: accessibleDescription(absolute),
+				style: absolute.dataset.factorioStyle,
+			},
+			positionDisabled: [positionX.disabled, positionY.disabled],
+			positionValues: [positionX.value, positionY.value],
+			relative: {
+				checked: relative.checked,
+				description: accessibleDescription(relative),
+				style: relative.dataset.factorioStyle,
+			},
+		}).toStrictEqual({
+			absolute: {
+				checked: false,
+				description: 'Snaps to the global grid. Grid position X and Y set the blueprint offset.',
+				style: 'radiobutton',
+			},
+			positionDisabled: [true, true],
+			positionValues: ['0', '-16'],
+			relative: {
+				checked: true,
+				description:
+					'Snaps relative to where dragging the blueprint started. Grid position is unavailable in this mode.',
+				style: 'radiobutton',
+			},
+		});
 	},
 };
 
@@ -323,7 +418,7 @@ export const NarrowDimensions: Story = {
 			pageOverflow: document.documentElement.scrollWidth - window.innerWidth,
 			width: width.getBoundingClientRect().width,
 		}).toStrictEqual({
-			gridTemplate: '45.3594px 40px 50.7031px 40px',
+			gridTemplate: '46px 40px 51px 40px',
 			heightBounds: true,
 			pageOverflow: 0,
 			width: 40,

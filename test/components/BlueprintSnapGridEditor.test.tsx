@@ -24,6 +24,20 @@ function EditorHarness({initialSettings, onChange}: EditorHarnessProps) {
 	);
 }
 
+function accessibleDescriptions(control: HTMLElement): string[] {
+	const descriptionIds = control.getAttribute('aria-describedby');
+	if (descriptionIds === null) {
+		throw new Error('Expected the control to reference an accessible description.');
+	}
+	return descriptionIds.split(' ').map((descriptionId) => {
+		const description = document.getElementById(descriptionId);
+		if (description === null) {
+			throw new Error(`Expected accessible description ${descriptionId}.`);
+		}
+		return description.textContent;
+	});
+}
+
 test('enables every grid control while preserving zero and negative draft positions', async () => {
 	const user = userEvent.setup();
 	const onChange = vi.fn<(settings: BlueprintSnapGrid) => void>();
@@ -43,8 +57,8 @@ test('enables every grid control while preserving zero and negative draft positi
 
 	const width = screen.getByRole<HTMLInputElement>('spinbutton', {name: 'Width'});
 	const height = screen.getByRole<HTMLInputElement>('spinbutton', {name: 'Height'});
-	const positionX = screen.getByRole<HTMLInputElement>('spinbutton', {name: 'X'});
-	const positionY = screen.getByRole<HTMLInputElement>('spinbutton', {name: 'Y'});
+	const positionX = screen.getByRole<HTMLInputElement>('spinbutton', {name: 'Grid position X'});
+	const positionY = screen.getByRole<HTMLInputElement>('spinbutton', {name: 'Grid position Y'});
 	const master = screen.getByRole<HTMLInputElement>('checkbox', {name: 'Snap to grid'});
 	const fieldset = screen.getByRole<HTMLFieldSetElement>('group', {name: 'Snap to grid settings'});
 	const controls = [...fieldset.querySelectorAll<HTMLInputElement>('input')];
@@ -63,6 +77,12 @@ test('enables every grid control while preserving zero and negative draft positi
 		headingStyle: screen.getByRole('heading', {name: 'Snap to grid'}).dataset.factorioStyle,
 		masterDisabled: master.disabled,
 		masterOutsideFieldset: !fieldset.contains(master),
+		masterStyle: master.dataset.factorioStyle,
+		positionContracts: [positionX, positionY].map((position) => ({
+			descriptions: accessibleDescriptions(position),
+			step: position.step,
+			style: position.dataset.factorioStyle,
+		})),
 		values: [width.value, height.value, positionX.value, positionY.value],
 	}).toStrictEqual({
 		controlDisabledStates: [true, true, true, true, true, true],
@@ -74,6 +94,25 @@ test('enables every grid control while preserving zero and negative draft positi
 		headingStyle: 'caption_checkbox',
 		masterDisabled: false,
 		masterOutsideFieldset: true,
+		masterStyle: 'caption_checkbox',
+		positionContracts: [
+			{
+				descriptions: [
+					'Coordinates that position the blueprint relative to the global grid.',
+					'Snaps to the global grid. Grid position X and Y set the blueprint offset.',
+				],
+				step: '1',
+				style: 'very_short_number_textfield',
+			},
+			{
+				descriptions: [
+					'Coordinates that position the blueprint relative to the global grid.',
+					'Snaps to the global grid. Grid position X and Y set the blueprint offset.',
+				],
+				step: '1',
+				style: 'very_short_number_textfield',
+			},
+		],
 		values: ['32', '64', '0', '-16'],
 	});
 
@@ -122,16 +161,33 @@ test('distinguishes relative placement while retaining the absolute position dra
 
 	await user.click(screen.getByRole('radio', {name: 'Relative'}));
 
-	const positionX = screen.getByRole<HTMLInputElement>('spinbutton', {name: 'X'});
-	const positionY = screen.getByRole<HTMLInputElement>('spinbutton', {name: 'Y'});
+	const positionX = screen.getByRole<HTMLInputElement>('spinbutton', {name: 'Grid position X'});
+	const positionY = screen.getByRole<HTMLInputElement>('spinbutton', {name: 'Grid position Y'});
+	const absolute = screen.getByRole<HTMLInputElement>('radio', {name: 'Absolute'});
+	const relative = screen.getByRole<HTMLInputElement>('radio', {name: 'Relative'});
 	expect({
-		absoluteChecked: screen.getByRole<HTMLInputElement>('radio', {name: 'Absolute'}).checked,
+		absolute: {
+			checked: absolute.checked,
+			description: screen.getByText('Snaps to the global grid. Grid position X and Y set the blueprint offset.')
+				.textContent,
+			style: absolute.dataset.factorioStyle,
+		},
 		calls: onChange.mock.calls,
 		positionDisabled: [positionX.disabled, positionY.disabled],
 		positionValues: [positionX.value, positionY.value],
-		relativeChecked: screen.getByRole<HTMLInputElement>('radio', {name: 'Relative'}).checked,
+		relative: {
+			checked: relative.checked,
+			description: screen.getByText(
+				'Snaps relative to where dragging the blueprint started. Grid position is unavailable in this mode.',
+			).textContent,
+			style: relative.dataset.factorioStyle,
+		},
 	}).toStrictEqual({
-		absoluteChecked: false,
+		absolute: {
+			checked: false,
+			description: 'Snaps to the global grid. Grid position X and Y set the blueprint offset.',
+			style: 'radiobutton',
+		},
 		calls: [
 			[
 				{
@@ -146,7 +202,12 @@ test('distinguishes relative placement while retaining the absolute position dra
 		],
 		positionDisabled: [true, true],
 		positionValues: ['0', '-16'],
-		relativeChecked: true,
+		relative: {
+			checked: true,
+			description:
+				'Snaps relative to where dragging the blueprint started. Grid position is unavailable in this mode.',
+			style: 'radiobutton',
+		},
 	});
 });
 
@@ -246,7 +307,7 @@ test('commits positive integer dimensions without emitting invalid intermediate 
 		calls: onChange.mock.calls,
 		values: [width.value, height.value],
 	}).toStrictEqual({
-		activeElement: screen.getByRole('radio', {name: 'Absolute'}),
+		activeElement: screen.getByRole('spinbutton', {name: 'Grid position X'}),
 		calls: [
 			[
 				{

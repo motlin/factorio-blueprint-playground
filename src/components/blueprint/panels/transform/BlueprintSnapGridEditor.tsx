@@ -71,7 +71,13 @@ function SnapGridDimensionInput({label, onCommit, value}: SnapGridDimensionInput
 }
 
 export function BlueprintSnapGridEditor({onChange, settings}: BlueprintSnapGridEditorProps) {
+	const absoluteDescriptionId = useId();
 	const headingId = useId();
+	const gridPositionDescriptionId = useId();
+	const positionXId = useId();
+	const positionYId = useId();
+	const relativeDescriptionId = useId();
+	const snapDescriptionId = useId();
 	const settingsId = useId();
 
 	const update = (changes: Partial<BlueprintSnapGrid>) => {
@@ -90,7 +96,9 @@ export function BlueprintSnapGridEditor({onChange, settings}: BlueprintSnapGridE
 					<input
 						type="checkbox"
 						aria-controls={settingsId}
+						aria-describedby={snapDescriptionId}
 						checked={settings.enabled}
+						data-factorio-style="caption_checkbox"
 						onChange={(event) => {
 							update({enabled: event.currentTarget.checked});
 						}}
@@ -98,6 +106,9 @@ export function BlueprintSnapGridEditor({onChange, settings}: BlueprintSnapGridE
 					<span>Snap to grid</span>
 				</label>
 			</h4>
+			<span id={snapDescriptionId} className="transform-visually-hidden">
+				Snaps the blueprint to a repeating grid when it is built.
+			</span>
 			<fieldset
 				id={settingsId}
 				className="blueprint-snap-grid-editor__settings"
@@ -127,57 +138,103 @@ export function BlueprintSnapGridEditor({onChange, settings}: BlueprintSnapGridE
 						value={settings.height}
 					/>
 				</div>
-				<div className="blueprint-snap-grid-editor__row blueprint-snap-grid-editor__placement">
-					<strong>Placement</strong>
-					<label>
+				<div
+					className="blueprint-snap-grid-editor__row blueprint-snap-grid-editor__position"
+					data-factorio-columns="6"
+					data-factorio-source="BlueprintSettingsGui::makeSnappingsFrame"
+				>
+					<strong>
+						Grid position
+						<span className="blueprint-snap-grid-editor__info" aria-hidden="true">
+							i
+						</span>
+					</strong>
+					<span className="blueprint-snap-grid-editor__pusher" aria-hidden="true" />
+					<label htmlFor={positionXId}>
+						<span aria-hidden="true">X:</span>
+						<span className="transform-visually-hidden">Grid position X</span>
+					</label>
+					<input
+						id={positionXId}
+						type="number"
+						aria-describedby={`${gridPositionDescriptionId} ${absoluteDescriptionId}`}
+						data-factorio-style="very_short_number_textfield"
+						step="1"
+						value={settings.positionX}
+						disabled={!settings.absolute}
+						onChange={(event) => {
+							if (Number.isSafeInteger(event.currentTarget.valueAsNumber)) {
+								update({positionX: event.currentTarget.valueAsNumber});
+							}
+						}}
+					/>
+					<label htmlFor={positionYId}>
+						<span aria-hidden="true">Y:</span>
+						<span className="transform-visually-hidden">Grid position Y</span>
+					</label>
+					<input
+						id={positionYId}
+						type="number"
+						aria-describedby={`${gridPositionDescriptionId} ${absoluteDescriptionId}`}
+						data-factorio-style="very_short_number_textfield"
+						step="1"
+						value={settings.positionY}
+						disabled={!settings.absolute}
+						onChange={(event) => {
+							if (Number.isSafeInteger(event.currentTarget.valueAsNumber)) {
+								update({positionY: event.currentTarget.valueAsNumber});
+							}
+						}}
+					/>
+				</div>
+				<span id={gridPositionDescriptionId} className="transform-visually-hidden">
+					Coordinates that position the blueprint relative to the global grid.
+				</span>
+				<div
+					className="blueprint-snap-grid-editor__placement"
+					role="radiogroup"
+					aria-label="Snapping mode"
+					data-factorio-source="BlueprintSettingsGui::makeSnappingsFrame"
+				>
+					<label title="Snaps to the global grid. Grid position X and Y set the blueprint offset.">
 						<input
 							type="radio"
-							name={`${headingId}-placement`}
+							aria-describedby={absoluteDescriptionId}
 							checked={settings.absolute}
+							data-factorio-style="radiobutton"
+							name={`${headingId}-placement`}
 							onChange={() => {
 								update({absolute: true});
 							}}
-						/>{' '}
-						Absolute
+						/>
+						<span>Absolute</span>
+						<span className="blueprint-snap-grid-editor__info" aria-hidden="true">
+							i
+						</span>
 					</label>
-					<label>
+					<span id={absoluteDescriptionId} className="transform-visually-hidden">
+						Snaps to the global grid. Grid position X and Y set the blueprint offset.
+					</span>
+					<label title="Snaps relative to where dragging the blueprint started.">
 						<input
 							type="radio"
-							name={`${headingId}-placement`}
+							aria-describedby={relativeDescriptionId}
 							checked={!settings.absolute}
+							data-factorio-style="radiobutton"
+							name={`${headingId}-placement`}
 							onChange={() => {
 								update({absolute: false});
 							}}
-						/>{' '}
-						Relative
-					</label>
-				</div>
-				<div className="blueprint-snap-grid-editor__row">
-					<strong>Grid position</strong>
-					<label>
-						X
-						<input
-							type="number"
-							step="1"
-							value={settings.positionX}
-							disabled={!settings.absolute}
-							onChange={(event) => {
-								update({positionX: event.currentTarget.valueAsNumber});
-							}}
 						/>
+						<span>Relative</span>
+						<span className="blueprint-snap-grid-editor__info" aria-hidden="true">
+							i
+						</span>
 					</label>
-					<label>
-						Y
-						<input
-							type="number"
-							step="1"
-							value={settings.positionY}
-							disabled={!settings.absolute}
-							onChange={(event) => {
-								update({positionY: event.currentTarget.valueAsNumber});
-							}}
-						/>
-					</label>
+					<span id={relativeDescriptionId} className="transform-visually-hidden">
+						Snaps relative to where dragging the blueprint started. Grid position is unavailable in this
+						mode.
+					</span>
 				</div>
 			</fieldset>
 		</section>
