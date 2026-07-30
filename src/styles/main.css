@@ -2564,18 +2564,33 @@ body {
 	display: flex;
 	flex-direction: column;
 	align-items: flex-start;
-	gap: 8px;
-	padding: 0 14px 12px;
+	gap: 4px;
+	padding: 0 12px 12px;
 }
 
 .blueprint-content-filters__option {
 	width: fit-content;
+	min-height: 28px;
 	margin: 0;
 	align-items: center;
+	line-height: 1;
 }
 
-.blueprint-content-filters__option > div {
-	width: auto;
+.blueprint-content-filters__option input {
+	width: 28px;
+	height: 28px;
+	padding: 0;
+	margin: 0;
+}
+
+.blueprint-content-filters__option > .checkbox {
+	box-sizing: content-box;
+	margin: 0;
+	flex: 0 0 auto;
+}
+
+.blueprint-content-filters__label {
+	padding-left: 8px;
 	user-select: text;
 }
 

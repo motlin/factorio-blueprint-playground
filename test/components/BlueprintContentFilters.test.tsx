@@ -143,7 +143,7 @@ const filterMatrix: FilterMatrixCase[] = [
 			showGroup: true,
 			visible: {...absentCategories, stationNames: true},
 		},
-		expectedControls: [{checked: true, label: 'Station names'}],
+		expectedControls: [{checked: true, label: 'Train stop names'}],
 		name: 'named station',
 		sourceMode: BlueprintEditorSourceMode.ExistingRecord,
 	},
@@ -165,7 +165,7 @@ const filterMatrix: FilterMatrixCase[] = [
 			showGroup: true,
 			visible: {...absentCategories, fuel: true},
 		},
-		expectedControls: [{checked: true, label: 'Fuel'}],
+		expectedControls: [{checked: true, label: 'Vehicle fuel'}],
 		name: 'fuel in a train-only blueprint',
 		sourceMode: BlueprintEditorSourceMode.ExistingRecord,
 	},
@@ -310,14 +310,47 @@ test('toggles a selectable label with the native keyboard control', async () => 
 	expect({
 		activeElement: document.activeElement,
 		calls: callbacks.trains.mock.calls,
+		description: trains.getAttribute('aria-description'),
 		factorioCheckbox: trains.nextElementSibling?.className,
+		factorioStyle: trains.dataset.factorioStyle,
 		labelElement: trains.labels?.[0]?.tagName,
 		labelText: trains.labels?.[0]?.textContent,
+		title: trains.labels?.[0]?.title,
 	}).toStrictEqual({
 		activeElement: trains,
 		calls: [[false]],
+		description: 'Include trains in the blueprint',
 		factorioCheckbox: 'checkbox',
+		factorioStyle: 'checkbox',
 		labelElement: 'LABEL',
 		labelText: 'Trains',
+		title: 'Include trains in the blueprint',
+	});
+});
+
+test('labels the source-backed Filters frame and options without exposing absent categories', () => {
+	const analysis = blueprintFilterAnalysis(
+		blueprint([assemblingMachine, locomotive, car], [concrete]),
+		BlueprintEditorSourceMode.ExistingRecord,
+	);
+	renderFilters(analysis);
+
+	const frame = screen.getByRole('region', {name: 'Filters'});
+	const options = screen.getAllByRole<HTMLInputElement>('checkbox');
+
+	expect({
+		frameSource: frame.dataset.factorioSource,
+		frameStyle: frame.dataset.factorioStyle,
+		headingStyle: screen.getByRole('heading', {name: 'Filters'}).dataset.factorioStyle,
+		optionLabels: options.map((option) => option.labels?.[0]?.textContent),
+		optionStyles: options.map((option) => option.dataset.factorioStyle),
+		vehiclesDescription: screen.getByRole('checkbox', {name: 'Vehicles'}).getAttribute('aria-description'),
+	}).toStrictEqual({
+		frameSource: 'BlueprintSettingsGui::updateCheckboxes',
+		frameStyle: 'bordered_frame',
+		headingStyle: 'caption_label',
+		optionLabels: ['Entities', 'Tiles', 'Trains', 'Vehicles'],
+		optionStyles: ['checkbox', 'checkbox', 'checkbox', 'checkbox'],
+		vehiclesDescription: 'Include vehicles (other than trains) in the blueprint',
 	});
 });

@@ -21,23 +21,26 @@ interface BlueprintContentFiltersProps {
 }
 
 interface ContentFilterCheckboxProps {
+	description?: string;
 	included: boolean;
 	label: string;
 	onIncludedChange: (included: boolean) => void;
 }
 
-function ContentFilterCheckbox({included, label, onIncludedChange}: ContentFilterCheckboxProps) {
+function ContentFilterCheckbox({description, included, label, onIncludedChange}: ContentFilterCheckboxProps) {
 	return (
-		<label className="checkbox-label blueprint-content-filters__option">
+		<label className="checkbox-label blueprint-content-filters__option" title={description}>
 			<input
 				type="checkbox"
+				aria-description={description}
 				checked={included}
+				data-factorio-style="checkbox"
 				onChange={(event) => {
 					onIncludedChange(event.currentTarget.checked);
 				}}
 			/>
 			<span className="checkbox" aria-hidden="true" />
-			<div>{label}</div>
+			<span className="blueprint-content-filters__label">{label}</span>
 		</label>
 	);
 }
@@ -85,12 +88,13 @@ export function BlueprintContentFilters({
 	if (analysis.visible.stationNames) {
 		options.push({
 			included: stationNamesIncluded,
-			label: 'Station names',
+			label: 'Train stop names',
 			onIncludedChange: onStationNamesIncludedChange,
 		});
 	}
 	if (analysis.visible.trains) {
 		options.push({
+			description: 'Include trains in the blueprint',
 			included: trainsIncluded,
 			label: 'Trains',
 			onIncludedChange: onTrainsIncludedChange,
@@ -99,12 +103,13 @@ export function BlueprintContentFilters({
 	if (analysis.visible.fuel) {
 		options.push({
 			included: fuelIncluded,
-			label: 'Fuel',
+			label: 'Vehicle fuel',
 			onIncludedChange: onFuelIncludedChange,
 		});
 	}
 	if (analysis.visible.vehicles) {
 		options.push({
+			description: 'Include vehicles (other than trains) in the blueprint',
 			included: vehiclesIncluded,
 			label: 'Vehicles',
 			onIncludedChange: onVehiclesIncludedChange,
@@ -114,9 +119,19 @@ export function BlueprintContentFilters({
 	if (!analysis.showGroup) return null;
 
 	return (
-		<section className="transform-workflow__section blueprint-content-filters" aria-labelledby={headingId}>
-			<h4 id={headingId}>Filters</h4>
-			<div className="blueprint-content-filters__options">
+		<section
+			className="transform-workflow__section blueprint-content-filters"
+			aria-labelledby={headingId}
+			data-factorio-source="BlueprintSettingsGui::updateCheckboxes"
+			data-factorio-style="bordered_frame"
+		>
+			<h4 id={headingId} data-factorio-style="caption_label">
+				Filters
+			</h4>
+			<div
+				className="blueprint-content-filters__options"
+				data-factorio-source="BlueprintSettingsGui::updateCheckboxes"
+			>
 				{options.map((option) => (
 					<ContentFilterCheckbox key={option.label} {...option} />
 				))}
