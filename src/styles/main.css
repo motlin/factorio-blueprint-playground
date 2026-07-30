@@ -3888,16 +3888,33 @@ body {
 	padding: 0;
 }
 
-.blueprint-components__slot--removed .blueprint-components__slot-button {
-	background: #592b2b;
-	box-shadow:
-		inset 1px 1px 1px #845050,
-		inset -2px -2px 2px #211313;
+.blueprint-components__slot-button > [data-factorio-icon-size] {
+	width: 100%;
+	height: 100%;
 }
 
-.blueprint-components__slot--removed img {
-	opacity: 0.42;
-	filter: grayscale(0.55);
+.blueprint-components__slot--removed .blueprint-components__slot-button {
+	background: #733636;
+	box-shadow:
+		inset 1px 1px 0 #a85858,
+		inset -2px -2px 0 #321616;
+}
+
+.blueprint-components__slot--removed .blueprint-components__slot-button:hover,
+.blueprint-components__slot--removed .blueprint-components__slot-button:focus-visible,
+.blueprint-components__slot--removed .blueprint-components__slot-button[data-visual-state='hover'] {
+	background: #a84c4c;
+	box-shadow:
+		inset 1px 1px 0 #e78383,
+		inset -2px -2px 0 #512020,
+		0 0 0 2px rgb(240 74 74 / 36%);
+}
+
+.blueprint-components__slot--removed .blueprint-components__slot-button:active {
+	background: #7e2b2b;
+	box-shadow:
+		inset 2px 2px 0 #3b1515,
+		inset -1px -1px 0 #bf6464;
 }
 
 .blueprint-components__slot--empty {
@@ -3913,7 +3930,7 @@ body {
 	right: 2px;
 	bottom: 0;
 	color: #fff;
-	font-size: 14px;
+	font-size: calc(13px * var(--factorio-ui-density));
 	font-weight: bold;
 	line-height: 1;
 	text-shadow:
@@ -3921,6 +3938,15 @@ body {
 		1px -1px 1px #000,
 		-1px 1px 1px #000,
 		1px 1px 1px #000;
+}
+
+.blueprint-components__tooltip {
+	min-width: calc(210px * var(--factorio-ui-density));
+}
+
+.blueprint-components__tooltip .factorio-tooltip__body > :last-child {
+	margin-top: calc(2px * var(--factorio-ui-density));
+	color: #7fd7ff;
 }
 
 .blueprint-description-editor {

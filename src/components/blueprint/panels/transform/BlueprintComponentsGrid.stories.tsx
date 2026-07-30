@@ -1,8 +1,10 @@
 import type {Meta, StoryObj} from '@storybook/react-vite';
-import {expect, fn, within} from 'storybook/test';
+import {useState} from 'react';
+import {expect, fn, userEvent, within} from 'storybook/test';
 
 import {blueprintComponentRemovalKey} from '../../../../transform/componentRemoval';
 import type {BlueprintString} from '../../../../parsing/types';
+import type {BlueprintComponentRemovalKey} from '../../../../transform/componentRemoval';
 import {BlueprintComponentsGrid} from './BlueprintComponentsGrid';
 import {transformStoryParameters} from './transformStoryParameters';
 
@@ -102,9 +104,95 @@ export const InventoryGrid: Story = {
 	},
 };
 
+export const HoveredComponentTooltip: Story = {
+	play: async ({canvasElement}) => {
+		const canvas = within(canvasElement);
+		const documentBody = within(canvasElement.ownerDocument.body);
+		const transportBelt = canvas.getByRole('button', {name: /Transport belt, 2/});
+		await userEvent.hover(transportBelt);
+		const tooltip = documentBody.getByRole('tooltip', {name: /Transport belt/});
+		await expect({
+			action: tooltip.textContent,
+			open: tooltip.dataset.factorioTooltipOpen,
+			selectable: getComputedStyle(tooltip).userSelect,
+			triggerDescription: transportBelt.getAttribute('aria-describedby'),
+		}).toStrictEqual({
+			action: 'Transport beltentity:transport-beltRight-click to remove all components of this type.',
+			open: 'true',
+			selectable: 'text',
+			triggerDescription: tooltip.id,
+		});
+	},
+};
+
 export const RemovedComponent: Story = {
 	args: {
 		removedComponents: new Set([blueprintComponentRemovalKey({type: 'entity', name: 'transport-belt'})]),
+	},
+	play: async ({canvasElement}) => {
+		const canvas = within(canvasElement);
+		const documentBody = within(canvasElement.ownerDocument.body);
+		const transportBelt = canvas.getByRole('button', {name: /Transport belt, removed/});
+		transportBelt.focus();
+		const tooltip = documentBody.getByRole('tooltip', {name: /Transport belt/});
+		await expect({
+			count: transportBelt.querySelector('.blueprint-components__count')?.textContent,
+			open: tooltip.dataset.factorioTooltipOpen,
+			slotState: transportBelt.dataset.componentSlotState,
+			slotStyle: transportBelt.dataset.factorioSlotStyle,
+			tooltip: tooltip.textContent,
+		}).toStrictEqual({
+			count: '0',
+			open: 'true',
+			slotState: 'removed',
+			slotStyle: 'red_slot_button',
+			tooltip: 'Transport beltentity:transport-beltLeft-click to add all components of this type back.',
+		});
+	},
+};
+
+function InteractiveComponentsGrid({blueprint}: {blueprint: BlueprintString}) {
+	const [removedComponents, setRemovedComponents] = useState<ReadonlySet<BlueprintComponentRemovalKey>>(new Set());
+	return (
+		<BlueprintComponentsGrid
+			blueprint={blueprint}
+			removedComponents={removedComponents}
+			onComponentRemovedChange={(component, removed) => {
+				const key = blueprintComponentRemovalKey(component);
+				setRemovedComponents((current) => {
+					const next = new Set(current);
+					if (removed) {
+						next.add(key);
+					} else {
+						next.delete(key);
+					}
+					return next;
+				});
+			}}
+		/>
+	);
+}
+
+export const MouseAndKeyboardInteractions: Story = {
+	render: ({blueprint}) => <InteractiveComponentsGrid blueprint={blueprint} />,
+	play: async ({canvasElement}) => {
+		const canvas = within(canvasElement);
+		const included = canvas.getByRole('button', {name: /Transport belt, 2/});
+		await userEvent.pointer({keys: '[MouseRight]', target: included});
+		const removedByMouse = canvas.getByRole('button', {name: /Transport belt, removed/});
+		await expect(removedByMouse.querySelector('.blueprint-components__count')).toHaveTextContent('0');
+		await userEvent.click(removedByMouse);
+
+		const restoredByMouse = canvas.getByRole('button', {name: /Transport belt, 2/});
+		restoredByMouse.focus();
+		await userEvent.keyboard('{Delete}');
+		const removedByKeyboard = canvas.getByRole('button', {name: /Transport belt, removed/});
+		removedByKeyboard.focus();
+		await userEvent.keyboard('{Enter}');
+		await expect(canvas.getByRole('button', {name: /Transport belt, 2/})).toHaveAttribute(
+			'data-component-slot-state',
+			'included',
+		);
 	},
 };
 

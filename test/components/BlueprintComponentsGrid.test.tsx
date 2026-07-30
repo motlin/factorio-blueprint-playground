@@ -63,26 +63,41 @@ test('renders focusable counted slots with readable tooltips and an empty state'
 		/>,
 	);
 	const transportBelt = screen.getByRole('button', {name: /Transport belt, 2/});
+	fireEvent.pointerEnter(transportBelt);
+	const tooltip = screen.getByRole('tooltip', {name: /Transport belt/});
 
 	expect({
+		describedBy: transportBelt.getAttribute('aria-describedby'),
 		count: transportBelt.querySelector('.blueprint-components__count')?.textContent,
 		icon: transportBelt.querySelector('img')?.getAttribute('src'),
+		keyboardShortcut: transportBelt.getAttribute('aria-keyshortcuts'),
 		listSlotCount: screen.getByRole('list', {name: 'Blueprint component slots'}).children.length,
 		scrollFrame: {
 			source: screen.getByRole('region', {name: 'Blueprint components'}).dataset.factorioSource,
 			style: screen.getByRole('region', {name: 'Blueprint components'}).dataset.factorioStyle,
 		},
+		slotSource: transportBelt.dataset.factorioSource,
+		slotState: transportBelt.dataset.componentSlotState,
+		slotStyle: transportBelt.dataset.factorioSlotStyle,
 		slotLabels: screen.getAllByRole('button').map((slot) => slot.getAttribute('aria-label')),
 		tagName: transportBelt.tagName,
-		tooltip: transportBelt.getAttribute('title'),
+		tooltip: {
+			open: tooltip.dataset.factorioTooltipOpen,
+			text: tooltip.textContent,
+		},
 	}).toStrictEqual({
+		describedBy: tooltip.id,
 		count: '2',
 		icon: 'https://factorio-icon-cdn.pages.dev/entity/transport-belt.webp',
+		keyboardShortcut: 'Delete',
 		listSlotCount: 10,
 		scrollFrame: {
 			source: 'BlueprintSettingsGui::makeComponentsFrame',
 			style: 'deep_slots_scroll_pane',
 		},
+		slotSource: 'BlueprintSettingsGui::updateTotal',
+		slotState: 'included',
+		slotStyle: 'slot_button',
 		slotLabels: [
 			'Coal, 10. Right-click or press Delete to remove.',
 			'Speed module, 3. Right-click or press Delete to remove.',
@@ -92,7 +107,10 @@ test('renders focusable counted slots with readable tooltips and an empty state'
 			'Assembling machine 1, 1. Right-click or press Delete to remove.',
 		],
 		tagName: 'BUTTON',
-		tooltip: 'Transport belt\nentity:transport-belt\nRight-click to remove.',
+		tooltip: {
+			open: 'true',
+			text: 'Transport beltentity:transport-beltRight-click to remove all components of this type.',
+		},
 	});
 
 	rerender(
@@ -133,17 +151,31 @@ test('suppresses context menus and supports pointer and keyboard removal restora
 		/>,
 	);
 	const removedTransportBelt = screen.getByRole('button', {name: /Transport belt, removed/});
+	removedTransportBelt.focus();
+	const tooltip = screen.getByRole('tooltip', {name: /Transport belt/});
 
 	expect({
 		contextMenuAllowed,
 		count: removedTransportBelt.querySelector('.blueprint-components__count')?.textContent,
+		keyboardShortcut: removedTransportBelt.getAttribute('aria-keyshortcuts'),
 		parentClassName: removedTransportBelt.parentElement?.className,
-		tooltip: removedTransportBelt.getAttribute('title'),
+		slotState: removedTransportBelt.dataset.componentSlotState,
+		slotStyle: removedTransportBelt.dataset.factorioSlotStyle,
+		tooltip: {
+			open: tooltip.dataset.factorioTooltipOpen,
+			text: tooltip.textContent,
+		},
 	}).toStrictEqual({
 		contextMenuAllowed: false,
 		count: '0',
+		keyboardShortcut: 'Enter',
 		parentClassName: 'blueprint-components__slot blueprint-components__slot--removed',
-		tooltip: 'Transport belt\nentity:transport-belt\nLeft-click to restore.',
+		slotState: 'removed',
+		slotStyle: 'red_slot_button',
+		tooltip: {
+			open: 'true',
+			text: 'Transport beltentity:transport-beltLeft-click to add all components of this type back.',
+		},
 	});
 
 	const removedContextMenuAllowed = fireEvent.contextMenu(removedTransportBelt);
