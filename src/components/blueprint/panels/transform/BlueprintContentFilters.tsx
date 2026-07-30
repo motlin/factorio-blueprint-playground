@@ -4,6 +4,7 @@ import type {BlueprintFilterAnalysis} from '../../../../transform/strip';
 
 interface BlueprintContentFiltersProps {
 	analysis: BlueprintFilterAnalysis;
+	disabled?: boolean;
 	entitiesIncluded: boolean;
 	fuelIncluded: boolean;
 	modulesIncluded: boolean;
@@ -22,24 +23,36 @@ interface BlueprintContentFiltersProps {
 
 interface ContentFilterCheckboxProps {
 	description?: string;
+	disabled?: boolean;
 	included: boolean;
 	label: string;
 	onIncludedChange: (included: boolean) => void;
 }
 
-function ContentFilterCheckbox({description, included, label, onIncludedChange}: ContentFilterCheckboxProps) {
+function ContentFilterCheckbox({
+	description,
+	disabled = false,
+	included,
+	label,
+	onIncludedChange,
+}: ContentFilterCheckboxProps) {
 	return (
-		<label className="checkbox-label blueprint-content-filters__option" title={description}>
+		<label
+			className="checkbox-label blueprint-content-filters__option"
+			data-disabled={disabled ? 'true' : undefined}
+			title={description}
+		>
 			<input
 				type="checkbox"
 				aria-description={description}
 				checked={included}
 				data-factorio-style="checkbox"
+				disabled={disabled}
 				onChange={(event) => {
 					onIncludedChange(event.currentTarget.checked);
 				}}
 			/>
-			<span className="checkbox" aria-hidden="true" />
+			<span className="checkbox blueprint-content-filters__checkbox" aria-hidden="true" />
 			<span className="blueprint-content-filters__label">{label}</span>
 		</label>
 	);
@@ -47,6 +60,7 @@ function ContentFilterCheckbox({description, included, label, onIncludedChange}:
 
 export function BlueprintContentFilters({
 	analysis,
+	disabled = false,
 	entitiesIncluded,
 	fuelIncluded,
 	modulesIncluded,
@@ -63,7 +77,7 @@ export function BlueprintContentFilters({
 	vehiclesIncluded,
 }: BlueprintContentFiltersProps) {
 	const headingId = useId();
-	const options: ContentFilterCheckboxProps[] = [];
+	const options: Array<Omit<ContentFilterCheckboxProps, 'disabled'>> = [];
 	if (analysis.visible.modules) {
 		options.push({
 			included: modulesIncluded,
@@ -133,7 +147,7 @@ export function BlueprintContentFilters({
 				data-factorio-source="BlueprintSettingsGui::updateCheckboxes"
 			>
 				{options.map((option) => (
-					<ContentFilterCheckbox key={option.label} {...option} />
+					<ContentFilterCheckbox disabled={disabled} key={option.label} {...option} />
 				))}
 			</div>
 		</section>

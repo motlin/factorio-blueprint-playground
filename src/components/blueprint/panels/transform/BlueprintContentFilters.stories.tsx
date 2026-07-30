@@ -221,6 +221,101 @@ export const CapturedDraftDefaults: Story = {
 	},
 };
 
+export const HoverAndFocusStates: Story = {
+	args: {
+		entitiesIncluded: false,
+		fuelIncluded: false,
+		stationNamesIncluded: false,
+		tilesIncluded: false,
+		trainsIncluded: false,
+		vehiclesIncluded: false,
+	},
+	play: async ({args, canvasElement}) => {
+		const canvas = within(canvasElement);
+		const modules = canvas.getByRole<HTMLInputElement>('checkbox', {name: 'Modules'});
+		const entities = canvas.getByRole<HTMLInputElement>('checkbox', {name: 'Entities'});
+		const modulesGlyph = modules.nextElementSibling;
+		const entitiesGlyph = entities.nextElementSibling;
+		const modulesLabel = modules.labels?.[0];
+		const entitiesLabel = entities.labels?.[0];
+		const entitiesLabelText = entitiesLabel?.querySelector('.blueprint-content-filters__label');
+		if (
+			!(modulesGlyph instanceof HTMLElement) ||
+			!(entitiesGlyph instanceof HTMLElement) ||
+			!(modulesLabel instanceof HTMLElement) ||
+			!(entitiesLabel instanceof HTMLElement) ||
+			!(entitiesLabelText instanceof HTMLElement)
+		) {
+			throw new TypeError('Expected checkbox glyphs and labels.');
+		}
+
+		entitiesGlyph.classList.add('hover');
+		await userEvent.tab();
+		await expect(modules).toHaveFocus();
+
+		await expect({
+			entitiesBackground: getComputedStyle(entitiesGlyph).backgroundColor,
+			entitiesChecked: entities.checked,
+			entitiesLabelSelection: getComputedStyle(entitiesLabelText).userSelect,
+			modulesBackground: getComputedStyle(modulesGlyph).backgroundColor,
+			modulesChecked: modules.checked,
+			modulesOutline: getComputedStyle(modulesGlyph).outlineStyle,
+		}).toStrictEqual({
+			entitiesBackground: 'rgb(227, 152, 39)',
+			entitiesChecked: false,
+			entitiesLabelSelection: 'text',
+			modulesBackground: 'rgb(227, 152, 39)',
+			modulesChecked: true,
+			modulesOutline: 'solid',
+		});
+
+		await userEvent.keyboard(' ');
+		await expect(args.onModulesIncludedChange.mock.calls).toStrictEqual([[false]]);
+	},
+};
+
+export const DisabledStates: Story = {
+	args: {
+		disabled: true,
+		entitiesIncluded: false,
+		fuelIncluded: false,
+		stationNamesIncluded: false,
+		tilesIncluded: false,
+		trainsIncluded: false,
+		vehiclesIncluded: false,
+	},
+	play: async ({args, canvasElement}) => {
+		const canvas = within(canvasElement);
+		const modules = canvas.getByRole<HTMLInputElement>('checkbox', {name: 'Modules'});
+		const entities = canvas.getByRole<HTMLInputElement>('checkbox', {name: 'Entities'});
+		const modulesGlyph = modules.nextElementSibling;
+		const modulesLabel = modules.labels?.[0];
+		const entitiesLabel = entities.labels?.[0];
+		if (
+			!(modulesGlyph instanceof HTMLElement) ||
+			!(modulesLabel instanceof HTMLElement) ||
+			!(entitiesLabel instanceof HTMLElement)
+		) {
+			throw new TypeError('Expected checkbox glyph and labels.');
+		}
+
+		await expect({
+			background: getComputedStyle(modulesGlyph).backgroundColor,
+			checked: modules.checked,
+			controlsDisabled: canvas.getAllByRole<HTMLInputElement>('checkbox').every((checkbox) => checkbox.disabled),
+			labelColor: getComputedStyle(modulesLabel).color,
+		}).toStrictEqual({
+			background: 'rgb(49, 48, 49)',
+			checked: true,
+			controlsDisabled: true,
+			labelColor: 'rgba(255, 255, 255, 0.5)',
+		});
+
+		await userEvent.click(entitiesLabel);
+		await expect(args.onEntitiesIncludedChange).not.toHaveBeenCalled();
+	},
+};
+
 export const NoApplicableFilters: Story = {
 	args: {
 		analysis: hiddenAnalysis,

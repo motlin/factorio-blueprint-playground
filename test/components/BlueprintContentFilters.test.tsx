@@ -239,7 +239,7 @@ const filterMatrix: FilterMatrixCase[] = [
 	},
 ];
 
-function renderFilters(analysis: BlueprintFilterAnalysis) {
+function renderFilters(analysis: BlueprintFilterAnalysis, disabled = false) {
 	const callbacks = {
 		entities: vi.fn<(included: boolean) => void>(),
 		fuel: vi.fn<(included: boolean) => void>(),
@@ -253,6 +253,7 @@ function renderFilters(analysis: BlueprintFilterAnalysis) {
 	render(
 		<BlueprintContentFilters
 			analysis={analysis}
+			disabled={disabled}
 			entitiesIncluded={analysis.defaults.entities}
 			fuelIncluded={analysis.defaults.fuel}
 			modulesIncluded={analysis.defaults.modules}
@@ -320,11 +321,48 @@ test('toggles a selectable label with the native keyboard control', async () => 
 		activeElement: trains,
 		calls: [[false]],
 		description: 'Include trains in the blueprint',
-		factorioCheckbox: 'checkbox',
+		factorioCheckbox: 'checkbox blueprint-content-filters__checkbox',
 		factorioStyle: 'checkbox',
 		labelElement: 'LABEL',
 		labelText: 'Trains',
 		title: 'Include trains in the blueprint',
+	});
+});
+
+test('disables every source-backed filter without changing the selected values', async () => {
+	const user = userEvent.setup();
+	const analysis = blueprintFilterAnalysis(
+		blueprint([assemblingMachine, locomotive, car], [concrete]),
+		BlueprintEditorSourceMode.ExistingRecord,
+	);
+	const callbacks = renderFilters(analysis, true);
+	const controls = screen.getAllByRole<HTMLInputElement>('checkbox');
+	const trains = screen.getByRole<HTMLInputElement>('checkbox', {name: 'Trains'});
+	const trainsLabel = trains.labels?.[0];
+	if (!(trainsLabel instanceof HTMLLabelElement)) throw new TypeError('Expected the Trains label.');
+
+	await user.click(trainsLabel);
+	await user.tab();
+
+	expect({
+		activeElement: document.activeElement?.tagName,
+		calls: Object.values(callbacks).flatMap((callback) => callback.mock.calls),
+		controls: controls.map((control) => ({
+			checked: control.checked,
+			disabled: control.disabled,
+			label: control.labels?.[0]?.textContent,
+		})),
+		disabledMarkers: controls.map((control) => control.labels?.[0]?.dataset.disabled),
+	}).toStrictEqual({
+		activeElement: 'BODY',
+		calls: [],
+		controls: [
+			{checked: true, disabled: true, label: 'Entities'},
+			{checked: true, disabled: true, label: 'Tiles'},
+			{checked: true, disabled: true, label: 'Trains'},
+			{checked: true, disabled: true, label: 'Vehicles'},
+		],
+		disabledMarkers: ['true', 'true', 'true', 'true'],
 	});
 });
 
