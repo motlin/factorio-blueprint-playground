@@ -8,7 +8,7 @@ import {
 	type BlueprintComponentRemovalKey,
 } from '../../../../transform/componentRemoval';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
-import {FactorioInventorySlot} from '../../../ui/FactorioUi';
+import {FactorioInventorySlot, FactorioScrollFrame} from '../../../ui/FactorioUi';
 import {aggregateBlueprintComponents, blueprintComponentName} from './blueprintComponents';
 
 const slotsPerRow = gameUiSpec.styles.signalsTableColumnCount;
@@ -25,17 +25,33 @@ export function BlueprintComponentsGrid({
 	removedComponents,
 }: BlueprintComponentsGridProps) {
 	const headingId = useId();
+	const emptyDescriptionId = useId();
 	const components = useMemo(() => aggregateBlueprintComponents(blueprint), [blueprint]);
 	const emptySlotCount =
-		components.length === 0 ? 0 : (slotsPerRow - (components.length % slotsPerRow)) % slotsPerRow;
+		components.length === 0 ? slotsPerRow : (slotsPerRow - (components.length % slotsPerRow)) % slotsPerRow;
 
 	return (
-		<section className="transform-workflow__section blueprint-components" aria-labelledby={headingId}>
-			<h4 id={headingId}>Components</h4>
+		<section
+			className="transform-workflow__section blueprint-components"
+			aria-labelledby={headingId}
+			data-factorio-source="BlueprintSettingsGui::makeComponentsFrame"
+			data-factorio-style="bordered_frame"
+		>
+			<h4 id={headingId} data-factorio-style="caption_label">
+				Components
+			</h4>
 			{components.length === 0 ? (
-				<p className="blueprint-components__empty">No components in this blueprint.</p>
-			) : (
-				<ul className="blueprint-components__grid" aria-label="Blueprint components">
+				<p id={emptyDescriptionId} className="transform-visually-hidden">
+					No components in this blueprint.
+				</p>
+			) : null}
+			<FactorioScrollFrame
+				className="blueprint-components__scroll"
+				aria-label="Blueprint components"
+				aria-describedby={components.length === 0 ? emptyDescriptionId : undefined}
+				data-factorio-source="BlueprintSettingsGui::makeComponentsFrame"
+			>
+				<ul className="blueprint-components__grid" aria-label="Blueprint component slots">
 					{components.map((component) => {
 						const identity: BlueprintComponentIdentity = {
 							name: component.name,
@@ -103,7 +119,7 @@ export function BlueprintComponentsGrid({
 						/>
 					))}
 				</ul>
-			)}
+			</FactorioScrollFrame>
 		</section>
 	);
 }

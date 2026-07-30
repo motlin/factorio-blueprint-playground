@@ -46,10 +46,10 @@ test('aggregates inventory components with exact counts and deterministic orderi
 	expect(aggregateBlueprintComponents(blueprintWithComponents)).toStrictEqual([
 		{count: 10, name: 'coal', quality: undefined, type: 'item'},
 		{count: 3, name: 'speed-module', quality: 'rare', type: 'item'},
-		{count: 2, name: 'refined-concrete', quality: undefined, type: 'tile'},
 		{count: 2, name: 'transport-belt', quality: undefined, type: 'entity'},
-		{count: 1, name: 'assembling-machine-1', quality: undefined, type: 'entity'},
+		{count: 2, name: 'refined-concrete', quality: undefined, type: 'tile'},
 		{count: 1, name: 'locomotive', quality: undefined, type: 'entity'},
+		{count: 1, name: 'assembling-machine-1', quality: undefined, type: 'entity'},
 	]);
 });
 
@@ -67,19 +67,29 @@ test('renders focusable counted slots with readable tooltips and an empty state'
 	expect({
 		count: transportBelt.querySelector('.blueprint-components__count')?.textContent,
 		icon: transportBelt.querySelector('img')?.getAttribute('src'),
+		listSlotCount: screen.getByRole('list', {name: 'Blueprint component slots'}).children.length,
+		scrollFrame: {
+			source: screen.getByRole('region', {name: 'Blueprint components'}).dataset.factorioSource,
+			style: screen.getByRole('region', {name: 'Blueprint components'}).dataset.factorioStyle,
+		},
 		slotLabels: screen.getAllByRole('button').map((slot) => slot.getAttribute('aria-label')),
 		tagName: transportBelt.tagName,
 		tooltip: transportBelt.getAttribute('title'),
 	}).toStrictEqual({
 		count: '2',
 		icon: 'https://factorio-icon-cdn.pages.dev/entity/transport-belt.webp',
+		listSlotCount: 10,
+		scrollFrame: {
+			source: 'BlueprintSettingsGui::makeComponentsFrame',
+			style: 'deep_slots_scroll_pane',
+		},
 		slotLabels: [
 			'Coal, 10. Right-click or press Delete to remove.',
 			'Speed module, 3. Right-click or press Delete to remove.',
-			'Refined concrete, 2. Right-click or press Delete to remove.',
 			'Transport belt, 2. Right-click or press Delete to remove.',
-			'Assembling machine 1, 1. Right-click or press Delete to remove.',
+			'Refined concrete, 2. Right-click or press Delete to remove.',
 			'Locomotive, 1. Right-click or press Delete to remove.',
+			'Assembling machine 1, 1. Right-click or press Delete to remove.',
 		],
 		tagName: 'BUTTON',
 		tooltip: 'Transport belt\nentity:transport-belt\nRight-click to remove.',
@@ -94,10 +104,12 @@ test('renders focusable counted slots with readable tooltips and an empty state'
 	);
 	expect({
 		emptyMessage: screen.getByText('No components in this blueprint.').textContent,
-		grid: screen.queryByRole('list', {name: 'Blueprint components'}),
+		gridSlotCount: screen.getByRole('list', {name: 'Blueprint component slots'}).children.length,
+		scrollDescription: screen.getByRole('region', {name: 'Blueprint components'}).getAttribute('aria-describedby'),
 	}).toStrictEqual({
 		emptyMessage: 'No components in this blueprint.',
-		grid: null,
+		gridSlotCount: 10,
+		scrollDescription: screen.getByText('No components in this blueprint.').id,
 	});
 });
 
