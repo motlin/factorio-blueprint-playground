@@ -99,7 +99,7 @@ export function TransformPanel({
 		commitBlueprintEditorDraft,
 		discardBlueprintEditorDraft,
 		editorCommitAction,
-		editorCommitDisabled,
+		editorCommitState,
 		editorContext,
 		editorDescription,
 		editorDirty,
@@ -361,7 +361,7 @@ export function TransformPanel({
 					bookOperationSelected={hasSelectedBookOperation}
 					breadcrumb={editorBreadcrumb}
 					commitAction={editorCommitAction}
-					commitDisabled={editorCommitDisabled}
+					commitState={editorCommitState}
 					context={editorContext}
 					description={editorDescription}
 					closeConfirmationOpen={blueprintCloseConfirmationOpen}

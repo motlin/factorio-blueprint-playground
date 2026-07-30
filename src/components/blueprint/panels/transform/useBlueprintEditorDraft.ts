@@ -38,7 +38,21 @@ export {BlueprintEditorSourceMode} from '../../../../transform/blueprintEditor';
 
 export interface BlueprintEditorCommitAction {
 	caption: string;
+	kind: BlueprintEditorCommitActionKind;
 	scopeDescription: string;
+}
+
+export enum BlueprintEditorCommitActionKind {
+	Create = 'create',
+	SaveChild = 'save-child',
+	SaveRoot = 'save-root',
+}
+
+export enum BlueprintEditorCommitState {
+	Clean = 'clean',
+	Invalid = 'invalid',
+	Pending = 'pending',
+	Ready = 'ready',
 }
 
 export interface BlueprintEditorContext {
@@ -81,19 +95,22 @@ function blueprintEditorCommitAction(
 ): BlueprintEditorCommitAction {
 	if (selectedPath !== '') {
 		return {
-			caption: 'Save to Book',
-			scopeDescription: 'Commits this selection into its containing root book.',
+			caption: 'Save blueprint',
+			kind: BlueprintEditorCommitActionKind.SaveChild,
+			scopeDescription: 'Saves this child in its containing book. The whole book remains the loaded result.',
 		};
 	}
 	if (sourceMode === BlueprintEditorSourceMode.CapturedDraft) {
 		return {
-			caption: 'Create Blueprint',
-			scopeDescription: 'Creates this newly captured draft as the committed root blueprint.',
+			caption: 'Create blueprint',
+			kind: BlueprintEditorCommitActionKind.Create,
+			scopeDescription: 'Creates this captured draft as the loaded root blueprint.',
 		};
 	}
 	return {
-		caption: 'Save Blueprint',
-		scopeDescription: 'Commits changes to the existing blueprint record.',
+		caption: 'Save blueprint',
+		kind: BlueprintEditorCommitActionKind.SaveRoot,
+		scopeDescription: 'Saves changes to this loaded root blueprint.',
 	};
 }
 
@@ -244,7 +261,6 @@ export function useBlueprintEditorDraft({
 		() => blueprintEditorContext(blueprint, selectedPath, sourceMode),
 		[blueprint, selectedPath, sourceMode],
 	);
-
 	const editorDraft = useMemo(() => {
 		if (blueprint === undefined || rootBlueprint === undefined) {
 			return {rootBlueprint: undefined, selectedBlueprint: undefined};
@@ -303,6 +319,12 @@ export function useBlueprintEditorDraft({
 		stripTrainsSelected,
 		stripVehiclesSelected,
 	]);
+	const editorCommitState =
+		editorDraft.rootBlueprint === undefined
+			? BlueprintEditorCommitState.Invalid
+			: sourceMode === BlueprintEditorSourceMode.ExistingRecord && !editorDirty
+				? BlueprintEditorCommitState.Clean
+				: BlueprintEditorCommitState.Ready;
 
 	const openBlueprintEditor = useCallback(() => {
 		resetBlueprintEditorDraft();
@@ -344,9 +366,7 @@ export function useBlueprintEditorDraft({
 		commitBlueprintEditorDraft,
 		discardBlueprintEditorDraft,
 		editorCommitAction,
-		editorCommitDisabled:
-			editorDraft.rootBlueprint === undefined ||
-			(sourceMode === BlueprintEditorSourceMode.ExistingRecord && !editorDirty),
+		editorCommitState,
 		editorContext,
 		editorDescription,
 		editorDirty,

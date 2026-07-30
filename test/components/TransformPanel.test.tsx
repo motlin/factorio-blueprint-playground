@@ -1381,8 +1381,8 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		render(<TransformPanel blueprint={blueprint} />);
 
 		openBlueprintEditor();
-		expect(screen.getByRole<HTMLButtonElement>('button', {name: 'Save Blueprint'}).disabled).toBe(true);
-		await user.click(screen.getByRole('button', {name: 'Close'}));
+		expect(screen.getByRole<HTMLButtonElement>('button', {name: 'Save blueprint'}).disabled).toBe(true);
+		await user.click(screen.getByRole('button', {name: 'Close Blueprint Editor'}));
 
 		expect({
 			dialog: screen.queryByRole('dialog', {name: 'Blueprint Editor'}),
@@ -1409,7 +1409,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 
 		const editorTool = screen.getByRole('button', {name: 'Open Blueprint Editor'});
 		await user.click(editorTool);
-		const createButton = screen.getByRole<HTMLButtonElement>('button', {name: 'Create Blueprint'});
+		const createButton = screen.getByRole<HTMLButtonElement>('button', {name: 'Create blueprint'});
 		expect({
 			createDisabled: createButton.disabled,
 			dialogState: interactionState(),
@@ -1486,7 +1486,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			{checked: false, label: 'Trains'},
 			{checked: false, label: 'Vehicles'},
 		]);
-		await user.click(screen.getByRole('button', {name: 'Create Blueprint'}));
+		await user.click(screen.getByRole('button', {name: 'Create blueprint'}));
 
 		expect(onBlueprintCommit.mock.calls).toStrictEqual([
 			[
@@ -1781,7 +1781,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 				(name) => screen.getByRole<HTMLInputElement>('checkbox', {name}).checked,
 			),
 			icon: screen.getByRole('button', {name: 'Edit icon 1'}).getAttribute('title'),
-			saveDisabled: screen.getByRole<HTMLButtonElement>('button', {name: 'Save Blueprint'}).disabled,
+			saveDisabled: screen.getByRole<HTMLButtonElement>('button', {name: 'Save blueprint'}).disabled,
 			title: screen.getByText('Alice', {selector: '.blueprint-editor__title'}).textContent,
 		}).toStrictEqual({
 			description: 'Source description',
@@ -1852,7 +1852,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			editorInert: false,
 			expanded: 'false',
 		});
-		await user.click(screen.getByRole('button', {name: 'Save Blueprint'}));
+		await user.click(screen.getByRole('button', {name: 'Save blueprint'}));
 
 		expect(navigate).toHaveBeenCalledExactlyOnceWith({
 			to: '/',
@@ -1896,7 +1896,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			contextMenuAllowed,
 			count: removedComponent.querySelector('.blueprint-components__count')?.textContent,
 			navigation: navigate.mock.calls,
-			saveDisabled: screen.getByRole<HTMLButtonElement>('button', {name: 'Save Blueprint'}).disabled,
+			saveDisabled: screen.getByRole<HTMLButtonElement>('button', {name: 'Save blueprint'}).disabled,
 		}).toStrictEqual({
 			contextMenuAllowed: false,
 			count: '0',
@@ -1908,14 +1908,14 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		const restoredComponent = screen.getByRole('button', {name: /Transport belt, 1/});
 		expect({
 			count: restoredComponent.querySelector('.blueprint-components__count')?.textContent,
-			saveDisabled: screen.getByRole<HTMLButtonElement>('button', {name: 'Save Blueprint'}).disabled,
+			saveDisabled: screen.getByRole<HTMLButtonElement>('button', {name: 'Save blueprint'}).disabled,
 		}).toStrictEqual({
 			count: '1',
 			saveDisabled: true,
 		});
 
 		fireEvent.keyDown(restoredComponent, {key: 'Delete'});
-		await user.click(screen.getByRole('button', {name: 'Save Blueprint'}));
+		await user.click(screen.getByRole('button', {name: 'Save blueprint'}));
 
 		expect(navigate).toHaveBeenCalledExactlyOnceWith({
 			to: '/',
@@ -1990,7 +1990,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 
 		openBlueprintEditor();
 		await user.click(screen.getByRole('checkbox', {name: 'Sort entries by label'}));
-		await user.click(screen.getByRole('button', {name: 'Save Blueprint'}));
+		await user.click(screen.getByRole('button', {name: 'Save blueprint'}));
 
 		expect(navigate).toHaveBeenCalledExactlyOnceWith({
 			to: '/',
@@ -2704,7 +2704,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		await user.click(screen.getByRole('button', {name: 'Edit icon 3'}));
 		await searchSignals(user, 'green');
 		await chooseSignal(user, 'Signal green');
-		await user.click(screen.getByRole('button', {name: 'Save Blueprint'}));
+		await user.click(screen.getByRole('button', {name: 'Save blueprint'}));
 		await Promise.resolve();
 
 		expect({
@@ -2757,7 +2757,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		openBlueprintEditor();
 		fireEvent.change(screen.getByRole('spinbutton', {name: 'Width'}), {target: {value: '16'}});
 		await user.click(screen.getByRole('radio', {name: 'Relative'}));
-		await user.click(screen.getByRole('button', {name: 'Save Blueprint'}));
+		await user.click(screen.getByRole('button', {name: 'Save blueprint'}));
 
 		expect(navigate).toHaveBeenCalledExactlyOnceWith({
 			to: '/',
@@ -2868,7 +2868,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		});
 
 		await user.click(screen.getByRole('button', {name: 'Keep Editing'}));
-		await user.click(screen.getByRole('button', {name: 'Save to Book'}));
+		await user.click(screen.getByRole('button', {name: 'Save blueprint'}));
 		await Promise.resolve();
 
 		expect({
@@ -2897,7 +2897,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		openBlueprintEditor();
 		expect({
 			icon: screen.getByRole('button', {name: 'Edit icon 1'}).getAttribute('title'),
-			saveDisabled: screen.getByRole<HTMLButtonElement>('button', {name: 'Save to Book'}).disabled,
+			saveDisabled: screen.getByRole<HTMLButtonElement>('button', {name: 'Save blueprint'}).disabled,
 			title: screen.getByText('New label', {selector: '.blueprint-editor__title'}).textContent,
 		}).toStrictEqual({
 			icon: 'Signal red\nvirtual:signal-red',
@@ -3545,7 +3545,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		openBlueprintEditor();
 		await user.click(screen.getByRole('checkbox', {name: 'Trains'}));
 		await user.click(screen.getByRole('checkbox', {name: 'Tiles'}));
-		await user.click(screen.getByRole('button', {name: 'Save Blueprint'}));
+		await user.click(screen.getByRole('button', {name: 'Save blueprint'}));
 
 		expect(navigate).toHaveBeenCalledExactlyOnceWith({
 			to: '/',
@@ -3572,7 +3572,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 
 		openBlueprintEditor();
 		await user.click(screen.getByRole('checkbox', {name: 'Entities'}));
-		await user.click(screen.getByRole('button', {name: 'Save Blueprint'}));
+		await user.click(screen.getByRole('button', {name: 'Save blueprint'}));
 
 		expect(navigate).toHaveBeenCalledExactlyOnceWith({
 			to: '/',

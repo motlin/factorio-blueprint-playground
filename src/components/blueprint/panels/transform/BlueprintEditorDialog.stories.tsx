@@ -7,6 +7,7 @@ import {blueprintFilterAnalysis} from '../../../../transform/strip';
 import {BlueprintEditorDialog} from './BlueprintEditorDialog';
 import {BlueprintLabelIcons} from './BlueprintLabelIcons';
 import {transformStoryParameters} from './transformStoryParameters';
+import {BlueprintEditorCommitActionKind, BlueprintEditorCommitState} from './useBlueprintEditorDraft';
 
 const blueprint: BlueprintString = {
 	blueprint: {
@@ -33,10 +34,11 @@ const meta = {
 		breadcrumb: 'Root blueprint',
 		closeConfirmationOpen: false,
 		commitAction: {
-			caption: 'Save Blueprint',
-			scopeDescription: 'Commits changes to the existing blueprint record.',
+			caption: 'Save blueprint',
+			kind: BlueprintEditorCommitActionKind.SaveRoot,
+			scopeDescription: 'Saves changes to this loaded root blueprint.',
 		},
-		commitDisabled: true,
+		commitState: BlueprintEditorCommitState.Clean,
 		context: {
 			caption: 'Blueprint item',
 			contextLabel: 'Existing blueprint',
@@ -123,6 +125,43 @@ async function expectContext(
 	});
 }
 
+async function expectCommitAction(
+	canvasElement: HTMLElement,
+	expected: {
+		busy: string;
+		caption: string;
+		disabled: boolean;
+		kind: BlueprintEditorCommitActionKind;
+		scope: string;
+		state: BlueprintEditorCommitState;
+		status: string;
+	},
+) {
+	const canvas = within(canvasElement);
+	const footer = canvas.getByRole('contentinfo');
+	const action = within(footer).getByRole<HTMLButtonElement>('button', {name: expected.caption});
+
+	await expect({
+		actionBusy: action.getAttribute('aria-busy'),
+		actionDisabled: action.disabled,
+		buttons: within(footer)
+			.getAllByRole('button')
+			.map((button) => button.textContent),
+		kind: footer.dataset.commitKind,
+		scope: within(footer).getByText(expected.scope).textContent,
+		state: footer.dataset.commitState,
+		status: within(footer).getByRole('status').textContent,
+	}).toStrictEqual({
+		actionBusy: expected.busy,
+		actionDisabled: expected.disabled,
+		buttons: [expected.caption],
+		kind: expected.kind,
+		scope: expected.scope,
+		state: expected.state,
+		status: expected.status,
+	});
+}
+
 export const Blueprint: Story = {
 	play: async ({canvasElement}) => {
 		const canvas = within(canvasElement);
@@ -153,6 +192,15 @@ export const Blueprint: Story = {
 		await expect(settingsScroll.querySelector('[data-website-extension="book-operations"]')).toBeNull();
 		await expect(canvas.queryByRole('heading', {name: 'Preview'})).not.toBeInTheDocument();
 		await expect(dialog.querySelector('[data-blueprint-preview]')).toBeNull();
+		await expectCommitAction(canvasElement, {
+			busy: 'false',
+			caption: 'Save blueprint',
+			disabled: true,
+			kind: BlueprintEditorCommitActionKind.SaveRoot,
+			scope: 'Saves changes to this loaded root blueprint.',
+			state: BlueprintEditorCommitState.Clean,
+			status: 'No changes to save.',
+		});
 	},
 };
 
@@ -160,10 +208,11 @@ export const NewBlueprint: Story = {
 	args: {
 		breadcrumb: "Alice's reactor block",
 		commitAction: {
-			caption: 'Create Blueprint',
-			scopeDescription: 'Creates this newly captured draft as the committed root blueprint.',
+			caption: 'Create blueprint',
+			kind: BlueprintEditorCommitActionKind.Create,
+			scopeDescription: 'Creates this captured draft as the loaded root blueprint.',
 		},
-		commitDisabled: false,
+		commitState: BlueprintEditorCommitState.Ready,
 		context: {
 			caption: 'Set up new blueprint',
 			contextLabel: 'New blueprint',
@@ -174,6 +223,15 @@ export const NewBlueprint: Story = {
 			breadcrumb: "Alice's reactor block",
 			caption: 'Set up new blueprint',
 			contextLabel: 'New blueprint',
+		});
+		await expectCommitAction(canvasElement, {
+			busy: 'false',
+			caption: 'Create blueprint',
+			disabled: false,
+			kind: BlueprintEditorCommitActionKind.Create,
+			scope: 'Creates this captured draft as the loaded root blueprint.',
+			state: BlueprintEditorCommitState.Ready,
+			status: 'Blueprint is ready to create.',
 		});
 	},
 };
@@ -265,10 +323,11 @@ export const ChildBlueprint: Story = {
 	args: {
 		breadcrumb: "Alice's blueprint book › Reactor block",
 		commitAction: {
-			caption: 'Save to Book',
-			scopeDescription: 'Commits this selection into its containing root book.',
+			caption: 'Save blueprint',
+			kind: BlueprintEditorCommitActionKind.SaveChild,
+			scopeDescription: 'Saves this child in its containing book. The whole book remains the loaded result.',
 		},
-		commitDisabled: false,
+		commitState: BlueprintEditorCommitState.Ready,
 		context: {
 			caption: 'Blueprint in the blueprint library',
 			contextLabel: 'Child blueprint record',
@@ -280,13 +339,73 @@ export const ChildBlueprint: Story = {
 			caption: 'Blueprint in the blueprint library',
 			contextLabel: 'Child blueprint record',
 		});
+		await expectCommitAction(canvasElement, {
+			busy: 'false',
+			caption: 'Save blueprint',
+			disabled: false,
+			kind: BlueprintEditorCommitActionKind.SaveChild,
+			scope: 'Saves this child in its containing book. The whole book remains the loaded result.',
+			state: BlueprintEditorCommitState.Ready,
+			status: 'Changes are ready to save.',
+		});
+	},
+};
+
+export const ExistingRootDirty: Story = {
+	args: {
+		commitState: BlueprintEditorCommitState.Ready,
+	},
+	play: async ({canvasElement}) => {
+		await expectCommitAction(canvasElement, {
+			busy: 'false',
+			caption: 'Save blueprint',
+			disabled: false,
+			kind: BlueprintEditorCommitActionKind.SaveRoot,
+			scope: 'Saves changes to this loaded root blueprint.',
+			state: BlueprintEditorCommitState.Ready,
+			status: 'Changes are ready to save.',
+		});
+	},
+};
+
+export const CommitPending: Story = {
+	args: {
+		commitState: BlueprintEditorCommitState.Pending,
+	},
+	play: async ({canvasElement}) => {
+		await expectCommitAction(canvasElement, {
+			busy: 'true',
+			caption: 'Save blueprint',
+			disabled: true,
+			kind: BlueprintEditorCommitActionKind.SaveRoot,
+			scope: 'Saves changes to this loaded root blueprint.',
+			state: BlueprintEditorCommitState.Pending,
+			status: 'Saving changes…',
+		});
+	},
+};
+
+export const InvalidDraft: Story = {
+	args: {
+		commitState: BlueprintEditorCommitState.Invalid,
+	},
+	play: async ({canvasElement}) => {
+		await expectCommitAction(canvasElement, {
+			busy: 'false',
+			caption: 'Save blueprint',
+			disabled: true,
+			kind: BlueprintEditorCommitActionKind.SaveRoot,
+			scope: 'Saves changes to this loaded root blueprint.',
+			state: BlueprintEditorCommitState.Invalid,
+			status: 'This draft cannot be saved.',
+		});
 	},
 };
 
 export const DirtyCloseConfirmation: Story = {
 	args: {
 		closeConfirmationOpen: true,
-		commitDisabled: false,
+		commitState: BlueprintEditorCommitState.Ready,
 	},
 	play: async ({canvasElement}) => {
 		const canvas = within(canvasElement);
@@ -299,6 +418,6 @@ export const DirtyCloseConfirmation: Story = {
 				.getAllByRole('button')
 				.map((button) => button.textContent),
 		).toStrictEqual(['Keep Editing', 'Discard Changes']);
-		await expect(canvas.getByRole('button', {hidden: true, name: 'Save Blueprint'})).toBeInTheDocument();
+		await expect(canvas.getByRole('button', {hidden: true, name: 'Save blueprint'})).toBeInTheDocument();
 	},
 };

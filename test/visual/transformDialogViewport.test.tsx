@@ -4,6 +4,10 @@ import {expect, test} from 'vite-plus/test';
 import {BlueprintEditorDialog} from '../../src/components/blueprint/panels/transform/BlueprintEditorDialog';
 import {BlueprintLabelIcons} from '../../src/components/blueprint/panels/transform/BlueprintLabelIcons';
 import {UpgradePlannerDialog} from '../../src/components/blueprint/panels/transform/UpgradePlannerDialog';
+import {
+	BlueprintEditorCommitActionKind,
+	BlueprintEditorCommitState,
+} from '../../src/components/blueprint/panels/transform/useBlueprintEditorDraft';
 import type {BlueprintString} from '../../src/parsing/types';
 import {BlueprintEditorSourceMode} from '../../src/transform/blueprintEditor';
 import {blueprintFilterAnalysis} from '../../src/transform/strip';
@@ -38,10 +42,11 @@ function renderBlueprintEditorHtml(): string {
 			breadcrumb="Root blueprint"
 			closeConfirmationOpen={false}
 			commitAction={{
-				caption: 'Save Blueprint',
-				scopeDescription: 'Commits changes to the existing blueprint record.',
+				caption: 'Save blueprint',
+				kind: BlueprintEditorCommitActionKind.SaveRoot,
+				scopeDescription: 'Saves changes to this loaded root blueprint.',
 			}}
-			commitDisabled={false}
+			commitState={BlueprintEditorCommitState.Ready}
 			context={{
 				caption: 'Blueprint item',
 				contextLabel: 'Existing blueprint',

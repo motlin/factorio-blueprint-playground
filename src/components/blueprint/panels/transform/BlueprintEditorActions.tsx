@@ -2,14 +2,17 @@ import {useId} from 'react';
 import {createPortal} from 'react-dom';
 
 import {FactorioButton, FactorioButtonKind} from '../../../ui/FactorioUi';
-import type {BlueprintEditorCommitAction} from './useBlueprintEditorDraft';
+import {
+	type BlueprintEditorCommitAction,
+	BlueprintEditorCommitActionKind,
+	BlueprintEditorCommitState,
+} from './useBlueprintEditorDraft';
 import {useDialogFocus} from './useDialogFocus';
 
 interface BlueprintEditorActionsProps {
 	closeConfirmationOpen: boolean;
 	commitAction: BlueprintEditorCommitAction;
-	commitDisabled: boolean;
-	onClose: () => void;
+	commitState: BlueprintEditorCommitState;
 	onCommit: () => void;
 	onDiscard: () => void;
 	onKeepEditing: () => void;
@@ -81,27 +84,46 @@ function BlueprintEditorCloseConfirmation({onDiscard, onKeepEditing}: BlueprintE
 export function BlueprintEditorActions({
 	closeConfirmationOpen,
 	commitAction,
-	commitDisabled,
-	onClose,
+	commitState,
 	onCommit,
 	onDiscard,
 	onKeepEditing,
 }: BlueprintEditorActionsProps) {
+	const scopeDescriptionId = useId();
+	const statusId = useId();
+	const commitDisabled = commitState !== BlueprintEditorCommitState.Ready;
+	const status = {
+		[BlueprintEditorCommitState.Clean]: 'No changes to save.',
+		[BlueprintEditorCommitState.Invalid]: 'This draft cannot be saved.',
+		[BlueprintEditorCommitState.Pending]:
+			commitAction.kind === BlueprintEditorCommitActionKind.Create ? 'Creating blueprint…' : 'Saving changes…',
+		[BlueprintEditorCommitState.Ready]:
+			commitAction.kind === BlueprintEditorCommitActionKind.Create
+				? 'Blueprint is ready to create.'
+				: 'Changes are ready to save.',
+	}[commitState];
+
 	return (
 		<>
-			<footer className="transform-workbench__footer transform-workbench__footer--actions blueprint-editor-actions">
-				<FactorioButton
-					className="transform-button"
-					onClick={() => {
-						onClose();
-					}}
-				>
-					Close
-				</FactorioButton>
-				<p className="blueprint-editor-actions__scope">{commitAction.scopeDescription}</p>
+			<footer
+				className="transform-workbench__footer transform-workbench__footer--actions blueprint-editor-actions"
+				data-commit-kind={commitAction.kind}
+				data-commit-state={commitState}
+				data-factorio-source="BlueprintSetupGui::getConfirmCaption"
+				data-factorio-style="dialog_buttons_horizontal_flow"
+			>
+				<div className="blueprint-editor-actions__scope">
+					<span id={scopeDescriptionId}>{commitAction.scopeDescription}</span>
+					<strong id={statusId} role="status" aria-live="polite">
+						{status}
+					</strong>
+				</div>
 				<FactorioButton
 					kind={FactorioButtonKind.Confirm}
+					className="blueprint-editor-actions__commit"
 					disabled={commitDisabled}
+					aria-busy={commitState === BlueprintEditorCommitState.Pending}
+					aria-describedby={`${scopeDescriptionId} ${statusId}`}
 					onClick={() => {
 						onCommit();
 					}}

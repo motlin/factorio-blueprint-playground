@@ -15,7 +15,11 @@ import {BlueprintParameterizationDialog} from './BlueprintParameterizationDialog
 import {BlueprintSnapGridEditor} from './BlueprintSnapGridEditor';
 import {BlueprintTitleEditor} from './BlueprintTitleEditor';
 import {UpgradePlannerSelectorDialog, type UpgradePlannerChoice} from './UpgradePlannerSelectorDialog';
-import type {BlueprintEditorCommitAction, BlueprintEditorContext} from './useBlueprintEditorDraft';
+import type {
+	BlueprintEditorCommitAction,
+	BlueprintEditorCommitState,
+	BlueprintEditorContext,
+} from './useBlueprintEditorDraft';
 import {useDialogFocus} from './useDialogFocus';
 
 /**
@@ -52,7 +56,7 @@ interface BlueprintEditorDialogProps {
 	breadcrumb: string;
 	closeConfirmationOpen: boolean;
 	commitAction: BlueprintEditorCommitAction;
-	commitDisabled: boolean;
+	commitState: BlueprintEditorCommitState;
 	context: BlueprintEditorContext;
 	description: string;
 	filterAnalysis: BlueprintFilterAnalysis;
@@ -106,7 +110,7 @@ export function BlueprintEditorDialog({
 	breadcrumb,
 	closeConfirmationOpen,
 	commitAction,
-	commitDisabled,
+	commitState,
 	context,
 	description,
 	filterAnalysis,
@@ -376,8 +380,7 @@ export function BlueprintEditorDialog({
 				<BlueprintEditorActions
 					closeConfirmationOpen={closeConfirmationOpen}
 					commitAction={commitAction}
-					commitDisabled={commitDisabled}
-					onClose={onClose}
+					commitState={commitState}
 					onCommit={onCommit}
 					onDiscard={onDiscard}
 					onKeepEditing={onKeepEditing}
