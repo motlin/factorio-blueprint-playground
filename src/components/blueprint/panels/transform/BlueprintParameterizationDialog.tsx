@@ -1,4 +1,4 @@
-import {useId, useLayoutEffect, useMemo, useState} from 'react';
+import {useId, useLayoutEffect, useMemo, useState, type DragEvent, type KeyboardEvent} from 'react';
 import {createPortal} from 'react-dom';
 
 import type {Parameter, SignalID} from '../../../../parsing/types';
@@ -129,6 +129,26 @@ function dependenciesValid(parameters: readonly Parameter[]): boolean {
 	return true;
 }
 
+function moveParameter(parameters: readonly Parameter[], fromIndex: number, toIndex: number): Parameter[] {
+	if (fromIndex === toIndex) {
+		return [...parameters];
+	}
+	const editableIndexes = parameters.flatMap((parameter, index) => (parameter.type === 'id' ? [index] : []));
+	const fromEditableIndex = editableIndexes.indexOf(fromIndex);
+	const toEditableIndex = editableIndexes.indexOf(toIndex);
+	if (fromEditableIndex === -1 || toEditableIndex === -1) {
+		throw new Error(`Cannot reorder hidden parameter from ${fromIndex.toString()} to ${toIndex.toString()}`);
+	}
+	const editableParameters = editableIndexes.map((index) => parameters[index]);
+	const [moved] = editableParameters.splice(fromEditableIndex, 1);
+	editableParameters.splice(toEditableIndex, 0, moved);
+	const next = [...parameters];
+	for (const [editableIndex, parameterIndex] of editableIndexes.entries()) {
+		next[parameterIndex] = editableParameters[editableIndex];
+	}
+	return next;
+}
+
 export function BlueprintParameterizationDialog({
 	dialogId,
 	onClose,
@@ -140,6 +160,8 @@ export function BlueprintParameterizationDialog({
 	const dialogDescriptionId = useId();
 	const [draftParameters, setDraftParameters] = useState(() => cloneParameters(parameters));
 	const [choosingValueIndex, setChoosingValueIndex] = useState<number>();
+	const [draggedParameterIndex, setDraggedParameterIndex] = useState<number>();
+	const [dragTargetIndex, setDragTargetIndex] = useState<number>();
 	const [dialogAnchor] = useState(activeDialogAnchor);
 	const editableParameters = draftParameters.flatMap((parameter, index) =>
 		parameter.type === 'id' ? [{index, parameter}] : [],
@@ -184,6 +206,16 @@ export function BlueprintParameterizationDialog({
 		setDraftParameters((current) =>
 			current.map((parameter, parameterIndex) => (parameterIndex === index ? update(parameter) : parameter)),
 		);
+	};
+	const reorderParameter = (fromIndex: number, toIndex: number, focusMovedHandle = false) => {
+		setDraftParameters((current) => moveParameter(current, fromIndex, toIndex));
+		if (focusMovedHandle) {
+			requestAnimationFrame(() => {
+				dialogReference.current
+					?.querySelector<HTMLButtonElement>(`[data-parameter-drag-handle="${toIndex.toString()}"]`)
+					?.focus();
+			});
+		}
 	};
 
 	return createPortal(
@@ -245,8 +277,60 @@ export function BlueprintParameterizationDialog({
 										: [],
 								);
 							const parameterNumber = editableIndex + 1;
+							const previousParameterIndex = editableParameters[editableIndex - 1]?.index;
+							const nextParameterIndex = editableParameters[editableIndex + 1]?.index;
+							const parameterLabel =
+								parameter.name === undefined || parameter.name === ''
+									? `parameter ${parameterNumber.toString()}`
+									: parameter.name;
+							const handleDragStart = (event: DragEvent<HTMLButtonElement>) => {
+								setDraggedParameterIndex(index);
+								setDragTargetIndex(index);
+								event.dataTransfer.effectAllowed = 'move';
+								event.dataTransfer.setData('text/plain', index.toString());
+							};
+							const handleReorderKey = (event: KeyboardEvent<HTMLButtonElement>) => {
+								const targetIndex =
+									event.key === 'ArrowUp'
+										? previousParameterIndex
+										: event.key === 'ArrowDown'
+											? nextParameterIndex
+											: undefined;
+								if (targetIndex === undefined) {
+									return;
+								}
+								event.preventDefault();
+								reorderParameter(index, targetIndex, true);
+							};
 							return (
-								<div className="blueprint-parameterization__row" key={index}>
+								<div
+									className="factorio-frame factorio-frame--shallow blueprint-parameterization__row"
+									data-drag-state={
+										draggedParameterIndex === index
+											? 'dragging'
+											: dragTargetIndex === index
+												? 'target'
+												: undefined
+									}
+									data-factorio-style="blueprint_parameter_frame"
+									key={index}
+									onDragOver={(event) => {
+										if (draggedParameterIndex === undefined || draggedParameterIndex === index) {
+											return;
+										}
+										event.preventDefault();
+										event.dataTransfer.dropEffect = 'move';
+										setDragTargetIndex(index);
+									}}
+									onDrop={(event) => {
+										event.preventDefault();
+										if (draggedParameterIndex !== undefined && draggedParameterIndex !== index) {
+											reorderParameter(draggedParameterIndex, index);
+										}
+										setDraggedParameterIndex(undefined);
+										setDragTargetIndex(undefined);
+									}}
+								>
 									<div className="blueprint-parameterization__primary">
 										<label>
 											<span>
@@ -409,6 +493,23 @@ export function BlueprintParameterizationDialog({
 												))}
 											</select>
 										</label>
+										<button
+											type="button"
+											className="blueprint-parameterization__drag-handle"
+											data-parameter-drag-handle={index}
+											draggable
+											aria-keyshortcuts="ArrowUp ArrowDown"
+											aria-label={`Reorder ${parameterLabel}. Use Up Arrow or Down Arrow to change its evaluation order.`}
+											title="Drag to reorder. Use Up Arrow or Down Arrow for keyboard reordering."
+											onDragEnd={() => {
+												setDraggedParameterIndex(undefined);
+												setDragTargetIndex(undefined);
+											}}
+											onDragStart={handleDragStart}
+											onKeyDown={handleReorderKey}
+										>
+											<span aria-hidden="true" />
+										</button>
 									</div>
 								</div>
 							);

@@ -43,6 +43,41 @@ type Story = StoryObj<typeof meta>;
 
 export const DependentParameters: Story = {};
 
+export const ReorderedParameters: Story = {
+	args: {
+		parameters: [
+			{
+				type: 'id',
+				id: 'iron-plate',
+				name: 'Alice input',
+				'quality-condition': {quality: 'normal', comparator: '='},
+			},
+			{
+				type: 'id',
+				id: 'electronic-circuit',
+				name: 'Bob product',
+			},
+		],
+	},
+	play: async () => {
+		const dialog = await within(document.body).findByRole('dialog', {name: 'Blueprint parametrisation'});
+		const bobHandle = within(dialog).getByRole('button', {name: /^Reorder Bob product\./});
+		bobHandle.focus();
+		await userEvent.keyboard('{ArrowUp}');
+		await expect(
+			within(dialog)
+				.getAllByRole<HTMLInputElement>('textbox')
+				.map((input) => input.value),
+		).toStrictEqual(['Bob product', 'Alice input']);
+		await new Promise<void>((resolve) => {
+			requestAnimationFrame(() => {
+				resolve();
+			});
+		});
+		await expect(within(dialog).getByRole('button', {name: /^Reorder Bob product\./})).toHaveFocus();
+	},
+};
+
 const scrollableSignalNames = [
 	'iron-plate',
 	'copper-plate',

@@ -100,6 +100,13 @@ test('shows editable ID rows and confirms unsupported number parameters unchange
 		regionClass: parameterRegion.className,
 		regionStyle: parameterRegion.dataset.factorioStyle,
 		preserved: within(dialog).getByText('1 unsupported parameter is preserved unchanged.').textContent,
+		reorderHandles: within(dialog)
+			.getAllByRole('button', {name: /^Reorder /})
+			.map((button) => ({
+				keyshortcuts: button.getAttribute('aria-keyshortcuts'),
+				label: button.getAttribute('aria-label'),
+				title: button.title,
+			})),
 		rows: dialog.querySelectorAll('.blueprint-parameterization__row').length,
 	}).toStrictEqual({
 		add: '+ Add parameter',
@@ -113,12 +120,105 @@ test('shows editable ID rows and confirms unsupported number parameters unchange
 		regionClass: 'factorio-frame factorio-frame--deep factorio-scroll-frame blueprint-parameterization__body',
 		regionStyle: 'deep_slots_scroll_pane',
 		preserved: '1 unsupported parameter is preserved unchanged.',
+		reorderHandles: [
+			{
+				keyshortcuts: 'ArrowUp ArrowDown',
+				label: 'Reorder Plate. Use Up Arrow or Down Arrow to change its evaluation order.',
+				title: 'Drag to reorder. Use Up Arrow or Down Arrow for keyboard reordering.',
+			},
+			{
+				keyshortcuts: 'ArrowUp ArrowDown',
+				label: 'Reorder Gear. Use Up Arrow or Down Arrow to change its evaluation order.',
+				title: 'Drag to reorder. Use Up Arrow or Down Arrow for keyboard reordering.',
+			},
+		],
 		rows: 2,
 	});
 
 	await user.click(within(dialog).getByRole('button', {name: 'Confirm'}));
 
 	expect(onConfirm.mock.calls).toStrictEqual([[parameters]]);
+});
+
+test('reorders complete parameter rows by drag handle or keyboard in evaluation order', async () => {
+	const user = userEvent.setup();
+	const onConfirm = vi.fn<(nextParameters: Parameter[]) => void>();
+	const independentParameters: Parameter[] = [
+		parameters[0],
+		parameters[2],
+		{
+			type: 'id',
+			name: 'Gear',
+			id: 'iron-gear-wheel',
+		},
+	];
+	render(
+		<BlueprintParameterizationDialog
+			dialogId="blueprint-parameterization"
+			onClose={vi.fn<() => void>()}
+			onConfirm={onConfirm}
+			parameters={independentParameters}
+			signalOptions={[
+				{type: 'item', name: 'iron-plate'},
+				{type: 'item', name: 'iron-gear-wheel'},
+			]}
+		/>,
+	);
+
+	const dialog = screen.getByRole('dialog', {name: 'Blueprint parametrisation'});
+	const plateHandle = within(dialog).getByRole('button', {name: /^Reorder Plate\./});
+	expect({
+		draggable: plateHandle.draggable,
+		rowStyle: plateHandle.closest('.blueprint-parameterization__row')?.getAttribute('data-factorio-style'),
+	}).toStrictEqual({
+		draggable: true,
+		rowStyle: 'blueprint_parameter_frame',
+	});
+
+	plateHandle.focus();
+	await user.keyboard('{ArrowDown}');
+	await waitFor(() => {
+		expect(
+			within(dialog)
+				.getAllByRole<HTMLInputElement>('textbox')
+				.map((input) => input.value),
+		).toStrictEqual(['Gear', 'Plate']);
+		expect(document.activeElement?.getAttribute('aria-label')).toBe(
+			'Reorder Plate. Use Up Arrow or Down Arrow to change its evaluation order.',
+		);
+	});
+
+	const data = new Map<string, string>();
+	const dataTransfer = {
+		dropEffect: 'none',
+		effectAllowed: 'none',
+		getData: (format: string) => data.get(format) ?? '',
+		setData: (format: string, value: string) => {
+			data.set(format, value);
+		},
+	};
+	const movedPlateHandle = within(dialog).getByRole('button', {name: /^Reorder Plate\./});
+	const gearRow = within(dialog)
+		.getByRole('button', {name: /^Reorder Gear\./})
+		.closest<HTMLElement>('.blueprint-parameterization__row');
+	if (gearRow === null) {
+		throw new Error('Expected Gear parameter row');
+	}
+	fireEvent.dragStart(movedPlateHandle, {dataTransfer});
+	fireEvent.dragOver(gearRow, {dataTransfer});
+	expect({
+		dragging: movedPlateHandle.closest<HTMLElement>('.blueprint-parameterization__row')?.dataset.dragState,
+		dropEffect: dataTransfer.dropEffect,
+		target: gearRow.dataset.dragState,
+	}).toStrictEqual({
+		dragging: 'dragging',
+		dropEffect: 'move',
+		target: 'target',
+	});
+	fireEvent.drop(gearRow, {dataTransfer});
+
+	await user.click(within(dialog).getByRole('button', {name: 'Confirm'}));
+	expect(onConfirm.mock.calls).toStrictEqual([[independentParameters]]);
 });
 
 test('edits signal, quality, dependencies, and row membership before confirming', async () => {
