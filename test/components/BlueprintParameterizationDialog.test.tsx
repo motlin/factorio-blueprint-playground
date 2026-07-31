@@ -86,9 +86,17 @@ test('shows editable ID rows and confirms unsupported number parameters unchange
 		add: within(dialog).getByRole('button', {name: '+ Add parameter'}).textContent,
 		anchorPlacement: dialog.parentElement?.dataset.anchorPlacement,
 		confirm: within(dialog).getByRole('button', {name: 'Confirm'}).textContent,
-		dependencyMode: within(dialog).getByRole<HTMLSelectElement>('combobox', {
-			name: 'Parameter 2 dependency mode',
-		}).value,
+		dependencyMode: {
+			expanded: within(dialog)
+				.getByRole('button', {name: 'Parameter 2 dependency mode: Ingredient of'})
+				.getAttribute('aria-expanded'),
+			style: within(dialog).getByRole('button', {name: 'Parameter 2 dependency mode: Ingredient of'}).dataset
+				.factorioStyle,
+			text: within(dialog).getByRole('button', {name: 'Parameter 2 dependency mode: Ingredient of'}).textContent,
+		},
+		dependencySource: within(dialog)
+			.getByRole('button', {name: 'Parameter 2 dependency source: Plate'})
+			.getAttribute('aria-invalid'),
 		description: dialog.getAttribute('aria-describedby'),
 		info: within(dialog).getByRole('button', {
 			name: 'Dependencies can only target parameters above them.',
@@ -112,7 +120,12 @@ test('shows editable ID rows and confirms unsupported number parameters unchange
 		add: '+ Add parameter',
 		anchorPlacement: 'centered',
 		confirm: '✓Confirm',
-		dependencyMode: 'ingredient-of',
+		dependencyMode: {
+			expanded: 'false',
+			style: 'train_schedule_circuit_condition_comparator_dropdown',
+			text: 'Ingredient of',
+		},
+		dependencySource: null,
 		description: orderDescription.id,
 		info: 'Dependencies can only target parameters above them.',
 		names: ['Plate', 'Gear'],
@@ -248,8 +261,10 @@ test('edits signal, quality, dependencies, and row membership before confirming'
 	await user.click(screen.getByRole('menuitemradio', {name: '≥'}));
 	await user.click(within(picker).getByRole('button', {name: 'Confirm'}));
 
-	await user.selectOptions(screen.getByRole('combobox', {name: 'Parameter 2 dependency mode'}), 'product-of');
-	await user.selectOptions(screen.getByRole('combobox', {name: 'Parameter 2 dependency source'}), 'copper-cable');
+	await user.click(screen.getByRole('button', {name: 'Parameter 2 dependency mode: Ingredient of'}));
+	await user.click(screen.getByRole('option', {name: 'Product of'}));
+	await user.click(screen.getByRole('button', {name: 'Parameter 2 dependency source: iron-plate unavailable'}));
+	await user.click(screen.getByRole('option', {name: /Cable$/}));
 	await user.click(screen.getByRole('button', {name: '+ Add parameter'}));
 	await user.click(screen.getByRole('button', {name: 'Remove parameter 3 Parameter 1'}));
 	await user.click(screen.getByRole('button', {name: 'Confirm'}));
@@ -270,6 +285,117 @@ test('edits signal, quality, dependencies, and row membership before confirming'
 					'product-of': 'copper-cable',
 				},
 				parameters[2],
+			],
+		],
+	]);
+});
+
+test('uses game dependency controls with explicit source validation and disabled parameter state', async () => {
+	const user = userEvent.setup();
+	const onConfirm = vi.fn<(nextParameters: Parameter[]) => void>();
+	render(
+		<BlueprintParameterizationDialog
+			dialogId="blueprint-parameterization"
+			onClose={vi.fn<() => void>()}
+			onConfirm={onConfirm}
+			parameters={[
+				{type: 'id', id: 'iron-plate', name: 'Plate'},
+				{type: 'id', id: 'iron-gear-wheel', name: 'Gear'},
+			]}
+			signalOptions={[
+				{type: 'item', name: 'iron-plate'},
+				{type: 'item', name: 'iron-gear-wheel'},
+			]}
+		/>,
+	);
+
+	const dialog = screen.getByRole('dialog', {name: 'Blueprint parametrisation'});
+	const enabled = within(dialog).getByRole<HTMLInputElement>('checkbox', {name: 'Parameter 2 enabled'});
+	const confirm = within(dialog).getByRole('button', {name: 'Confirm'});
+	const initialMode = within(dialog).getByRole('button', {
+		name: 'Parameter 2 dependency mode: Independent',
+	});
+	expect({
+		checked: enabled.checked,
+		modeDisabled: initialMode.hasAttribute('disabled'),
+		modeStyle: initialMode.dataset.factorioStyle,
+		source: within(dialog).queryByRole('button', {name: /^Parameter 2 dependency source:/}),
+	}).toStrictEqual({
+		checked: true,
+		modeDisabled: false,
+		modeStyle: 'train_schedule_circuit_condition_comparator_dropdown',
+		source: null,
+	});
+
+	await user.click(initialMode);
+	const modeList = within(dialog).getByRole('listbox', {name: 'Dependency mode for parameter 2'});
+	expect(
+		within(modeList)
+			.getAllByRole('option')
+			.map((option) => option.textContent),
+	).toStrictEqual([
+		'Independent',
+		'Ingredient of',
+		'Item ingredient of',
+		'Fluid ingredient of',
+		'Product of',
+		'Item product of',
+		'Fluid product of',
+	]);
+	await user.click(within(modeList).getByRole('option', {name: 'Product of'}));
+
+	const emptySource = within(dialog).getByRole('button', {
+		name: 'Parameter 2 dependency source: None',
+	});
+	expect({
+		confirmDisabled: confirm.hasAttribute('disabled'),
+		dependencyNumber: dialog.querySelector('.blueprint-parameterization__dependency-number')?.textContent,
+		error: within(dialog).getByRole('alert').textContent,
+		invalid: emptySource.getAttribute('aria-invalid'),
+	}).toStrictEqual({
+		confirmDisabled: true,
+		dependencyNumber: '#',
+		error: "Source of dependency isn't above.",
+		invalid: 'true',
+	});
+
+	await user.click(emptySource);
+	const sourceList = within(dialog).getByRole('listbox', {name: 'Dependency source for parameter 2'});
+	await user.click(within(sourceList).getByRole('option', {name: 'Plate'}));
+	const selectedSource = within(dialog).getByRole('button', {
+		name: 'Parameter 2 dependency source: Plate',
+	});
+	expect({
+		confirmDisabled: confirm.hasAttribute('disabled'),
+		dependencyNumber: within(dialog).getByTitle('Dependency #1').textContent,
+		invalid: selectedSource.getAttribute('aria-invalid'),
+	}).toStrictEqual({
+		confirmDisabled: false,
+		dependencyNumber: '#1',
+		invalid: null,
+	});
+
+	selectedSource.focus();
+	await user.keyboard('{Delete}');
+	expect(within(dialog).getByRole('button', {name: 'Confirm'}).hasAttribute('disabled')).toBe(true);
+
+	await user.click(enabled);
+	const disabledMode = within(dialog).getByRole('button', {
+		name: 'Parameter 2 dependency mode: Independent',
+	});
+	expect({
+		checked: enabled.checked,
+		modeDisabled: disabledMode.hasAttribute('disabled'),
+		source: within(dialog).queryByRole('button', {name: /^Parameter 2 dependency source:/}),
+	}).toStrictEqual({checked: false, modeDisabled: true, source: null});
+
+	await user.click(enabled);
+	await user.click(within(dialog).getByRole('button', {name: 'Confirm'}));
+	expect(onConfirm.mock.calls).toStrictEqual([
+		[
+			[
+				{type: 'id', id: 'iron-plate', name: 'Plate'},
+				{type: 'id', id: 'iron-gear-wheel', name: 'Gear'},
 			],
 		],
 	]);

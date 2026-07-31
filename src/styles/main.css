@@ -4673,8 +4673,7 @@ body {
 	white-space: nowrap;
 }
 
-.blueprint-parameterization__primary input,
-.blueprint-parameterization__secondary select {
+.blueprint-parameterization__primary input {
 	box-sizing: border-box;
 	min-width: 0;
 	padding: 6px 8px;
@@ -4718,34 +4717,218 @@ body {
 .blueprint-parameterization__secondary {
 	display: grid;
 	min-width: 0;
+	min-height: calc(28px * var(--factorio-ui-density));
 	direction: ltr;
 	grid-template-columns:
-		max-content minmax(0, 1fr) minmax(0, 1fr)
+		max-content minmax(calc(152px * var(--factorio-ui-density)), 1fr) auto auto
 		calc(20px * var(--factorio-ui-density));
 	align-items: center;
-	gap: 8px;
+	gap: calc(8px * var(--factorio-ui-density));
 }
 
-.blueprint-parameterization__secondary > label:not(.blueprint-parameterization__select-label) {
+.blueprint-parameterization__parameter-toggle {
 	display: flex;
+	min-height: calc(28px * var(--factorio-ui-density));
 	align-items: center;
-	gap: 4px;
+	gap: calc(8px * var(--factorio-ui-density));
+	margin: 0;
 	white-space: nowrap;
 }
 
-.blueprint-parameterization__secondary .blueprint-parameterization__select-label {
-	display: grid;
+.blueprint-parameterization__parameter-toggle .blueprint-parameterization__checkbox {
+	box-sizing: content-box;
+	margin: 0;
+	flex: 0 0 auto;
+}
+
+.blueprint-parameterization__parameter-toggle input {
+	width: calc(28px * var(--factorio-ui-density));
+	height: calc(28px * var(--factorio-ui-density));
+	padding: 0;
+	margin: 0;
+}
+
+.blueprint-parameterization__parameter-toggle input:checked ~ .blueprint-parameterization__checkbox::after {
+	top: calc(4px * var(--factorio-ui-density));
+	left: calc(9px * var(--factorio-ui-density));
+	width: calc(6px * var(--factorio-ui-density));
+	height: calc(12px * var(--factorio-ui-density));
+	border-width: 0 calc(3px * var(--factorio-ui-density)) calc(3px * var(--factorio-ui-density)) 0;
+}
+
+.blueprint-parameterization__dependency-dropdown,
+.blueprint-parameterization__source-picker {
+	position: relative;
 	min-width: 0;
-	gap: 4px;
-	color: #c9c4bf;
 }
 
-.blueprint-parameterization__secondary select {
+.blueprint-parameterization__dependency-trigger {
+	display: grid;
 	width: 100%;
+	min-width: 0;
+	height: calc(28px * var(--factorio-ui-density));
+	grid-template-columns: minmax(0, 1fr) calc(18px * var(--factorio-ui-density));
+	align-items: center;
+	padding: 0 0 0 calc(8px * var(--factorio-ui-density));
+	border: 1px solid #171717;
+	border-radius: calc(3px * var(--factorio-ui-density));
+	appearance: none;
+	background: #292829;
+	box-shadow:
+		inset 0 1px 1px #656365,
+		inset 0 -2px 2px #151415,
+		0 1px 1px rgb(0 0 0 / 45%);
+	color: var(--factorio-ui-text);
+	font: inherit;
+	font-size: calc(14px * var(--factorio-ui-density));
+	line-height: 1;
+	text-align: left;
+	cursor: pointer;
 }
 
-.blueprint-parameterization__secondary select:disabled {
-	color: #77736f;
+.blueprint-parameterization__dependency-trigger > span:first-child {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.blueprint-parameterization__dependency-trigger:hover:not(:disabled),
+.blueprint-parameterization__dependency-trigger[aria-expanded='true'] {
+	background: #3f3d3f;
+	box-shadow:
+		inset 0 1px 1px #767376,
+		inset 0 -2px 2px #171617,
+		0 0 0 1px #e39827;
+}
+
+.blueprint-parameterization__dependency-trigger:focus-visible,
+.blueprint-parameterization__source-trigger:focus-visible,
+.blueprint-parameterization__dependency-option:focus-visible,
+.blueprint-parameterization__source-option:focus-visible {
+	outline: 2px solid #ffe6c0;
+	outline-offset: 1px;
+}
+
+.blueprint-parameterization__dependency-trigger:disabled {
+	background: #242324;
+	box-shadow:
+		inset 0 1px 1px #3e3c3e,
+		inset 0 -1px 1px #151415;
+	color: #716e6b;
+	cursor: default;
+}
+
+.blueprint-parameterization__dependency-chevron {
+	display: block;
+	width: 0;
+	height: 0;
+	justify-self: center;
+	border-top: calc(5px * var(--factorio-ui-density)) solid currentcolor;
+	border-right: calc(4px * var(--factorio-ui-density)) solid transparent;
+	border-left: calc(4px * var(--factorio-ui-density)) solid transparent;
+}
+
+.blueprint-parameterization__dependency-list,
+.blueprint-parameterization__source-list {
+	position: absolute;
+	z-index: 8;
+	top: calc(100% + 2px);
+	left: 0;
+	display: grid;
+	min-width: 100%;
+	padding: calc(3px * var(--factorio-ui-density));
+	border: 1px solid #161516;
+	background: #292829;
+	box-shadow:
+		inset 0 1px 1px #5c5a5c,
+		0 calc(5px * var(--factorio-ui-density)) calc(12px * var(--factorio-ui-density)) rgb(0 0 0 / 70%);
+}
+
+.blueprint-parameterization__dependency-list {
+	width: max-content;
+	min-width: 100%;
+}
+
+.blueprint-parameterization__dependency-option,
+.blueprint-parameterization__source-option {
+	min-height: calc(28px * var(--factorio-ui-density));
+	padding: calc(4px * var(--factorio-ui-density)) calc(8px * var(--factorio-ui-density));
+	border: 0;
+	appearance: none;
+	background: transparent;
+	color: var(--factorio-ui-text);
+	font: inherit;
+	font-size: calc(14px * var(--factorio-ui-density));
+	text-align: left;
+	white-space: nowrap;
+	cursor: pointer;
+}
+
+.blueprint-parameterization__dependency-option:hover,
+.blueprint-parameterization__source-option:hover,
+.blueprint-parameterization__dependency-option[aria-selected='true'],
+.blueprint-parameterization__source-option[aria-selected='true'] {
+	background: #e39827;
+	color: #17110a;
+}
+
+.blueprint-parameterization__source-picker,
+.blueprint-parameterization__source-trigger {
+	width: calc(28px * var(--factorio-ui-density));
+	height: calc(28px * var(--factorio-ui-density));
+}
+
+.blueprint-parameterization__source-trigger {
+	padding: 0;
+}
+
+.blueprint-parameterization__source-trigger > [data-factorio-icon-size] {
+	width: 100%;
+	height: 100%;
+}
+
+.blueprint-parameterization__source-trigger[aria-invalid='true'] {
+	box-shadow:
+		inset 0 0 0 1px #f05245,
+		0 0 0 1px #6d1f19;
+	color: #ffd3ce;
+}
+
+.blueprint-parameterization__source-list {
+	width: max-content;
+	min-width: calc(164px * var(--factorio-ui-density));
+}
+
+.blueprint-parameterization__source-option {
+	display: grid;
+	grid-template-columns: calc(24px * var(--factorio-ui-density)) minmax(0, 1fr);
+	align-items: center;
+	gap: calc(6px * var(--factorio-ui-density));
+	padding: calc(2px * var(--factorio-ui-density)) calc(6px * var(--factorio-ui-density));
+}
+
+.blueprint-parameterization__source-option > [data-factorio-icon-size] {
+	width: calc(24px * var(--factorio-ui-density));
+	height: calc(24px * var(--factorio-ui-density));
+}
+
+.blueprint-parameterization__source-empty {
+	padding: calc(6px * var(--factorio-ui-density)) calc(8px * var(--factorio-ui-density));
+	color: var(--factorio-ui-muted);
+	font-size: calc(13px * var(--factorio-ui-density));
+	white-space: nowrap;
+}
+
+.blueprint-parameterization__dependency-number {
+	min-width: calc(18px * var(--factorio-ui-density));
+	color: var(--factorio-ui-text);
+	font-size: calc(14px * var(--factorio-ui-density));
+	font-weight: 700;
+	text-align: center;
+}
+
+.blueprint-parameterization__dependency-number[data-valid='false'] {
+	color: #928d88;
 }
 
 .blueprint-parameterization__drag-handle {
@@ -4924,20 +5107,13 @@ body {
 	}
 
 	.blueprint-parameterization__secondary {
-		grid-template-columns: 1fr;
-	}
-
-	.blueprint-parameterization__secondary {
-		grid-template-columns: minmax(0, 1fr) calc(20px * var(--factorio-ui-density));
-	}
-
-	.blueprint-parameterization__secondary > label {
-		grid-column: 1;
+		grid-template-columns:
+			max-content minmax(0, 1fr) auto auto
+			calc(20px * var(--factorio-ui-density));
 	}
 
 	.blueprint-parameterization__drag-handle {
-		grid-column: 2;
-		grid-row: 1 / span 3;
+		grid-column: 5;
 	}
 
 	.blueprint-snap-grid-editor__row label {

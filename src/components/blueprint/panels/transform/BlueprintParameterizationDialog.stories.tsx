@@ -43,6 +43,36 @@ type Story = StoryObj<typeof meta>;
 
 export const DependentParameters: Story = {};
 
+export const DependencyControlStates: Story = {
+	args: {
+		parameters: [
+			{type: 'id', id: 'iron-plate', name: 'Enabled independent'},
+			{type: 'id', id: 'copper-plate', name: 'Disabled parameter', parameter: false},
+			{type: 'id', id: 'electronic-circuit', name: 'Valid dependency', 'product-of': 'iron-plate'},
+			{type: 'id', id: 'advanced-circuit', name: 'Invalid dependency', 'ingredient-of': 'missing-source'},
+		],
+		signalOptions: [
+			{type: 'item', name: 'iron-plate'},
+			{type: 'item', name: 'copper-plate'},
+			{type: 'item', name: 'electronic-circuit'},
+			{type: 'item', name: 'advanced-circuit'},
+		],
+	},
+	play: async () => {
+		const dialog = await within(document.body).findByRole('dialog', {name: 'Blueprint parametrisation'});
+		await expect(within(dialog).getByRole('checkbox', {name: 'Parameter 2 enabled'})).not.toBeChecked();
+		await expect(
+			within(dialog).getByRole('button', {name: 'Parameter 2 dependency mode: Independent'}),
+		).toBeDisabled();
+		await expect(
+			within(dialog).getByRole('button', {name: 'Parameter 3 dependency source: Enabled independent'}),
+		).not.toHaveAttribute('aria-invalid');
+		await expect(
+			within(dialog).getByRole('button', {name: 'Parameter 4 dependency source: missing-source unavailable'}),
+		).toHaveAttribute('aria-invalid', 'true');
+	},
+};
+
 export const ReorderedParameters: Story = {
 	args: {
 		parameters: [

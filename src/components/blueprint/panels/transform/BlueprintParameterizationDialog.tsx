@@ -1,4 +1,4 @@
-import {useId, useLayoutEffect, useMemo, useState, type DragEvent, type KeyboardEvent} from 'react';
+import {useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent} from 'react';
 import {createPortal} from 'react-dom';
 
 import type {Parameter, SignalID} from '../../../../parsing/types';
@@ -28,6 +28,280 @@ interface BlueprintParameterizationDialogProps {
 interface DialogAnchor {
 	bottom: number;
 	left: number;
+}
+
+interface DependencySourceOption {
+	id: string;
+	name: string;
+	signal: SignalID;
+}
+
+interface ParameterDependencyDropdownProps {
+	disabled: boolean;
+	onChange: (value: (typeof dependencyOptions)[number]) => void;
+	parameterNumber: number;
+	value: (typeof dependencyOptions)[number];
+}
+
+function ParameterDependencyDropdown({disabled, onChange, parameterNumber, value}: ParameterDependencyDropdownProps) {
+	const [open, setOpen] = useState(false);
+	const rootReference = useRef<HTMLDivElement>(null);
+	const listboxId = useId();
+
+	useEffect(() => {
+		if (!open) {
+			return undefined;
+		}
+		const closeOutside = (event: PointerEvent) => {
+			if (
+				event.target instanceof Node &&
+				(rootReference.current === null || !rootReference.current.contains(event.target))
+			) {
+				setOpen(false);
+			}
+		};
+		document.addEventListener('pointerdown', closeOutside);
+		return () => {
+			document.removeEventListener('pointerdown', closeOutside);
+		};
+	}, [open]);
+
+	const focusOption = (position: 'first' | 'last' | 'selected') => {
+		requestAnimationFrame(() => {
+			const options = rootReference.current?.querySelectorAll<HTMLElement>('[role="option"]');
+			if (options === undefined || options.length === 0) {
+				return;
+			}
+			const selectedIndex = dependencyOptions.findIndex((option) => option.value === value.value);
+			options[position === 'first' ? 0 : position === 'last' ? options.length - 1 : selectedIndex]?.focus();
+		});
+	};
+
+	return (
+		<div ref={rootReference} className="blueprint-parameterization__dependency-dropdown">
+			<button
+				type="button"
+				className="blueprint-parameterization__dependency-trigger"
+				aria-controls={open ? listboxId : undefined}
+				aria-expanded={open}
+				aria-haspopup="listbox"
+				aria-label={`Parameter ${parameterNumber.toString()} dependency mode: ${value.label}`}
+				data-factorio-style="train_schedule_circuit_condition_comparator_dropdown"
+				disabled={disabled}
+				onClick={() => {
+					setOpen((current) => !current);
+				}}
+				onKeyDown={(event) => {
+					if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+						event.preventDefault();
+						setOpen(true);
+						focusOption(event.key === 'ArrowDown' ? 'first' : 'last');
+					}
+				}}
+			>
+				<span>{value.label}</span>
+				<span className="blueprint-parameterization__dependency-chevron" aria-hidden="true" />
+			</button>
+			{open ? (
+				<div
+					id={listboxId}
+					className="blueprint-parameterization__dependency-list"
+					role="listbox"
+					aria-label={`Dependency mode for parameter ${parameterNumber.toString()}`}
+				>
+					{dependencyOptions.map((option, optionIndex) => (
+						<button
+							type="button"
+							key={option.value}
+							className="blueprint-parameterization__dependency-option"
+							role="option"
+							aria-selected={option.value === value.value}
+							onClick={() => {
+								onChange(option);
+								setOpen(false);
+								rootReference.current
+									?.querySelector<HTMLButtonElement>('[aria-haspopup="listbox"]')
+									?.focus();
+							}}
+							onKeyDown={(event) => {
+								const target =
+									event.key === 'ArrowDown'
+										? optionIndex + 1
+										: event.key === 'ArrowUp'
+											? optionIndex - 1
+											: event.key === 'Home'
+												? 0
+												: event.key === 'End'
+													? dependencyOptions.length - 1
+													: undefined;
+								if (target !== undefined) {
+									event.preventDefault();
+									rootReference.current
+										?.querySelectorAll<HTMLElement>('[role="option"]')
+										.item(clamp(target, 0, dependencyOptions.length - 1))
+										.focus();
+								} else if (event.key === 'Escape') {
+									event.preventDefault();
+									event.stopPropagation();
+									setOpen(false);
+									rootReference.current
+										?.querySelector<HTMLButtonElement>('[aria-haspopup="listbox"]')
+										?.focus();
+								}
+							}}
+						>
+							{option.label}
+						</button>
+					))}
+				</div>
+			) : null}
+		</div>
+	);
+}
+
+interface ParameterDependencySourceProps {
+	currentSource: string;
+	disabled: boolean;
+	invalid: boolean;
+	onChange: (source: string) => void;
+	options: readonly DependencySourceOption[];
+	parameterNumber: number;
+}
+
+function ParameterDependencySource({
+	currentSource,
+	disabled,
+	invalid,
+	onChange,
+	options,
+	parameterNumber,
+}: ParameterDependencySourceProps) {
+	const [open, setOpen] = useState(false);
+	const rootReference = useRef<HTMLDivElement>(null);
+	const listboxId = useId();
+	const selected = options.find((option) => option.id === currentSource);
+
+	useEffect(() => {
+		if (!open) {
+			return undefined;
+		}
+		const closeOutside = (event: PointerEvent) => {
+			if (
+				event.target instanceof Node &&
+				(rootReference.current === null || !rootReference.current.contains(event.target))
+			) {
+				setOpen(false);
+			}
+		};
+		document.addEventListener('pointerdown', closeOutside);
+		return () => {
+			document.removeEventListener('pointerdown', closeOutside);
+		};
+	}, [open]);
+
+	return (
+		<div ref={rootReference} className="blueprint-parameterization__source-picker">
+			<FactorioInventorySlot
+				size={28}
+				className="blueprint-parameterization__source-trigger"
+				aria-controls={open ? listboxId : undefined}
+				aria-expanded={open}
+				aria-haspopup="listbox"
+				aria-invalid={invalid || undefined}
+				aria-label={`Parameter ${parameterNumber.toString()} dependency source: ${selected?.name ?? (currentSource === '' ? 'None' : `${currentSource} unavailable`)}`}
+				data-factorio-style="train_schedule_item_select_button"
+				disabled={disabled}
+				title={
+					invalid
+						? "Source of dependency isn't above."
+						: selected === undefined
+							? 'Choose dependency source'
+							: `Dependency source: ${selected.name}`
+				}
+				onClick={() => {
+					setOpen((current) => !current);
+				}}
+				onKeyDown={(event) => {
+					if ((event.key === 'Delete' || event.key === 'Backspace') && currentSource !== '') {
+						event.preventDefault();
+						onChange('');
+					} else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+						event.preventDefault();
+						setOpen(true);
+						requestAnimationFrame(() => {
+							const available = rootReference.current?.querySelectorAll<HTMLElement>('[role="option"]');
+							available?.item(event.key === 'ArrowDown' ? 0 : Math.max(0, available.length - 1)).focus();
+						});
+					}
+				}}
+			>
+				{selected === undefined ? (
+					<span aria-hidden="true">+</span>
+				) : (
+					<FactorioIcon icon={selected.signal} size="large" />
+				)}
+			</FactorioInventorySlot>
+			{open ? (
+				<div
+					id={listboxId}
+					className="blueprint-parameterization__source-list"
+					role="listbox"
+					aria-label={`Dependency source for parameter ${parameterNumber.toString()}`}
+				>
+					{options.length === 0 ? (
+						<span className="blueprint-parameterization__source-empty">No parameters above</span>
+					) : (
+						options.map((option, optionIndex) => (
+							<button
+								type="button"
+								key={option.id}
+								className="blueprint-parameterization__source-option"
+								role="option"
+								aria-label={option.name}
+								aria-selected={option.id === currentSource}
+								onClick={() => {
+									onChange(option.id);
+									setOpen(false);
+									rootReference.current
+										?.querySelector<HTMLButtonElement>('[aria-haspopup="listbox"]')
+										?.focus();
+								}}
+								onKeyDown={(event) => {
+									const target =
+										event.key === 'ArrowDown'
+											? optionIndex + 1
+											: event.key === 'ArrowUp'
+												? optionIndex - 1
+												: event.key === 'Home'
+													? 0
+													: event.key === 'End'
+														? options.length - 1
+														: undefined;
+									if (target !== undefined) {
+										event.preventDefault();
+										rootReference.current
+											?.querySelectorAll<HTMLElement>('[role="option"]')
+											.item(clamp(target, 0, options.length - 1))
+											.focus();
+									} else if (event.key === 'Escape') {
+										event.preventDefault();
+										event.stopPropagation();
+										setOpen(false);
+										rootReference.current
+											?.querySelector<HTMLButtonElement>('[aria-haspopup="listbox"]')
+											?.focus();
+									}
+								}}
+							>
+								<FactorioIcon icon={option.signal} size="large" />
+								<span>{option.name}</span>
+							</button>
+						))
+					)}
+				</div>
+			) : null}
+		</div>
+	);
 }
 
 function activeDialogAnchor(): DialogAnchor | undefined {
@@ -118,8 +392,9 @@ function dependenciesValid(parameters: readonly Parameter[]): boolean {
 		if (parameter.type !== 'id') {
 			continue;
 		}
-		const source = parameter.parameter === false ? '' : dependencySource(parameter);
-		if (source !== '' && (!available.has(source) || source === parameter.id)) {
+		const option = parameter.parameter === false ? dependencyOptions[0] : dependencyOption(parameter);
+		const source = option.field === undefined ? '' : dependencySource(parameter);
+		if (option.field !== undefined && (source === '' || !available.has(source) || source === parameter.id)) {
 			return false;
 		}
 		if (parameter.id !== undefined && parameter.id !== '') {
@@ -271,16 +546,37 @@ export function BlueprintParameterizationDialog({
 								baseSignal === undefined || parameter['quality-condition'] === undefined
 									? baseSignal
 									: {...baseSignal, quality: parameter['quality-condition'].quality};
-							const sourceOptions = draftParameters
-								.slice(0, index)
-								.flatMap((candidate) =>
-									candidate.type === 'id' &&
-									candidate.parameter !== false &&
-									candidate.id !== undefined &&
-									candidate.id !== ''
-										? [{id: candidate.id, name: candidate.name ?? candidate.id}]
-										: [],
-								);
+							const sourceOptions = draftParameters.slice(0, index).flatMap((candidate) =>
+								candidate.type === 'id' &&
+								candidate.parameter !== false &&
+								candidate.id !== undefined &&
+								candidate.id !== ''
+									? [
+											{
+												id: candidate.id,
+												name: candidate.name ?? candidate.id,
+												signal: inferredSignal(candidate, pickerOptions) ?? {
+													type: 'item',
+													name: candidate.id,
+												},
+											},
+										]
+									: [],
+							);
+							const sourceValid =
+								currentSource !== '' && sourceOptions.some((option) => option.id === currentSource);
+							const dependencyEnabled =
+								parameter.parameter !== false && currentDependency.field !== undefined;
+							const dependencyIndex = sourceValid
+								? draftParameters
+										.slice(0, index + 1)
+										.filter(
+											(candidate) =>
+												candidate.type === 'id' &&
+												dependencyOption(candidate).field === currentDependency.field &&
+												dependencySource(candidate) === currentSource,
+										).length
+								: undefined;
 							const parameterNumber = editableIndex + 1;
 							const previousParameterIndex = editableParameters[editableIndex - 1]?.index;
 							const nextParameterIndex = editableParameters[editableIndex + 1]?.index;
@@ -421,10 +717,12 @@ export function BlueprintParameterizationDialog({
 									</div>
 
 									<div className="blueprint-parameterization__secondary">
-										<label>
+										<label className="checkbox-label blueprint-parameterization__parameter-toggle">
 											<input
 												type="checkbox"
+												aria-label={`Parameter ${parameterNumber.toString()} enabled`}
 												checked={parameter.parameter !== false}
+												data-factorio-style="checkbox"
 												onChange={(event) => {
 													const checked = event.currentTarget.checked;
 													updateParameter(index, (current) => {
@@ -439,87 +737,65 @@ export function BlueprintParameterizationDialog({
 														return next;
 													});
 												}}
-											/>{' '}
-											Parameter
+											/>
+											<span
+												className="checkbox blueprint-parameterization__checkbox"
+												aria-hidden="true"
+											/>
+											<span>Parameter</span>
 											<span className="transform-visually-hidden"> {parameterNumber}</span>
 										</label>
-										<label className="blueprint-parameterization__select-label">
-											<span>
-												Dependency
-												<span className="transform-visually-hidden">
-													{' '}
-													mode for parameter {parameterNumber}
-												</span>
-											</span>
-											<select
-												aria-label={`Parameter ${parameterNumber.toString()} dependency mode`}
-												value={currentDependency.value}
-												disabled={parameter.parameter === false}
-												onChange={(event) => {
-													const selected = dependencyOptions.find(
-														(option) => option.value === event.currentTarget.value,
-													);
-													if (selected === undefined) {
-														throw new Error(
-															`Unknown parameter dependency mode: ${event.currentTarget.value}`,
-														);
+										<ParameterDependencyDropdown
+											disabled={parameter.parameter === false}
+											parameterNumber={parameterNumber}
+											value={currentDependency}
+											onChange={(selected) => {
+												updateParameter(index, (current) => {
+													const next = withoutDependencies(current);
+													if (selected.field !== undefined) {
+														next[selected.field] = currentSource;
 													}
-													updateParameter(index, (current) => {
-														const next = withoutDependencies(current);
-														const source = currentSource || sourceOptions.at(0)?.id;
-														if (selected.field !== undefined && source !== undefined) {
-															next[selected.field] = source;
-														}
-														return next;
-													});
-												}}
-											>
-												{dependencyOptions.map((option) => (
-													<option key={option.value} value={option.value}>
-														{option.label}
-													</option>
-												))}
-											</select>
-										</label>
-										<label className="blueprint-parameterization__select-label">
-											<span>
-												Source parameter
-												<span className="transform-visually-hidden">
-													{' '}
-													for parameter {parameterNumber}
+													return next;
+												});
+											}}
+										/>
+										{dependencyEnabled ? (
+											<>
+												<ParameterDependencySource
+													currentSource={currentSource}
+													disabled={parameter.parameter === false}
+													invalid={!sourceValid}
+													options={sourceOptions}
+													parameterNumber={parameterNumber}
+													onChange={(source) => {
+														updateParameter(index, (current) => {
+															const option = dependencyOption(current);
+															const next = withoutDependencies(current);
+															if (option.field !== undefined) {
+																next[option.field] = source;
+															}
+															return next;
+														});
+													}}
+												/>
+												<span
+													className="blueprint-parameterization__dependency-number"
+													data-valid={sourceValid ? 'true' : 'false'}
+													title={
+														sourceValid
+															? `Dependency #${dependencyIndex?.toString()}`
+															: "Source of dependency isn't above."
+													}
+												>
+													#{dependencyIndex}
 												</span>
-											</span>
-											<select
-												aria-label={`Parameter ${parameterNumber.toString()} dependency source`}
-												value={currentSource}
-												disabled={
-													parameter.parameter === false ||
-													currentDependency.field === undefined
-												}
-												onChange={(event) => {
-													const source = event.currentTarget.value;
-													updateParameter(index, (current) => {
-														const option = dependencyOption(current);
-														const next = withoutDependencies(current);
-														if (option.field !== undefined && source !== '') {
-															next[option.field] = source;
-														}
-														return next;
-													});
-												}}
-											>
-												<option value="">Select source</option>
-												{currentSource !== '' &&
-												!sourceOptions.some((option) => option.id === currentSource) ? (
-													<option value={currentSource}>{currentSource} (unavailable)</option>
-												) : null}
-												{sourceOptions.map((option) => (
-													<option key={option.id} value={option.id}>
-														{option.name}
-													</option>
-												))}
-											</select>
-										</label>
+												{sourceValid ? null : (
+													<span className="transform-visually-hidden" role="alert">
+														Source of dependency isn't above.
+													</span>
+												)}
+											</>
+										) : null}
 										<button
 											type="button"
 											className="blueprint-parameterization__drag-handle"
