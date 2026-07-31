@@ -386,7 +386,7 @@ function nextParameterId(parameters: readonly Parameter[]): string {
 	return `parameter-${index.toString()}`;
 }
 
-function dependenciesValid(parameters: readonly Parameter[]): boolean {
+function dependencyValidationMessage(parameters: readonly Parameter[]): string | undefined {
 	const available = new Set<string>();
 	for (const parameter of parameters) {
 		if (parameter.type !== 'id') {
@@ -395,13 +395,13 @@ function dependenciesValid(parameters: readonly Parameter[]): boolean {
 		const option = parameter.parameter === false ? dependencyOptions[0] : dependencyOption(parameter);
 		const source = option.field === undefined ? '' : dependencySource(parameter);
 		if (option.field !== undefined && (source === '' || !available.has(source) || source === parameter.id)) {
-			return false;
+			return "Source of dependency isn't above.";
 		}
 		if (parameter.id !== undefined && parameter.id !== '') {
 			available.add(parameter.id);
 		}
 	}
-	return true;
+	return undefined;
 }
 
 function moveParameter(parameters: readonly Parameter[], fromIndex: number, toIndex: number): Parameter[] {
@@ -433,6 +433,7 @@ export function BlueprintParameterizationDialog({
 }: BlueprintParameterizationDialogProps) {
 	const dialogTitleId = useId();
 	const dialogDescriptionId = useId();
+	const confirmErrorId = useId();
 	const [draftParameters, setDraftParameters] = useState(() => cloneParameters(parameters));
 	const [choosingValueIndex, setChoosingValueIndex] = useState<number>();
 	const [draggedParameterIndex, setDraggedParameterIndex] = useState<number>();
@@ -447,6 +448,7 @@ export function BlueprintParameterizationDialog({
 		[draftParameters, signalOptions],
 	);
 	const choosingParameter = choosingValueIndex === undefined ? undefined : draftParameters[choosingValueIndex];
+	const validationMessage = dependencyValidationMessage(draftParameters);
 	const dialogReference = useDialogFocus<HTMLElement>({
 		initialFocusSelector: '[data-dialog-initial-focus="true"]',
 		onClose,
@@ -493,9 +495,23 @@ export function BlueprintParameterizationDialog({
 		}
 	};
 	const confirmParameters = () => {
-		if (dependenciesValid(draftParameters)) {
+		if (validationMessage === undefined) {
 			onConfirm(cloneParameters(draftParameters));
 		}
+	};
+	const addParameter = () => {
+		setDraftParameters((current) => {
+			const id = nextParameterId(current);
+			return [
+				...current,
+				{
+					type: 'id',
+					id,
+					name: `Parameter ${(Number(id.slice('parameter-'.length)) + 1).toString()}`,
+					'quality-condition': {quality: 'normal', comparator: '='},
+				},
+			];
+		});
 	};
 
 	return createPortal(
@@ -699,8 +715,8 @@ export function BlueprintParameterizationDialog({
 												<FactorioIcon icon={signal} size="large" />
 											)}
 										</FactorioInventorySlot>
-										<button
-											type="button"
+										<FactorioButton
+											kind={FactorioButtonKind.Delete}
 											className="blueprint-parameterization__remove"
 											aria-label={`Remove parameter ${parameterNumber.toString()}${parameter.name === undefined ? '' : ` ${parameter.name}`}`}
 											title={`Remove parameter ${parameterNumber.toString()}${parameter.name === undefined ? '' : ` ${parameter.name}`}`}
@@ -711,9 +727,7 @@ export function BlueprintParameterizationDialog({
 													),
 												);
 											}}
-										>
-											×
-										</button>
+										/>
 									</div>
 
 									<div className="blueprint-parameterization__secondary">
@@ -827,36 +841,26 @@ export function BlueprintParameterizationDialog({
 								{unsupportedCount === 1 ? 'parameter is' : 'parameters are'} preserved unchanged.
 							</p>
 						)}
-						<button
-							data-dialog-initial-focus="true"
-							type="button"
-							className="blueprint-parameterization__add"
-							onClick={() => {
-								setDraftParameters((current) => {
-									const id = nextParameterId(current);
-									return [
-										...current,
-										{
-											type: 'id',
-											id,
-											name: `Parameter ${(Number(id.slice('parameter-'.length)) + 1).toString()}`,
-											'quality-condition': {quality: 'normal', comparator: '='},
-										},
-									];
-								});
-							}}
-						>
-							+ Add parameter
-						</button>
 					</FactorioScrollFrame>
 				</div>
 
 				<footer className="blueprint-parameterization__footer">
 					<FactorioButton
+						kind={FactorioButtonKind.Neutral}
+						className="blueprint-parameterization__add"
+						aria-label="Add parameter"
+						title="Add parameter"
+						onClick={addParameter}
+					>
+						<span aria-hidden="true">+</span>
+						<span>Add parameter</span>
+					</FactorioButton>
+					<FactorioButton
 						kind={FactorioButtonKind.Confirm}
 						className="transform-picker__confirm blueprint-parameterization__confirm"
-						disabled={!dependenciesValid(draftParameters)}
-						title="Confirm Blueprint parametrisation"
+						aria-describedby={validationMessage === undefined ? undefined : confirmErrorId}
+						disabled={validationMessage !== undefined}
+						title={validationMessage ?? 'Confirm Blueprint parametrisation'}
 						onClick={(event) => {
 							event.preventDefault();
 							confirmParameters();
@@ -865,6 +869,11 @@ export function BlueprintParameterizationDialog({
 						<span aria-hidden="true">✓</span>
 						<span className="transform-picker__confirm-label">Confirm</span>
 					</FactorioButton>
+					{validationMessage === undefined ? null : (
+						<span id={confirmErrorId} className="transform-visually-hidden">
+							{validationMessage}
+						</span>
+					)}
 				</footer>
 			</section>
 

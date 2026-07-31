@@ -83,9 +83,16 @@ test('shows editable ID rows and confirms unsupported number parameters unchange
 	const parameterRegion = within(dialog).getByRole('region', {name: 'Blueprint parameters'});
 	const orderDescription = within(dialog).getByText('Parameters are evaluated top to bottom.');
 	expect({
-		add: within(dialog).getByRole('button', {name: '+ Add parameter'}).textContent,
+		add: {
+			style: within(dialog).getByRole('button', {name: 'Add parameter'}).dataset.factorioStyle,
+			text: within(dialog).getByRole('button', {name: 'Add parameter'}).textContent,
+		},
 		anchorPlacement: dialog.parentElement?.dataset.anchorPlacement,
-		confirm: within(dialog).getByRole('button', {name: 'Confirm'}).textContent,
+		confirm: {
+			style: within(dialog).getByRole('button', {name: 'Confirm'}).dataset.factorioStyle,
+			text: within(dialog).getByRole('button', {name: 'Confirm'}).textContent,
+			title: within(dialog).getByRole('button', {name: 'Confirm'}).title,
+		},
 		dependencyMode: {
 			expanded: within(dialog)
 				.getByRole('button', {name: 'Parameter 2 dependency mode: Ingredient of'})
@@ -108,6 +115,9 @@ test('shows editable ID rows and confirms unsupported number parameters unchange
 		regionClass: parameterRegion.className,
 		regionStyle: parameterRegion.dataset.factorioStyle,
 		preserved: within(dialog).getByText('1 unsupported parameter is preserved unchanged.').textContent,
+		removeStyles: within(dialog)
+			.getAllByRole('button', {name: /^Remove parameter /})
+			.map((button) => button.dataset.factorioStyle),
 		reorderHandles: within(dialog)
 			.getAllByRole('button', {name: /^Reorder /})
 			.map((button) => ({
@@ -117,9 +127,9 @@ test('shows editable ID rows and confirms unsupported number parameters unchange
 			})),
 		rows: dialog.querySelectorAll('.blueprint-parameterization__row').length,
 	}).toStrictEqual({
-		add: '+ Add parameter',
+		add: {style: 'button', text: '+Add parameter'},
 		anchorPlacement: 'centered',
-		confirm: '✓Confirm',
+		confirm: {style: 'green_button', text: '✓Confirm', title: 'Confirm Blueprint parametrisation'},
 		dependencyMode: {
 			expanded: 'false',
 			style: 'train_schedule_circuit_condition_comparator_dropdown',
@@ -133,6 +143,7 @@ test('shows editable ID rows and confirms unsupported number parameters unchange
 		regionClass: 'factorio-frame factorio-frame--deep factorio-scroll-frame blueprint-parameterization__body',
 		regionStyle: 'deep_slots_scroll_pane',
 		preserved: '1 unsupported parameter is preserved unchanged.',
+		removeStyles: ['red_button', 'red_button'],
 		reorderHandles: [
 			{
 				keyshortcuts: 'ArrowUp ArrowDown',
@@ -265,7 +276,7 @@ test('edits signal, quality, dependencies, and row membership before confirming'
 	await user.click(screen.getByRole('option', {name: 'Product of'}));
 	await user.click(screen.getByRole('button', {name: 'Parameter 2 dependency source: iron-plate unavailable'}));
 	await user.click(screen.getByRole('option', {name: /Cable$/}));
-	await user.click(screen.getByRole('button', {name: '+ Add parameter'}));
+	await user.click(screen.getByRole('button', {name: 'Add parameter'}));
 	await user.click(screen.getByRole('button', {name: 'Remove parameter 3 Parameter 1'}));
 	await user.click(screen.getByRole('button', {name: 'Confirm'}));
 
@@ -349,11 +360,15 @@ test('uses game dependency controls with explicit source validation and disabled
 	});
 	expect({
 		confirmDisabled: confirm.hasAttribute('disabled'),
+		confirmError: document.getElementById(confirm.getAttribute('aria-describedby') ?? '')?.textContent,
+		confirmTitle: confirm.title,
 		dependencyNumber: dialog.querySelector('.blueprint-parameterization__dependency-number')?.textContent,
 		error: within(dialog).getByRole('alert').textContent,
 		invalid: emptySource.getAttribute('aria-invalid'),
 	}).toStrictEqual({
 		confirmDisabled: true,
+		confirmError: "Source of dependency isn't above.",
+		confirmTitle: "Source of dependency isn't above.",
 		dependencyNumber: '#',
 		error: "Source of dependency isn't above.",
 		invalid: 'true',
@@ -367,10 +382,14 @@ test('uses game dependency controls with explicit source validation and disabled
 	});
 	expect({
 		confirmDisabled: confirm.hasAttribute('disabled'),
+		confirmError: confirm.getAttribute('aria-describedby'),
+		confirmTitle: confirm.title,
 		dependencyNumber: within(dialog).getByTitle('Dependency #1').textContent,
 		invalid: selectedSource.getAttribute('aria-invalid'),
 	}).toStrictEqual({
 		confirmDisabled: false,
+		confirmError: null,
+		confirmTitle: 'Confirm Blueprint parametrisation',
 		dependencyNumber: '#1',
 		invalid: null,
 	});
@@ -517,7 +536,7 @@ test('presents source-order name and value controls with keyboard edit, clear, a
 		shortcuts: value.getAttribute('aria-keyshortcuts'),
 		size: value.style.width,
 	}).toStrictEqual({
-		controlOrder: ['Name: for parameter 1', '', 'Value:', '0', '×'],
+		controlOrder: ['Name: for parameter 1', '', 'Value:', '0', ''],
 		parameterArtwork: {nodeName: 'SPAN', source: null, text: '0'},
 		shortcuts: 'Enter Space Delete Backspace',
 		size: 'calc(28px * var(--factorio-ui-density, 1))',

@@ -60,6 +60,7 @@ export const DependencyControlStates: Story = {
 	},
 	play: async () => {
 		const dialog = await within(document.body).findByRole('dialog', {name: 'Blueprint parametrisation'});
+		const confirm = within(dialog).getByRole('button', {name: 'Confirm'});
 		await expect(within(dialog).getByRole('checkbox', {name: 'Parameter 2 enabled'})).not.toBeChecked();
 		await expect(
 			within(dialog).getByRole('button', {name: 'Parameter 2 dependency mode: Independent'}),
@@ -70,6 +71,27 @@ export const DependencyControlStates: Story = {
 		await expect(
 			within(dialog).getByRole('button', {name: 'Parameter 4 dependency source: missing-source unavailable'}),
 		).toHaveAttribute('aria-invalid', 'true');
+		await expect(confirm).toBeDisabled();
+		await expect(confirm).toHaveAttribute('data-factorio-style', 'green_button');
+		await expect(confirm).toHaveAttribute('title', "Source of dependency isn't above.");
+	},
+};
+
+export const AddAndRemoveControls: Story = {
+	args: {
+		parameters: [{type: 'id', id: 'iron-plate', name: 'Existing parameter'}],
+	},
+	play: async () => {
+		const dialog = await within(document.body).findByRole('dialog', {name: 'Blueprint parametrisation'});
+		const add = within(dialog).getByRole('button', {name: 'Add parameter'});
+		await expect(add).toHaveAttribute('data-factorio-style', 'button');
+		await userEvent.click(add);
+		const removeButtons = within(dialog).getAllByRole('button', {name: /^Remove parameter /});
+		await expect(removeButtons).toHaveLength(2);
+		for (const remove of removeButtons) {
+			await expect(remove).toHaveAttribute('data-factorio-style', 'red_button');
+		}
+		await expect(within(dialog).getByRole('button', {name: 'Confirm'})).toBeEnabled();
 	},
 };
 

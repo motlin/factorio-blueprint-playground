@@ -4522,7 +4522,10 @@ body {
 }
 
 .transform-dialog.blueprint-parameterization {
-	width: min(calc(680px * var(--factorio-ui-density)), 100%);
+	width: min(
+		calc(680px * var(--factorio-ui-density)),
+		calc(100vw - var(--transform-viewport-gutter) - var(--transform-viewport-gutter))
+	);
 	padding: 0;
 	overflow: hidden;
 }
@@ -4663,7 +4666,7 @@ body {
 	min-height: calc(28px * var(--factorio-ui-density));
 	grid-template-columns:
 		max-content minmax(72px, 1fr) max-content
-		calc(28px * var(--factorio-ui-density)) 30px;
+		calc(28px * var(--factorio-ui-density)) calc(28px * var(--factorio-ui-density));
 	align-items: center;
 	gap: calc(8px * var(--factorio-ui-density));
 }
@@ -4699,19 +4702,16 @@ body {
 }
 
 .blueprint-parameterization__remove {
-	width: 30px;
-	height: 30px;
+	width: calc(28px * var(--factorio-ui-density));
+	height: calc(28px * var(--factorio-ui-density));
+	min-height: calc(28px * var(--factorio-ui-density));
 	padding: 0;
-	border: 1px solid #331714;
-	background: #6e2923;
-	color: #ffe3df;
-	font-size: 20px;
-	line-height: 1;
 }
 
-.blueprint-parameterization__remove:hover,
-.blueprint-parameterization__remove:focus-visible {
-	background: #92362e;
+.blueprint-parameterization__remove .factorio-button__content,
+.blueprint-parameterization__remove svg {
+	width: calc(18px * var(--factorio-ui-density));
+	height: calc(18px * var(--factorio-ui-density));
 }
 
 .blueprint-parameterization__secondary {
@@ -4972,16 +4972,13 @@ body {
 }
 
 .blueprint-parameterization__add {
-	align-self: flex-start;
-	padding: 7px 12px;
-	border: 1px solid #1d1c1b;
-	background: #57534f;
-	color: #f0eeeb;
-}
-
-.blueprint-parameterization__add:hover,
-.blueprint-parameterization__add:focus-visible {
-	background: #6a6560;
+	width: auto;
+	min-width: calc(124px * var(--factorio-ui-density));
+	height: calc(32px * var(--factorio-ui-density));
+	min-height: calc(32px * var(--factorio-ui-density));
+	padding: calc(5px * var(--factorio-ui-density)) calc(10px * var(--factorio-ui-density));
+	font-weight: 700;
+	white-space: nowrap;
 }
 
 .blueprint-parameterization__footer {
@@ -4990,7 +4987,8 @@ body {
 	min-height: calc(44px * var(--factorio-ui-density));
 	flex: 0 0 auto;
 	align-items: center;
-	justify-content: flex-end;
+	justify-content: space-between;
+	gap: calc(8px * var(--factorio-ui-density));
 	padding: calc(8px * var(--factorio-ui-density));
 	background: var(--factorio-ui-dialog-face);
 }
