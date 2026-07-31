@@ -217,6 +217,11 @@ export function BlueprintParameterizationDialog({
 			});
 		}
 	};
+	const confirmParameters = () => {
+		if (dependenciesValid(draftParameters)) {
+			onConfirm(cloneParameters(draftParameters));
+		}
+	};
 
 	return createPortal(
 		<div
@@ -332,50 +337,72 @@ export function BlueprintParameterizationDialog({
 									}}
 								>
 									<div className="blueprint-parameterization__primary">
-										<label>
-											<span>
-												Name
-												<span className="transform-visually-hidden">
-													{' '}
-													for parameter {parameterNumber}
-												</span>
+										<label htmlFor={`parameter-name-${index.toString()}`}>
+											Name:
+											<span className="transform-visually-hidden">
+												{' '}
+												for parameter {parameterNumber}
 											</span>
-											<input
-												data-dialog-initial-focus={editableIndex === 0 ? 'true' : undefined}
-												type="text"
-												aria-label={`Parameter ${parameterNumber.toString()} name`}
-												value={parameter.name ?? ''}
-												onChange={(event) => {
-													const name = event.currentTarget.value;
-													updateParameter(index, (current) => {
-														const next = {...current};
-														if (name === '') {
-															delete next.name;
-														} else {
-															next.name = name;
-														}
-														return next;
-													});
-												}}
-											/>
 										</label>
-										<label>
-											<span>Value signal</span>
-											<FactorioInventorySlot
-												className={`transform-signal-slot${signal === undefined ? ' transform-signal-slot--empty' : ''}`}
-												aria-label={`Choose value for parameter ${parameterNumber.toString()}${parameter.name === undefined ? '' : ` ${parameter.name}`}`}
-												title={`Choose value for parameter ${parameterNumber.toString()}${parameter.name === undefined ? '' : ` ${parameter.name}`}`}
-												onClick={() => {
-													setChoosingValueIndex(index);
-												}}
-											>
-												{signal === undefined ? (
-													<span aria-hidden="true">+</span>
-												) : (
-													<FactorioIcon icon={signal} size="large" />
-												)}
-											</FactorioInventorySlot>
-										</label>
+										<input
+											id={`parameter-name-${index.toString()}`}
+											data-dialog-initial-focus={editableIndex === 0 ? 'true' : undefined}
+											type="text"
+											aria-label={`Parameter ${parameterNumber.toString()} name`}
+											value={parameter.name ?? ''}
+											onChange={(event) => {
+												const name = event.currentTarget.value;
+												updateParameter(index, (current) => {
+													const next = {...current};
+													if (name === '') {
+														delete next.name;
+													} else {
+														next.name = name;
+													}
+													return next;
+												});
+											}}
+											onKeyDown={(event) => {
+												if (event.key === 'Enter') {
+													event.preventDefault();
+													confirmParameters();
+												}
+											}}
+										/>
+										<span className="blueprint-parameterization__value-label">Value:</span>
+										<FactorioInventorySlot
+											size={28}
+											className={`transform-signal-slot blueprint-parameterization__value-slot${signal === undefined ? ' transform-signal-slot--empty' : ''}`}
+											aria-keyshortcuts={
+												signal === undefined ? 'Enter Space' : 'Enter Space Delete Backspace'
+											}
+											aria-label={`${signal === undefined ? 'Choose' : 'Edit'} value for parameter ${parameterNumber.toString()}${parameter.name === undefined ? '' : ` ${parameter.name}`}`}
+											title={`${signal === undefined ? 'Choose a value' : 'Edit value. Delete or Backspace to clear'} for parameter ${parameterNumber.toString()}${parameter.name === undefined ? '' : ` ${parameter.name}`}`}
+											onClick={() => {
+												setChoosingValueIndex(index);
+											}}
+											onKeyDown={(event) => {
+												if (
+													signal === undefined ||
+													(event.key !== 'Delete' && event.key !== 'Backspace')
+												) {
+													return;
+												}
+												event.preventDefault();
+												updateParameter(index, (current) => {
+													const next = {...current};
+													delete next.id;
+													delete next['quality-condition'];
+													return next;
+												});
+											}}
+										>
+											{signal === undefined ? (
+												<span aria-hidden="true">+</span>
+											) : (
+												<FactorioIcon icon={signal} size="large" />
+											)}
+										</FactorioInventorySlot>
 										<button
 											type="button"
 											className="blueprint-parameterization__remove"
@@ -556,7 +583,7 @@ export function BlueprintParameterizationDialog({
 						title="Confirm Blueprint parametrisation"
 						onClick={(event) => {
 							event.preventDefault();
-							onConfirm(cloneParameters(draftParameters));
+							confirmParameters();
 						}}
 					>
 						<span aria-hidden="true">✓</span>

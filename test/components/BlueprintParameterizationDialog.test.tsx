@@ -240,7 +240,7 @@ test('edits signal, quality, dependencies, and row membership before confirming'
 
 	await user.clear(screen.getByRole('textbox', {name: 'Parameter 1 name'}));
 	await user.type(screen.getByRole('textbox', {name: 'Parameter 1 name'}), 'Cable');
-	await user.click(screen.getByRole('button', {name: 'Choose value for parameter 1 Cable'}));
+	await user.click(screen.getByRole('button', {name: 'Edit value for parameter 1 Cable'}));
 	const picker = screen.getByRole('dialog', {name: 'Choose value for Cable'});
 	await user.click(within(picker).getByRole('button', {name: 'Choose Copper cable'}));
 	await user.click(within(picker).getByRole('button', {name: 'Rare quality'}));
@@ -289,7 +289,7 @@ test('keeps nested picker focus in the top layer and returns it through the dial
 
 	const parameterDialog = screen.getByRole('dialog', {name: 'Blueprint parametrisation'});
 	const firstName = within(parameterDialog).getByRole('textbox', {name: 'Parameter 1 name'});
-	const valueInvoker = within(parameterDialog).getByRole('button', {name: 'Choose value for parameter 1 Plate'});
+	const valueInvoker = within(parameterDialog).getByRole('button', {name: 'Edit value for parameter 1 Plate'});
 	expect({
 		activeElement: document.activeElement,
 		anchorPlacement: parameterDialog.parentElement?.dataset.anchorPlacement,
@@ -361,4 +361,63 @@ test('keeps nested picker focus in the top layer and returns it through the dial
 		editorAriaHidden: null,
 		editorInert: false,
 	});
+});
+
+test('presents source-order name and value controls with keyboard edit, clear, and confirm semantics', async () => {
+	const user = userEvent.setup();
+	const onConfirm = vi.fn<(nextParameters: Parameter[]) => void>();
+	render(
+		<BlueprintParameterizationDialog
+			dialogId="blueprint-parameterization"
+			onClose={vi.fn<() => void>()}
+			onConfirm={onConfirm}
+			parameters={[{type: 'id', id: 'parameter-0', name: 'Input'}]}
+			signalOptions={[{type: 'item', name: 'iron-plate'}]}
+		/>,
+	);
+
+	const dialog = screen.getByRole('dialog', {name: 'Blueprint parametrisation'});
+	const row = dialog.querySelector<HTMLElement>('.blueprint-parameterization__primary');
+	const name = within(dialog).getByRole<HTMLInputElement>('textbox', {name: 'Parameter 1 name'});
+	const value = within(dialog).getByRole('button', {name: 'Edit value for parameter 1 Input'});
+	const parameterArtwork = within(value).getByTestId('icon');
+	expect({
+		controlOrder: [...(row?.children ?? [])].map((child) => child.textContent),
+		parameterArtwork: {
+			nodeName: parameterArtwork.nodeName,
+			source: parameterArtwork.getAttribute('src'),
+			text: parameterArtwork.textContent,
+		},
+		shortcuts: value.getAttribute('aria-keyshortcuts'),
+		size: value.style.width,
+	}).toStrictEqual({
+		controlOrder: ['Name: for parameter 1', '', 'Value:', '0', '×'],
+		parameterArtwork: {nodeName: 'SPAN', source: null, text: '0'},
+		shortcuts: 'Enter Space Delete Backspace',
+		size: 'calc(28px * var(--factorio-ui-density, 1))',
+	});
+
+	value.focus();
+	await user.keyboard('{Delete}');
+	const emptyValue = within(dialog).getByRole('button', {name: 'Choose value for parameter 1 Input'});
+	expect({
+		activeElement: document.activeElement,
+		shortcuts: emptyValue.getAttribute('aria-keyshortcuts'),
+		text: emptyValue.textContent,
+	}).toStrictEqual({
+		activeElement: emptyValue,
+		shortcuts: 'Enter Space',
+		text: '+',
+	});
+
+	await user.keyboard('{Enter}');
+	expect(screen.getByRole('dialog', {name: 'Choose value for Input'}).getAttribute('aria-modal')).toBe('true');
+	await user.keyboard('{Escape}');
+	await waitFor(() => {
+		expect(document.activeElement).toBe(emptyValue);
+	});
+
+	name.focus();
+	await user.keyboard('{Enter}');
+	expect(onConfirm.mock.calls).toStrictEqual([[[{type: 'id', name: 'Input'}]]]);
 });

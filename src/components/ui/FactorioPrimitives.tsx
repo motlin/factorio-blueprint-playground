@@ -68,6 +68,7 @@ export function FactorioButton({
 export interface FactorioInventorySlotProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 	ref?: React.Ref<HTMLButtonElement>;
 	selected?: boolean;
+	size?: number;
 }
 
 export function FactorioInventorySlot({
@@ -76,11 +77,12 @@ export function FactorioInventorySlot({
 	disabled,
 	ref,
 	selected,
+	size,
 	style,
 	type = 'button',
 	...buttonProps
 }: FactorioInventorySlotProps) {
-	const slotSize = `calc(${gameUiSpec.styles.slotSize.toString()}px * var(--factorio-ui-density, 1))`;
+	const slotSize = `calc(${(size ?? gameUiSpec.styles.slotSize).toString()}px * var(--factorio-ui-density, 1))`;
 	return (
 		<button
 			{...buttonProps}
