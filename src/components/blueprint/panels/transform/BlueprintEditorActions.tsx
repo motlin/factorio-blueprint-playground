@@ -25,6 +25,7 @@ interface BlueprintEditorCloseConfirmationProps {
 
 function BlueprintEditorCloseConfirmation({onDiscard, onKeepEditing}: BlueprintEditorCloseConfirmationProps) {
 	const confirmationHeadingId = useId();
+	const confirmationMessageId = useId();
 	const confirmationReference = useDialogFocus<HTMLElement>({
 		initialFocusSelector: '[data-dialog-initial-focus="true"]',
 		onClose: onKeepEditing,
@@ -34,33 +35,42 @@ function BlueprintEditorCloseConfirmation({onDiscard, onKeepEditing}: BlueprintE
 		<div className="transform-dialog-backdrop transform-dialog-backdrop--confirmation">
 			<section
 				ref={confirmationReference}
-				className="factorio-frame factorio-frame--shallow transform-dialog transform-dialog--confirmation"
+				className="factorio-frame factorio-frame--shallow transform-dialog transform-dialog--confirmation blueprint-editor-close-confirmation"
+				data-factorio-source="ConfirmationBox"
 				role="alertdialog"
 				aria-modal="true"
 				aria-labelledby={confirmationHeadingId}
+				aria-describedby={confirmationMessageId}
 			>
 				<header className="factorio-title-bar transform-dialog__header">
-					<h3 id={confirmationHeadingId}>There are uncommitted changes</h3>
+					<h3 id={confirmationHeadingId}>Confirmation</h3>
 				</header>
-				<p>Closing now will discard this draft. Keep editing to save it first.</p>
-				<div className="transform-dialog__actions">
+				<div className="blueprint-editor-close-confirmation__notice" data-factorio-style="notice_scroll_pane">
+					<p id={confirmationMessageId}>There are unconfirmed changes.</p>
+				</div>
+				<div
+					className="transform-dialog__actions blueprint-editor-close-confirmation__actions"
+					data-factorio-style="dialog_buttons_horizontal_flow"
+				>
 					<FactorioButton
 						data-dialog-initial-focus="true"
-						className="transform-button"
+						className="blueprint-editor-close-confirmation__cancel"
+						data-factorio-source-style="back_button"
 						onClick={() => {
 							onKeepEditing();
 						}}
 					>
-						Keep Editing
+						Cancel
 					</FactorioButton>
 					<FactorioButton
 						kind={FactorioButtonKind.Delete}
-						className="transform-button"
+						className="blueprint-editor-close-confirmation__discard"
+						data-factorio-source-style="red_confirm_button"
 						onClick={() => {
 							onDiscard();
 						}}
 					>
-						Discard Changes
+						Discard changes
 					</FactorioButton>
 				</div>
 			</section>

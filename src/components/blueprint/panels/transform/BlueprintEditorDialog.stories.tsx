@@ -410,14 +410,16 @@ export const DirtyCloseConfirmation: Story = {
 	play: async ({canvasElement}) => {
 		const canvas = within(canvasElement);
 		const confirmation = within(document.body).getByRole('alertdialog', {
-			name: 'There are uncommitted changes',
+			name: 'Confirmation',
 		});
 
+		await expect(confirmation).toHaveAttribute('data-factorio-source', 'ConfirmationBox');
+		await expect(within(confirmation).getByText('There are unconfirmed changes.')).toBeVisible();
 		await expect(
 			within(confirmation)
 				.getAllByRole('button')
 				.map((button) => button.textContent),
-		).toStrictEqual(['Keep Editing', 'Discard Changes']);
+		).toStrictEqual(['Cancel', 'Discard changes']);
 		await expect(canvas.getByRole('button', {hidden: true, name: 'Save blueprint'})).toBeInTheDocument();
 	},
 };

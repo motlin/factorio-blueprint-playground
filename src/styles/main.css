@@ -4648,16 +4648,78 @@ body {
 }
 
 .transform-dialog--confirmation {
-	width: min(460px, 100%);
+	width: min(376px, 100%);
 }
 
-.transform-dialog--confirmation p {
-	margin: 12px 0;
-	color: #d8d4d0;
+.blueprint-editor-close-confirmation__notice {
+	min-width: 0;
+	padding: 4px 8px;
+	border: 1px solid #171717;
+	background: #242324;
+	box-shadow:
+		inset 0 2px 4px #111,
+		inset 0 -1px 1px #686868;
 }
 
-.transform-dialog--confirmation .transform-dialog__actions {
+.blueprint-editor-close-confirmation__notice p {
+	margin: 0;
+	color: var(--factorio-ui-text);
+	line-height: 1.35;
+	user-select: text;
+}
+
+.blueprint-editor-close-confirmation__actions {
+	align-items: stretch;
+	justify-content: space-between;
 	gap: 8px;
+	padding-top: 8px;
+}
+
+.blueprint-editor-close-confirmation__actions .factorio-button {
+	width: auto;
+	min-width: 112px;
+	height: 32px;
+	min-height: 32px;
+	padding-block: 6px 4px;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.blueprint-editor-close-confirmation__cancel {
+	justify-content: flex-start;
+	text-align: left;
+}
+
+.blueprint-editor-close-confirmation__cancel .factorio-button__content::before,
+.blueprint-editor-close-confirmation__discard .factorio-button__content::after {
+	width: 0;
+	height: 0;
+	border-block: 5px solid transparent;
+	content: '';
+}
+
+.blueprint-editor-close-confirmation__cancel .factorio-button__content::before {
+	border-right: 7px solid currentColor;
+}
+
+.blueprint-editor-close-confirmation__discard {
+	justify-content: flex-end;
+	text-align: right;
+}
+
+.blueprint-editor-close-confirmation__discard .factorio-button__content::after {
+	border-left: 7px solid currentColor;
+}
+
+@media (max-width: 360px) {
+	.blueprint-editor-close-confirmation__actions .factorio-button {
+		padding-inline: 6px;
+		font-size: 90%;
+	}
+
+	.blueprint-editor-close-confirmation__actions .factorio-button__content {
+		gap: 4px;
+	}
 }
 
 @media (max-width: 620px) {

@@ -141,7 +141,7 @@ test.each([
 	expect(onCommit.mock.calls).toStrictEqual(fixture.disabled ? [] : [[]]);
 });
 
-test('offers explicit discard or continued editing and routes Escape back to the same draft', async () => {
+test('matches ConfirmationBox and routes cancel or Escape back to the same draft', async () => {
 	const user = userEvent.setup();
 	const onCommit = vi.fn<() => void>();
 	const onDiscard = vi.fn<() => void>();
@@ -152,20 +152,34 @@ test('offers explicit discard or continued editing and routes Escape back to the
 		onDiscard,
 		onKeepEditing,
 	});
-	const confirmation = screen.getByRole('alertdialog', {name: 'There are uncommitted changes'});
+	const confirmation = screen.getByRole('alertdialog', {name: 'Confirmation'});
+	const message = within(confirmation).getByText('There are unconfirmed changes.');
+	const cancel = within(confirmation).getByRole('button', {name: 'Cancel'});
+	const discard = within(confirmation).getByRole('button', {name: 'Discard changes'});
 
 	expect({
+		activeElement: document.activeElement,
 		actions: within(confirmation)
 			.getAllByRole('button')
 			.map((button) => button.textContent),
-		message: within(confirmation).getByText('Closing now will discard this draft. Keep editing to save it first.')
-			.textContent,
+		describedBy: confirmation.getAttribute('aria-describedby'),
+		dialogSource: confirmation.dataset.factorioSource,
+		discardStyle: discard.dataset.factorioSourceStyle,
+		footerStyle: discard.parentElement?.dataset.factorioStyle,
+		message: message.textContent,
+		messageStyle: message.parentElement?.dataset.factorioStyle,
 	}).toStrictEqual({
-		actions: ['Keep Editing', 'Discard Changes'],
-		message: 'Closing now will discard this draft. Keep editing to save it first.',
+		activeElement: cancel,
+		actions: ['Cancel', 'Discard changes'],
+		describedBy: message.id,
+		dialogSource: 'ConfirmationBox',
+		discardStyle: 'red_confirm_button',
+		footerStyle: 'dialog_buttons_horizontal_flow',
+		message: 'There are unconfirmed changes.',
+		messageStyle: 'notice_scroll_pane',
 	});
 
-	await user.click(within(confirmation).getByRole('button', {name: 'Discard Changes'}));
+	await user.click(discard);
 	fireEvent.keyDown(window, {key: 'Escape'});
 
 	expect({
