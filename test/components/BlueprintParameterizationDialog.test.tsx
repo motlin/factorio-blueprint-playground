@@ -80,20 +80,38 @@ test('shows editable ID rows and confirms unsupported number parameters unchange
 	);
 
 	const dialog = screen.getByRole('dialog', {name: 'Blueprint parametrisation'});
+	const parameterRegion = within(dialog).getByRole('region', {name: 'Blueprint parameters'});
+	const orderDescription = within(dialog).getByText('Parameters are evaluated top to bottom.');
 	expect({
 		add: within(dialog).getByRole('button', {name: '+ Add parameter'}).textContent,
+		anchorPlacement: dialog.parentElement?.dataset.anchorPlacement,
+		confirm: within(dialog).getByRole('button', {name: 'Confirm'}).textContent,
 		dependencyMode: within(dialog).getByRole<HTMLSelectElement>('combobox', {
 			name: 'Parameter 2 dependency mode',
 		}).value,
+		description: dialog.getAttribute('aria-describedby'),
+		info: within(dialog).getByRole('button', {
+			name: 'Dependencies can only target parameters above them.',
+		}).title,
 		names: within(dialog)
 			.getAllByRole<HTMLInputElement>('textbox')
 			.map((input) => input.value),
+		orderDescription: orderDescription.id,
+		regionClass: parameterRegion.className,
+		regionStyle: parameterRegion.dataset.factorioStyle,
 		preserved: within(dialog).getByText('1 unsupported parameter is preserved unchanged.').textContent,
 		rows: dialog.querySelectorAll('.blueprint-parameterization__row').length,
 	}).toStrictEqual({
 		add: '+ Add parameter',
+		anchorPlacement: 'centered',
+		confirm: '✓Confirm',
 		dependencyMode: 'ingredient-of',
+		description: orderDescription.id,
+		info: 'Dependencies can only target parameters above them.',
 		names: ['Plate', 'Gear'],
+		orderDescription: orderDescription.id,
+		regionClass: 'factorio-frame factorio-frame--deep factorio-scroll-frame blueprint-parameterization__body',
+		regionStyle: 'deep_slots_scroll_pane',
 		preserved: '1 unsupported parameter is preserved unchanged.',
 		rows: 2,
 	});
@@ -174,11 +192,21 @@ test('keeps nested picker focus in the top layer and returns it through the dial
 	const valueInvoker = within(parameterDialog).getByRole('button', {name: 'Choose value for parameter 1 Plate'});
 	expect({
 		activeElement: document.activeElement,
+		anchorPlacement: parameterDialog.parentElement?.dataset.anchorPlacement,
+		anchoredPosition: {
+			left: parameterDialog.style.left,
+			top: parameterDialog.style.top,
+		},
 		editorAriaHidden: editor.getAttribute('aria-hidden'),
 		editorInert: editor.inert,
 		parameterInert: parameterDialog.inert,
 	}).toStrictEqual({
 		activeElement: firstName,
+		anchorPlacement: 'anchored',
+		anchoredPosition: {
+			left: '24px',
+			top: '24px',
+		},
 		editorAriaHidden: 'true',
 		editorInert: true,
 		parameterInert: false,

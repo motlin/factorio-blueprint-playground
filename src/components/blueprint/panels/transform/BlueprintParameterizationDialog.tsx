@@ -1,9 +1,9 @@
-import {useId, useMemo, useState} from 'react';
+import {useId, useLayoutEffect, useMemo, useState} from 'react';
 import {createPortal} from 'react-dom';
 
 import type {Parameter, SignalID} from '../../../../parsing/types';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
-import {FactorioButton, FactorioButtonKind, FactorioInventorySlot} from '../../../ui/FactorioUi';
+import {FactorioButton, FactorioButtonKind, FactorioInventorySlot, FactorioScrollFrame} from '../../../ui/FactorioUi';
 import {SignalPickerDialog} from './SignalPickerDialog';
 import {useDialogFocus} from './useDialogFocus';
 
@@ -23,6 +23,24 @@ interface BlueprintParameterizationDialogProps {
 	onConfirm: (parameters: Parameter[]) => void;
 	parameters: readonly Parameter[];
 	signalOptions: readonly SignalID[];
+}
+
+interface DialogAnchor {
+	bottom: number;
+	left: number;
+}
+
+function activeDialogAnchor(): DialogAnchor | undefined {
+	const activeElement = document.activeElement;
+	if (!(activeElement instanceof HTMLElement) || activeElement === document.body) {
+		return undefined;
+	}
+	const bounds = activeElement.getBoundingClientRect();
+	return {bottom: bounds.bottom, left: bounds.left};
+}
+
+function clamp(value: number, minimum: number, maximum: number): number {
+	return Math.min(Math.max(value, minimum), maximum);
 }
 
 function cloneParameters(parameters: readonly Parameter[]): Parameter[] {
@@ -119,8 +137,10 @@ export function BlueprintParameterizationDialog({
 	signalOptions,
 }: BlueprintParameterizationDialogProps) {
 	const dialogTitleId = useId();
+	const dialogDescriptionId = useId();
 	const [draftParameters, setDraftParameters] = useState(() => cloneParameters(parameters));
 	const [choosingValueIndex, setChoosingValueIndex] = useState<number>();
+	const [dialogAnchor] = useState(activeDialogAnchor);
 	const editableParameters = draftParameters.flatMap((parameter, index) =>
 		parameter.type === 'id' ? [{index, parameter}] : [],
 	);
@@ -135,6 +155,31 @@ export function BlueprintParameterizationDialog({
 		onClose,
 	});
 
+	useLayoutEffect(() => {
+		const dialog = dialogReference.current;
+		if (dialog === null || dialogAnchor === undefined) {
+			return undefined;
+		}
+
+		const positionDialog = () => {
+			const viewportGutter = window.innerWidth <= 480 || window.innerHeight <= 640 ? 8 : 24;
+			const dialogBounds = dialog.getBoundingClientRect();
+			const maximumLeft = Math.max(viewportGutter, window.innerWidth - dialogBounds.width - viewportGutter);
+			const maximumTop = Math.max(viewportGutter, window.innerHeight - dialogBounds.height - viewportGutter);
+			dialog.style.left = `${clamp(dialogAnchor.left, viewportGutter, maximumLeft).toString()}px`;
+			dialog.style.top = `${clamp(dialogAnchor.bottom + 4, viewportGutter, maximumTop).toString()}px`;
+		};
+
+		positionDialog();
+		window.addEventListener('resize', positionDialog);
+		const resizeObserver = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(positionDialog);
+		resizeObserver?.observe(dialog);
+		return () => {
+			resizeObserver?.disconnect();
+			window.removeEventListener('resize', positionDialog);
+		};
+	}, [dialogAnchor, dialogReference]);
+
 	const updateParameter = (index: number, update: (parameter: Parameter) => Parameter) => {
 		setDraftParameters((current) =>
 			current.map((parameter, parameterIndex) => (parameterIndex === index ? update(parameter) : parameter)),
@@ -142,7 +187,10 @@ export function BlueprintParameterizationDialog({
 	};
 
 	return createPortal(
-		<div className="transform-dialog-backdrop blueprint-parameterization__backdrop">
+		<div
+			className="transform-dialog-backdrop blueprint-parameterization__backdrop"
+			data-anchor-placement={dialogAnchor === undefined ? 'centered' : 'anchored'}
+		>
 			<section
 				ref={dialogReference}
 				id={dialogId}
@@ -150,6 +198,7 @@ export function BlueprintParameterizationDialog({
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby={dialogTitleId}
+				aria-describedby={dialogDescriptionId}
 			>
 				<header className="factorio-title-bar transform-dialog__header blueprint-parameterization__header">
 					<h3 id={dialogTitleId}>Blueprint parametrisation</h3>
@@ -162,238 +211,255 @@ export function BlueprintParameterizationDialog({
 					/>
 				</header>
 
-				<div className="panel-hole blueprint-parameterization__body">
-					<p className="blueprint-parameterization__order">
-						Parameters are evaluated top to bottom. Dependencies can only target parameters above them.
-					</p>
-					{editableParameters.map(({index, parameter}, editableIndex) => {
-						const currentDependency = dependencyOption(parameter);
-						const currentSource = dependencySource(parameter);
-						const baseSignal = inferredSignal(parameter, pickerOptions);
-						const signal =
-							baseSignal === undefined || parameter['quality-condition'] === undefined
-								? baseSignal
-								: {...baseSignal, quality: parameter['quality-condition'].quality};
-						const sourceOptions = draftParameters
-							.slice(0, index)
-							.flatMap((candidate) =>
-								candidate.type === 'id' &&
-								candidate.parameter !== false &&
-								candidate.id !== undefined &&
-								candidate.id !== ''
-									? [{id: candidate.id, name: candidate.name ?? candidate.id}]
-									: [],
-							);
-						const parameterNumber = editableIndex + 1;
-						return (
-							<div className="blueprint-parameterization__row" key={index}>
-								<div className="blueprint-parameterization__primary">
-									<label>
-										<span>
-											Name
-											<span className="transform-visually-hidden">
-												{' '}
-												for parameter {parameterNumber}
-											</span>
-										</span>
-										<input
-											data-dialog-initial-focus={editableIndex === 0 ? 'true' : undefined}
-											type="text"
-											aria-label={`Parameter ${parameterNumber.toString()} name`}
-											value={parameter.name ?? ''}
-											onChange={(event) => {
-												const name = event.currentTarget.value;
-												updateParameter(index, (current) => {
-													const next = {...current};
-													if (name === '') {
-														delete next.name;
-													} else {
-														next.name = name;
-													}
-													return next;
-												});
-											}}
-										/>
-									</label>
-									<label>
-										<span>Value signal</span>
-										<FactorioInventorySlot
-											className={`transform-signal-slot${signal === undefined ? ' transform-signal-slot--empty' : ''}`}
-											aria-label={`Choose value for parameter ${parameterNumber.toString()}${parameter.name === undefined ? '' : ` ${parameter.name}`}`}
-											title={`Choose value for parameter ${parameterNumber.toString()}${parameter.name === undefined ? '' : ` ${parameter.name}`}`}
-											onClick={() => {
-												setChoosingValueIndex(index);
-											}}
-										>
-											{signal === undefined ? (
-												<span aria-hidden="true">+</span>
-											) : (
-												<FactorioIcon icon={signal} size="large" />
-											)}
-										</FactorioInventorySlot>
-									</label>
-									<button
-										type="button"
-										className="blueprint-parameterization__remove"
-										aria-label={`Remove parameter ${parameterNumber.toString()}${parameter.name === undefined ? '' : ` ${parameter.name}`}`}
-										title={`Remove parameter ${parameterNumber.toString()}${parameter.name === undefined ? '' : ` ${parameter.name}`}`}
-										onClick={() => {
-											setDraftParameters((current) =>
-												current.filter(
-													(_candidate, parameterIndex) => parameterIndex !== index,
-												),
-											);
-										}}
-									>
-										×
-									</button>
-								</div>
-
-								<div className="blueprint-parameterization__secondary">
-									<label>
-										<input
-											type="checkbox"
-											checked={parameter.parameter !== false}
-											onChange={(event) => {
-												const checked = event.currentTarget.checked;
-												updateParameter(index, (current) => {
-													const next = checked ? {...current} : withoutDependencies(current);
-													if (checked) {
-														delete next.parameter;
-													} else {
-														next.parameter = false;
-													}
-													return next;
-												});
-											}}
-										/>{' '}
-										Parameter
-										<span className="transform-visually-hidden"> {parameterNumber}</span>
-									</label>
-									<label className="blueprint-parameterization__select-label">
-										<span>
-											Dependency
-											<span className="transform-visually-hidden">
-												{' '}
-												mode for parameter {parameterNumber}
-											</span>
-										</span>
-										<select
-											aria-label={`Parameter ${parameterNumber.toString()} dependency mode`}
-											value={currentDependency.value}
-											disabled={parameter.parameter === false}
-											onChange={(event) => {
-												const selected = dependencyOptions.find(
-													(option) => option.value === event.currentTarget.value,
-												);
-												if (selected === undefined) {
-													throw new Error(
-														`Unknown parameter dependency mode: ${event.currentTarget.value}`,
-													);
-												}
-												updateParameter(index, (current) => {
-													const next = withoutDependencies(current);
-													const source = currentSource || sourceOptions.at(0)?.id;
-													if (selected.field !== undefined && source !== undefined) {
-														next[selected.field] = source;
-													}
-													return next;
-												});
-											}}
-										>
-											{dependencyOptions.map((option) => (
-												<option key={option.value} value={option.value}>
-													{option.label}
-												</option>
-											))}
-										</select>
-									</label>
-									<label className="blueprint-parameterization__select-label">
-										<span>
-											Source parameter
-											<span className="transform-visually-hidden">
-												{' '}
-												for parameter {parameterNumber}
-											</span>
-										</span>
-										<select
-											aria-label={`Parameter ${parameterNumber.toString()} dependency source`}
-											value={currentSource}
-											disabled={
-												parameter.parameter === false || currentDependency.field === undefined
-											}
-											onChange={(event) => {
-												const source = event.currentTarget.value;
-												updateParameter(index, (current) => {
-													const option = dependencyOption(current);
-													const next = withoutDependencies(current);
-													if (option.field !== undefined && source !== '') {
-														next[option.field] = source;
-													}
-													return next;
-												});
-											}}
-										>
-											<option value="">Select source</option>
-											{currentSource !== '' &&
-											!sourceOptions.some((option) => option.id === currentSource) ? (
-												<option value={currentSource}>{currentSource} (unavailable)</option>
-											) : null}
-											{sourceOptions.map((option) => (
-												<option key={option.id} value={option.id}>
-													{option.name}
-												</option>
-											))}
-										</select>
-									</label>
-								</div>
-							</div>
-						);
-					})}
-
-					{editableParameters.length === 0 ? (
-						<p className="blueprint-parameterization__empty">No editable signal parameters.</p>
-					) : null}
-					{unsupportedCount === 0 ? null : (
-						<p className="blueprint-parameterization__preserved">
-							{unsupportedCount} unsupported {unsupportedCount === 1 ? 'parameter is' : 'parameters are'}{' '}
-							preserved unchanged.
+				<div className="blueprint-parameterization__inside">
+					<div className="blueprint-parameterization__subheader">
+						<p id={dialogDescriptionId} className="blueprint-parameterization__order">
+							Parameters are evaluated top to bottom.
 						</p>
-					)}
-					<button
-						data-dialog-initial-focus="true"
-						type="button"
-						className="blueprint-parameterization__add"
-						onClick={() => {
-							setDraftParameters((current) => {
-								const id = nextParameterId(current);
-								return [
-									...current,
-									{
-										type: 'id',
-										id,
-										name: `Parameter ${(Number(id.slice('parameter-'.length)) + 1).toString()}`,
-										'quality-condition': {quality: 'normal', comparator: '='},
-									},
-								];
-							});
-						}}
-					>
-						+ Add parameter
-					</button>
+						<button
+							type="button"
+							className="blueprint-parameterization__order-info"
+							aria-label="Dependencies can only target parameters above them."
+							title="Dependencies can only target parameters above them."
+						>
+							<span aria-hidden="true">ⓘ</span>
+						</button>
+					</div>
+					<FactorioScrollFrame className="blueprint-parameterization__body" aria-label="Blueprint parameters">
+						{editableParameters.map(({index, parameter}, editableIndex) => {
+							const currentDependency = dependencyOption(parameter);
+							const currentSource = dependencySource(parameter);
+							const baseSignal = inferredSignal(parameter, pickerOptions);
+							const signal =
+								baseSignal === undefined || parameter['quality-condition'] === undefined
+									? baseSignal
+									: {...baseSignal, quality: parameter['quality-condition'].quality};
+							const sourceOptions = draftParameters
+								.slice(0, index)
+								.flatMap((candidate) =>
+									candidate.type === 'id' &&
+									candidate.parameter !== false &&
+									candidate.id !== undefined &&
+									candidate.id !== ''
+										? [{id: candidate.id, name: candidate.name ?? candidate.id}]
+										: [],
+								);
+							const parameterNumber = editableIndex + 1;
+							return (
+								<div className="blueprint-parameterization__row" key={index}>
+									<div className="blueprint-parameterization__primary">
+										<label>
+											<span>
+												Name
+												<span className="transform-visually-hidden">
+													{' '}
+													for parameter {parameterNumber}
+												</span>
+											</span>
+											<input
+												data-dialog-initial-focus={editableIndex === 0 ? 'true' : undefined}
+												type="text"
+												aria-label={`Parameter ${parameterNumber.toString()} name`}
+												value={parameter.name ?? ''}
+												onChange={(event) => {
+													const name = event.currentTarget.value;
+													updateParameter(index, (current) => {
+														const next = {...current};
+														if (name === '') {
+															delete next.name;
+														} else {
+															next.name = name;
+														}
+														return next;
+													});
+												}}
+											/>
+										</label>
+										<label>
+											<span>Value signal</span>
+											<FactorioInventorySlot
+												className={`transform-signal-slot${signal === undefined ? ' transform-signal-slot--empty' : ''}`}
+												aria-label={`Choose value for parameter ${parameterNumber.toString()}${parameter.name === undefined ? '' : ` ${parameter.name}`}`}
+												title={`Choose value for parameter ${parameterNumber.toString()}${parameter.name === undefined ? '' : ` ${parameter.name}`}`}
+												onClick={() => {
+													setChoosingValueIndex(index);
+												}}
+											>
+												{signal === undefined ? (
+													<span aria-hidden="true">+</span>
+												) : (
+													<FactorioIcon icon={signal} size="large" />
+												)}
+											</FactorioInventorySlot>
+										</label>
+										<button
+											type="button"
+											className="blueprint-parameterization__remove"
+											aria-label={`Remove parameter ${parameterNumber.toString()}${parameter.name === undefined ? '' : ` ${parameter.name}`}`}
+											title={`Remove parameter ${parameterNumber.toString()}${parameter.name === undefined ? '' : ` ${parameter.name}`}`}
+											onClick={() => {
+												setDraftParameters((current) =>
+													current.filter(
+														(_candidate, parameterIndex) => parameterIndex !== index,
+													),
+												);
+											}}
+										>
+											×
+										</button>
+									</div>
+
+									<div className="blueprint-parameterization__secondary">
+										<label>
+											<input
+												type="checkbox"
+												checked={parameter.parameter !== false}
+												onChange={(event) => {
+													const checked = event.currentTarget.checked;
+													updateParameter(index, (current) => {
+														const next = checked
+															? {...current}
+															: withoutDependencies(current);
+														if (checked) {
+															delete next.parameter;
+														} else {
+															next.parameter = false;
+														}
+														return next;
+													});
+												}}
+											/>{' '}
+											Parameter
+											<span className="transform-visually-hidden"> {parameterNumber}</span>
+										</label>
+										<label className="blueprint-parameterization__select-label">
+											<span>
+												Dependency
+												<span className="transform-visually-hidden">
+													{' '}
+													mode for parameter {parameterNumber}
+												</span>
+											</span>
+											<select
+												aria-label={`Parameter ${parameterNumber.toString()} dependency mode`}
+												value={currentDependency.value}
+												disabled={parameter.parameter === false}
+												onChange={(event) => {
+													const selected = dependencyOptions.find(
+														(option) => option.value === event.currentTarget.value,
+													);
+													if (selected === undefined) {
+														throw new Error(
+															`Unknown parameter dependency mode: ${event.currentTarget.value}`,
+														);
+													}
+													updateParameter(index, (current) => {
+														const next = withoutDependencies(current);
+														const source = currentSource || sourceOptions.at(0)?.id;
+														if (selected.field !== undefined && source !== undefined) {
+															next[selected.field] = source;
+														}
+														return next;
+													});
+												}}
+											>
+												{dependencyOptions.map((option) => (
+													<option key={option.value} value={option.value}>
+														{option.label}
+													</option>
+												))}
+											</select>
+										</label>
+										<label className="blueprint-parameterization__select-label">
+											<span>
+												Source parameter
+												<span className="transform-visually-hidden">
+													{' '}
+													for parameter {parameterNumber}
+												</span>
+											</span>
+											<select
+												aria-label={`Parameter ${parameterNumber.toString()} dependency source`}
+												value={currentSource}
+												disabled={
+													parameter.parameter === false ||
+													currentDependency.field === undefined
+												}
+												onChange={(event) => {
+													const source = event.currentTarget.value;
+													updateParameter(index, (current) => {
+														const option = dependencyOption(current);
+														const next = withoutDependencies(current);
+														if (option.field !== undefined && source !== '') {
+															next[option.field] = source;
+														}
+														return next;
+													});
+												}}
+											>
+												<option value="">Select source</option>
+												{currentSource !== '' &&
+												!sourceOptions.some((option) => option.id === currentSource) ? (
+													<option value={currentSource}>{currentSource} (unavailable)</option>
+												) : null}
+												{sourceOptions.map((option) => (
+													<option key={option.id} value={option.id}>
+														{option.name}
+													</option>
+												))}
+											</select>
+										</label>
+									</div>
+								</div>
+							);
+						})}
+
+						{editableParameters.length === 0 ? (
+							<p className="blueprint-parameterization__empty">No editable signal parameters.</p>
+						) : null}
+						{unsupportedCount === 0 ? null : (
+							<p className="blueprint-parameterization__preserved">
+								{unsupportedCount} unsupported{' '}
+								{unsupportedCount === 1 ? 'parameter is' : 'parameters are'} preserved unchanged.
+							</p>
+						)}
+						<button
+							data-dialog-initial-focus="true"
+							type="button"
+							className="blueprint-parameterization__add"
+							onClick={() => {
+								setDraftParameters((current) => {
+									const id = nextParameterId(current);
+									return [
+										...current,
+										{
+											type: 'id',
+											id,
+											name: `Parameter ${(Number(id.slice('parameter-'.length)) + 1).toString()}`,
+											'quality-condition': {quality: 'normal', comparator: '='},
+										},
+									];
+								});
+							}}
+						>
+							+ Add parameter
+						</button>
+					</FactorioScrollFrame>
 				</div>
 
 				<footer className="blueprint-parameterization__footer">
 					<FactorioButton
 						kind={FactorioButtonKind.Confirm}
+						className="transform-picker__confirm blueprint-parameterization__confirm"
 						disabled={!dependenciesValid(draftParameters)}
+						title="Confirm Blueprint parametrisation"
 						onClick={(event) => {
 							event.preventDefault();
 							onConfirm(cloneParameters(draftParameters));
 						}}
 					>
 						<span aria-hidden="true">✓</span>
-						<span>Confirm</span>
+						<span className="transform-picker__confirm-label">Confirm</span>
 					</FactorioButton>
 				</footer>
 			</section>

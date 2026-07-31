@@ -1,6 +1,9 @@
 import type {Meta, StoryObj} from '@storybook/react-vite';
-import {fn} from 'storybook/test';
+import {useState, type ComponentProps} from 'react';
+import {expect, fn, userEvent, within} from 'storybook/test';
 
+import type {Parameter} from '../../../../parsing/types';
+import {FactorioButton} from '../../../ui/FactorioUi';
 import {BlueprintParameterizationDialog} from './BlueprintParameterizationDialog';
 import {transformStoryParameters} from './transformStoryParameters';
 
@@ -32,10 +35,74 @@ const meta = {
 		],
 	},
 	parameters: transformStoryParameters,
-	tags: ['autodocs'],
+	tags: ['autodocs', 'visual-conformance'],
 } satisfies Meta<typeof BlueprintParameterizationDialog>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const DependentParameters: Story = {};
+
+const scrollableSignalNames = [
+	'iron-plate',
+	'copper-plate',
+	'electronic-circuit',
+	'advanced-circuit',
+	'processing-unit',
+	'iron-gear-wheel',
+	'steel-plate',
+	'copper-cable',
+	'stone-brick',
+	'battery',
+] as const;
+
+const scrollableParameters: Parameter[] = scrollableSignalNames.map((id, index) => ({
+	type: 'id',
+	id,
+	name: `Parameter ${(index + 1).toString()}`,
+	'quality-condition': {quality: 'normal', comparator: '='},
+}));
+
+export const ScrollableParameters: Story = {
+	args: {
+		parameters: scrollableParameters,
+		signalOptions: scrollableSignalNames.map((name) => ({type: 'item', name})),
+	},
+};
+
+function ParameterizationLauncher(props: ComponentProps<typeof BlueprintParameterizationDialog>) {
+	const [open, setOpen] = useState(false);
+	return (
+		<div style={{boxSizing: 'border-box', minHeight: '100vh', padding: '48px'}}>
+			<FactorioButton
+				aria-label="Open Blueprint parametrisation"
+				onClick={() => {
+					setOpen(true);
+				}}
+			>
+				Open Blueprint parametrisation
+			</FactorioButton>
+			{open ? (
+				<BlueprintParameterizationDialog
+					{...props}
+					onClose={() => {
+						setOpen(false);
+					}}
+				/>
+			) : null}
+		</div>
+	);
+}
+
+export const AnchoredScrollableParameters: Story = {
+	args: {
+		parameters: scrollableParameters,
+		signalOptions: scrollableSignalNames.map((name) => ({type: 'item', name})),
+	},
+	render: (args) => <ParameterizationLauncher {...args} />,
+	play: async () => {
+		await userEvent.click(within(document.body).getByRole('button', {name: 'Open Blueprint parametrisation'}));
+		const dialog = await within(document.body).findByRole('dialog', {name: 'Blueprint parametrisation'});
+		await expect(dialog.parentElement?.dataset.anchorPlacement).toBe('anchored');
+	},
+};
