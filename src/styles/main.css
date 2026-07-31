@@ -2160,6 +2160,73 @@ body {
 	font-size: 1rem;
 }
 
+.upgrade-planner-dialog__identity {
+	display: flex;
+	min-width: 0;
+	align-items: center;
+	gap: calc(6px * var(--factorio-ui-density));
+}
+
+.upgrade-planner-dialog__identity-icon {
+	display: grid;
+	width: calc(28px * var(--factorio-ui-density));
+	height: calc(28px * var(--factorio-ui-density));
+	flex: 0 0 auto;
+	place-items: center;
+	background: #303030;
+	box-shadow:
+		inset 0 1px 1px #141414,
+		inset 0 -1px 1px #5a585a;
+}
+
+.upgrade-planner-dialog__context-strip {
+	display: flex;
+	min-width: 0;
+	min-height: calc(28px * var(--factorio-ui-density));
+	flex: 0 0 auto;
+	align-items: center;
+	justify-content: space-between;
+	gap: calc(12px * var(--factorio-ui-density));
+	padding: calc(4px * var(--factorio-ui-density)) calc(8px * var(--factorio-ui-density));
+	border-top: 1px solid #171717;
+	border-bottom: 1px solid #171717;
+	background: #292829;
+	box-shadow:
+		inset 0 1px #4d4b4d,
+		inset 0 -1px #3a393a;
+	color: #b7b2ad;
+	font-size: 78%;
+	line-height: 1.25;
+}
+
+.upgrade-planner-dialog__context {
+	display: flex;
+	min-width: 0;
+	flex: 1 1 auto;
+	align-items: center;
+	gap: calc(5px * var(--factorio-ui-density));
+}
+
+.upgrade-planner-dialog__context-label {
+	flex: 0 0 auto;
+	color: #d6d1cb;
+	font-weight: 600;
+}
+
+.upgrade-planner-dialog__breadcrumb,
+.upgrade-planner-dialog__library-state {
+	overflow: hidden;
+	min-width: 0;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.upgrade-planner-dialog__library-state {
+	max-width: 48%;
+	flex: 0 1 auto;
+	text-align: right;
+}
+
 .upgrade-planner-dialog__body {
 	display: flex;
 	min-width: 0;
@@ -2199,15 +2266,6 @@ body {
 	min-width: 0;
 	flex: 1 1 auto;
 	padding: 0;
-}
-
-.upgrade-planner-dialog__record-state {
-	max-width: 42%;
-	overflow: hidden;
-	color: #b7b2ad;
-	font-size: 75%;
-	text-overflow: ellipsis;
-	white-space: nowrap;
 }
 
 .upgrade-planner-dialog__record-details {
@@ -5268,6 +5326,17 @@ body {
 		align-items: flex-start;
 		flex-direction: column;
 		gap: 2px;
+	}
+
+	.upgrade-planner-dialog__context-strip {
+		align-items: stretch;
+		flex-direction: column;
+		gap: 2px;
+	}
+
+	.upgrade-planner-dialog__library-state {
+		max-width: none;
+		text-align: left;
 	}
 
 	.transform-workbench__footer > .flex-space-between {

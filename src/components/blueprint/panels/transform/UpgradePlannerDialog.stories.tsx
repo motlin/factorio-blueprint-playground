@@ -96,6 +96,7 @@ export const EditablePlanner: Story = {
 	play: async () => {
 		const dialog = within(document.body).getByRole('dialog', {name: 'Upgrade Planner'});
 		const editor = within(dialog).getByRole('region', {name: 'Upgrade planner editor'});
+		const context = within(dialog).getByRole('navigation', {name: 'Upgrade planner blueprint context'});
 		const mapperScroll = within(editor).getByRole('region', {name: 'Upgrade mappings'});
 		const grid = mapperScroll.querySelector<HTMLElement>('.upgrade-mapping-grid');
 		const firstPair = mapperScroll.querySelector<HTMLElement>('.upgrade-mapping-grid__slots > li');
@@ -112,9 +113,12 @@ export const EditablePlanner: Story = {
 			endpointWidth: firstEndpoint.getBoundingClientRect().width,
 			gridWidth: grid.getBoundingClientRect().width,
 			headingGroups: mapperScroll.querySelectorAll('.upgrade-mapping-grid__headings > div').length,
+			headerIcon: dialog.querySelector('.upgrade-planner-dialog__identity-icon img')?.getAttribute('src'),
+			libraryState: within(dialog).getByLabelText('Planner library status').textContent,
 			mapperStyle: mapperScroll.dataset.factorioStyle,
 			mappingCount: mapperScroll.querySelectorAll('[data-mapping-key]').length,
 			pairWidth: firstPair.getBoundingClientRect().width,
+			plannerContext: context.textContent,
 			slotCount: mapperScroll.querySelectorAll('[data-upgrade-mapping-slot]').length,
 		}).toStrictEqual({
 			applicationInsideEditor: null,
@@ -122,10 +126,39 @@ export const EditablePlanner: Story = {
 			endpointWidth: 40,
 			gridWidth: 400,
 			headingGroups: 4,
+			headerIcon: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
+			libraryState: 'Local draft · not in Blueprint Library',
 			mapperStyle: 'mappers_scroll_pane',
 			mappingCount: 1,
 			pairWidth: 80,
+			plannerContext: "Selected blueprint›Alice's blueprint",
 			slotCount: 16,
+		});
+	},
+};
+
+export const SavedPlannerRootScope: Story = {
+	args: {
+		breadcrumb: "Alice's belt book › Smelting",
+		canChooseRootScope: true,
+		matchCount: 153,
+		savedRecordName: 'Starter belt upgrades',
+		scope: 'root',
+	},
+	play: async () => {
+		const dialog = within(document.body).getByRole('dialog', {name: 'Upgrade Planner'});
+		await expect({
+			applicationStatus: within(dialog).getByLabelText('153 matches').textContent,
+			context: within(dialog).getByRole('navigation', {name: 'Upgrade planner blueprint context'}).textContent,
+			contextExtension: dialog
+				.querySelector('.upgrade-planner-dialog__context-strip')
+				?.getAttribute('data-website-extension'),
+			libraryState: within(dialog).getByLabelText('Planner library status').textContent,
+		}).toStrictEqual({
+			applicationStatus: '153 matches',
+			context: "Entire root book›Alice's belt book › Smelting",
+			contextExtension: 'planner-context',
+			libraryState: 'Blueprint Library › Starter belt upgrades',
 		});
 	},
 };

@@ -410,18 +410,47 @@ export function UpgradePlannerDialog({
 				aria-hidden={savePrompt.open || undefined}
 				inert={savePrompt.open}
 			>
-				<header className="factorio-title-bar transform-dialog__header upgrade-planner-dialog__title-bar">
-					<h3 id={dialogHeadingId}>Upgrade Planner</h3>
+				<header
+					className="factorio-title-bar transform-dialog__header upgrade-planner-dialog__title-bar"
+					data-factorio-source="UpgradeItemGui::UpgradeItemGui"
+				>
+					<div className="upgrade-planner-dialog__identity">
+						<span
+							className="upgrade-planner-dialog__identity-icon"
+							data-website-extension="planner-identity-icon"
+						>
+							<FactorioIcon decorative icon={{type: 'item', name: 'upgrade-planner'}} size="small" />
+						</span>
+						<h3 id={dialogHeadingId}>Upgrade Planner</h3>
+					</div>
 					<FactorioButton
 						kind={FactorioButtonKind.Close}
 						className="transform-dialog__close"
 						aria-label="Close Upgrade Planner"
+						data-factorio-source="GameGuiWithControllerInventory::closeButton"
+						data-factorio-close-action="request-close"
 						title="Close Upgrade Planner"
 						onClick={() => {
 							onClose();
 						}}
 					/>
 				</header>
+				<div className="upgrade-planner-dialog__context-strip" data-website-extension="planner-context">
+					<nav className="upgrade-planner-dialog__context" aria-label="Upgrade planner blueprint context">
+						<span className="upgrade-planner-dialog__context-label">
+							{scope === 'root' ? 'Entire root book' : selectionScopeLabel}
+						</span>
+						<span aria-hidden="true">›</span>
+						<span className="upgrade-planner-dialog__breadcrumb" aria-current="page">
+							{breadcrumb}
+						</span>
+					</nav>
+					<span className="upgrade-planner-dialog__library-state" aria-label="Planner library status">
+						{savedRecordName === undefined
+							? 'Local draft · not in Blueprint Library'
+							: `Blueprint Library › ${savedRecordName}`}
+					</span>
+				</div>
 
 				<div className="upgrade-planner-dialog__body">
 					<section
@@ -442,11 +471,6 @@ export function UpgradePlannerDialog({
 									onLabelChange={recordMetadata.onLabelChange}
 								/>
 							</div>
-							<span className="upgrade-planner-dialog__record-state">
-								{savedRecordName === undefined
-									? 'Not saved to Blueprint Library'
-									: `Saved record: ${savedRecordName}`}
-							</span>
 						</header>
 						<div className="upgrade-planner-dialog__record-details">
 							<section
@@ -495,7 +519,7 @@ export function UpgradePlannerDialog({
 						<header className="factorio-title-bar upgrade-planner-dialog__panel-heading">
 							<h4 id={applicationHeadingId}>Website application</h4>
 							<span aria-label={`${matchCount.toString()} ${matchCount === 1 ? 'match' : 'matches'}`}>
-								{`${matchCount.toString()} ${matchCount === 1 ? 'match' : 'matches'} in ${breadcrumb}`}
+								{`${matchCount.toString()} ${matchCount === 1 ? 'match' : 'matches'}`}
 							</span>
 						</header>
 						<div className="upgrade-planner-dialog__application-controls">

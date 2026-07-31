@@ -387,6 +387,9 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			throw new Error('Expected the website application section.');
 		}
 		const dialogHeading = within(dialog).getByRole('heading', {name: 'Upgrade Planner'});
+		const plannerContext = within(dialog).getByRole('navigation', {
+			name: 'Upgrade planner blueprint context',
+		});
 		expect(dialog.getAttribute('aria-labelledby')).toBe(dialogHeading.id);
 		expect({
 			applicationExtension: application.dataset.websiteExtension,
@@ -395,6 +398,11 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 				?.className,
 			changeIn: screen.queryByRole('group', {name: 'Change in'}),
 			closeButton: within(dialog).getByRole('button', {name: 'Close Upgrade Planner'}).getAttribute('aria-label'),
+			closeSource: within(dialog)
+				.getByRole('button', {name: 'Close Upgrade Planner'})
+				.getAttribute('data-factorio-source'),
+			context: plannerContext.textContent,
+			contextExtension: plannerContext.parentElement?.dataset.websiteExtension,
 			dialog: dialog.getAttribute('aria-modal'),
 			editorClass: editor.className,
 			editorStyle: editor.dataset.factorioStyle,
@@ -409,6 +417,9 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 					: undefined,
 			fromToGroup: within(editor).getByRole('group', {name: 'From and To mappings'}).getAttribute('aria-label'),
 			headerElement: dialog.firstElementChild?.tagName,
+			headerIcon: dialog.querySelector('.upgrade-planner-dialog__identity-icon img')?.getAttribute('src'),
+			headerSource: dialog.firstElementChild?.getAttribute('data-factorio-source'),
+			libraryState: within(dialog).getByLabelText('Planner library status').textContent,
 			liveResult: screen.queryByText('Live result'),
 			loaderInsideEditor: within(editor).queryByText('Load planner'),
 			loaderExtension:
@@ -447,6 +458,9 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			bookWidePanel: 'panel-hole transform-workflow__section book-wide-replacements',
 			changeIn: null,
 			closeButton: 'Close Upgrade Planner',
+			closeSource: 'GameGuiWithControllerInventory::closeButton',
+			context: 'This blueprint or book›Untitled blueprint',
+			contextExtension: 'planner-context',
 			dialog: 'true',
 			editorClass: 'factorio-frame factorio-frame--shallow upgrade-planner-dialog__editor-shell',
 			editorStyle: 'entity_frame',
@@ -456,6 +470,9 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			footerExtension: 'planner-actions',
 			fromToGroup: 'From and To mappings',
 			headerElement: 'HEADER',
+			headerIcon: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
+			headerSource: 'UpgradeItemGui::UpgradeItemGui',
+			libraryState: 'Local draft · not in Blueprint Library',
 			liveResult: null,
 			loaderInsideEditor: null,
 			loaderExtension: 'planner-library-loader',
@@ -1130,7 +1147,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		await choosePlanner(user, 'Library belts');
 		await user.click(screen.getByRole('button', {name: 'Choose target for Transport belt'}));
 		await chooseSignal(user, 'Express transport belt');
-		expect(screen.getByText('Saved record: Library belts').textContent).toBe('Saved record: Library belts');
+		expect(screen.getByLabelText('Planner library status').textContent).toBe('Blueprint Library › Library belts');
 		await user.click(screen.getByRole('button', {name: 'Edit planner name'}));
 		const canceledName = screen.getByRole('textbox', {name: 'Planner name'});
 		await user.clear(canceledName);
@@ -1313,12 +1330,12 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			description: screen.getByRole<HTMLInputElement>('textbox', {name: 'Planner description'}).value,
 			iconTitle: screen.getByRole('button', {name: 'Edit preview icon 1'}).title,
 			name: screen.getByText('Reloaded planner', {selector: '.blueprint-editor__title'}).textContent,
-			state: screen.getByText('Saved record: Reloaded planner').textContent,
+			state: screen.getByLabelText('Planner library status').textContent,
 		}).toStrictEqual({
 			description: 'Reloaded description',
 			iconTitle: 'Signal green\nvirtual:signal-green',
 			name: 'Reloaded planner',
-			state: 'Saved record: Reloaded planner',
+			state: 'Blueprint Library › Reloaded planner',
 		});
 	});
 
