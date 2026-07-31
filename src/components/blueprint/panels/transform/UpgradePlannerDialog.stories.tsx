@@ -1,5 +1,5 @@
 import type {Meta, StoryObj} from '@storybook/react-vite';
-import {expect, fn, within} from 'storybook/test';
+import {expect, fn, userEvent, within} from 'storybook/test';
 
 import type {BlueprintString} from '../../../../parsing/types';
 import {transformStoryParameters} from './transformStoryParameters';
@@ -72,6 +72,17 @@ const meta = {
 			onIconsChange: fn(),
 			onLabelChange: fn(),
 		},
+		recordTools: {
+			deleteKind: 'local',
+			onCopy: fn(async () => {
+				await Promise.resolve();
+				return true;
+			}),
+			onDelete: fn(async () => {
+				await Promise.resolve();
+			}),
+			onExport: fn(),
+		},
 		saveDisabled: false,
 		savePrompt: {
 			label: 'Starter belt upgrades',
@@ -97,6 +108,7 @@ export const EditablePlanner: Story = {
 		const dialog = within(document.body).getByRole('dialog', {name: 'Upgrade Planner'});
 		const editor = within(dialog).getByRole('region', {name: 'Upgrade planner editor'});
 		const context = within(dialog).getByRole('navigation', {name: 'Upgrade planner blueprint context'});
+		const recordTools = within(dialog).getByRole('toolbar', {name: 'Planner record tools'});
 		const mapperScroll = within(editor).getByRole('region', {name: 'Upgrade mappings'});
 		const grid = mapperScroll.querySelector<HTMLElement>('.upgrade-mapping-grid');
 		const firstPair = mapperScroll.querySelector<HTMLElement>('.upgrade-mapping-grid__slots > li');
@@ -119,6 +131,9 @@ export const EditablePlanner: Story = {
 			mappingCount: mapperScroll.querySelectorAll('[data-mapping-key]').length,
 			pairWidth: firstPair.getBoundingClientRect().width,
 			plannerContext: context.textContent,
+			recordTools: within(recordTools)
+				.getAllByRole('button')
+				.map((button) => ({label: button.getAttribute('aria-label'), style: button.dataset.factorioStyle})),
 			slotCount: mapperScroll.querySelectorAll('[data-upgrade-mapping-slot]').length,
 		}).toStrictEqual({
 			applicationInsideEditor: null,
@@ -132,8 +147,71 @@ export const EditablePlanner: Story = {
 			mappingCount: 1,
 			pairWidth: 80,
 			plannerContext: "Selected blueprint›Alice's blueprint",
+			recordTools: [
+				{label: 'Copy planner string', style: 'button'},
+				{label: 'Export planner string', style: 'button'},
+				{label: 'Discard local planner', style: 'red_button'},
+			],
 			slotCount: 16,
 		});
+	},
+};
+
+export const MetadataEditor: Story = {
+	play: async () => {
+		const planner = within(document.body).getByRole('dialog', {name: 'Upgrade Planner'});
+		await userEvent.click(within(planner).getByRole('button', {name: 'Edit planner name'}));
+		const editor = within(document.body).getByRole('dialog', {name: 'Edit upgrade planner'});
+		await expect(planner).toHaveAttribute('inert');
+		await expect(within(editor).getByRole('textbox', {name: 'Name'})).toHaveValue('Starter belt upgrades');
+		await expect(within(editor).getByRole('textbox', {name: 'Planner description'})).toHaveValue(
+			'Upgrade the starter belt line.',
+		);
+		await expect(within(editor).getByRole('img', {name: 'Upgrade planner icon preview'})).toHaveAttribute(
+			'data-preview-icon-count',
+			'1',
+		);
+		await expect(within(editor).getAllByRole('button', {name: /preview icon/})).toHaveLength(4);
+		await expect(within(editor).getByRole('button', {name: 'Confirm planner metadata'})).toHaveAttribute(
+			'data-factorio-style',
+			'green_button',
+		);
+	},
+};
+
+export const MetadataDescriptionEditing: Story = {
+	play: async () => {
+		await userEvent.click(within(document.body).getByRole('button', {name: 'Edit planner name'}));
+		const description = within(document.body).getByRole('textbox', {name: 'Planner description'});
+		await userEvent.click(description);
+		await userEvent.type(description, ' Updated.');
+		await expect(description).toHaveFocus();
+	},
+};
+
+export const MetadataIconPicker: Story = {
+	play: async () => {
+		await userEvent.click(within(document.body).getByRole('button', {name: 'Edit planner name'}));
+		await userEvent.click(within(document.body).getByRole('button', {name: 'Choose preview icon 2'}));
+		await expect(document.querySelector('.upgrade-planner-metadata')).toHaveAttribute('inert');
+		await expect(within(document.body).getByRole('dialog', {name: 'Choose planner preview icon 2'})).toBeVisible();
+	},
+};
+
+export const SavedDeleteConfirmation: Story = {
+	args: {
+		recordTools: {...meta.args.recordTools, deleteKind: 'saved'},
+		savedRecordName: 'Starter belt upgrades',
+	},
+	play: async () => {
+		await userEvent.click(
+			within(document.body).getByRole('button', {name: 'Delete planner from Blueprint Library'}),
+		);
+		const confirmation = within(document.body).getByRole('alertdialog', {name: 'Delete saved planner?'});
+		await expect(within(confirmation).getByRole('button', {name: 'Delete from Library'})).toHaveAttribute(
+			'data-factorio-style',
+			'red_button',
+		);
 	},
 };
 

@@ -174,6 +174,17 @@ function renderPlannerHtml(): string {
 				onIconsChange: noop,
 				onLabelChange: noop,
 			}}
+			recordTools={{
+				deleteKind: 'local',
+				onCopy: async () => {
+					await Promise.resolve();
+					return true;
+				},
+				onDelete: async () => {
+					await Promise.resolve();
+				},
+				onExport: noop,
+			}}
 			saveDisabled={false}
 			savePrompt={{
 				label: 'Default Upgrade',

@@ -2268,21 +2268,32 @@ body {
 	padding: 0;
 }
 
-.upgrade-planner-dialog__record-details {
-	display: grid;
-	min-width: 0;
-	grid-template-columns: auto minmax(0, 1fr);
-	align-items: stretch;
-	gap: calc(8px * var(--factorio-ui-density));
+.upgrade-planner-dialog__record-tools {
+	display: flex;
+	flex: 0 0 auto;
+	align-items: center;
+	gap: calc(3px * var(--factorio-ui-density));
 }
 
-.upgrade-planner-dialog__preview-icons > div {
-	padding-top: 2px;
+.upgrade-planner-dialog__record-tool {
+	width: calc(28px * var(--factorio-ui-density));
+	min-width: calc(28px * var(--factorio-ui-density));
+	height: calc(28px * var(--factorio-ui-density));
+	min-height: calc(28px * var(--factorio-ui-density));
+	padding: calc(4px * var(--factorio-ui-density));
 }
 
-.upgrade-planner-dialog__preview-icons h4,
-.upgrade-planner-dialog__record-details .blueprint-description-editor__heading {
-	padding-block: calc(5px * var(--factorio-ui-density));
+.upgrade-planner-dialog__record-tool svg {
+	width: calc(18px * var(--factorio-ui-density));
+	height: calc(18px * var(--factorio-ui-density));
+}
+
+.upgrade-planner-dialog__record-description {
+	margin: 0;
+	color: var(--factorio-ui-title);
+	font-weight: 700;
+	line-height: 1.3;
+	user-select: text;
 }
 
 .upgrade-planner-dialog__filler {
@@ -4424,6 +4435,104 @@ body {
 	outline-offset: -2px;
 }
 
+.upgrade-planner-metadata__backdrop {
+	z-index: 1150;
+}
+
+.transform-dialog.upgrade-planner-metadata {
+	width: min(
+		calc(560px * var(--factorio-ui-density)),
+		calc(100vw - var(--transform-viewport-gutter) - var(--transform-viewport-gutter))
+	);
+	padding: 0;
+}
+
+.upgrade-planner-metadata__header {
+	margin: 0;
+}
+
+.upgrade-planner-metadata__record {
+	display: flex;
+	min-width: 0;
+	flex-direction: column;
+	gap: calc(6px * var(--factorio-ui-density));
+	margin: 0 calc(8px * var(--factorio-ui-density));
+	padding: calc(10px * var(--factorio-ui-density));
+	background: #3e3d3e;
+}
+
+.upgrade-planner-metadata__label,
+.upgrade-planner-metadata .blueprint-description-editor__heading {
+	margin: 0;
+	padding: 0;
+	color: var(--factorio-ui-title);
+	font-weight: 700;
+	line-height: calc(20px * var(--factorio-ui-density));
+	user-select: text;
+}
+
+.upgrade-planner-metadata__name {
+	width: 100%;
+	height: calc(28px * var(--factorio-ui-density));
+	padding: 0 calc(5px * var(--factorio-ui-density));
+	border: 1px solid #111;
+	background: var(--factorio-ui-dark);
+	box-shadow: inset 0 1px 3px #111;
+	color: var(--factorio-ui-text);
+	font: inherit;
+}
+
+.upgrade-planner-metadata__name:focus-visible {
+	border-color: var(--factorio-ui-accent);
+	outline: 2px solid rgb(227 152 39 / 45%);
+	outline-offset: 0;
+}
+
+.blueprint-description-editor--record-preview {
+	padding: 0;
+	border: 0;
+	background: transparent;
+	box-shadow: none;
+}
+
+.blueprint-description-editor--record-preview .blueprint-description-editor__field {
+	margin: 0;
+}
+
+.upgrade-planner-metadata__icon-label span {
+	color: #75c4e7;
+	font-size: 85%;
+	cursor: help;
+}
+
+.upgrade-planner-metadata__icons {
+	display: flex;
+	min-width: 0;
+	align-items: center;
+	gap: calc(8px * var(--factorio-ui-density));
+}
+
+.upgrade-planner-metadata__footer {
+	display: flex;
+	min-height: calc(48px * var(--factorio-ui-density));
+	align-items: center;
+	gap: calc(8px * var(--factorio-ui-density));
+	padding: calc(8px * var(--factorio-ui-density));
+}
+
+.upgrade-planner-metadata__drag-space {
+	min-width: 0;
+	height: calc(32px * var(--factorio-ui-density));
+	flex: 1 1 auto;
+	background: repeating-linear-gradient(
+		90deg,
+		#353435 0,
+		#353435 calc(2px * var(--factorio-ui-density)),
+		#3d3c3d calc(2px * var(--factorio-ui-density)),
+		#3d3c3d calc(4px * var(--factorio-ui-density))
+	);
+}
+
 .transform-workflow__section .blueprint-snap-grid-editor__master {
 	display: inline-flex;
 	align-items: center;
@@ -5382,10 +5491,6 @@ body {
 }
 
 @media (max-width: 480px) {
-	.upgrade-planner-dialog__record-details {
-		grid-template-columns: minmax(0, 1fr);
-	}
-
 	.upgrade-mapping-grid {
 		padding: 8px;
 	}

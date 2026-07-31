@@ -391,6 +391,10 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 		}
 		return plannerFromMappings(mappingDrafts, {...recordMetadataDraft, label: normalizedLabel}, selectedPlanner);
 	};
+	const serializedPlannerDraft = (): string =>
+		serializeBlueprint({
+			upgrade_planner: plannerFromMappings(mappingDrafts, recordMetadataDraft, selectedPlanner),
+		});
 	const libraryRecordContent = (): LibraryRecordContent => {
 		const planner = plannerForLibrary();
 		return {
@@ -603,6 +607,7 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 				setPlannerOpen(false);
 			}
 		},
+		serializedPlannerDraft,
 		libraryRecordContent,
 		libraryRecordId: source.startsWith('library:') ? source.slice('library:'.length) : undefined,
 		onLibraryRecordSaved: (record: LibraryRecord) => {

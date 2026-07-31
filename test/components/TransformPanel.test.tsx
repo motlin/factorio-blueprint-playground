@@ -335,6 +335,14 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			libraryRecords[index] = record;
 			return Promise.resolve(record);
 		});
+		vi.spyOn(db, 'deleteLibraryRecord').mockImplementation(async ({id}) => {
+			await Promise.resolve();
+			const index = libraryRecords.findIndex((record) => record.id === id);
+			if (index < 0) {
+				throw new Error(`Missing library record: ${id}`);
+			}
+			libraryRecords.splice(index, 1);
+		});
 	});
 
 	test('renders nothing without a blueprint or for a deconstruction planner', () => {
@@ -517,9 +525,10 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 
 		await user.click(tool);
 		await user.click(screen.getByRole('button', {name: 'Edit planner name'}));
-		const plannerName = screen.getByRole('textbox', {name: 'Planner name'});
+		const plannerName = screen.getByRole('textbox', {name: 'Name'});
 		await user.clear(plannerName);
-		await user.type(plannerName, 'Dirty planner{Enter}');
+		await user.type(plannerName, 'Dirty planner');
+		await user.click(screen.getByRole('button', {name: 'Confirm planner metadata'}));
 		const closePlanner = screen.getByRole('button', {name: 'Close Upgrade Planner'});
 		await user.click(closePlanner);
 
@@ -1002,12 +1011,13 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		await user.click(screen.getByRole('button', {name: 'Rare quality'}));
 		await chooseSignal(user, 'Fast transport belt');
 		await user.click(screen.getByRole('button', {name: 'Edit planner name'}));
-		const plannerName = screen.getByRole('textbox', {name: 'Planner name'});
+		const plannerName = screen.getByRole('textbox', {name: 'Name'});
 		await user.clear(plannerName);
-		await user.type(plannerName, 'Rare belt upgrades{Enter}');
+		await user.type(plannerName, 'Rare belt upgrades');
 		await user.type(screen.getByRole('textbox', {name: 'Planner description'}), 'Rare belt line');
 		await user.click(screen.getByRole('button', {name: 'Choose preview icon 1'}));
 		await chooseSignal(user, 'Signal red');
+		await user.click(screen.getByRole('button', {name: 'Confirm planner metadata'}));
 		await user.click(screen.getByRole('button', {name: 'Save Planner'}));
 		const savePrompt = screen.getByRole('dialog', {name: 'Save to Blueprint Library'});
 		expect({
@@ -1149,9 +1159,10 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		await chooseSignal(user, 'Express transport belt');
 		expect(screen.getByLabelText('Planner library status').textContent).toBe('Blueprint Library › Library belts');
 		await user.click(screen.getByRole('button', {name: 'Edit planner name'}));
-		const canceledName = screen.getByRole('textbox', {name: 'Planner name'});
+		const canceledName = screen.getByRole('textbox', {name: 'Name'});
 		await user.clear(canceledName);
-		await user.type(canceledName, 'Canceled name{Enter}');
+		await user.type(canceledName, 'Canceled name');
+		await user.click(screen.getByRole('button', {name: 'Confirm planner metadata'}));
 		await user.click(screen.getByRole('button', {name: 'Save Planner'}));
 		const canceledPrompt = screen.getByRole('dialog', {name: 'Save to Blueprint Library'});
 		await user.click(within(canceledPrompt).getByRole('button', {name: 'Cancel Save'}));
@@ -1171,9 +1182,10 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		});
 
 		await user.click(screen.getByRole('button', {name: 'Edit planner name'}));
-		const updatedName = screen.getByRole('textbox', {name: 'Planner name'});
+		const updatedName = screen.getByRole('textbox', {name: 'Name'});
 		await user.clear(updatedName);
-		await user.type(updatedName, 'Express belt upgrades{Enter}');
+		await user.type(updatedName, 'Express belt upgrades');
+		await user.click(screen.getByRole('button', {name: 'Confirm planner metadata'}));
 		await user.click(screen.getByRole('button', {name: 'Save Planner'}));
 		const updatePrompt = screen.getByRole('dialog', {name: 'Save to Blueprint Library'});
 		expect({
@@ -1259,9 +1271,10 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		openUpgradePlanner();
 		await choosePlanner(user, 'Original planner');
 		await user.click(screen.getByRole('button', {name: 'Edit planner name'}));
-		const name = screen.getByRole('textbox', {name: 'Planner name'});
+		const name = screen.getByRole('textbox', {name: 'Name'});
 		await user.clear(name);
-		await user.type(name, 'Copied planner{Enter}');
+		await user.type(name, 'Copied planner');
+		await user.click(screen.getByRole('button', {name: 'Confirm planner metadata'}));
 		await user.click(screen.getByRole('button', {name: 'Save Planner'}));
 		const prompt = screen.getByRole('dialog', {name: 'Save to Blueprint Library'});
 		await user.click(within(prompt).getByRole('button', {name: 'Save a Copy'}));
@@ -1325,11 +1338,12 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 
 		openUpgradePlanner();
 		await choosePlanner(user, 'Reloaded planner');
+		await user.click(screen.getByRole('button', {name: 'Edit planner name'}));
 
 		expect({
 			description: screen.getByRole<HTMLInputElement>('textbox', {name: 'Planner description'}).value,
 			iconTitle: screen.getByRole('button', {name: 'Edit preview icon 1'}).title,
-			name: screen.getByText('Reloaded planner', {selector: '.blueprint-editor__title'}).textContent,
+			name: screen.getByRole<HTMLInputElement>('textbox', {name: 'Name'}).value,
 			state: screen.getByLabelText('Planner library status').textContent,
 		}).toStrictEqual({
 			description: 'Reloaded description',
@@ -1337,6 +1351,95 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			name: 'Reloaded planner',
 			state: 'Blueprint Library › Reloaded planner',
 		});
+	});
+
+	test('copies and exports the current planner draft and explicitly discards an unsaved record', async () => {
+		const user = userEvent.setup();
+		const originalClipboard = navigator.clipboard;
+		const writeText = vi.fn<(text: string) => Promise<void>>(async () => {});
+		Object.defineProperty(navigator, 'clipboard', {configurable: true, value: {writeText}});
+		const createObjectUrl = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:planner-export');
+		const revokeObjectUrl = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+		const anchorClick = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+		render(<TransformPanel blueprint={blueprint} />);
+
+		openUpgradePlanner();
+		const toolbar = screen.getByRole('toolbar', {name: 'Planner record tools'});
+		expect(
+			within(toolbar)
+				.getAllByRole('button')
+				.map((button) => ({label: button.getAttribute('aria-label'), style: button.dataset.factorioStyle})),
+		).toStrictEqual([
+			{label: 'Copy planner string', style: 'button'},
+			{label: 'Export planner string', style: 'button'},
+			{label: 'Discard local planner', style: 'red_button'},
+		]);
+
+		await user.click(within(toolbar).getByRole('button', {name: 'Copy planner string'}));
+		await screen.findByText('Planner string copied.');
+		const copiedPlanner = parseUpgradePlanner(writeText.mock.calls[0][0]);
+		expect({label: copiedPlanner.label, mappings: copiedPlanner.settings.mappers.length}).toStrictEqual({
+			label: 'Default Upgrade',
+			mappings: 14,
+		});
+
+		await user.click(within(toolbar).getByRole('button', {name: 'Export planner string'}));
+		expect({
+			anchorClicks: anchorClick.mock.calls.length,
+			blobType: (createObjectUrl.mock.calls[0][0] as Blob).type,
+			revoked: revokeObjectUrl.mock.calls,
+		}).toStrictEqual({anchorClicks: 1, blobType: 'text/plain', revoked: [['blob:planner-export']]});
+
+		const discard = within(toolbar).getByRole('button', {name: 'Discard local planner'});
+		await user.click(discard);
+		const confirmation = screen.getByRole('alertdialog', {name: 'Discard local planner?'});
+		expect(within(confirmation).getByText(/no Blueprint Library record/).textContent).toBe(
+			'This planner has no Blueprint Library record. Its local draft will be discarded.',
+		);
+		await user.click(within(confirmation).getByRole('button', {name: 'Keep planner'}));
+		await waitFor(() => {
+			expect(document.activeElement).toBe(discard);
+		});
+		await user.click(discard);
+		await user.click(
+			within(screen.getByRole('alertdialog', {name: 'Discard local planner?'})).getByRole('button', {
+				name: 'Discard local draft',
+			}),
+		);
+		await waitFor(() => {
+			expect(screen.queryByRole('dialog', {name: 'Upgrade Planner'})).toBeNull();
+		});
+		expect(vi.mocked(db.deleteLibraryRecord).mock.calls).toStrictEqual([]);
+		Object.defineProperty(navigator, 'clipboard', {configurable: true, value: originalClipboard});
+	});
+
+	test('deletes a loaded planner from its Blueprint Library location after confirmation', async () => {
+		const user = userEvent.setup();
+		const planner: UpgradePlanner = {
+			item: 'upgrade-planner',
+			label: 'Library planner',
+			version: 0,
+			settings: {mappers: []},
+		};
+		libraryRecords.push(storedPlanner('planner-to-delete', planner, 'Library planner', 0));
+		render(<TransformPanel blueprint={blueprint} />);
+
+		openUpgradePlanner();
+		await choosePlanner(user, 'Library planner');
+		await user.click(screen.getByRole('button', {name: 'Delete planner from Blueprint Library'}));
+		const confirmation = screen.getByRole('alertdialog', {name: 'Delete saved planner?'});
+		expect(within(confirmation).getByText(/loaded blueprint is not changed/).textContent).toBe(
+			'This removes the planner from the Blueprint Library. The loaded blueprint is not changed.',
+		);
+		await user.click(within(confirmation).getByRole('button', {name: 'Delete from Library'}));
+		await waitFor(() => {
+			expect(screen.queryByRole('dialog', {name: 'Upgrade Planner'})).toBeNull();
+		});
+		expect({
+			deleteCalls: vi.mocked(db.deleteLibraryRecord).mock.calls,
+			libraryRecords,
+			navigation: navigate.mock.calls,
+		}).toStrictEqual({deleteCalls: [[{id: 'planner-to-delete'}]], libraryRecords: [], navigation: []});
 	});
 
 	test('preserves unused mappings and unsupported serialized fields when planner metadata is updated', async () => {
@@ -1371,9 +1474,10 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		await choosePlanner(user, 'Opaque planner');
 		expect(screen.getByLabelText('0 matches').getAttribute('aria-label')).toBe('0 matches');
 		await user.click(screen.getByRole('button', {name: 'Edit planner name'}));
-		const name = screen.getByRole('textbox', {name: 'Planner name'});
+		const name = screen.getByRole('textbox', {name: 'Name'});
 		await user.clear(name);
-		await user.type(name, 'Renamed opaque planner{Enter}');
+		await user.type(name, 'Renamed opaque planner');
+		await user.click(screen.getByRole('button', {name: 'Confirm planner metadata'}));
 		await user.click(screen.getByRole('button', {name: 'Save Planner'}));
 		await user.click(
 			within(screen.getByRole('dialog', {name: 'Save to Blueprint Library'})).getByRole('button', {
