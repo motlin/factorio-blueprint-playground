@@ -131,19 +131,22 @@ export const ResponsiveUpgradePlanner: Story = {
 		await userEvent.click(canvas.getByRole('button', {name: 'Open Upgrade Planner'}));
 
 		const dialog = canvas.getByRole('dialog', {name: 'Upgrade Planner'});
-		const body = canvas.getByRole('region', {name: 'Upgrade Planner configuration'});
+		const body = dialog.querySelector<HTMLElement>('.upgrade-planner-dialog__body');
+		const mapperScroll = canvas.getByRole('region', {name: 'Upgrade mappings'});
 		const header = dialog.firstElementChild;
 		const footer = dialog.lastElementChild;
-		const configuration = canvas
-			.getByRole('heading', {name: 'Upgrade mappings'})
-			.closest('.upgrade-planner-dialog__configuration');
+		const editor = canvas.getByRole('region', {name: 'Upgrade planner editor'});
+		const application = canvas
+			.getByRole('heading', {name: 'Website application'})
+			.closest('.upgrade-planner-dialog__application');
 		const replacements = canvas
 			.getByRole('heading', {name: 'Book-wide replacements'})
 			.closest('.book-wide-replacements');
 		if (
+			body === null ||
 			!(header instanceof HTMLElement) ||
 			!(footer instanceof HTMLElement) ||
-			!(configuration instanceof HTMLElement) ||
+			!(application instanceof HTMLElement) ||
 			!(replacements instanceof HTMLElement)
 		) {
 			throw new Error('Expected the responsive planner shell and panels.');
@@ -152,20 +155,25 @@ export const ResponsiveUpgradePlanner: Story = {
 		const dialogBounds = dialog.getBoundingClientRect();
 		const headerBounds = header.getBoundingClientRect();
 		const footerBounds = footer.getBoundingClientRect();
-		const configurationBounds = configuration.getBoundingClientRect();
+		const editorBounds = editor.getBoundingClientRect();
+		const applicationBounds = application.getBoundingClientRect();
 		const replacementsBounds = replacements.getBoundingClientRect();
 		await expect({
 			bodyFitsHorizontally: body.scrollWidth <= body.clientWidth,
 			dialogFitsHorizontally: dialogBounds.left >= 0 && dialogBounds.right <= window.innerWidth,
 			footerVisible: footerBounds.bottom <= window.innerHeight,
 			headerVisible: headerBounds.top >= 0,
-			panelBordersAligned: Math.abs(configurationBounds.left - replacementsBounds.left) < 1,
+			mappingSourceWidth: mapperScroll.querySelector('.upgrade-mapping-grid')?.getBoundingClientRect().width,
+			panelInsetsPreserved:
+				Math.abs(applicationBounds.left - editorBounds.left - 4) < 1 &&
+				Math.abs(editorBounds.left - replacementsBounds.left) < 1,
 		}).toStrictEqual({
 			bodyFitsHorizontally: true,
 			dialogFitsHorizontally: true,
 			footerVisible: true,
 			headerVisible: true,
-			panelBordersAligned: true,
+			mappingSourceWidth: 400,
+			panelInsetsPreserved: true,
 		});
 	},
 };

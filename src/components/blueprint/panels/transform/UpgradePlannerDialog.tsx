@@ -73,6 +73,25 @@ interface UpgradePlannerMappings {
 	sourceOptions: SignalID[];
 }
 
+interface UpgradePlannerLoaderProps {
+	error: string | undefined;
+	onPlannerLoad: (choice: UpgradePlannerChoice) => void;
+	onPlannerInputChange: (value: string) => void;
+	plannerInput: string;
+	rootBlueprint: BlueprintString;
+	source: string;
+	sourceLabel: string;
+}
+
+interface UpgradeMappingsEditorProps {
+	mappings: PositionedUpgradeMapping[];
+	onClearEndpoint: (mappingId: string, endpoint: 'from' | 'to') => void;
+	onMove: (mappingId: string, targetSlotIndex: number) => void;
+	onSourceChange: (mappingId: string | undefined, slotIndex: number, source: UpgradeSourceSignal) => void;
+	onTargetChange: (mappingId: string | undefined, slotIndex: number, target: SignalID) => void;
+	sourceOptions: SignalID[];
+}
+
 interface UpgradePlannerDialogProps {
 	breadcrumb: string;
 	canChooseRootScope: boolean;
@@ -190,49 +209,21 @@ function UpgradePlannerSavePrompt({
 	);
 }
 
-function UpgradeMappingsEditor({
+function UpgradePlannerLoader({
 	error,
-	mappings,
-	onClearEndpoint,
-	onMove,
 	onPlannerLoad,
 	onPlannerInputChange,
-	onSourceChange,
-	onTargetChange,
 	plannerInput,
 	rootBlueprint,
 	source,
 	sourceLabel,
-	sourceOptions,
-}: UpgradePlannerMappings) {
+}: UpgradePlannerLoaderProps) {
 	const plannerSelectorId = useId();
 	const [plannerSelectorOpen, setPlannerSelectorOpen] = useState(false);
-	const [sourcePicker, setSourcePicker] = useState<{mappingId?: string; slotIndex: number}>();
-	const [targetPicker, setTargetPicker] = useState<{mappingId?: string; slotIndex: number}>();
-	const sourcePickerMapping = mappings.find((mapping) => mapping.mappingId === sourcePicker?.mappingId);
-	const targetPickerMapping = mappings.find((mapping) => mapping.mappingId === targetPicker?.mappingId);
-	const sourceSelectionAllowed = (sourceSignal: UpgradeSourceSignal): boolean => {
-		const duplicate = mappings.some(
-			(mapping) =>
-				mapping.mappingId !== sourcePicker?.mappingId &&
-				mapping.from !== undefined &&
-				signalIdentity(mapping.from) === signalIdentity(sourceSignal),
-		);
-		return !duplicate;
-	};
-	const sourcePickerOptions = [
-		...new Map(
-			[...sourceOptions, ...(sourcePickerMapping?.from === undefined ? [] : [sourcePickerMapping.from])].map(
-				(signal) => [signalPrototypeIdentity(signal), signal],
-			),
-		).values(),
-	];
-	const targetPickerOptions =
-		targetPickerMapping?.from === undefined ? sourceOptions : upgradeTargetOptions(targetPickerMapping.from);
 
 	return (
 		<>
-			<div className="upgrade-planner-editor">
+			<div className="upgrade-planner-loader" data-website-extension="planner-library-loader">
 				<div className="panel-hole-inner upgrade-planner-editor__source">
 					<strong>Load planner</strong>
 					<button
@@ -268,19 +259,6 @@ function UpgradeMappingsEditor({
 						{error}
 					</p>
 				)}
-				<UpgradeMappingGrid
-					mappings={mappings}
-					onChooseSource={(mappingId, slotIndex) => {
-						setSourcePicker({mappingId, slotIndex});
-						setTargetPicker(undefined);
-					}}
-					onChooseTarget={(mappingId, slotIndex) => {
-						setTargetPicker({mappingId, slotIndex});
-						setSourcePicker(undefined);
-					}}
-					onClearEndpoint={onClearEndpoint}
-					onMove={onMove}
-				/>
 			</div>
 			{plannerSelectorOpen ? (
 				<UpgradePlannerSelectorDialog
@@ -293,12 +271,60 @@ function UpgradeMappingsEditor({
 					}}
 					onChoose={(choice) => {
 						onPlannerLoad(choice);
-						setSourcePicker(undefined);
-						setTargetPicker(undefined);
 						setPlannerSelectorOpen(false);
 					}}
 				/>
 			) : null}
+		</>
+	);
+}
+
+function UpgradeMappingsEditor({
+	mappings,
+	onClearEndpoint,
+	onMove,
+	onSourceChange,
+	onTargetChange,
+	sourceOptions,
+}: UpgradeMappingsEditorProps) {
+	const [sourcePicker, setSourcePicker] = useState<{mappingId?: string; slotIndex: number}>();
+	const [targetPicker, setTargetPicker] = useState<{mappingId?: string; slotIndex: number}>();
+	const sourcePickerMapping = mappings.find((mapping) => mapping.mappingId === sourcePicker?.mappingId);
+	const targetPickerMapping = mappings.find((mapping) => mapping.mappingId === targetPicker?.mappingId);
+	const sourceSelectionAllowed = (sourceSignal: UpgradeSourceSignal): boolean => {
+		const duplicate = mappings.some(
+			(mapping) =>
+				mapping.mappingId !== sourcePicker?.mappingId &&
+				mapping.from !== undefined &&
+				signalIdentity(mapping.from) === signalIdentity(sourceSignal),
+		);
+		return !duplicate;
+	};
+	const sourcePickerOptions = [
+		...new Map(
+			[...sourceOptions, ...(sourcePickerMapping?.from === undefined ? [] : [sourcePickerMapping.from])].map(
+				(signal) => [signalPrototypeIdentity(signal), signal],
+			),
+		).values(),
+	];
+	const targetPickerOptions =
+		targetPickerMapping?.from === undefined ? sourceOptions : upgradeTargetOptions(targetPickerMapping.from);
+
+	return (
+		<>
+			<UpgradeMappingGrid
+				mappings={mappings}
+				onChooseSource={(mappingId, slotIndex) => {
+					setSourcePicker({mappingId, slotIndex});
+					setTargetPicker(undefined);
+				}}
+				onChooseTarget={(mappingId, slotIndex) => {
+					setTargetPicker({mappingId, slotIndex});
+					setSourcePicker(undefined);
+				}}
+				onClearEndpoint={onClearEndpoint}
+				onMove={onMove}
+			/>
 			{targetPicker === undefined ? null : (
 				<SignalPickerDialog
 					confirmationMode="required"
@@ -362,8 +388,7 @@ export function UpgradePlannerDialog({
 	selectionScopeLabel,
 }: UpgradePlannerDialogProps) {
 	const dialogHeadingId = useId();
-	const configurationHeadingId = useId();
-	const recordHeadingId = useId();
+	const applicationHeadingId = useId();
 	const [previewIconPickerIndex, setPreviewIconPickerIndex] = useState<number>();
 	const previewIconOptions = chatIconPickerOptions([
 		...mappings.sourceOptions,
@@ -385,21 +410,8 @@ export function UpgradePlannerDialog({
 				aria-hidden={savePrompt.open || undefined}
 				inert={savePrompt.open}
 			>
-				<header className="factorio-title-bar transform-dialog__header transform-workbench__header">
-					<div className="transform-workbench__title">
-						<FactorioIcon icon={{type: 'item', name: 'upgrade-planner'}} size="large" />
-						<div>
-							<h3 id={dialogHeadingId}>Upgrade Planner</h3>
-							<span>{breadcrumb}</span>
-						</div>
-					</div>
-					<div
-						className="transform-workbench__status"
-						aria-label={`${matchCount.toString()} ${matchCount === 1 ? 'match' : 'matches'}`}
-					>
-						<strong>{matchCount}</strong>
-						<span>{matchCount === 1 ? 'match' : 'matches'}</span>
-					</div>
+				<header className="factorio-title-bar transform-dialog__header upgrade-planner-dialog__title-bar">
+					<h3 id={dialogHeadingId}>Upgrade Planner</h3>
 					<FactorioButton
 						kind={FactorioButtonKind.Close}
 						className="transform-dialog__close"
@@ -411,26 +423,17 @@ export function UpgradePlannerDialog({
 					/>
 				</header>
 
-				<div
-					className="factorio-scroll-frame transform-workbench__body upgrade-planner-dialog__scroll-region"
-					role="region"
-					aria-label="Upgrade Planner configuration"
-					tabIndex={0}
-				>
-					<div className="upgrade-planner-dialog__content transform-workflow">
-						<section
-							className="panel-hole upgrade-planner-dialog__record"
-							aria-labelledby={recordHeadingId}
+				<div className="upgrade-planner-dialog__body">
+					<section
+						className="factorio-frame factorio-frame--shallow upgrade-planner-dialog__editor-shell"
+						data-factorio-style="entity_frame"
+						aria-label="Upgrade planner editor"
+					>
+						<header
+							className="factorio-title-bar upgrade-planner-dialog__record-subheader"
+							data-factorio-style="subheader_frame"
 						>
-							<header className="factorio-title-bar upgrade-planner-dialog__panel-heading">
-								<h4 id={recordHeadingId}>Planner record</h4>
-								<span className="upgrade-planner-dialog__record-state">
-									{savedRecordName === undefined
-										? 'Not saved to Blueprint Library'
-										: `Saved record: ${savedRecordName}`}
-								</span>
-							</header>
-							<div className="panel-hole-inner blueprint-editor__title-row">
+							<div className="blueprint-editor__title-row upgrade-planner-dialog__name-group">
 								<BlueprintTitleEditor
 									editLabel="Edit planner name"
 									emptyLabel="Planner name required"
@@ -439,6 +442,13 @@ export function UpgradePlannerDialog({
 									onLabelChange={recordMetadata.onLabelChange}
 								/>
 							</div>
+							<span className="upgrade-planner-dialog__record-state">
+								{savedRecordName === undefined
+									? 'Not saved to Blueprint Library'
+									: `Saved record: ${savedRecordName}`}
+							</span>
+						</header>
+						<div className="upgrade-planner-dialog__record-details">
 							<section
 								className="transform-workflow__section blueprint-editor__icons upgrade-planner-dialog__preview-icons"
 								aria-labelledby="upgrade-planner-preview-icons-heading"
@@ -454,24 +464,41 @@ export function UpgradePlannerDialog({
 										signalTitle={signalTitle}
 									/>
 								</div>
-								<small>
-									These icons identify the saved planner record; changing them does not apply the
-									planner.
-								</small>
 							</section>
 							<BlueprintDescriptionEditor
 								accessibleLabel="Planner description"
 								description={recordMetadata.description}
 								onDescriptionChange={recordMetadata.onDescriptionChange}
 							/>
-						</section>
-						<section
-							className="panel-hole upgrade-planner-dialog__configuration"
-							aria-labelledby={configurationHeadingId}
+						</div>
+						<div
+							className="factorio-scroll-frame upgrade-planner-dialog__scroll-region"
+							data-factorio-style="mappers_scroll_pane"
+							role="region"
+							aria-label="Upgrade mappings"
+							tabIndex={0}
 						>
-							<header className="factorio-title-bar upgrade-planner-dialog__panel-heading">
-								<h4 id={configurationHeadingId}>Upgrade mappings</h4>
-							</header>
+							<UpgradeMappingsEditor {...mappings} />
+						</div>
+						<div
+							className="upgrade-planner-dialog__filler"
+							data-factorio-style="entity_frame_filler"
+							aria-hidden="true"
+						/>
+					</section>
+
+					<section
+						className="panel-hole upgrade-planner-dialog__application"
+						data-website-extension="planner-application"
+						aria-labelledby={applicationHeadingId}
+					>
+						<header className="factorio-title-bar upgrade-planner-dialog__panel-heading">
+							<h4 id={applicationHeadingId}>Website application</h4>
+							<span aria-label={`${matchCount.toString()} ${matchCount === 1 ? 'match' : 'matches'}`}>
+								{`${matchCount.toString()} ${matchCount === 1 ? 'match' : 'matches'} in ${breadcrumb}`}
+							</span>
+						</header>
+						<div className="upgrade-planner-dialog__application-controls">
 							<div className="panel-hole-inner transform-workflow__scope">
 								<label>
 									<strong>Apply mappings to</strong>
@@ -491,14 +518,17 @@ export function UpgradePlannerDialog({
 									</select>
 								</label>
 							</div>
-							<UpgradeMappingsEditor {...mappings} />
-						</section>
+							<UpgradePlannerLoader {...mappings} />
+						</div>
+					</section>
 
-						<BookWideReplacements {...replacements} />
-					</div>
+					<BookWideReplacements {...replacements} />
 				</div>
 
-				<footer className="transform-workbench__footer transform-workbench__footer--actions">
+				<footer
+					className="transform-workbench__footer transform-workbench__footer--actions upgrade-planner-dialog__website-actions"
+					data-website-extension="planner-actions"
+				>
 					<FactorioButton
 						className="transform-button"
 						onClick={() => {

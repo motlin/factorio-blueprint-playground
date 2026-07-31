@@ -217,8 +217,10 @@ test('keeps the planner shell and mapping inside narrow and short viewports', as
 		dialogFitsViewport: true,
 		footerVisible: true,
 		headerVisible: true,
-		mappingFitsHorizontally: true,
+		mapperOwnsHorizontalScrolling: true,
+		mappingSourceWidthHonored: true,
 		panelInsetsPreserved: true,
+		singleMapperScrollRegion: true,
 		titleColorMatchesPriorArt: true,
 	};
 

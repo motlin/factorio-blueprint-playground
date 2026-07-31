@@ -374,29 +374,51 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 
 		openUpgradePlanner();
 		const dialog = screen.getByRole('dialog', {name: 'Upgrade Planner'});
-		const configuration = within(dialog).getByRole('region', {name: 'Upgrade Planner configuration'});
+		const body = dialog.querySelector<HTMLElement>('.upgrade-planner-dialog__body');
+		if (body === null) {
+			throw new Error('Expected the Upgrade Planner body.');
+		}
+		const editor = within(dialog).getByRole('region', {name: 'Upgrade planner editor'});
+		const mapperScroll = within(editor).getByRole('region', {name: 'Upgrade mappings'});
+		const application = within(dialog)
+			.getByRole('heading', {name: 'Website application'})
+			.closest<HTMLElement>('section');
+		if (application === null) {
+			throw new Error('Expected the website application section.');
+		}
 		const dialogHeading = within(dialog).getByRole('heading', {name: 'Upgrade Planner'});
 		expect(dialog.getAttribute('aria-labelledby')).toBe(dialogHeading.id);
 		expect({
-			bodyClass: configuration.className,
-			bookWidePanel: within(configuration)
-				.getByRole('heading', {name: 'Book-wide replacements'})
-				.closest('section')?.className,
+			applicationExtension: application.dataset.websiteExtension,
+			bodyClass: body.className,
+			bookWidePanel: within(body).getByRole('heading', {name: 'Book-wide replacements'}).closest('section')
+				?.className,
 			changeIn: screen.queryByRole('group', {name: 'Change in'}),
 			closeButton: within(dialog).getByRole('button', {name: 'Close Upgrade Planner'}).getAttribute('aria-label'),
-			configurationPanel: within(configuration)
-				.getByRole('heading', {name: 'Upgrade mappings'})
-				.closest('section')?.className,
 			dialog: dialog.getAttribute('aria-modal'),
+			editorClass: editor.className,
+			editorStyle: editor.dataset.factorioStyle,
 			exportActions: ['Copy String', 'Copy JSON', 'Download String', 'Open in Playground'].map((name) =>
 				screen.queryByRole('button', {name}),
 			),
+			fillerStyle: editor.querySelector<HTMLElement>('.upgrade-planner-dialog__filler')?.dataset.factorioStyle,
 			footerElement: dialog.lastElementChild?.tagName,
-			fromToGroup: within(configuration)
-				.getByRole('group', {name: 'From and To mappings'})
-				.getAttribute('aria-label'),
+			footerExtension:
+				dialog.lastElementChild instanceof HTMLElement
+					? dialog.lastElementChild.dataset.websiteExtension
+					: undefined,
+			fromToGroup: within(editor).getByRole('group', {name: 'From and To mappings'}).getAttribute('aria-label'),
 			headerElement: dialog.firstElementChild?.tagName,
 			liveResult: screen.queryByText('Live result'),
+			loaderInsideEditor: within(editor).queryByText('Load planner'),
+			loaderExtension:
+				application.querySelector<HTMLElement>('.upgrade-planner-loader')?.dataset.websiteExtension,
+			mapperClass: mapperScroll.className,
+			mapperStyle: mapperScroll.dataset.factorioStyle,
+			mappingHeadingGroups: [...editor.querySelectorAll('.upgrade-mapping-grid__headings > div')].map(
+				(group) => group.textContent,
+			),
+			mappingSlots: editor.querySelectorAll('[data-upgrade-mapping-slot]').length,
 			modeButtons: ['Upgrade', 'Downgrade', 'Strip quality'].map((name) => screen.queryByRole('button', {name})),
 			operationButtons: [
 				'Save Planner',
@@ -404,10 +426,11 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 				'Apply Downgrade to Current Blueprint',
 			].map((name) => screen.queryByRole('button', {name})?.textContent ?? null),
 			preserveCapitalization: screen.queryByRole('checkbox', {name: 'Preserve capitalization'}),
-			sectionOrder: [...configuration.querySelectorAll('.upgrade-planner-dialog__content > section')].map(
-				(section) => section.querySelector('h4')?.textContent,
+			sectionOrder: [...body.children].map(
+				(section) =>
+					section.getAttribute('data-factorio-style') ?? section.getAttribute('data-website-extension'),
 			),
-			scrollTabIndex: configuration.tabIndex,
+			scrollTabIndex: mapperScroll.tabIndex,
 			sourceIcon: screen
 				.getByRole('button', {name: 'Choose source, currently Transport belt'})
 				.querySelector('img')
@@ -417,19 +440,29 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 				.querySelector('img')
 				?.getAttribute('src'),
 			bookWideReplacements: screen.getByRole('heading', {name: 'Book-wide replacements'}).textContent,
-			websiteLabel: within(configuration).getByText('Website extension').textContent,
+			websiteLabel: within(dialog).queryByText('Website extension')?.textContent,
 		}).toStrictEqual({
-			bodyClass: 'factorio-scroll-frame transform-workbench__body upgrade-planner-dialog__scroll-region',
+			applicationExtension: 'planner-application',
+			bodyClass: 'upgrade-planner-dialog__body',
 			bookWidePanel: 'panel-hole transform-workflow__section book-wide-replacements',
 			changeIn: null,
 			closeButton: 'Close Upgrade Planner',
-			configurationPanel: 'panel-hole upgrade-planner-dialog__configuration',
 			dialog: 'true',
+			editorClass: 'factorio-frame factorio-frame--shallow upgrade-planner-dialog__editor-shell',
+			editorStyle: 'entity_frame',
 			exportActions: [null, null, null, null],
+			fillerStyle: 'entity_frame_filler',
 			footerElement: 'FOOTER',
+			footerExtension: 'planner-actions',
 			fromToGroup: 'From and To mappings',
 			headerElement: 'HEADER',
 			liveResult: null,
+			loaderInsideEditor: null,
+			loaderExtension: 'planner-library-loader',
+			mapperClass: 'factorio-scroll-frame upgrade-planner-dialog__scroll-region',
+			mapperStyle: 'mappers_scroll_pane',
+			mappingHeadingGroups: ['FromTo', 'FromTo', 'FromTo', 'FromTo'],
+			mappingSlots: 20,
 			modeButtons: [null, null, null],
 			operationButtons: [
 				'Save Planner',
@@ -437,7 +470,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 				'Apply Downgrade to Current Blueprint',
 			],
 			preserveCapitalization: null,
-			sectionOrder: ['Planner record', 'Upgrade mappings', 'Book-wide replacements'],
+			sectionOrder: ['entity_frame', 'planner-application', null],
 			scrollTabIndex: 0,
 			sourceIcon: 'https://factorio-icon-cdn.pages.dev/entity/transport-belt.webp',
 			targetIcon: 'https://factorio-icon-cdn.pages.dev/entity/fast-transport-belt.webp',
@@ -452,7 +485,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		const tool = screen.getByRole('button', {name: 'Open Upgrade Planner'});
 
 		await user.click(tool);
-		expect(document.activeElement).toBe(screen.getByRole('region', {name: 'Upgrade Planner configuration'}));
+		expect(document.activeElement).toBe(screen.getByRole('region', {name: 'Upgrade mappings'}));
 
 		await user.click(screen.getByRole('button', {name: 'Close Upgrade Planner'}));
 		await waitFor(() => {
@@ -2030,7 +2063,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			),
 		}).toStrictEqual({
 			dialogState: {
-				activeElement: {name: 'Upgrade Planner configuration', tagName: 'DIV'},
+				activeElement: {name: 'Upgrade mappings', tagName: 'DIV'},
 				dialogStack: [
 					{
 						ariaHidden: null,
