@@ -3562,22 +3562,35 @@ body {
 
 .upgrade-mapping-grid {
 	min-width: 0;
-	width: calc(400px * var(--factorio-ui-density));
+	width: calc(var(--upgrade-mapping-table-width) * var(--factorio-ui-density));
 	margin: 0;
 	padding: 0;
 	overflow: visible;
 }
 
 .upgrade-mapping-grid__table {
-	width: calc(400px * var(--factorio-ui-density));
-	min-width: calc(400px * var(--factorio-ui-density));
+	display: grid;
+	width: calc(var(--upgrade-mapping-table-width) * var(--factorio-ui-density));
+	min-width: calc(var(--upgrade-mapping-table-width) * var(--factorio-ui-density));
+	row-gap: calc(var(--upgrade-mapping-vertical-spacing) * var(--factorio-ui-density));
+}
+
+.upgrade-mapping-grid__headings,
+.upgrade-mapping-grid__slots {
+	display: grid;
+	grid-template-columns:
+		calc(var(--upgrade-mapping-pair-width) * var(--factorio-ui-density))
+		calc(var(--upgrade-mapping-first-spacing) * var(--factorio-ui-density))
+		calc(var(--upgrade-mapping-pair-width) * var(--factorio-ui-density))
+		calc(var(--upgrade-mapping-second-spacing) * var(--factorio-ui-density))
+		calc(var(--upgrade-mapping-pair-width) * var(--factorio-ui-density))
+		calc(var(--upgrade-mapping-third-spacing) * var(--factorio-ui-density))
+		calc(var(--upgrade-mapping-pair-width) * var(--factorio-ui-density));
+	column-gap: 0;
+	row-gap: calc(var(--upgrade-mapping-vertical-spacing) * var(--factorio-ui-density));
 }
 
 .upgrade-mapping-grid__headings {
-	display: grid;
-	grid-template-columns: repeat(4, calc(80px * var(--factorio-ui-density)));
-	justify-content: space-between;
-	gap: 0;
 	padding: 0;
 	color: #ffe6c0;
 	font-size: 0.88rem;
@@ -3586,30 +3599,47 @@ body {
 
 .upgrade-mapping-grid__headings > div {
 	display: grid;
-	grid-template-columns: repeat(2, calc(40px * var(--factorio-ui-density)));
+	grid-template-columns: repeat(2, calc(var(--upgrade-mapping-slot-width) * var(--factorio-ui-density)));
 	gap: 0;
 }
 
 .upgrade-mapping-grid__headings span {
-	width: calc(40px * var(--factorio-ui-density));
+	width: calc(var(--upgrade-mapping-slot-width) * var(--factorio-ui-density));
 	text-align: center;
 }
 
 .upgrade-mapping-grid__slots {
-	display: grid;
-	grid-template-columns: repeat(4, calc(80px * var(--factorio-ui-density)));
-	justify-content: space-between;
-	gap: 0;
 	margin: 0;
 	padding: 0;
 	list-style: none;
 }
 
+.upgrade-mapping-grid__headings > :nth-child(4n + 1),
+.upgrade-mapping-grid__slots > :nth-child(4n + 1) {
+	grid-column: 1;
+}
+
+.upgrade-mapping-grid__headings > :nth-child(4n + 2),
+.upgrade-mapping-grid__slots > :nth-child(4n + 2) {
+	grid-column: 3;
+}
+
+.upgrade-mapping-grid__headings > :nth-child(4n + 3),
+.upgrade-mapping-grid__slots > :nth-child(4n + 3) {
+	grid-column: 5;
+}
+
+.upgrade-mapping-grid__headings > :nth-child(4n),
+.upgrade-mapping-grid__slots > :nth-child(4n) {
+	grid-column: 7;
+}
+
 .upgrade-mapping-grid__pair {
 	position: relative;
 	display: grid;
-	grid-template-columns: repeat(2, calc(40px * var(--factorio-ui-density)));
+	grid-template-columns: repeat(2, calc(var(--upgrade-mapping-slot-width) * var(--factorio-ui-density)));
 	gap: 0;
+	margin: 0;
 	list-style: none;
 }
 
@@ -3632,6 +3662,7 @@ body {
 }
 
 .upgrade-mapping-grid__empty-slot {
+	margin: 0;
 	list-style: none;
 }
 

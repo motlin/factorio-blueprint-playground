@@ -91,6 +91,7 @@ describe('generated game UI specification', () => {
 			),
 			upgradeGroupCount: specification.upgrades.groups.length,
 			nextUpgradeCount: specification.upgrades.next.length,
+			upgradePlanner: specification.upgradePlanner,
 			utilityConstants: specification.utilityConstants,
 			styles: specification.styles,
 		}).toStrictEqual({
@@ -144,6 +145,8 @@ describe('generated game UI specification', () => {
 			labels: {
 				anyQuality: 'Any quality',
 				qualitySelectionTooltip: 'Quality: __1__',
+				upgradeFrom: 'From',
+				upgradeTo: 'To',
 			},
 			signalTypeOrder: ['item', 'entity', 'fluid', 'virtual', 'recipe', 'space-location', 'quality'],
 			categoryOrder: [
@@ -220,6 +223,7 @@ describe('generated game UI specification', () => {
 			],
 			upgradeGroupCount: 59,
 			nextUpgradeCount: 14,
+			upgradePlanner: {mappingsPerRow: 4, minimumMappingRows: 4},
 			utilityConstants: {
 				blueprintBigSlotsPerRow: 6,
 				blueprintSmallSlotsPerRow: 10,
@@ -240,12 +244,18 @@ describe('generated game UI specification', () => {
 				labelUnderWidgetBottomMargin: 4,
 				labelUnderWidgetHeight: 40,
 				labelUnderWidgetTopMargin: -4,
+				mappingPairWidth: 80,
+				mappingTableHorizontalSpacing: [27, 26, 27],
+				mappingTableVerticalSpacing: 0,
 				signalsTableColumnCount: 10,
 				signalsTableMinimumWidth: 400,
+				slotColumnHeaderWidth: 40,
 				bindings: {
 					slotButton: 'slot_button',
 					filterSlotTable: 'filter_slot_table',
 					deepSlotsScrollPane: 'deep_slots_scroll_pane',
+					mappingScrollPane: 'mappers_scroll_pane',
+					mappingTable: 'mappers_table',
 				},
 			},
 		});

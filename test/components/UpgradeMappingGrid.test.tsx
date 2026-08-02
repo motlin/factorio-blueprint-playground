@@ -31,6 +31,16 @@ const mappings: PositionedUpgradeMapping[] = [
 	},
 ];
 
+function sequentialMappings(count: number): PositionedUpgradeMapping[] {
+	return Array.from({length: count}, (_, slotIndex) => ({
+		count: slotIndex + 1,
+		from: {type: 'entity', name: 'transport-belt'},
+		mappingId: `mapping-${(slotIndex + 1).toString()}`,
+		slotIndex,
+		to: {type: 'entity', name: 'fast-transport-belt'},
+	}));
+}
+
 function renderGrid(overrides: Partial<ComponentProps<typeof UpgradeMappingGrid>> = {}) {
 	const properties: ComponentProps<typeof UpgradeMappingGrid> = {
 		mappings,
@@ -44,6 +54,113 @@ function renderGrid(overrides: Partial<ComponentProps<typeof UpgradeMappingGrid>
 }
 
 describe('UpgradeMappingGrid', () => {
+	test('uses the source-derived four-column table and grows by one padded row after content', () => {
+		const layouts = [0, 1, 4, 5, 16, 17].map((mappingCount) => {
+			const {unmount} = renderGrid({mappings: sequentialMappings(mappingCount)});
+			const grid = screen.getByRole('group', {name: 'From and To mappings'});
+			const table = grid.querySelector<HTMLElement>('.upgrade-mapping-grid__table');
+			if (table === null) {
+				throw new Error('Expected the upgrade mapping table.');
+			}
+			const slotCount = within(grid).getAllByRole('listitem').length;
+			const layout = {
+				columns: table.dataset.factorioColumns,
+				emptySlotCount: slotCount - mappingCount,
+				headings: screen.getAllByText(/^(From|To)$/).map((heading) => heading.textContent),
+				mappingCount,
+				minimumRows: table.dataset.factorioMinimumRows,
+				rowCount: slotCount / 4,
+				slotCount,
+				source: grid.dataset.factorioSource,
+				style: table.dataset.factorioStyle,
+				styleVariables: grid.getAttribute('style'),
+			};
+			unmount();
+			return layout;
+		});
+
+		expect(layouts).toStrictEqual([
+			{
+				columns: '4',
+				emptySlotCount: 16,
+				headings: ['From', 'To', 'From', 'To', 'From', 'To', 'From', 'To'],
+				mappingCount: 0,
+				minimumRows: '4',
+				rowCount: 4,
+				slotCount: 16,
+				source: 'UpgradeItemGui::MappersWidgets',
+				style: 'mappers_table',
+				styleVariables:
+					'--upgrade-mapping-first-spacing: 27px; --upgrade-mapping-pair-width: 80px; --upgrade-mapping-second-spacing: 26px; --upgrade-mapping-slot-width: 40px; --upgrade-mapping-table-width: 400px; --upgrade-mapping-third-spacing: 27px; --upgrade-mapping-vertical-spacing: 0px;',
+			},
+			{
+				columns: '4',
+				emptySlotCount: 15,
+				headings: ['From', 'To', 'From', 'To', 'From', 'To', 'From', 'To'],
+				mappingCount: 1,
+				minimumRows: '4',
+				rowCount: 4,
+				slotCount: 16,
+				source: 'UpgradeItemGui::MappersWidgets',
+				style: 'mappers_table',
+				styleVariables:
+					'--upgrade-mapping-first-spacing: 27px; --upgrade-mapping-pair-width: 80px; --upgrade-mapping-second-spacing: 26px; --upgrade-mapping-slot-width: 40px; --upgrade-mapping-table-width: 400px; --upgrade-mapping-third-spacing: 27px; --upgrade-mapping-vertical-spacing: 0px;',
+			},
+			{
+				columns: '4',
+				emptySlotCount: 12,
+				headings: ['From', 'To', 'From', 'To', 'From', 'To', 'From', 'To'],
+				mappingCount: 4,
+				minimumRows: '4',
+				rowCount: 4,
+				slotCount: 16,
+				source: 'UpgradeItemGui::MappersWidgets',
+				style: 'mappers_table',
+				styleVariables:
+					'--upgrade-mapping-first-spacing: 27px; --upgrade-mapping-pair-width: 80px; --upgrade-mapping-second-spacing: 26px; --upgrade-mapping-slot-width: 40px; --upgrade-mapping-table-width: 400px; --upgrade-mapping-third-spacing: 27px; --upgrade-mapping-vertical-spacing: 0px;',
+			},
+			{
+				columns: '4',
+				emptySlotCount: 11,
+				headings: ['From', 'To', 'From', 'To', 'From', 'To', 'From', 'To'],
+				mappingCount: 5,
+				minimumRows: '4',
+				rowCount: 4,
+				slotCount: 16,
+				source: 'UpgradeItemGui::MappersWidgets',
+				style: 'mappers_table',
+				styleVariables:
+					'--upgrade-mapping-first-spacing: 27px; --upgrade-mapping-pair-width: 80px; --upgrade-mapping-second-spacing: 26px; --upgrade-mapping-slot-width: 40px; --upgrade-mapping-table-width: 400px; --upgrade-mapping-third-spacing: 27px; --upgrade-mapping-vertical-spacing: 0px;',
+			},
+			{
+				columns: '4',
+				emptySlotCount: 4,
+				headings: ['From', 'To', 'From', 'To', 'From', 'To', 'From', 'To'],
+				mappingCount: 16,
+				minimumRows: '4',
+				rowCount: 5,
+				slotCount: 20,
+				source: 'UpgradeItemGui::MappersWidgets',
+				style: 'mappers_table',
+				styleVariables:
+					'--upgrade-mapping-first-spacing: 27px; --upgrade-mapping-pair-width: 80px; --upgrade-mapping-second-spacing: 26px; --upgrade-mapping-slot-width: 40px; --upgrade-mapping-table-width: 400px; --upgrade-mapping-third-spacing: 27px; --upgrade-mapping-vertical-spacing: 0px;',
+			},
+			{
+				columns: '4',
+				emptySlotCount: 7,
+				headings: ['From', 'To', 'From', 'To', 'From', 'To', 'From', 'To'],
+				mappingCount: 17,
+				minimumRows: '4',
+				rowCount: 6,
+				slotCount: 24,
+				source: 'UpgradeItemGui::MappersWidgets',
+				style: 'mappers_table',
+				styleVariables:
+					'--upgrade-mapping-first-spacing: 27px; --upgrade-mapping-pair-width: 80px; --upgrade-mapping-second-spacing: 26px; --upgrade-mapping-slot-width: 40px; --upgrade-mapping-table-width: 400px; --upgrade-mapping-third-spacing: 27px; --upgrade-mapping-vertical-spacing: 0px;',
+			},
+		]);
+	});
+
 	test('renders persistent complete, incomplete, and zero-match rows at stable slots', () => {
 		renderGrid();
 
