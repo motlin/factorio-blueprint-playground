@@ -125,6 +125,8 @@ export const EditablePlanner: Story = {
 		const context = within(dialog).getByRole('navigation', {name: 'Upgrade planner blueprint context'});
 		const recordTools = within(dialog).getByRole('toolbar', {name: 'Planner record tools'});
 		const scope = within(dialog).getByRole('radiogroup', {name: 'Apply mappings to'});
+		const source = within(dialog).getByLabelText('Draft source: Default Upgrade');
+		const sourceButton = within(dialog).getByRole('button', {name: 'Load planner to replace draft'});
 		const mapperScroll = within(editor).getByRole('region', {name: 'Upgrade mappings'});
 		const grid = mapperScroll.querySelector<HTMLElement>('.upgrade-mapping-grid');
 		const firstPair = mapperScroll.querySelector<HTMLElement>('.upgrade-mapping-grid__slots > li');
@@ -151,6 +153,13 @@ export const EditablePlanner: Story = {
 			recordTools: within(recordTools)
 				.getAllByRole('button')
 				.map((button) => ({label: button.getAttribute('aria-label'), style: button.dataset.factorioStyle})),
+			source: {
+				buttonText: sourceButton.textContent,
+				describedBy: sourceButton.getAttribute('aria-describedby'),
+				expanded: sourceButton.getAttribute('aria-expanded'),
+				label: source.querySelector('strong')?.textContent,
+				websiteAction: sourceButton.dataset.websiteAction,
+			},
 			scopeExtension: scope.dataset.websiteExtension,
 			scopeOptions: within(scope)
 				.getAllByRole<HTMLInputElement>('radio')
@@ -179,6 +188,13 @@ export const EditablePlanner: Story = {
 				{label: 'Export planner string', style: 'button'},
 				{label: 'Discard local planner', style: 'red_button'},
 			],
+			source: {
+				buttonText: 'Load planner…',
+				describedBy: source.id,
+				expanded: 'false',
+				label: 'Default Upgrade',
+				websiteAction: 'replace-planner-draft',
+			},
 			scopeExtension: 'planner-application-scope',
 			scopeOptions: [
 				{

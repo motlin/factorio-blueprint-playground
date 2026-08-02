@@ -2315,6 +2315,7 @@ body {
 .upgrade-planner-dialog__application,
 .upgrade-planner-dialog__body > .book-wide-replacements {
 	min-width: 0;
+	flex: 0 0 auto;
 	padding: var(--transform-frame-gap);
 }
 
@@ -3222,44 +3223,44 @@ body {
 
 .upgrade-planner-editor__source {
 	display: grid;
-	grid-template-columns: auto minmax(0, 1fr);
+	grid-template-columns: minmax(0, 1fr) auto;
 	align-items: center;
-	gap: 10px;
-	padding: 10px 12px;
+	gap: calc(8px * var(--factorio-ui-density));
+	padding: calc(8px * var(--factorio-ui-density));
 }
 
-.upgrade-planner-editor__source > strong {
-	color: #ffe6c0;
-	font-weight: bold;
+.upgrade-planner-editor__source-identity {
+	display: grid;
+	min-width: 0;
+	gap: calc(2px * var(--factorio-ui-density));
 }
 
-.upgrade-planner-editor__source-button {
+.upgrade-planner-editor__source-identity > span:first-child {
+	color: var(--factorio-ui-muted);
+	font-size: 75%;
+	font-weight: 600;
+}
+
+.upgrade-planner-editor__source-value {
 	display: flex;
 	min-width: 0;
 	align-items: center;
-	gap: 8px;
-	padding: 6px 10px;
-	border: 1px solid #171717;
-	background: #383738;
-	box-shadow:
-		inset 0 1px 1px #777,
-		inset 0 -2px 2px #181818;
-	color: #f1efed;
-	font: inherit;
-	text-align: left;
-	cursor: pointer;
+	gap: calc(6px * var(--factorio-ui-density));
 }
 
-.upgrade-planner-editor__source-button span {
+.upgrade-planner-editor__source-value strong {
 	overflow: hidden;
+	min-width: 0;
+	color: #f1efed;
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
 
-.upgrade-planner-editor__source-button:hover,
-.upgrade-planner-editor__source-button:focus-visible,
+.upgrade-planner-editor__source-button {
+	white-space: nowrap;
+}
+
 .upgrade-planner-editor__source-button[aria-expanded='true'] {
-	background: #4d4c4d;
 	outline: 2px solid #e39827;
 	outline-offset: -2px;
 }
@@ -5602,6 +5603,15 @@ body {
 @media (max-width: 480px) {
 	.upgrade-mapping-grid {
 		padding: 8px;
+	}
+
+	.upgrade-planner-editor__source {
+		grid-template-columns: minmax(0, 1fr);
+		align-items: stretch;
+	}
+
+	.upgrade-planner-editor__source-button {
+		justify-content: center;
 	}
 }
 

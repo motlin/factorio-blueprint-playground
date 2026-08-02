@@ -433,27 +433,39 @@ function UpgradePlannerLoader({
 	sourceLabel,
 }: UpgradePlannerLoaderProps) {
 	const plannerSelectorId = useId();
+	const plannerSourceId = useId();
 	const [plannerSelectorOpen, setPlannerSelectorOpen] = useState(false);
 
 	return (
 		<>
 			<div className="upgrade-planner-loader" data-website-extension="planner-library-loader">
 				<div className="panel-hole-inner upgrade-planner-editor__source">
-					<strong>Load planner</strong>
-					<button
-						type="button"
+					<div
+						id={plannerSourceId}
+						className="upgrade-planner-editor__source-identity"
+						aria-label={`Draft source: ${sourceLabel}`}
+					>
+						<span>Draft source</span>
+						<span className="upgrade-planner-editor__source-value">
+							<FactorioIcon decorative icon={{type: 'item', name: 'upgrade-planner'}} size="small" />
+							<strong title={sourceLabel}>{sourceLabel}</strong>
+						</span>
+					</div>
+					<FactorioButton
 						className="upgrade-planner-editor__source-button"
 						aria-controls={plannerSelectorId}
+						aria-describedby={plannerSourceId}
 						aria-expanded={plannerSelectorOpen}
 						aria-haspopup="dialog"
-						aria-label={`Load planner, currently ${sourceLabel}`}
+						aria-label="Load planner to replace draft"
+						data-website-action="replace-planner-draft"
+						title="Choose a planner to replace this editable draft"
 						onClick={() => {
 							setPlannerSelectorOpen(true);
 						}}
 					>
-						<FactorioIcon icon={{type: 'item', name: 'upgrade-planner'}} size="small" />
-						<span>{sourceLabel}</span>
-					</button>
+						Load planner…
+					</FactorioButton>
 				</div>
 				{source === 'pasted' ? (
 					<div className="upgrade-planner-editor__paste">
@@ -485,7 +497,6 @@ function UpgradePlannerLoader({
 					}}
 					onChoose={(choice) => {
 						onPlannerLoad(choice);
-						setPlannerSelectorOpen(false);
 					}}
 				/>
 			) : null}

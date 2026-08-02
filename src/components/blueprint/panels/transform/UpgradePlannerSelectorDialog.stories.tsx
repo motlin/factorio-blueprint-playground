@@ -122,14 +122,14 @@ export const LoadPlanner: Story = {
 	args: {includeEditingChoices: true},
 	play: async () => {
 		const page = within(document.body);
-		const dialog = page.getByRole('dialog', {name: 'Load an upgrade planner'});
+		const dialog = page.getByRole('dialog', {name: 'Choose a planner for this draft'});
 		const grid = page.getByRole('grid', {name: 'Upgrade planners'});
 
 		await expect({
 			columns: grid.getAttribute('data-factorio-columns'),
 			dialogVisible: dialog.getClientRects().length > 0,
-			instructions: page.getByText('Choose a planner to copy all of its mappings into the editable draft.')
-				.textContent,
+			closeControl: page.getByRole('button', {name: 'Close planner draft chooser'}).getAttribute('aria-label'),
+			instructionText: page.getByText(/Choosing a planner replaces this editable draft/).textContent,
 			tiles: within(grid)
 				.getAllByRole('button')
 				.map((tile) => ({
@@ -139,9 +139,11 @@ export const LoadPlanner: Story = {
 					websiteExtension: tile.getAttribute('data-website-extension'),
 				})),
 		}).toStrictEqual({
+			closeControl: 'Close planner draft chooser',
 			columns: '6',
 			dialogVisible: true,
-			instructions: 'Choose a planner to copy all of its mappings into the editable draft.',
+			instructionText:
+				'Choosing a planner replaces this editable draft and returns to the Upgrade Planner. It does not apply changes to the blueprint.',
 			tiles: [
 				{choiceKind: 'default', label: 'Default Upgrade', pressed: 'true', websiteExtension: null},
 				{
