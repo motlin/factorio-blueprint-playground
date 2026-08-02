@@ -2324,8 +2324,117 @@ body {
 	gap: var(--transform-frame-gap);
 }
 
-.upgrade-planner-dialog__application .transform-workflow__scope {
-	margin-top: var(--transform-frame-gap);
+.upgrade-planner-dialog__application-scope {
+	min-width: 0;
+	margin: var(--transform-frame-gap) 0 0;
+	padding: calc(8px * var(--factorio-ui-density));
+	border: 0;
+}
+
+.upgrade-planner-dialog__application-scope legend {
+	padding: 0 calc(4px * var(--factorio-ui-density));
+	color: #ffe6c0;
+	font-weight: 700;
+}
+
+.upgrade-planner-dialog__scope-options {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(calc(160px * var(--factorio-ui-density)), 1fr));
+	gap: calc(6px * var(--factorio-ui-density));
+}
+
+.upgrade-planner-dialog__scope-options label {
+	display: flex;
+	min-width: 0;
+	min-height: calc(52px * var(--factorio-ui-density));
+	align-items: center;
+	gap: calc(8px * var(--factorio-ui-density));
+	padding: calc(6px * var(--factorio-ui-density)) calc(8px * var(--factorio-ui-density));
+	background: #383738;
+	box-shadow:
+		inset 1px 1px 0 #646264,
+		inset -2px -2px 0 #1c1b1c;
+	cursor: pointer;
+}
+
+.upgrade-planner-dialog__scope-options label[data-selected='true'] {
+	background: #414041;
+	box-shadow:
+		inset 0 0 0 2px #a56d1d,
+		inset 1px 1px 0 #777,
+		inset -2px -2px 0 #1c1b1c;
+}
+
+.upgrade-planner-dialog__scope-options label:has(input:disabled) {
+	color: #77736f;
+	cursor: not-allowed;
+	opacity: 0.55;
+}
+
+.upgrade-planner-dialog__scope-options input {
+	position: relative;
+	box-sizing: border-box;
+	width: calc(22px * var(--factorio-ui-density));
+	height: calc(22px * var(--factorio-ui-density));
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	appearance: none;
+	background: #313031;
+	box-shadow:
+		inset 1px 1px 0 #777,
+		inset -2px -2px 0 #1c1b1c,
+		0 1px 2px #171717;
+	margin: 0;
+	flex: 0 0 auto;
+}
+
+.upgrade-planner-dialog__scope-options input::after {
+	position: absolute;
+	inset: calc(6px * var(--factorio-ui-density));
+	display: none;
+	border-radius: 50%;
+	background: #e39827;
+	box-shadow: 0 0 4px rgb(227 152 39 / 70%);
+	content: '';
+}
+
+.upgrade-planner-dialog__scope-options input:checked::after {
+	display: block;
+}
+
+.upgrade-planner-dialog__scope-options label:hover input:not(:disabled) {
+	box-shadow:
+		inset 1px 1px 0 #8f8f8f,
+		inset -2px -2px 0 #1c1b1c,
+		0 0 0 2px rgb(227 152 39 / 45%);
+}
+
+.upgrade-planner-dialog__scope-options input:focus-visible {
+	outline: 2px solid #e39827;
+	outline-offset: 2px;
+}
+
+.upgrade-planner-dialog__scope-copy {
+	display: grid;
+	min-width: 0;
+	gap: calc(2px * var(--factorio-ui-density));
+}
+
+.upgrade-planner-dialog__scope-copy strong,
+.upgrade-planner-dialog__scope-copy small {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.upgrade-planner-dialog__scope-copy strong {
+	color: #f1efed;
+}
+
+.upgrade-planner-dialog__scope-copy small {
+	color: #b7b2ad;
+	font-size: 75%;
 }
 
 .upgrade-planner-loader {

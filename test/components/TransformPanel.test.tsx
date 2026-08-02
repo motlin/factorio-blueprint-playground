@@ -398,6 +398,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		const plannerContext = within(dialog).getByRole('navigation', {
 			name: 'Upgrade planner blueprint context',
 		});
+		const plannerScope = within(dialog).getByRole('radiogroup', {name: 'Apply mappings to'});
 		expect(dialog.getAttribute('aria-labelledby')).toBe(dialogHeading.id);
 		expect({
 			applicationExtension: application.dataset.websiteExtension,
@@ -439,12 +440,22 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			),
 			mappingSlots: editor.querySelectorAll('[data-upgrade-mapping-slot]').length,
 			modeButtons: ['Upgrade', 'Downgrade', 'Strip quality'].map((name) => screen.queryByRole('button', {name})),
+			nativeScopeSelect: within(dialog).queryByRole('combobox', {name: 'Apply to'}),
 			operationButtons: [
 				'Save Planner',
 				'Apply Upgrade to Current Blueprint',
 				'Apply Downgrade to Current Blueprint',
 			].map((name) => screen.queryByRole('button', {name})?.textContent ?? null),
 			preserveCapitalization: screen.queryByRole('checkbox', {name: 'Preserve capitalization'}),
+			scopeExtension: plannerScope.dataset.websiteExtension,
+			scopeOptions: within(plannerScope)
+				.getAllByRole<HTMLInputElement>('radio')
+				.map((radio) => ({
+					checked: radio.checked,
+					disabled: radio.disabled,
+					label: radio.parentElement?.textContent,
+					value: radio.value,
+				})),
 			sectionOrder: [...body.children].map(
 				(section) =>
 					section.getAttribute('data-factorio-style') ?? section.getAttribute('data-website-extension'),
@@ -489,12 +500,22 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			mappingHeadingGroups: ['FromTo', 'FromTo', 'FromTo', 'FromTo'],
 			mappingSlots: 20,
 			modeButtons: [null, null, null],
+			nativeScopeSelect: null,
 			operationButtons: [
 				'Save Planner',
 				'Apply Upgrade to Current Blueprint',
 				'Apply Downgrade to Current Blueprint',
 			],
 			preserveCapitalization: null,
+			scopeExtension: 'planner-application-scope',
+			scopeOptions: [
+				{
+					checked: true,
+					disabled: false,
+					label: 'Current selectionThis blueprint or book',
+					value: 'selection',
+				},
+			],
 			sectionOrder: ['entity_frame', 'planner-application', null],
 			scrollTabIndex: 0,
 			sourceIcon: 'https://factorio-icon-cdn.pages.dev/entity/transport-belt.webp',
@@ -602,7 +623,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		await choosePlanner(user, 'Empty Planner');
 		const loadEmptyPlannerCommitCount = commitsSincePreviousInteraction();
 
-		await user.selectOptions(screen.getByRole('combobox', {name: 'Apply to'}), 'root');
+		await user.click(screen.getByRole('radio', {name: /^Entire book/}));
 		const rootScopeCommitCount = commitsSincePreviousInteraction();
 		await user.click(firstEmptyMappingSourceButton());
 		await chooseSignal(user, 'Transport belt');
@@ -3134,7 +3155,10 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		render(<TransformPanel blueprint={selectedBlueprint} rootBlueprint={rootBlueprint} selectedPath="1" />);
 
 		openUpgradePlanner();
-		const scope = screen.getByRole<HTMLSelectElement>('combobox', {name: 'Apply to'}).value;
+		const scope = within(screen.getByRole('radiogroup', {name: 'Apply mappings to'})).getByRole<HTMLInputElement>(
+			'radio',
+			{checked: true},
+		).value;
 		await applyPlanner(user);
 
 		expect({
@@ -3217,7 +3241,9 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 
 		openUpgradePlanner();
 		expect({
-			entityScope: screen.getByRole<HTMLSelectElement>('combobox', {name: 'Apply to'}).value,
+			entityScope: within(
+				screen.getByRole('radiogroup', {name: 'Apply mappings to'}),
+			).getByRole<HTMLInputElement>('radio', {checked: true}).value,
 			replacementScope: screen.getByText(
 				'Always applies to titles, descriptions, and label icons throughout the entire root book, regardless of the selected blueprint.',
 			).textContent,
@@ -3331,7 +3357,10 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 
 		openUpgradePlanner();
 		expect({
-			scope: screen.getByRole<HTMLSelectElement>('combobox', {name: 'Apply to'}).value,
+			scope: within(screen.getByRole('radiogroup', {name: 'Apply mappings to'})).getByRole<HTMLInputElement>(
+				'radio',
+				{checked: true},
+			).value,
 			status: screen.getByLabelText('1 match').getAttribute('aria-label'),
 		}).toStrictEqual({scope: 'root', status: '1 match'});
 

@@ -604,6 +604,7 @@ export function UpgradePlannerDialog({
 }: UpgradePlannerDialogProps) {
 	const dialogHeadingId = useId();
 	const applicationHeadingId = useId();
+	const applicationScopeName = useId();
 	const [metadataEditorOpen, setMetadataEditorOpen] = useState(false);
 	const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
 	const [copyStatus, setCopyStatus] = useState<string>();
@@ -772,25 +773,50 @@ export function UpgradePlannerDialog({
 							</span>
 						</header>
 						<div className="upgrade-planner-dialog__application-controls">
-							<div className="panel-hole-inner transform-workflow__scope">
-								<label>
-									<strong>Apply mappings to</strong>
-									<select
-										aria-label="Apply to"
-										value={scope}
-										onChange={(event) => {
-											onScopeChange(event.currentTarget.value === 'root' ? 'root' : 'selection');
-										}}
-									>
-										<option value="selection" disabled={selectionScopeDisabled}>
-											{selectionScopeLabel}
-										</option>
-										{canChooseRootScope || selectionScopeDisabled ? (
-											<option value="root">Entire root book</option>
-										) : null}
-									</select>
-								</label>
-							</div>
+							<fieldset
+								className="panel-hole-inner upgrade-planner-dialog__application-scope"
+								role="radiogroup"
+								data-website-extension="planner-application-scope"
+							>
+								<legend>Apply mappings to</legend>
+								<div className="upgrade-planner-dialog__scope-options">
+									<label data-selected={scope === 'selection' || undefined}>
+										<input
+											type="radio"
+											checked={scope === 'selection'}
+											data-factorio-style="radiobutton"
+											disabled={selectionScopeDisabled}
+											name={applicationScopeName}
+											value="selection"
+											onChange={() => {
+												onScopeChange('selection');
+											}}
+										/>
+										<span className="upgrade-planner-dialog__scope-copy">
+											<strong>Current selection</strong>
+											<small>{selectionScopeLabel}</small>
+										</span>
+									</label>
+									{canChooseRootScope || selectionScopeDisabled ? (
+										<label data-selected={scope === 'root' || undefined}>
+											<input
+												type="radio"
+												checked={scope === 'root'}
+												data-factorio-style="radiobutton"
+												name={applicationScopeName}
+												value="root"
+												onChange={() => {
+													onScopeChange('root');
+												}}
+											/>
+											<span className="upgrade-planner-dialog__scope-copy">
+												<strong>Entire book</strong>
+												<small>Every blueprint in the loaded root book</small>
+											</span>
+										</label>
+									) : null}
+								</div>
+							</fieldset>
 							<UpgradePlannerLoader {...mappings} />
 						</div>
 					</section>

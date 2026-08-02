@@ -1,4 +1,5 @@
 import type {Meta, StoryObj} from '@storybook/react-vite';
+import {useState, type ComponentProps} from 'react';
 import {expect, fn, userEvent, within} from 'storybook/test';
 
 import type {BlueprintString} from '../../../../parsing/types';
@@ -103,12 +104,27 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+function InteractiveScopePlanner(args: ComponentProps<typeof UpgradePlannerDialog>) {
+	const [scope, setScope] = useState(args.scope);
+	return (
+		<UpgradePlannerDialog
+			{...args}
+			scope={scope}
+			onScopeChange={(nextScope) => {
+				args.onScopeChange(nextScope);
+				setScope(nextScope);
+			}}
+		/>
+	);
+}
+
 export const EditablePlanner: Story = {
 	play: async () => {
 		const dialog = within(document.body).getByRole('dialog', {name: 'Upgrade Planner'});
 		const editor = within(dialog).getByRole('region', {name: 'Upgrade planner editor'});
 		const context = within(dialog).getByRole('navigation', {name: 'Upgrade planner blueprint context'});
 		const recordTools = within(dialog).getByRole('toolbar', {name: 'Planner record tools'});
+		const scope = within(dialog).getByRole('radiogroup', {name: 'Apply mappings to'});
 		const mapperScroll = within(editor).getByRole('region', {name: 'Upgrade mappings'});
 		const grid = mapperScroll.querySelector<HTMLElement>('.upgrade-mapping-grid');
 		const firstPair = mapperScroll.querySelector<HTMLElement>('.upgrade-mapping-grid__slots > li');
@@ -129,11 +145,21 @@ export const EditablePlanner: Story = {
 			libraryState: within(dialog).getByLabelText('Planner library status').textContent,
 			mapperStyle: mapperScroll.dataset.factorioStyle,
 			mappingCount: mapperScroll.querySelectorAll('[data-mapping-key]').length,
+			nativeScopeSelect: within(dialog).queryByRole('combobox', {name: 'Apply to'}),
 			pairWidth: firstPair.getBoundingClientRect().width,
 			plannerContext: context.textContent,
 			recordTools: within(recordTools)
 				.getAllByRole('button')
 				.map((button) => ({label: button.getAttribute('aria-label'), style: button.dataset.factorioStyle})),
+			scopeExtension: scope.dataset.websiteExtension,
+			scopeOptions: within(scope)
+				.getAllByRole<HTMLInputElement>('radio')
+				.map((radio) => ({
+					checked: radio.checked,
+					disabled: radio.disabled,
+					label: radio.parentElement?.textContent,
+					value: radio.value,
+				})),
 			slotCount: mapperScroll.querySelectorAll('[data-upgrade-mapping-slot]').length,
 		}).toStrictEqual({
 			applicationInsideEditor: null,
@@ -145,12 +171,22 @@ export const EditablePlanner: Story = {
 			libraryState: 'Local draft · not in Blueprint Library',
 			mapperStyle: 'mappers_scroll_pane',
 			mappingCount: 1,
+			nativeScopeSelect: null,
 			pairWidth: 80,
 			plannerContext: "Selected blueprint›Alice's blueprint",
 			recordTools: [
 				{label: 'Copy planner string', style: 'button'},
 				{label: 'Export planner string', style: 'button'},
 				{label: 'Discard local planner', style: 'red_button'},
+			],
+			scopeExtension: 'planner-application-scope',
+			scopeOptions: [
+				{
+					checked: true,
+					disabled: false,
+					label: 'Current selectionSelected blueprint',
+					value: 'selection',
+				},
 			],
 			slotCount: 16,
 		});
@@ -225,6 +261,7 @@ export const SavedPlannerRootScope: Story = {
 	},
 	play: async () => {
 		const dialog = within(document.body).getByRole('dialog', {name: 'Upgrade Planner'});
+		const scope = within(dialog).getByRole('radiogroup', {name: 'Apply mappings to'});
 		await expect({
 			applicationStatus: within(dialog).getByLabelText('153 matches').textContent,
 			context: within(dialog).getByRole('navigation', {name: 'Upgrade planner blueprint context'}).textContent,
@@ -232,12 +269,83 @@ export const SavedPlannerRootScope: Story = {
 				.querySelector('.upgrade-planner-dialog__context-strip')
 				?.getAttribute('data-website-extension'),
 			libraryState: within(dialog).getByLabelText('Planner library status').textContent,
+			scopeOptions: within(scope)
+				.getAllByRole<HTMLInputElement>('radio')
+				.map((radio) => ({
+					checked: radio.checked,
+					disabled: radio.disabled,
+					label: radio.parentElement?.textContent,
+					value: radio.value,
+				})),
 		}).toStrictEqual({
 			applicationStatus: '153 matches',
 			context: "Entire root book›Alice's belt book › Smelting",
 			contextExtension: 'planner-context',
 			libraryState: 'Blueprint Library › Starter belt upgrades',
+			scopeOptions: [
+				{
+					checked: false,
+					disabled: false,
+					label: 'Current selectionSelected blueprint',
+					value: 'selection',
+				},
+				{
+					checked: true,
+					disabled: false,
+					label: 'Entire bookEvery blueprint in the loaded root book',
+					value: 'root',
+				},
+			],
 		});
+	},
+};
+
+export const ApplicationScopeKeyboard: Story = {
+	args: {
+		canChooseRootScope: true,
+	},
+	render: (args) => <InteractiveScopePlanner {...args} />,
+	play: async ({args}) => {
+		const scope = within(document.body).getByRole('radiogroup', {name: 'Apply mappings to'});
+		const currentSelection = within(scope).getByRole<HTMLInputElement>('radio', {
+			name: 'Current selection Selected blueprint',
+		});
+		const entireBook = within(scope).getByRole<HTMLInputElement>('radio', {
+			name: 'Entire book Every blueprint in the loaded root book',
+		});
+		currentSelection.focus();
+		await userEvent.keyboard('{ArrowRight}');
+		await expect({
+			calls: args.onScopeChange.mock.calls,
+			currentSelection: {checked: currentSelection.checked, focused: document.activeElement === currentSelection},
+			entireBook: {checked: entireBook.checked, focused: document.activeElement === entireBook},
+		}).toStrictEqual({
+			calls: [['root']],
+			currentSelection: {checked: false, focused: false},
+			entireBook: {checked: true, focused: true},
+		});
+	},
+};
+
+export const ForcedEntireBookScope: Story = {
+	args: {
+		scope: 'root',
+		selectionScopeDisabled: true,
+	},
+	play: async () => {
+		const scope = within(document.body).getByRole('radiogroup', {name: 'Apply mappings to'});
+		await expect(
+			within(scope)
+				.getAllByRole<HTMLInputElement>('radio')
+				.map((radio) => ({
+					checked: radio.checked,
+					disabled: radio.disabled,
+					value: radio.value,
+				})),
+		).toStrictEqual([
+			{checked: false, disabled: true, value: 'selection'},
+			{checked: true, disabled: false, value: 'root'},
+		]);
 	},
 };
 
