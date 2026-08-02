@@ -17,6 +17,28 @@ const rootBlueprint: BlueprintString = {
 	},
 };
 
+const pastedPlannerInput = JSON.stringify({
+	upgrade_planner: {
+		item: 'upgrade-planner',
+		label: "Alice's pasted planner",
+		version: 0,
+		settings: {
+			mappers: [
+				{
+					index: 1,
+					from: {type: 'entity', name: 'transport-belt'},
+					to: {type: 'entity', name: 'fast-transport-belt'},
+				},
+				{
+					index: 2,
+					from: {type: 'item', name: 'speed-module'},
+					to: {type: 'item', name: 'speed-module-2'},
+				},
+			],
+		},
+	},
+});
+
 const meta = {
 	title: 'Blueprint/Panels/Transform/UpgradePlannerDialog',
 	component: UpgradePlannerDialog,
@@ -41,6 +63,7 @@ const meta = {
 			onSourceChange: fn(),
 			onTargetChange: fn(),
 			plannerInput: '',
+			plannerInputError: undefined,
 			rootBlueprint,
 			source: 'suggested',
 			sourceLabel: 'Default Upgrade',
@@ -113,6 +136,28 @@ function InteractiveScopePlanner(args: ComponentProps<typeof UpgradePlannerDialo
 			onScopeChange={(nextScope) => {
 				args.onScopeChange(nextScope);
 				setScope(nextScope);
+			}}
+		/>
+	);
+}
+
+function InteractivePastePlanner(args: ComponentProps<typeof UpgradePlannerDialog>) {
+	const [plannerInput, setPlannerInput] = useState(args.mappings.plannerInput);
+	const [plannerInputError, setPlannerInputError] = useState(args.mappings.plannerInputError);
+	return (
+		<UpgradePlannerDialog
+			{...args}
+			mappings={{
+				...args.mappings,
+				plannerInput,
+				plannerInputError,
+				onPlannerInputChange: (nextInput) => {
+					args.mappings.onPlannerInputChange(nextInput);
+					setPlannerInput(nextInput);
+					setPlannerInputError(
+						nextInput === pastedPlannerInput ? undefined : 'Invalid upgrade planner test value.',
+					);
+				},
 			}}
 		/>
 	);
@@ -362,6 +407,179 @@ export const ForcedEntireBookScope: Story = {
 			{checked: false, disabled: true, value: 'selection'},
 			{checked: true, disabled: false, value: 'root'},
 		]);
+	},
+};
+
+export const EmptyPasteInput: Story = {
+	args: {
+		mappings: {
+			...meta.args.mappings,
+			mappings: [],
+			plannerInput: '',
+			plannerInputError: 'Paste an upgrade planner string or JSON.',
+			source: 'pasted',
+			sourceLabel: 'Paste upgrade planner…',
+		},
+		matchCount: 0,
+	},
+	play: async () => {
+		const dialog = within(document.body).getByRole('dialog', {name: 'Upgrade Planner'});
+		const paste = within(dialog).getByRole('region', {name: 'Paste planner definition'});
+		const input = within(paste).getByRole<HTMLTextAreaElement>('textbox', {name: 'Planner string or JSON'});
+		await expect({
+			alert: within(paste).queryByRole('alert'),
+			describedBy: document.getElementById(input.getAttribute('aria-describedby') ?? '')?.textContent,
+			extension: paste.dataset.websiteExtension,
+			mappingCount: dialog.querySelectorAll('[data-mapping-key]').length,
+			state: paste.dataset.validationState,
+			textarea: {
+				invalid: input.getAttribute('aria-invalid'),
+				placeholder: input.getAttribute('placeholder'),
+				style: input.dataset.factorioStyle,
+				value: input.value,
+			},
+		}).toStrictEqual({
+			alert: null,
+			describedBy: 'Paste an encoded upgrade planner string or its JSON representation.',
+			extension: 'planner-paste-import',
+			mappingCount: 0,
+			state: 'empty',
+			textarea: {
+				invalid: null,
+				placeholder: 'Paste an upgrade planner string or JSON',
+				style: 'textbox',
+				value: '',
+			},
+		});
+	},
+};
+
+export const ValidPastedPlanner: Story = {
+	args: {
+		mappings: {
+			...meta.args.mappings,
+			mappings: [
+				meta.args.mappings.mappings[0],
+				{
+					count: 0,
+					from: {type: 'item', name: 'speed-module'},
+					mappingId: 'mapping-module',
+					slotIndex: 1,
+					to: {type: 'item', name: 'speed-module-2'},
+				},
+			],
+			plannerInput: pastedPlannerInput,
+			source: 'pasted',
+			sourceLabel: 'Paste upgrade planner…',
+		},
+	},
+	play: async () => {
+		const dialog = within(document.body).getByRole('dialog', {name: 'Upgrade Planner'});
+		const paste = within(dialog).getByRole('region', {name: 'Paste planner definition'});
+		const input = within(paste).getByRole<HTMLTextAreaElement>('textbox', {name: 'Planner string or JSON'});
+		const mappings = [...dialog.querySelectorAll<HTMLElement>('[data-mapping-key]')];
+		await expect({
+			alert: within(paste).queryByRole('alert'),
+			describedBy: document.getElementById(input.getAttribute('aria-describedby') ?? '')?.textContent,
+			mappingSummaries: mappings.map(
+				(mapping) => mapping.querySelector('.transform-visually-hidden')?.textContent,
+			),
+			state: paste.dataset.validationState,
+			textarea: {invalid: input.getAttribute('aria-invalid'), value: input.value},
+		}).toStrictEqual({
+			alert: null,
+			describedBy: 'Planner loaded into the editable mapping grid.',
+			mappingSummaries: [
+				'1 match. Drag this From and To pair to move it, or focus either endpoint and press Control plus an arrow key. Press Delete to clear the focused endpoint.',
+				'0 matches. Drag this From and To pair to move it, or focus either endpoint and press Control plus an arrow key. Press Delete to clear the focused endpoint.',
+			],
+			state: 'valid',
+			textarea: {invalid: null, value: pastedPlannerInput},
+		});
+	},
+};
+
+export const InvalidPasteInput: Story = {
+	args: {
+		mappings: {
+			...meta.args.mappings,
+			plannerInput: '{',
+			plannerInputError: 'Invalid upgrade planner test value.',
+			source: 'pasted',
+			sourceLabel: 'Paste upgrade planner…',
+		},
+	},
+	play: async () => {
+		const dialog = within(document.body).getByRole('dialog', {name: 'Upgrade Planner'});
+		const paste = within(dialog).getByRole('region', {name: 'Paste planner definition'});
+		const input = within(paste).getByRole<HTMLTextAreaElement>('textbox', {name: 'Planner string or JSON'});
+		await expect({
+			alert: within(paste).getByRole('alert').textContent,
+			describedBy: document.getElementById(input.getAttribute('aria-describedby') ?? '')?.textContent,
+			state: paste.dataset.validationState,
+			textarea: {invalid: input.getAttribute('aria-invalid'), value: input.value},
+		}).toStrictEqual({
+			alert: 'Invalid upgrade planner test value.',
+			describedBy: 'Invalid upgrade planner test value.',
+			state: 'invalid',
+			textarea: {invalid: 'true', value: '{'},
+		});
+	},
+};
+
+export const ValidPasteWithMappingError: Story = {
+	args: {
+		mappings: {
+			...meta.args.mappings,
+			error: 'Upgrade planner defines more than one target for transport-belt.',
+			plannerInput: pastedPlannerInput,
+			source: 'pasted',
+			sourceLabel: 'Paste upgrade planner…',
+		},
+	},
+	play: async () => {
+		const dialog = within(document.body).getByRole('dialog', {name: 'Upgrade Planner'});
+		const paste = within(dialog).getByRole('region', {name: 'Paste planner definition'});
+		const input = within(paste).getByRole<HTMLTextAreaElement>('textbox', {name: 'Planner string or JSON'});
+		await expect({
+			fieldAlert: within(paste).queryByRole('alert'),
+			globalAlert: within(dialog).getByRole('alert').textContent,
+			state: paste.dataset.validationState,
+			textareaInvalid: input.getAttribute('aria-invalid'),
+		}).toStrictEqual({
+			fieldAlert: null,
+			globalAlert: 'Upgrade planner defines more than one target for transport-belt.',
+			state: 'valid',
+			textareaInvalid: null,
+		});
+	},
+};
+
+export const PasteValidationGeometry: Story = {
+	args: ValidPastedPlanner.args,
+	render: (args) => <InteractivePastePlanner {...args} />,
+	play: async () => {
+		const dialog = within(document.body).getByRole('dialog', {name: 'Upgrade Planner'});
+		const grid = within(dialog).getByRole('region', {name: 'Upgrade mappings'});
+		const input = within(dialog).getByRole('textbox', {name: 'Planner string or JSON'});
+		const rectangle = () => {
+			const {height, width} = grid.getBoundingClientRect();
+			return {height, offsetLeft: grid.offsetLeft, offsetTop: grid.offsetTop, width};
+		};
+		const initialRectangle = rectangle();
+		await userEvent.clear(input);
+		await userEvent.type(input, 'not a planner');
+		await expect({
+			alert: within(dialog).getByRole('alert').textContent,
+			initialRectangle,
+			invalidRectangle: rectangle(),
+			mappingCount: dialog.querySelectorAll('[data-mapping-key]').length,
+		}).toStrictEqual({
+			alert: 'Invalid upgrade planner test value.',
+			initialRectangle,
+			invalidRectangle: initialRectangle,
+			mappingCount: 2,
+		});
 	},
 };
 

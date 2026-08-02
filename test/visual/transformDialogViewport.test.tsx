@@ -142,6 +142,7 @@ function renderPlannerHtml(): string {
 				onSourceChange: noop,
 				onTargetChange: noop,
 				plannerInput: '',
+				plannerInputError: undefined,
 				rootBlueprint,
 				source: 'suggested',
 				sourceLabel: 'Default Upgrade',

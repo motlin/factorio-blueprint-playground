@@ -442,7 +442,7 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 			setDiscardConfirmationOpen(false);
 		},
 		mappings: {
-			error,
+			error: mappingRuleError,
 			mappings,
 			onClearEndpoint: (mappingId: string, endpoint: 'from' | 'to') => {
 				setPlannerDraftChanged(true);
@@ -559,6 +559,7 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 				});
 			},
 			plannerInput,
+			plannerInputError: plannerError,
 			source,
 			sourceLabel,
 			sourceOptions,

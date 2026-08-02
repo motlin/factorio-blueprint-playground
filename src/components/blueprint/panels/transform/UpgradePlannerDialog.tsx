@@ -5,7 +5,6 @@ import type {BlueprintString, SignalID, UpgradeSourceSignal} from '../../../../p
 import type {UpgradeDirection} from '../../../../transform/upgradePlanner';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
 import {FactorioButton, FactorioButtonKind} from '../../../ui/FactorioUi';
-import {Textarea} from '../../../ui/Textarea';
 import {BookWideReplacements, type BookWideReplacementsProps} from './BookWideReplacements';
 import {BlueprintDescriptionEditor} from './BlueprintDescriptionEditor';
 import {BlueprintLabelIcons} from './BlueprintLabelIcons';
@@ -68,6 +67,7 @@ interface UpgradePlannerMappings {
 	onSourceChange: (mappingId: string | undefined, slotIndex: number, source: UpgradeSourceSignal) => void;
 	onTargetChange: (mappingId: string | undefined, slotIndex: number, target: SignalID) => void;
 	plannerInput: string;
+	plannerInputError: string | undefined;
 	rootBlueprint: BlueprintString;
 	source: string;
 	sourceLabel: string;
@@ -79,6 +79,7 @@ interface UpgradePlannerLoaderProps {
 	onPlannerLoad: (choice: UpgradePlannerChoice) => void;
 	onPlannerInputChange: (value: string) => void;
 	plannerInput: string;
+	plannerInputError: string | undefined;
 	rootBlueprint: BlueprintString;
 	source: string;
 	sourceLabel: string;
@@ -428,13 +429,24 @@ function UpgradePlannerLoader({
 	onPlannerLoad,
 	onPlannerInputChange,
 	plannerInput,
+	plannerInputError,
 	rootBlueprint,
 	source,
 	sourceLabel,
 }: UpgradePlannerLoaderProps) {
 	const plannerSelectorId = useId();
 	const plannerSourceId = useId();
+	const pasteHeadingId = useId();
+	const pasteInputId = useId();
+	const pasteStatusId = useId();
 	const [plannerSelectorOpen, setPlannerSelectorOpen] = useState(false);
+	const pasteState = plannerInput === '' ? 'empty' : plannerInputError === undefined ? 'valid' : 'invalid';
+	const pasteStatus =
+		pasteState === 'empty'
+			? 'Paste an encoded upgrade planner string or its JSON representation.'
+			: pasteState === 'valid'
+				? 'Planner loaded into the editable mapping grid.'
+				: plannerInputError;
 
 	return (
 		<>
@@ -468,17 +480,40 @@ function UpgradePlannerLoader({
 					</FactorioButton>
 				</div>
 				{source === 'pasted' ? (
-					<div className="upgrade-planner-editor__paste">
-						<label className="upgrade-planner-editor__paste-label">
-							<span>Planner string or JSON</span>
-							<Textarea
-								value={plannerInput}
-								onChange={onPlannerInputChange}
-								placeholder="Paste an upgrade planner string or JSON"
-								rows={3}
-							/>
+					<section
+						className="panel-hole-inner upgrade-planner-editor__paste"
+						data-validation-state={pasteState}
+						data-website-extension="planner-paste-import"
+						aria-labelledby={pasteHeadingId}
+					>
+						<header className="upgrade-planner-editor__paste-header">
+							<span className="upgrade-planner-editor__paste-extension">Website extension</span>
+							<h5 id={pasteHeadingId}>Paste planner definition</h5>
+						</header>
+						<label className="upgrade-planner-editor__paste-label" htmlFor={pasteInputId}>
+							Planner string or JSON
 						</label>
-					</div>
+						<textarea
+							id={pasteInputId}
+							value={plannerInput}
+							aria-describedby={pasteStatusId}
+							aria-invalid={pasteState === 'invalid' || undefined}
+							data-factorio-style="textbox"
+							placeholder="Paste an upgrade planner string or JSON"
+							rows={3}
+							onChange={(event) => {
+								onPlannerInputChange(event.currentTarget.value);
+							}}
+						/>
+						<p
+							id={pasteStatusId}
+							className="upgrade-planner-editor__paste-status"
+							aria-live={pasteState === 'invalid' ? undefined : 'polite'}
+							role={pasteState === 'invalid' ? 'alert' : undefined}
+						>
+							{pasteStatus}
+						</p>
+					</section>
 				) : null}
 				{error === undefined ? null : (
 					<p className="panel alert alert-error upgrade-planner-editor__error" role="alert">

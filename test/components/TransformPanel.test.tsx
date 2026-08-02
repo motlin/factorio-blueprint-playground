@@ -2593,7 +2593,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 
 		openUpgradePlanner();
 		await choosePlanner(user, 'Paste upgrade planner…');
-		fireEvent.change(screen.getByPlaceholderText('Paste an upgrade planner string or JSON'), {
+		fireEvent.change(screen.getByRole('textbox', {name: 'Planner string or JSON'}), {
 			target: {
 				value: JSON.stringify({
 					upgrade_planner: {
@@ -2664,7 +2664,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 
 		openUpgradePlanner();
 		await choosePlanner(user, 'Paste upgrade planner…');
-		fireEvent.change(screen.getByPlaceholderText('Paste an upgrade planner string or JSON'), {
+		fireEvent.change(screen.getByRole('textbox', {name: 'Planner string or JSON'}), {
 			target: {
 				value: JSON.stringify({
 					upgrade_planner: {
@@ -3623,12 +3623,145 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		choosePlannerWithClicks('Paste upgrade planner…');
 		expect({
 			label: screen.getByLabelText('Draft source: Paste upgrade planner…').querySelector('strong')?.textContent,
-			pasteInput: screen.getByPlaceholderText('Paste an upgrade planner string or JSON').tagName,
+			pasteInput: screen.getByRole('textbox', {name: 'Planner string or JSON'}).tagName,
 		}).toStrictEqual({
 			label: 'Paste upgrade planner…',
 			pasteInput: 'TEXTAREA',
 		});
 	}, 10_000);
+
+	test('keeps pasted planner parsing feedback distinct from mapping-rule validation', async () => {
+		const user = userEvent.setup();
+		render(<TransformPanel blueprint={blueprint} />);
+
+		openUpgradePlanner();
+		const mappingRegion = screen.getByRole('region', {name: 'Upgrade mappings'});
+		expect({
+			pastePanel: screen.queryByRole('region', {name: 'Paste planner definition'}),
+			pasteTextbox: screen.queryByRole('textbox', {name: 'Planner string or JSON'}),
+		}).toStrictEqual({pastePanel: null, pasteTextbox: null});
+
+		await choosePlanner(user, 'Paste upgrade planner…');
+		const pastePanel = screen.getByRole('region', {name: 'Paste planner definition'});
+		const pasteTextbox = screen.getByRole<HTMLTextAreaElement>('textbox', {name: 'Planner string or JSON'});
+		expect({
+			alert: within(pastePanel).queryByRole('alert'),
+			describedBy: document.getElementById(pasteTextbox.getAttribute('aria-describedby') ?? '')?.textContent,
+			extension: pastePanel.dataset.websiteExtension,
+			invalid: pasteTextbox.getAttribute('aria-invalid'),
+			state: pastePanel.dataset.validationState,
+		}).toStrictEqual({
+			alert: null,
+			describedBy: 'Paste an encoded upgrade planner string or its JSON representation.',
+			extension: 'planner-paste-import',
+			invalid: null,
+			state: 'empty',
+		});
+
+		fireEvent.change(pasteTextbox, {target: {value: '{'}});
+		expect({
+			alert: within(pastePanel).getByRole('alert').textContent,
+			invalid: pasteTextbox.getAttribute('aria-invalid'),
+			mappingCount: mappingRegion.querySelectorAll('[data-mapping-key]').length,
+			mappingRegionPreserved: screen.getByRole('region', {name: 'Upgrade mappings'}),
+			state: pastePanel.dataset.validationState,
+		}).toStrictEqual({
+			alert: 'JSON5: invalid end of input at 1:2',
+			invalid: 'true',
+			mappingCount: 0,
+			mappingRegionPreserved: mappingRegion,
+			state: 'invalid',
+		});
+
+		fireEvent.change(pasteTextbox, {
+			target: {
+				value: JSON.stringify({
+					upgrade_planner: {
+						item: 'upgrade-planner',
+						version: 0,
+						settings: {
+							mappers: [
+								{
+									index: 100,
+									from: {type: 'item', name: 'speed-module'},
+									to: {type: 'item', name: 'speed-module-2'},
+								},
+							],
+						},
+					},
+				}),
+			},
+		});
+		const zeroMatchMapping = screen.getByRole('button', {name: 'Choose source, currently Speed module'});
+		expect({
+			alert: within(pastePanel).queryByRole('alert'),
+			describedBy: document.getElementById(pasteTextbox.getAttribute('aria-describedby') ?? '')?.textContent,
+			invalid: pasteTextbox.getAttribute('aria-invalid'),
+			mapping: {
+				from: zeroMatchMapping.title,
+				matchSummary: zeroMatchMapping
+					.closest('[data-mapping-key]')
+					?.querySelector('.transform-visually-hidden')?.textContent,
+				to: screen.getByRole('button', {name: 'Choose target for Speed module'}).title,
+			},
+			state: pastePanel.dataset.validationState,
+		}).toStrictEqual({
+			alert: null,
+			describedBy: 'Planner loaded into the editable mapping grid.',
+			invalid: null,
+			mapping: {
+				from: 'Speed module\nitem:speed-module',
+				matchSummary: `0 matches. ${mappingInstructions}`,
+				to: 'Speed module 2\nitem:speed-module-2',
+			},
+			state: 'valid',
+		});
+
+		fireEvent.change(pasteTextbox, {
+			target: {
+				value: JSON.stringify({
+					upgrade_planner: {
+						item: 'upgrade-planner',
+						version: 0,
+						settings: {
+							mappers: [
+								{
+									index: 100,
+									from: {type: 'entity', name: 'transport-belt'},
+									to: {type: 'entity', name: 'fast-transport-belt'},
+								},
+								{
+									index: 200,
+									from: {type: 'entity', name: 'transport-belt'},
+									to: {type: 'entity', name: 'express-transport-belt'},
+								},
+							],
+						},
+					},
+				}),
+			},
+		});
+		expect({
+			fieldAlert: within(pastePanel).queryByRole('alert'),
+			globalAlert: screen.getByRole('alert').textContent,
+			invalid: pasteTextbox.getAttribute('aria-invalid'),
+			mappingCount: mappingRegion.querySelectorAll('[data-mapping-key]').length,
+			state: pastePanel.dataset.validationState,
+		}).toStrictEqual({
+			fieldAlert: null,
+			globalAlert: 'Upgrade planner defines more than one target for transport-belt.',
+			invalid: null,
+			mappingCount: 2,
+			state: 'valid',
+		});
+
+		await choosePlanner(user, 'Default Upgrade');
+		expect({
+			alert: screen.queryByRole('alert'),
+			pastePanel: screen.queryByRole('region', {name: 'Paste planner definition'}),
+			pasteTextbox: screen.queryByRole('textbox', {name: 'Planner string or JSON'}),
+		}).toStrictEqual({alert: null, pastePanel: null, pasteTextbox: null});
+	});
 
 	test('saves a pasted planner with a zero-match mapping and applies its matching rule', async () => {
 		const user = userEvent.setup();
@@ -3655,7 +3788,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 
 		await user.click(screen.getByRole('button', {name: 'Open Upgrade Planner'}));
 		await choosePlanner(user, 'Paste upgrade planner…');
-		fireEvent.change(screen.getByPlaceholderText('Paste an upgrade planner string or JSON'), {
+		fireEvent.change(screen.getByRole('textbox', {name: 'Planner string or JSON'}), {
 			target: {
 				value: JSON.stringify({upgrade_planner: pastedPlanner}),
 			},
