@@ -61,11 +61,11 @@ test('uses root icons as sources and preserves mappings while incomplete choices
 	expect({
 		activeElement: document.activeElement?.getAttribute('aria-label'),
 		count: mapping.querySelector('strong')?.textContent,
-		endpointClasses: ['Source Signal red', 'Target Signal blue'].map(
+		endpointClasses: ['Edit source, currently Signal red', 'Edit target, currently Signal blue'].map(
 			(name) => screen.getByRole('button', {name}).parentElement?.className,
 		),
 		names: [...mapping.querySelectorAll('.icon-replacement-editor__name')].map((element) => element.textContent),
-		titles: ['Source Signal red', 'Target Signal blue'].map((name) =>
+		titles: ['Edit source, currently Signal red', 'Edit target, currently Signal blue'].map((name) =>
 			screen.getByRole('button', {name}).getAttribute('title'),
 		),
 	}).toStrictEqual({
@@ -145,4 +145,33 @@ test('uses root icons as sources and preserves mappings while incomplete choices
 		{from: redSignal, to: blueSignal},
 		{from: greenSignal, to: {type: 'virtual', name: 'signal-yellow'}},
 	]);
+});
+
+test('edits existing replacement endpoints in place through the nested pickers', async () => {
+	const user = userEvent.setup();
+	const onChange = vi.fn<IconReplacementDialogProps['onChange']>();
+	render(
+		<IconReplacementDialog
+			onChange={onChange}
+			onClose={vi.fn<IconReplacementDialogProps['onClose']>()}
+			replacements={replacements}
+			rootBlueprint={rootBlueprint}
+		/>,
+	);
+
+	await user.click(screen.getByRole('button', {name: 'Edit target, currently Signal blue'}));
+	const targetPicker = screen.getByRole('dialog', {name: 'Choose target icon'});
+	await user.click(within(targetPicker).getByRole('button', {name: 'Choose Signal yellow'}));
+	expect(onChange).toHaveBeenLastCalledWith([{from: redSignal, to: {type: 'virtual', name: 'signal-yellow'}}]);
+
+	await user.click(screen.getByRole('button', {name: 'Edit source, currently Signal red'}));
+	const sourcePicker = screen.getByRole('dialog', {name: 'Choose source icon used here'});
+	expect(
+		within(sourcePicker)
+			.getAllByRole('button')
+			.map((button) => button.getAttribute('aria-label'))
+			.filter((label): label is string => label?.startsWith('Choose ') === true),
+	).toStrictEqual(['Choose Signal red', 'Choose Signal green']);
+	await user.click(within(sourcePicker).getByRole('button', {name: 'Choose Signal green'}));
+	expect(onChange).toHaveBeenLastCalledWith([{from: greenSignal, to: blueSignal}]);
 });
