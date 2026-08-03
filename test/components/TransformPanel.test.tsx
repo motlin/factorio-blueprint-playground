@@ -2502,6 +2502,26 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		});
 	});
 
+	test('offers hidden module-slot candidates and blocks only exact duplicate sources in Set the filter', async () => {
+		const user = userEvent.setup();
+		render(<TransformPanel blueprint={blueprint} />);
+
+		openUpgradePlanner();
+		await user.click(firstEmptyMappingSourceButton());
+
+		const picker = screen.getByRole('dialog', {name: 'Set the filter'});
+		const duplicate = within(picker).getByRole('button', {name: 'Choose Transport belt'});
+		expect(duplicate.getAttribute('aria-disabled')).toBe('true');
+
+		await user.click(within(picker).getByRole('button', {name: 'Rare quality'}));
+		expect(duplicate.getAttribute('aria-disabled')).toBe('false');
+
+		await searchSignals(user, 'Empty module slot');
+		expect(
+			within(picker).getByRole('button', {name: 'Choose Empty module slot'}).getAttribute('aria-disabled'),
+		).toBe('false');
+	});
+
 	test('keeps an incomplete mapping row through picker cancellation until it is removed', async () => {
 		const user = userEvent.setup();
 		render(<TransformPanel blueprint={blueprint} />);
