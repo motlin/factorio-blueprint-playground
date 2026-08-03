@@ -1284,3 +1284,31 @@ describe('SignalPickerDialog golden cancellation and focus source contracts', ()
 		});
 	});
 });
+
+test('lets tab clicks change the grid after an exact search match activates a category', async () => {
+	const user = userEvent.setup();
+	const options: SignalID[] = [
+		{type: 'entity', name: 'iron-plate-conveyor'},
+		{type: 'item', name: 'iron-plate'},
+	];
+	render(
+		<SignalPickerDialog
+			confirmationMode="required"
+			title="Exact match tabs"
+			options={options}
+			onChoose={vi.fn<SignalPickerDialogProps['onChoose']>()}
+			onClose={vi.fn<() => void>()}
+		/>,
+	);
+
+	await user.click(screen.getByRole('button', {name: 'Search'}));
+	await user.type(screen.getByRole('searchbox', {name: 'Search'}), 'Iron plate');
+	expect(
+		screen.getAllByRole('button', {name: /^Choose /}).map((button) => button.getAttribute('aria-label')),
+	).toStrictEqual(['Choose Iron plate']);
+
+	await user.click(screen.getByRole('tab', {name: 'Logistics'}));
+	expect(
+		screen.getAllByRole('button', {name: /^Choose /}).map((button) => button.getAttribute('aria-label')),
+	).toStrictEqual(['Choose Iron plate conveyor']);
+});

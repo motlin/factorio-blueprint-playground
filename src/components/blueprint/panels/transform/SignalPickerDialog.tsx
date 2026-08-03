@@ -326,14 +326,8 @@ export function SignalPickerDialog({
 	const matchingCategories = availableCategories.filter(
 		(category) => (categoryOptions.get(category.id)?.length ?? 0) > 0,
 	);
-	const exactMatchCategory = availableCategories.find((category) =>
-		(categoryOptions.get(category.id) ?? []).some(
-			(signal) => signalName(signal).toLowerCase() === normalizedSearch,
-		),
-	);
 	const resolvedActiveCategoryId =
-		exactMatchCategory?.id ??
-		((categoryOptions.get(activeCategoryId ?? '')?.length ?? 0) > 0 ? activeCategoryId : matchingCategories[0]?.id);
+		(categoryOptions.get(activeCategoryId ?? '')?.length ?? 0) > 0 ? activeCategoryId : matchingCategories[0]?.id;
 	const activeCategory: PickerCategory | undefined =
 		resolvedActiveCategoryId === undefined
 			? undefined
@@ -573,6 +567,16 @@ export function SignalPickerDialog({
 									value={search}
 									onChange={(event) => {
 										setSearch(event.currentTarget.value);
+										const normalized = event.currentTarget.value.trim().toLowerCase();
+										const exactMatch =
+											normalized === ''
+												? undefined
+												: visibleOptions.find(
+														(signal) => signalName(signal).toLowerCase() === normalized,
+													);
+										if (exactMatch !== undefined) {
+											setActiveCategoryId(categoryIdForSignal(exactMatch));
+										}
 										clearInspectedSignal();
 									}}
 								/>
