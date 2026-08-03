@@ -2545,7 +2545,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			plannerAriaHidden: null,
 			plannerInert: false,
 			source: 'Transport belt\nentity:transport-belt',
-			target: 'Choose target for Transport belt',
+			target: '',
 			targetPicker: null,
 		});
 
@@ -2801,7 +2801,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		}).toStrictEqual({
 			icon: null,
 			mappingKey: mappingKeyBeforeSourceEdit,
-			title: 'Choose target for Assembling machine 1',
+			title: '',
 		});
 		await user.click(clearedTarget);
 

@@ -41,7 +41,7 @@ export function SignalSlot({descriptionId, label, onChoose, onClear, signal}: Si
 			}
 			aria-label={label}
 			disabled={onChoose === undefined}
-			title={signal === undefined ? label : signalTitle(signal)}
+			title={signal === undefined ? undefined : signalTitle(signal)}
 			onClick={() => {
 				onChoose?.();
 			}}

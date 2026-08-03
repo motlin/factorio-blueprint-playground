@@ -34,7 +34,7 @@ import {useDialogFocus} from './useDialogFocus';
  *   definition. Picker confirmations, endpoint clearing, and pair reordering
  *   update that draft; they do not transform a blueprint.
  * - `UpgradeMappingGrid` owns ordered placement, `UpgradeMappingRow` owns a
- *   populated pair, `AddUpgradeMappingRow` owns empty or incomplete pairs,
+ *   populated or incomplete pair, `AddUpgradeMappingRow` owns empty pairs,
  *   `upgradePlannerSignals` owns endpoint eligibility and compatibility, and
  *   `useUpgradePlannerDraft` is the sole authoritative draft and commit boundary.
  *   This dialog only composes those parts and opens their pickers.
