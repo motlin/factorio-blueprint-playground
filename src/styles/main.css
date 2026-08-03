@@ -1410,6 +1410,14 @@ body {
 	margin: 0 0 12px;
 }
 
+.history-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 12px;
+}
+
 .blueprint-library__history-link {
 	flex: 0 0 auto;
 	color: #171717;
