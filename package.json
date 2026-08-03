@@ -72,7 +72,7 @@
 		"eslint": "^10.8.0",
 		"eslint-plugin-storybook": "^10.5.4",
 		"fallow": "^3.9.1",
-		"jsdom": "^29.1.1",
+		"jsdom": "^30.0.0",
 		"markdownlint-cli2": "^0.23.2",
 		"pixelmatch": "^7.2.0",
 		"playwright": "^1.62.0",
