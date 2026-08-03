@@ -2522,6 +2522,37 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		).toBe('false');
 	});
 
+	test('restricts Select upgrade for a module source to the module family including the empty slot', async () => {
+		const user = userEvent.setup();
+		render(<TransformPanel blueprint={blueprint} />);
+
+		openUpgradePlanner();
+		await user.click(firstEmptyMappingSourceButton());
+		await chooseSignal(user, 'Speed module');
+		await user.click(screen.getByRole('button', {name: 'Choose target for Speed module'}));
+
+		const targetPicker = screen.getByRole('dialog', {name: 'Select upgrade'});
+		expect(
+			within(targetPicker)
+				.getAllByRole('button', {name: /^Choose /})
+				.map((button) => button.getAttribute('aria-label')),
+		).toStrictEqual([
+			'Choose Speed module',
+			'Choose Speed module 2',
+			'Choose Speed module 3',
+			'Choose Efficiency module',
+			'Choose Efficiency module 2',
+			'Choose Efficiency module 3',
+			'Choose Productivity module',
+			'Choose Productivity module 2',
+			'Choose Productivity module 3',
+			'Choose Quality module',
+			'Choose Quality module 2',
+			'Choose Quality module 3',
+			'Choose Empty module slot',
+		]);
+	});
+
 	test('keeps an incomplete mapping row through picker cancellation until it is removed', async () => {
 		const user = userEvent.setup();
 		render(<TransformPanel blueprint={blueprint} />);
