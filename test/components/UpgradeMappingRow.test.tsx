@@ -51,6 +51,8 @@ describe('UpgradeMappingRow', () => {
 				.getAllByRole('button')
 				.map((button) => button.getAttribute('aria-label')),
 			comparator: source.querySelector('.transform-signal-slot__comparator')?.textContent,
+			sourceImages: [...source.querySelectorAll('img')].map((image) => image.getAttribute('src')),
+			targetImages: [...target.querySelectorAll('img')].map((image) => image.getAttribute('src')),
 			operations: {
 				chooseSource: onChooseSource.mock.calls,
 				chooseTarget: onChooseTarget.mock.calls,
@@ -70,6 +72,11 @@ describe('UpgradeMappingRow', () => {
 			},
 			buttonNames: ['Choose source, currently Transport belt', 'Choose target for Transport belt'],
 			comparator: '≤',
+			sourceImages: [
+				'https://factorio-icon-cdn.pages.dev/entity/transport-belt.webp',
+				'https://factorio-icon-cdn.pages.dev/quality/rare.webp',
+			],
+			targetImages: ['https://factorio-icon-cdn.pages.dev/entity/fast-transport-belt.webp'],
 			operations: {
 				chooseSource: [[]],
 				chooseTarget: [[]],
@@ -113,6 +120,36 @@ describe('UpgradeMappingRow', () => {
 				'Choose target for Assembling machine 2',
 			],
 			moveButton: null,
+		});
+	});
+
+	test('marks a configured source without a quality condition as matching any quality', () => {
+		render(
+			<ol>
+				<UpgradeMappingRow
+					count={2}
+					from={{type: 'entity', name: 'transport-belt'}}
+					mappingId="mapping-any-quality"
+					slotIndex={0}
+					to={{type: 'entity', name: 'fast-transport-belt'}}
+					onChooseSource={vi.fn<() => void>()}
+					onChooseTarget={vi.fn<() => void>()}
+					onClearSource={vi.fn<() => void>()}
+					onClearTarget={vi.fn<() => void>()}
+				/>
+			</ol>,
+		);
+
+		const source = screen.getByRole('button', {name: 'Choose source, currently Transport belt'});
+		expect({
+			comparator: source.querySelector('.transform-signal-slot__comparator'),
+			sourceImages: [...source.querySelectorAll('img')].map((image) => image.getAttribute('src')),
+		}).toStrictEqual({
+			comparator: null,
+			sourceImages: [
+				'https://factorio-icon-cdn.pages.dev/entity/transport-belt.webp',
+				'https://factorio-icon-cdn.pages.dev/virtual-signal/signal-any-quality.webp',
+			],
 		});
 	});
 

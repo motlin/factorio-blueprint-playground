@@ -3748,13 +3748,28 @@ body {
 	font-size: 22px;
 }
 
-.transform-signal-slot__comparator {
+/* QualityCondition::draw anchors the condition to the bottom-left corner at
+   GuiConstants::QUALITY_CONDITION_RELATIVE_SIZE (0.425 of the slot), with the
+   quality icon shifted right of the comparator text. */
+.transform-signal-slot__condition {
 	position: absolute;
 	z-index: 2;
-	bottom: 0;
-	left: 2px;
+	inset: 0;
+	display: flex;
+	align-items: flex-end;
+	justify-content: flex-start;
+	pointer-events: none;
+}
+
+.transform-signal-slot__condition img {
+	width: 42.5%;
+	height: 42.5%;
+	object-fit: contain;
+}
+
+.transform-signal-slot__comparator {
 	color: #fff;
-	font-size: 17px;
+	font-size: calc(17px * var(--factorio-ui-density, 1));
 	font-weight: bold;
 	line-height: 1;
 	text-shadow:
@@ -3762,12 +3777,6 @@ body {
 		1px -1px 0 #111,
 		-1px 1px 0 #111,
 		1px 1px 0 #111;
-	pointer-events: none;
-}
-
-.transform-signal-slot--condition [data-testid='quality'] {
-	right: 1px;
-	left: auto;
 }
 
 .icon-replacement-editor__add {
