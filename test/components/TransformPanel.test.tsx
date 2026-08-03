@@ -2553,6 +2553,43 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		]);
 	});
 
+	test('scopes a module source to one machine through the Set the filter entity-filter extras', async () => {
+		const user = userEvent.setup();
+		render(<TransformPanel blueprint={blueprint} />);
+
+		openUpgradePlanner();
+		await user.click(firstEmptyMappingSourceButton());
+		const sourcePicker = screen.getByRole('dialog', {name: 'Set the filter'});
+		expect(within(sourcePicker).queryByRole('button', {name: 'Choose entity filter'})).toBe(null);
+
+		await searchSignals(user, 'Speed module');
+		await user.click(within(sourcePicker).getByRole('button', {name: 'Choose Speed module'}));
+		await user.click(within(sourcePicker).getByRole('button', {name: 'Choose entity filter'}));
+
+		const entityPicker = screen.getByRole('dialog', {name: 'Choose entity filter'});
+		const labels = within(entityPicker)
+			.getAllByRole('button', {name: /^Choose /})
+			.map((button) => button.getAttribute('aria-label'));
+		expect({
+			hasAssembler: labels.includes('Choose Assembling machine 2'),
+			hasBelt: labels.includes('Choose Transport belt'),
+			hasModuleItem: labels.includes('Choose Speed module'),
+		}).toStrictEqual({
+			hasAssembler: true,
+			hasBelt: false,
+			hasModuleItem: false,
+		});
+		await user.click(within(entityPicker).getByRole('button', {name: 'Choose Assembling machine 2'}));
+		await user.click(within(sourcePicker).getByRole('button', {name: 'Confirm'}));
+
+		await user.click(screen.getByRole('button', {name: 'Choose source, currently Speed module'}));
+		expect(
+			screen
+				.getByRole('button', {name: 'Edit entity filter, currently Assembling machine 2'})
+				.getAttribute('aria-label'),
+		).toBe('Edit entity filter, currently Assembling machine 2');
+	});
+
 	test('offers fuel sources and restricts their Select upgrade targets to the fuel family', async () => {
 		const user = userEvent.setup();
 		render(<TransformPanel blueprint={blueprint} />);

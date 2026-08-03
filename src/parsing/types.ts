@@ -32,6 +32,11 @@ export interface SignalID {
 
 export interface UpgradeSourceSignal extends SignalID {
 	comparator?: QualityComparator;
+	/**
+	 * UpgradeFilter::entityFilterKey: a module source may scope replacement to
+	 * one module-using entity, serialized as `module_filter`.
+	 */
+	module_filter?: SignalID & {comparator?: QualityComparator};
 }
 
 /**

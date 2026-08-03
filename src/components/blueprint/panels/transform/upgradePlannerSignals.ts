@@ -220,6 +220,21 @@ export function signalPickerSubgroup(signal: SignalID): string {
 export const maxModuleSlots = Math.max(...Object.values(gameData.entityModuleSlots));
 
 /**
+ * UpgradeHelpers::shouldEnableEntityFilter: the From picker's entity-filter
+ * extras apply to module items and the empty module slot; candidates are
+ * limited to entities that use modules.
+ */
+export function entityFilterAllowed(signal: SignalID): boolean {
+	return normalizedSignalType(signal) === 'item' && upgradeModuleNames.has(signal.name);
+}
+
+export function moduleEntityFilterOptions(): SignalID[] {
+	return Object.keys(gameData.entityModuleSlots)
+		.map((name): SignalID => ({type: 'entity', name}))
+		.sort(comparePickerSignalOrder);
+}
+
+/**
  * UpgradeHelpers::shouldEnableModuleLimit: the Module limit extras apply only
  * to true module destinations, never to the empty module slot.
  */

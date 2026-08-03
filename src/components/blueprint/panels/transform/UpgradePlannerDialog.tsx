@@ -12,9 +12,12 @@ import {BlueprintTitleEditor} from './BlueprintTitleEditor';
 import {SignalPickerDialog} from './SignalPickerDialog';
 import {UpgradeMappingGrid, type PositionedUpgradeMapping} from './UpgradeMappingGrid';
 import {UpgradeDestinationExtras} from './UpgradeDestinationExtras';
+import {UpgradeSourceExtras} from './UpgradeSourceExtras';
 import {
 	chatIconPickerOptions,
+	entityFilterAllowed,
 	isUpgradeTargetSelectionAllowed,
+	moduleEntityFilterOptions,
 	moduleLimitAllowed,
 	signalIdentity,
 	signalPrototypeIdentity,
@@ -552,6 +555,8 @@ function UpgradeMappingsEditor({
 	const [sourcePicker, setSourcePicker] = useState<{mappingId?: string; slotIndex: number}>();
 	const [targetPicker, setTargetPicker] = useState<{mappingId?: string; slotIndex: number}>();
 	const [pendingModuleLimit, setPendingModuleLimit] = useState<number>();
+	const [pendingEntityFilter, setPendingEntityFilter] = useState<SignalID>();
+	const [choosingEntityFilter, setChoosingEntityFilter] = useState(false);
 	const sourcePickerMapping = mappings.find((mapping) => mapping.mappingId === sourcePicker?.mappingId);
 	const targetPickerMapping = mappings.find((mapping) => mapping.mappingId === targetPicker?.mappingId);
 	const sourceSelectionAllowed = (sourceSignal: UpgradeSourceSignal): boolean => {
@@ -579,6 +584,9 @@ function UpgradeMappingsEditor({
 				mappings={mappings}
 				onChooseSource={(mappingId, slotIndex) => {
 					setSourcePicker({mappingId, slotIndex});
+					setPendingEntityFilter(
+						mappings.find((mapping) => mapping.mappingId === mappingId)?.from?.module_filter,
+					);
 					setTargetPicker(undefined);
 				}}
 				onChooseTarget={(mappingId, slotIndex) => {
@@ -632,16 +640,47 @@ function UpgradeMappingsEditor({
 					title="Set the filter"
 					options={sourcePickerOptions}
 					qualityMode="source"
+					extrasFrame={(pendingSignal) =>
+						pendingSignal !== undefined && entityFilterAllowed(pendingSignal) ? (
+							<UpgradeSourceExtras
+								entityFilter={pendingEntityFilter}
+								onChooseEntityFilter={() => {
+									setChoosingEntityFilter(true);
+								}}
+								onClearEntityFilter={() => {
+									setPendingEntityFilter(undefined);
+								}}
+							/>
+						) : null
+					}
 					isSelectionAllowed={sourceSelectionAllowed}
 					onClose={() => {
 						setSourcePicker(undefined);
 					}}
 					onChoose={(sourceSignal) => {
-						onSourceChange(sourcePicker.mappingId, sourcePicker.slotIndex, sourceSignal);
+						onSourceChange(sourcePicker.mappingId, sourcePicker.slotIndex, {
+							...sourceSignal,
+							module_filter: entityFilterAllowed(sourceSignal) ? pendingEntityFilter : undefined,
+						});
 						setSourcePicker(undefined);
 					}}
 				/>
 			)}
+			{choosingEntityFilter ? (
+				<SignalPickerDialog
+					confirmationMode="immediate"
+					initialSignal={pendingEntityFilter}
+					title="Choose entity filter"
+					options={moduleEntityFilterOptions()}
+					onClose={() => {
+						setChoosingEntityFilter(false);
+					}}
+					onChoose={(entityFilter) => {
+						setPendingEntityFilter(entityFilter);
+						setChoosingEntityFilter(false);
+					}}
+				/>
+			) : null}
 		</>
 	);
 }
