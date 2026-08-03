@@ -1749,6 +1749,18 @@ body {
 	background-color: rgba(94, 182, 99, 0.2);
 }
 
+.history-blueprint-item:hover > div {
+	background-color: #4a4a4a;
+}
+
+.history-blueprint-item.selected:hover > div {
+	background-color: rgba(94, 182, 99, 0.3);
+}
+
+.history-blueprint-item:focus-within > div {
+	background-color: #4a4a4a;
+}
+
 .history-checkbox-container {
 	display: flex;
 	align-items: center;
