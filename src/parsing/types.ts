@@ -34,6 +34,16 @@ export interface UpgradeSourceSignal extends SignalID {
 	comparator?: QualityComparator;
 }
 
+/**
+ * Upgrade planner mapper destinations serialize `module_limit` (omitted when
+ * zero) and `module_slots` (fixed-length list whose empty entries are empty
+ * objects), mirroring UpgradeDestination::save at Factorio 2.1.12.
+ */
+export interface UpgradeTargetSignal extends SignalID {
+	module_limit?: number;
+	module_slots?: Partial<SignalID>[];
+}
+
 export interface Icon {
 	signal: SignalID;
 	// 1-based index, max 4 icons
@@ -300,7 +310,7 @@ export interface DeconstructionPlanner extends CommonFields {
 
 export interface UpgradeMapping {
 	from?: UpgradeSourceSignal;
-	to?: SignalID;
+	to?: UpgradeTargetSignal;
 	index: number;
 }
 

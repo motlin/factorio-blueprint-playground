@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useId, useMemo, useRef, useState} from 'react';
+import {useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode} from 'react';
 import {createPortal} from 'react-dom';
 
 import gameUiSpec from '../../../../generated/game-ui-spec.json';
@@ -135,6 +135,7 @@ const pickerCategories: readonly PickerCategory[] = gameUiSpec.signals.categorie
 
 export interface SignalPickerDialogProps {
 	confirmationMode: SignalPickerConfirmationMode;
+	extrasFrame?: (pendingSignal: PickerSignal | undefined) => ReactNode;
 	includeHiddenSignals?: boolean;
 	initialQuality?: UpgradeQualitySelection;
 	initialSearch?: string;
@@ -258,6 +259,7 @@ function signalGridCells(options: readonly SignalID[]): GridCell[] {
 
 export function SignalPickerDialog({
 	confirmationMode,
+	extrasFrame,
 	includeHiddenSignals = false,
 	initialQuality,
 	initialSearch = '',
@@ -370,6 +372,7 @@ export function SignalPickerDialog({
 			? undefined
 			: signalWithCurrentQuality(selectedSignal, qualityMode, qualitySelection, qualityComparator);
 	const selectionAllowed = confirmedSignal !== undefined && (isSelectionAllowed?.(confirmedSignal) ?? true);
+	const pickerExtras = extrasFrame?.(confirmedSignal);
 	const chooseSignal = useCallback(
 		(signal: SignalID) => {
 			const signalWithQuality = signalWithCurrentQuality(
@@ -739,6 +742,11 @@ export function SignalPickerDialog({
 						</div>
 					</div>
 				</div>
+				{pickerExtras === null || pickerExtras === undefined ? null : (
+					<div className="transform-picker__extras" data-factorio-source="SelectListGui::addToExtrasFrame">
+						{pickerExtras}
+					</div>
+				)}
 				{confirmationMode === 'required' ? (
 					<footer className="transform-picker__footer" data-factorio-style="subfooter_frame">
 						{qualityMode === undefined ? null : (

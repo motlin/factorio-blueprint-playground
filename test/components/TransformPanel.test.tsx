@@ -2553,6 +2553,41 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		]);
 	});
 
+	test('edits a module limit in the Select upgrade extras and shows it on the target slot', async () => {
+		const user = userEvent.setup();
+		render(<TransformPanel blueprint={blueprint} />);
+
+		openUpgradePlanner();
+		await user.click(firstEmptyMappingSourceButton());
+		await chooseSignal(user, 'Speed module');
+		await user.click(screen.getByRole('button', {name: 'Choose target for Speed module'}));
+
+		const targetPicker = screen.getByRole('dialog', {name: 'Select upgrade'});
+		expect(within(targetPicker).queryByRole('checkbox', {name: 'Module limit'})).toBe(null);
+
+		await user.click(within(targetPicker).getByRole('button', {name: 'Choose Speed module 2'}));
+		await user.click(within(targetPicker).getByRole('checkbox', {name: 'Module limit'}));
+		const limitValue = within(targetPicker).getByRole('spinbutton', {name: 'Module limit value'});
+		fireEvent.change(limitValue, {target: {value: '2'}});
+		await user.click(within(targetPicker).getByRole('button', {name: 'Confirm'}));
+
+		const row = screen.getByRole('listitem', {name: 'Mapping from Speed module to Speed module 2'});
+		const target = within(row).getByRole('button', {name: 'Choose target for Speed module'});
+		expect(target.querySelector('.transform-signal-slot__count')?.textContent).toBe('2');
+
+		await user.click(target);
+		const reopenedPicker = screen.getByRole('dialog', {name: 'Select upgrade'});
+		expect({
+			limitChecked: within(reopenedPicker).getByRole<HTMLInputElement>('checkbox', {name: 'Module limit'})
+				.checked,
+			limitValue: within(reopenedPicker).getByRole<HTMLInputElement>('spinbutton', {name: 'Module limit value'})
+				.value,
+		}).toStrictEqual({
+			limitChecked: true,
+			limitValue: '2',
+		});
+	});
+
 	test('keeps an incomplete mapping row through picker cancellation until it is removed', async () => {
 		const user = userEvent.setup();
 		render(<TransformPanel blueprint={blueprint} />);

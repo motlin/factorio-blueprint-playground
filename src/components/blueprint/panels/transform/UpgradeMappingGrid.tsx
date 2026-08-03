@@ -1,7 +1,7 @@
 import {type CSSProperties, useState} from 'react';
 
 import gameUiSpec from '../../../../generated/game-ui-spec.json';
-import type {SignalID, UpgradeSourceSignal} from '../../../../parsing/types';
+import type {UpgradeSourceSignal, UpgradeTargetSignal} from '../../../../parsing/types';
 import {AddUpgradeMappingRow} from './AddUpgradeMappingRow';
 import {UpgradeMappingRow} from './UpgradeMappingRow';
 
@@ -10,7 +10,7 @@ export interface PositionedUpgradeMapping {
 	from?: UpgradeSourceSignal;
 	mappingId: string;
 	slotIndex: number;
-	to?: SignalID;
+	to?: UpgradeTargetSignal;
 }
 
 interface UpgradeMappingGridProps {

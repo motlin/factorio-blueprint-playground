@@ -1,6 +1,6 @@
 import {useId} from 'react';
 
-import type {SignalID, UpgradeSourceSignal} from '../../../../parsing/types';
+import type {SignalID, UpgradeSourceSignal, UpgradeTargetSignal} from '../../../../parsing/types';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
 import {FactorioInventorySlot, FactorioQualityBadge} from '../../../ui/FactorioUi';
 import {anyQualityIconSource} from './UpgradeQualityControls';
@@ -8,6 +8,7 @@ import {signalName, signalTitle} from './upgradePlannerSignals';
 
 interface SignalSlotProps {
 	condition?: boolean;
+	cornerCount?: number;
 	descriptionId?: string;
 	label: string;
 	onChoose?: () => void;
@@ -52,10 +53,18 @@ interface UpgradeMappingRowProps {
 	onClearSource: () => void;
 	onClearTarget: () => void;
 	slotIndex: number;
-	to?: SignalID;
+	to?: UpgradeTargetSignal;
 }
 
-export function SignalSlot({condition = false, descriptionId, label, onChoose, onClear, signal}: SignalSlotProps) {
+export function SignalSlot({
+	condition = false,
+	cornerCount,
+	descriptionId,
+	label,
+	onChoose,
+	onClear,
+	signal,
+}: SignalSlotProps) {
 	return (
 		<FactorioInventorySlot
 			className={`transform-signal-slot${signal === undefined ? ' transform-signal-slot--empty' : ''}${
@@ -95,6 +104,11 @@ export function SignalSlot({condition = false, descriptionId, label, onChoose, o
 				/>
 			)}
 			{condition && signal !== undefined ? conditionOverlay(signal) : null}
+			{cornerCount === undefined || cornerCount === 0 ? null : (
+				<span className="transform-signal-slot__count" aria-hidden="true">
+					{cornerCount}
+				</span>
+			)}
 		</FactorioInventorySlot>
 	);
 }
@@ -160,6 +174,7 @@ export function UpgradeMappingRow({
 				onClear={from === undefined ? undefined : onClearSource}
 			/>
 			<SignalSlot
+				cornerCount={to?.module_limit}
 				descriptionId={instructionsId}
 				label={
 					targetName === undefined

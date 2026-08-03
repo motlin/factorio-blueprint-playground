@@ -1,7 +1,7 @@
 import {Copy, ExternalLink} from 'lucide-react';
 import {useId, useState} from 'react';
 
-import type {BlueprintString, SignalID, UpgradeSourceSignal} from '../../../../parsing/types';
+import type {BlueprintString, SignalID, UpgradeSourceSignal, UpgradeTargetSignal} from '../../../../parsing/types';
 import type {UpgradeDirection} from '../../../../transform/upgradePlanner';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
 import {FactorioButton, FactorioButtonKind} from '../../../ui/FactorioUi';
@@ -11,9 +11,11 @@ import {BlueprintLabelIcons} from './BlueprintLabelIcons';
 import {BlueprintTitleEditor} from './BlueprintTitleEditor';
 import {SignalPickerDialog} from './SignalPickerDialog';
 import {UpgradeMappingGrid, type PositionedUpgradeMapping} from './UpgradeMappingGrid';
+import {UpgradeDestinationExtras} from './UpgradeDestinationExtras';
 import {
 	chatIconPickerOptions,
 	isUpgradeTargetSelectionAllowed,
+	moduleLimitAllowed,
 	signalIdentity,
 	signalPrototypeIdentity,
 	signalTitle,
@@ -65,7 +67,7 @@ interface UpgradePlannerMappings {
 	onPlannerLoad: (choice: UpgradePlannerChoice) => void;
 	onPlannerInputChange: (value: string) => void;
 	onSourceChange: (mappingId: string | undefined, slotIndex: number, source: UpgradeSourceSignal) => void;
-	onTargetChange: (mappingId: string | undefined, slotIndex: number, target: SignalID) => void;
+	onTargetChange: (mappingId: string | undefined, slotIndex: number, target: UpgradeTargetSignal) => void;
 	plannerInput: string;
 	plannerInputError: string | undefined;
 	rootBlueprint: BlueprintString;
@@ -90,7 +92,7 @@ interface UpgradeMappingsEditorProps {
 	onClearEndpoint: (mappingId: string, endpoint: 'from' | 'to') => void;
 	onMove: (mappingId: string, targetSlotIndex: number) => void;
 	onSourceChange: (mappingId: string | undefined, slotIndex: number, source: UpgradeSourceSignal) => void;
-	onTargetChange: (mappingId: string | undefined, slotIndex: number, target: SignalID) => void;
+	onTargetChange: (mappingId: string | undefined, slotIndex: number, target: UpgradeTargetSignal) => void;
 	sourceOptions: SignalID[];
 }
 
@@ -549,6 +551,7 @@ function UpgradeMappingsEditor({
 }: UpgradeMappingsEditorProps) {
 	const [sourcePicker, setSourcePicker] = useState<{mappingId?: string; slotIndex: number}>();
 	const [targetPicker, setTargetPicker] = useState<{mappingId?: string; slotIndex: number}>();
+	const [pendingModuleLimit, setPendingModuleLimit] = useState<number>();
 	const sourcePickerMapping = mappings.find((mapping) => mapping.mappingId === sourcePicker?.mappingId);
 	const targetPickerMapping = mappings.find((mapping) => mapping.mappingId === targetPicker?.mappingId);
 	const sourceSelectionAllowed = (sourceSignal: UpgradeSourceSignal): boolean => {
@@ -580,6 +583,9 @@ function UpgradeMappingsEditor({
 				}}
 				onChooseTarget={(mappingId, slotIndex) => {
 					setTargetPicker({mappingId, slotIndex});
+					setPendingModuleLimit(
+						mappings.find((mapping) => mapping.mappingId === mappingId)?.to?.module_limit,
+					);
 					setSourcePicker(undefined);
 				}}
 				onClearEndpoint={onClearEndpoint}
@@ -594,6 +600,14 @@ function UpgradeMappingsEditor({
 					title="Select upgrade"
 					options={targetPickerOptions}
 					qualityMode="target"
+					extrasFrame={(pendingSignal) =>
+						pendingSignal !== undefined && moduleLimitAllowed(pendingSignal) ? (
+							<UpgradeDestinationExtras
+								moduleLimit={pendingModuleLimit}
+								onModuleLimitChange={setPendingModuleLimit}
+							/>
+						) : null
+					}
 					isSelectionAllowed={(target) =>
 						targetPickerMapping?.from === undefined ||
 						isUpgradeTargetSelectionAllowed(targetPickerMapping.from, target)
@@ -602,7 +616,10 @@ function UpgradeMappingsEditor({
 						setTargetPicker(undefined);
 					}}
 					onChoose={(target) => {
-						onTargetChange(targetPicker.mappingId, targetPicker.slotIndex, target);
+						onTargetChange(targetPicker.mappingId, targetPicker.slotIndex, {
+							...target,
+							module_limit: moduleLimitAllowed(target) ? pendingModuleLimit : undefined,
+						});
 						setTargetPicker(undefined);
 					}}
 				/>

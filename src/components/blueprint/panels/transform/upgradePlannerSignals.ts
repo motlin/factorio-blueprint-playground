@@ -211,6 +211,25 @@ export function signalPickerSubgroup(signal: SignalID): string {
 	return pickerSignalLayout(signal)?.subgroup ?? `unmapped-${normalizedSignalType(signal)}`;
 }
 
+/**
+ * UpgradeHelpers::getMaxModuleSlots caps the module-limit input at the largest
+ * module-slot count of any prototype; the web derives it from the generated
+ * per-entity counts.
+ */
+export const maxModuleSlots = Math.max(...Object.values(gameData.entityModuleSlots));
+
+/**
+ * UpgradeHelpers::shouldEnableModuleLimit: the Module limit extras apply only
+ * to true module destinations, never to the empty module slot.
+ */
+export function moduleLimitAllowed(signal: SignalID): boolean {
+	return (
+		normalizedSignalType(signal) === 'item' &&
+		upgradeModuleNames.has(signal.name) &&
+		signal.name !== 'empty-module-slot'
+	);
+}
+
 export function isUpgradeSourceOption(signal: SignalID): boolean {
 	const type = normalizedSignalType(signal);
 	return (

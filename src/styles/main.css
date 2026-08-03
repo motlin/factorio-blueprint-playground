@@ -3779,6 +3779,54 @@ body {
 		1px 1px 0 #111;
 }
 
+/* Mapper To slots draw their module limit as a slot count, mirroring
+   refreshMappersTable's setCount(getModuleLimit()). */
+.transform-signal-slot__count {
+	position: absolute;
+	z-index: 2;
+	right: 2px;
+	bottom: 0;
+	color: #fff;
+	font-size: calc(14px * var(--factorio-ui-density, 1));
+	font-weight: bold;
+	line-height: 1;
+	text-shadow:
+		-1px -1px 0 #111,
+		1px -1px 0 #111,
+		-1px 1px 0 #111,
+		1px 1px 0 #111;
+	pointer-events: none;
+}
+
+.transform-picker__extras {
+	padding: calc(8px * var(--factorio-ui-density)) calc(12px * var(--factorio-ui-density));
+	border-top: 1px solid #111;
+	background: #313131;
+}
+
+.upgrade-destination-extras__heading {
+	margin: 0 0 calc(6px * var(--factorio-ui-density));
+	color: #ffe6c0;
+	font-size: calc(14px * var(--factorio-ui-density));
+	font-weight: 600;
+}
+
+.upgrade-destination-extras__row {
+	display: flex;
+	align-items: center;
+	gap: calc(8px * var(--factorio-ui-density));
+}
+
+.upgrade-destination-extras__option {
+	display: inline-flex;
+	align-items: center;
+	gap: calc(6px * var(--factorio-ui-density));
+}
+
+.upgrade-destination-extras__value {
+	width: calc(64px * var(--factorio-ui-density));
+}
+
 .icon-replacement-editor__add {
 	margin-top: var(--transform-frame-gap);
 	padding: var(--transform-content-space) var(--transform-edge-space);
