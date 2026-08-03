@@ -2154,26 +2154,26 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			clearButton: screen.queryByRole('button', {name: /Clear source/}),
 			sourceImage: sourceSlot.querySelector('img'),
 			targetDisabled: targetSlot.getAttribute('aria-disabled'),
-		}).toStrictEqual({clearButton: null, sourceImage: null, targetDisabled: 'true'});
+		}).toStrictEqual({clearButton: null, sourceImage: null, targetDisabled: 'false'});
 
 		await user.click(sourceSlot);
 		await chooseSignal(user, 'Signal red');
 		expect({
-			clearButtonLabel: screen.getByRole('button', {name: 'Clear source Signal red'}).getAttribute('aria-label'),
+			clearButtonLabel: screen.getByRole('button', {name: 'Dismiss new replacement'}).getAttribute('aria-label'),
 			sourceImage: sourceSlot.querySelector('img')?.getAttribute('src'),
 			targetDisabled: targetSlot.getAttribute('aria-disabled'),
 		}).toStrictEqual({
-			clearButtonLabel: 'Clear source Signal red',
+			clearButtonLabel: 'Dismiss new replacement',
 			sourceImage: 'https://factorio-icon-cdn.pages.dev/virtual-signal/signal-red.webp',
 			targetDisabled: 'false',
 		});
 
-		await user.click(screen.getByRole('button', {name: 'Clear source Signal red'}));
+		await user.click(screen.getByRole('button', {name: 'Dismiss new replacement'}));
 		expect({
 			clearButton: screen.queryByRole('button', {name: /Clear source/}),
 			sourceImage: sourceSlot.querySelector('img'),
 			targetDisabled: targetSlot.getAttribute('aria-disabled'),
-		}).toStrictEqual({clearButton: null, sourceImage: null, targetDisabled: 'true'});
+		}).toStrictEqual({clearButton: null, sourceImage: null, targetDisabled: 'false'});
 	});
 
 	test('applies book operations to the live result', async () => {

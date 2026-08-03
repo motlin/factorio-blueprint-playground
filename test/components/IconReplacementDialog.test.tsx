@@ -116,24 +116,24 @@ test('uses root icons as sources and preserves mappings while incomplete choices
 
 	fireEvent.keyDown(window, {key: 'Escape', code: 'Escape'});
 	expect({
-		clearSource: screen.getByRole('button', {name: 'Clear source Signal green'}).getAttribute('aria-label'),
+		clearSource: screen.getByRole('button', {name: 'Dismiss new replacement'}).getAttribute('aria-label'),
 		committedMapping: screen
 			.getByRole('button', {name: 'Remove replacement for Signal red'})
 			.getAttribute('aria-label'),
 		picker: screen.queryByRole('dialog', {name: 'Choose target icon'}),
 	}).toStrictEqual({
-		clearSource: 'Clear source Signal green',
+		clearSource: 'Dismiss new replacement',
 		committedMapping: 'Remove replacement for Signal red',
 		picker: null,
 	});
 
-	await user.click(screen.getByRole('button', {name: 'Clear source Signal green'}));
+	await user.click(screen.getByRole('button', {name: 'Dismiss new replacement'}));
 	expect({
-		clearSource: screen.queryByRole('button', {name: /Clear source/}),
+		clearSource: screen.queryByRole('button', {name: 'Dismiss new replacement'}),
 		targetDisabled: screen.getByRole('button', {name: 'Choose target icon'}).getAttribute('aria-disabled'),
 	}).toStrictEqual({
 		clearSource: null,
-		targetDisabled: 'true',
+		targetDisabled: 'false',
 	});
 
 	await user.click(screen.getByRole('button', {name: 'Choose source icon'}));
@@ -174,4 +174,40 @@ test('edits existing replacement endpoints in place through the nested pickers',
 	).toStrictEqual(['Choose Signal red', 'Choose Signal green']);
 	await user.click(within(sourcePicker).getByRole('button', {name: 'Choose Signal green'}));
 	expect(onChange).toHaveBeenLastCalledWith([{from: greenSignal, to: blueSignal}]);
+});
+
+test('starts a new replacement from the target endpoint without silently committing', async () => {
+	const user = userEvent.setup();
+	const onChange = vi.fn<IconReplacementDialogProps['onChange']>();
+	render(
+		<IconReplacementDialog
+			onChange={onChange}
+			onClose={vi.fn<IconReplacementDialogProps['onClose']>()}
+			replacements={[]}
+			rootBlueprint={rootBlueprint}
+		/>,
+	);
+
+	await user.click(screen.getByRole('button', {name: 'Choose target icon'}));
+	const targetPicker = screen.getByRole('dialog', {name: 'Choose target icon'});
+	const signalsTab = within(targetPicker).queryByRole('tab', {name: 'Signals'});
+	if (signalsTab !== null) {
+		await user.click(signalsTab);
+	}
+	await user.click(within(targetPicker).getByRole('button', {name: 'Choose Signal yellow'}));
+	expect({
+		committed: onChange.mock.calls,
+		dismiss: screen.getByRole('button', {name: 'Dismiss new replacement'}).getAttribute('aria-label'),
+	}).toStrictEqual({
+		committed: [],
+		dismiss: 'Dismiss new replacement',
+	});
+
+	await user.click(screen.getByRole('button', {name: 'Choose source icon'}));
+	await user.click(
+		within(screen.getByRole('dialog', {name: 'Choose source icon used here'})).getByRole('button', {
+			name: 'Choose Signal red',
+		}),
+	);
+	expect(onChange).toHaveBeenCalledExactlyOnceWith([{from: redSignal, to: {type: 'virtual', name: 'signal-yellow'}}]);
 });
