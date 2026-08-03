@@ -38,8 +38,11 @@ describe('UpgradeMappingRow', () => {
 
 		expect({
 			attributes: {
+				className: row.className,
 				draggable: row.getAttribute('draggable'),
+				factorioSource: row.getAttribute('data-factorio-source'),
 				key: row.getAttribute('data-mapping-key'),
+				mappingState: row.getAttribute('data-mapping-state'),
 				slot: row.getAttribute('data-upgrade-mapping-slot'),
 				sourceTitle: source.title,
 				targetTitle: target.title,
@@ -56,8 +59,11 @@ describe('UpgradeMappingRow', () => {
 			},
 		}).toStrictEqual({
 			attributes: {
+				className: 'upgrade-mapping-grid__pair upgrade-mapping-grid__pair--complete',
 				draggable: 'true',
+				factorioSource: 'UpgradeItemGui::addEmptyMapper',
 				key: 'mapping-belt',
+				mappingState: 'complete',
 				slot: '2',
 				sourceTitle: 'Transport belt\nentity:transport-belt\nQuality: ≤ rare',
 				targetTitle: 'Fast transport belt\nentity:fast-transport-belt\nQuality: = normal',
@@ -70,6 +76,43 @@ describe('UpgradeMappingRow', () => {
 				clearSource: [[]],
 				clearTarget: [[]],
 			},
+		});
+	});
+
+	test('exposes a stable whole-pair dragging state without adding a reorder control', () => {
+		render(
+			<ol>
+				<UpgradeMappingRow
+					count={1}
+					dragging
+					from={{type: 'entity', name: 'assembling-machine-2'}}
+					mappingId="mapping-assembler"
+					slotIndex={1}
+					to={{type: 'entity', name: 'assembling-machine-3'}}
+					onChooseSource={vi.fn<() => void>()}
+					onChooseTarget={vi.fn<() => void>()}
+					onClearSource={vi.fn<() => void>()}
+					onClearTarget={vi.fn<() => void>()}
+				/>
+			</ol>,
+		);
+
+		const row = screen.getByRole('listitem', {
+			name: 'Mapping from Assembling machine 2 to Assembling machine 3',
+		});
+		expect({
+			dragging: row.getAttribute('data-dragging'),
+			endpointButtons: within(row)
+				.getAllByRole('button')
+				.map((button) => button.getAttribute('aria-label')),
+			moveButton: within(row).queryByRole('button', {name: /Move mapping/}),
+		}).toStrictEqual({
+			dragging: 'true',
+			endpointButtons: [
+				'Choose source, currently Assembling machine 2',
+				'Choose target for Assembling machine 2',
+			],
+			moveButton: null,
 		});
 	});
 

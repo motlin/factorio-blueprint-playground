@@ -198,6 +198,7 @@ export function UpgradeMappingGrid({
 								<UpgradeMappingRow
 									key={mapping.mappingId}
 									{...mapping}
+									dragging={draggedMappingId === mapping.mappingId}
 									onChooseSource={() => {
 										onChooseSource(mapping.mappingId, slotIndex);
 									}}

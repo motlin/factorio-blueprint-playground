@@ -15,6 +15,7 @@ interface SignalSlotProps {
 
 interface UpgradeMappingRowProps {
 	count: number;
+	dragging?: boolean;
 	dropTarget?: boolean;
 	from?: UpgradeSourceSignal;
 	mappingId: string;
@@ -58,7 +59,7 @@ export function SignalSlot({descriptionId, label, onChoose, onClear, signal}: Si
 				}
 			}}
 		>
-			{signal === undefined ? null : <FactorioIcon icon={signal} size="large" />}
+			{signal === undefined ? null : <FactorioIcon decorative icon={signal} size="large" />}
 			{signal?.comparator === undefined ? null : (
 				<span className="transform-signal-slot__comparator" aria-hidden="true">
 					{signal.comparator}
@@ -87,6 +88,7 @@ function mappingLabel(from: UpgradeSourceSignal | undefined, to: SignalID | unde
  */
 export function UpgradeMappingRow({
 	count,
+	dragging = false,
 	dropTarget = false,
 	from,
 	mappingId,
@@ -98,21 +100,24 @@ export function UpgradeMappingRow({
 	to,
 }: UpgradeMappingRowProps) {
 	const instructionsId = useId();
+	const incomplete = from === undefined || to === undefined;
 	const label = mappingLabel(from, to);
 	const sourceName = from === undefined ? undefined : signalName(from);
 	const targetName = to === undefined ? undefined : signalName(to);
 
 	return (
 		<li
-			className={`upgrade-mapping-grid__pair${
-				from === undefined || to === undefined ? ' upgrade-mapping-grid__pair--incomplete' : ''
-			}`}
+			className={`upgrade-mapping-grid__pair upgrade-mapping-grid__pair--${incomplete ? 'incomplete' : 'complete'}`}
+			aria-describedby={instructionsId}
 			data-mapping-key={mappingId}
+			data-mapping-state={incomplete ? 'incomplete' : 'complete'}
+			data-dragging={dragging || undefined}
 			data-drop-target={dropTarget || undefined}
+			data-factorio-source="UpgradeItemGui::addEmptyMapper"
 			data-upgrade-mapping-slot={slotIndex}
 			draggable
 			aria-label={label}
-			title={from === undefined || to === undefined ? label : `${sourceName} → ${targetName}`}
+			title={incomplete ? label : `${sourceName} → ${targetName}`}
 		>
 			<SignalSlot
 				descriptionId={instructionsId}

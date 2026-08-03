@@ -224,8 +224,9 @@ describe('UpgradeMappingGrid', () => {
 		const moduleRow = screen.getByRole('listitem', {name: 'Mapping from Speed module to Speed module 2'});
 		const emptySlot = screen.getByRole('group', {name: 'Empty mapping slot 5'});
 		fireEvent.dragStart(moduleRow, {dataTransfer});
+		const draggingBeforeDrop = moduleRow.getAttribute('data-dragging');
 		fireEvent.dragEnter(emptySlot, {dataTransfer});
-		expect(emptySlot.parentElement?.getAttribute('data-drop-target')).toBe('true');
+		const dropTargetBeforeDrop = emptySlot.parentElement?.getAttribute('data-drop-target');
 		fireEvent.dragOver(emptySlot, {dataTransfer});
 		fireEvent.drop(emptySlot, {dataTransfer});
 
@@ -234,12 +235,18 @@ describe('UpgradeMappingGrid', () => {
 			chooseTarget: onChooseTarget.mock.calls,
 			clearEndpoint: onClearEndpoint.mock.calls,
 			dragPayload: dataTransfer.setData.mock.calls,
+			draggingAfterDrop: moduleRow.getAttribute('data-dragging'),
+			draggingBeforeDrop,
+			dropTargetBeforeDrop,
 			move: onMove.mock.calls,
 		}).toStrictEqual({
 			chooseSource: [[undefined, 1]],
 			chooseTarget: [[undefined, 1]],
 			clearEndpoint: [['mapping-module', 'from']],
 			dragPayload: [['application/x-factorio-upgrade-mapping', 'mapping-module']],
+			draggingAfterDrop: null,
+			draggingBeforeDrop: 'true',
+			dropTargetBeforeDrop: 'true',
 			move: [['mapping-module', 4]],
 		});
 	});
