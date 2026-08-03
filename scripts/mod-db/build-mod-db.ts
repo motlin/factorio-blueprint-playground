@@ -9,6 +9,7 @@ import {
 	extractHiddenPlaceResults,
 	extractPickerSignals,
 	extractPrototypeNames,
+	extractEntityModuleSlots,
 	extractPrototypeUpgrades,
 	extractUpgradeModuleItems,
 	extractVisiblePlaceResults,
@@ -151,8 +152,15 @@ const upgradeEntityItems = [
 	...new Set([...extractVisiblePlaceResults(baseItemSource), ...extractVisiblePlaceResults(spaceAgeItemSource)]),
 ].sort();
 const upgradeModuleItems = extractUpgradeModuleItems([...factorioDataSources.values()]);
+const upgradeEntityNames = new Set(upgradeEntityItems);
+const entityModuleSlots = Object.fromEntries(
+	Object.entries(extractEntityModuleSlots([...factorioDataSources.values()])).filter(([name]) =>
+		upgradeEntityNames.has(name),
+	),
+);
 const gameDataOutput = `${JSON.stringify(
 	{
+		entityModuleSlots,
 		factorioDataVersion: sourceLock.factorioData.version,
 		nextUpgrades,
 		pickerSignals,
@@ -179,4 +187,7 @@ console.log(
 console.log(`Generated ${pickerSignals.length.toString()} categorized signals for the signal picker.`);
 console.log(`Generated ${upgradeEntityItems.length.toString()} placeable Upgrade Planner entities.`);
 console.log(`Generated ${upgradeModuleItems.length.toString()} Upgrade Planner module items.`);
+console.log(
+	`Generated module-slot counts for ${Object.keys(entityModuleSlots).length.toString()} Upgrade Planner entities.`,
+);
 console.log(`Generated ${virtualSignals.length.toString()} virtual signals for the replacement picker.`);
