@@ -912,7 +912,7 @@ export function UpgradePlannerDialog({
 								savePrompt.onOpen();
 							}}
 						>
-							Save Planner
+							Save to Library
 						</FactorioButton>
 						<FactorioButton
 							className="transform-button"

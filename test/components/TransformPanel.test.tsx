@@ -462,7 +462,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			modeButtons: ['Upgrade', 'Downgrade', 'Strip quality'].map((name) => screen.queryByRole('button', {name})),
 			nativeScopeSelect: within(dialog).queryByRole('combobox', {name: 'Apply to'}),
 			operationButtons: [
-				'Save Planner',
+				'Save to Library',
 				'Apply Upgrade to Current Blueprint',
 				'Apply Downgrade to Current Blueprint',
 			].map((name) => screen.queryByRole('button', {name})?.textContent ?? null),
@@ -534,7 +534,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			modeButtons: [null, null, null],
 			nativeScopeSelect: null,
 			operationButtons: [
-				'Save Planner',
+				'Save to Library',
 				'Apply Upgrade to Current Blueprint',
 				'Apply Downgrade to Current Blueprint',
 			],
@@ -1071,7 +1071,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		await user.click(screen.getByRole('button', {name: 'Choose preview icon 1'}));
 		await chooseSignal(user, 'Signal red');
 		await user.click(screen.getByRole('button', {name: 'Confirm planner metadata'}));
-		await user.click(screen.getByRole('button', {name: 'Save Planner'}));
+		await user.click(screen.getByRole('button', {name: 'Save to Library'}));
 		const savePrompt = screen.getByRole('dialog', {name: 'Save to Blueprint Library'});
 		expect({
 			dialogState: interactionState(),
@@ -1122,7 +1122,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		}).toStrictEqual({
 			destination: {parentId: LIBRARY_ROOT_ID, position: 0},
 			dialogState: {
-				activeElement: {name: 'Save Planner', tagName: 'BUTTON'},
+				activeElement: {name: 'Save to Library', tagName: 'BUTTON'},
 				dialogStack: [
 					{
 						ariaHidden: null,
@@ -1214,7 +1214,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		await user.clear(canceledName);
 		await user.type(canceledName, 'Canceled name');
 		await user.click(screen.getByRole('button', {name: 'Confirm planner metadata'}));
-		await user.click(screen.getByRole('button', {name: 'Save Planner'}));
+		await user.click(screen.getByRole('button', {name: 'Save to Library'}));
 		const canceledPrompt = screen.getByRole('dialog', {name: 'Save to Blueprint Library'});
 		await user.click(within(canceledPrompt).getByRole('button', {name: 'Cancel Save'}));
 
@@ -1237,7 +1237,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		await user.clear(updatedName);
 		await user.type(updatedName, 'Express belt upgrades');
 		await user.click(screen.getByRole('button', {name: 'Confirm planner metadata'}));
-		await user.click(screen.getByRole('button', {name: 'Save Planner'}));
+		await user.click(screen.getByRole('button', {name: 'Save to Library'}));
 		const updatePrompt = screen.getByRole('dialog', {name: 'Save to Blueprint Library'});
 		expect({
 			dialogState: interactionState(),
@@ -1324,7 +1324,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		await user.clear(name);
 		await user.type(name, 'Copied planner');
 		await user.click(screen.getByRole('button', {name: 'Confirm planner metadata'}));
-		await user.click(screen.getByRole('button', {name: 'Save Planner'}));
+		await user.click(screen.getByRole('button', {name: 'Save to Library'}));
 		const prompt = screen.getByRole('dialog', {name: 'Save to Blueprint Library'});
 		await user.click(within(prompt).getByRole('button', {name: 'Save a Copy'}));
 
@@ -1527,7 +1527,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		await user.clear(name);
 		await user.type(name, 'Renamed opaque planner');
 		await user.click(screen.getByRole('button', {name: 'Confirm planner metadata'}));
-		await user.click(screen.getByRole('button', {name: 'Save Planner'}));
+		await user.click(screen.getByRole('button', {name: 'Save to Library'}));
 		await user.click(
 			within(screen.getByRole('dialog', {name: 'Save to Blueprint Library'})).getByRole('button', {
 				name: 'Update Planner',
@@ -2224,7 +2224,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		expect({
 			dialogState: interactionState(),
 			plannerActions: [
-				'Save Planner',
+				'Save to Library',
 				'Apply Upgrade to Current Blueprint',
 				'Apply Downgrade to Current Blueprint',
 			].map((name) => screen.queryByRole('button', {name})?.textContent ?? null),
@@ -2245,7 +2245,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 				],
 			},
 			plannerActions: [
-				'Save Planner',
+				'Save to Library',
 				'Apply Upgrade to Current Blueprint',
 				'Apply Downgrade to Current Blueprint',
 			],
@@ -3901,7 +3901,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			unmatchedMapping: `0 matches. ${mappingInstructions}`,
 		});
 
-		await user.click(screen.getByRole('button', {name: 'Save Planner'}));
+		await user.click(screen.getByRole('button', {name: 'Save to Library'}));
 		const savePrompt = screen.getByRole('dialog', {name: 'Save to Blueprint Library'});
 		await user.click(within(savePrompt).getByRole('button', {name: 'Save Planner'}));
 		await Promise.resolve();
@@ -3915,7 +3915,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			saveInput: {...saveInputMetadata, planner: parseUpgradePlanner(saveInputData)},
 		}).toStrictEqual({
 			dialogState: {
-				activeElement: {name: 'Save Planner', tagName: 'BUTTON'},
+				activeElement: {name: 'Save to Library', tagName: 'BUTTON'},
 				dialogStack: [
 					{
 						ariaHidden: null,

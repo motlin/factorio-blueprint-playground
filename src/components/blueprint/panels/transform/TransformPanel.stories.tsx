@@ -104,7 +104,7 @@ export const UpgradePlanner: Story = {
 		).toBeVisible();
 		await expect(canvas.getByRole('group', {name: 'Text replacement'})).toBeVisible();
 		await expect(canvas.getByText('0 affected')).toBeVisible();
-		await expect(canvas.getByRole('button', {name: 'Save Planner'})).toBeVisible();
+		await expect(canvas.getByRole('button', {name: 'Save to Library'})).toBeVisible();
 		await expect(canvas.getByRole('button', {name: 'Apply Upgrade to Current Blueprint'})).toBeVisible();
 		await expect(canvas.getByRole('button', {name: 'Apply Downgrade to Current Blueprint'})).toBeVisible();
 		await expect(canvas.queryByRole('checkbox', {name: 'Preserve case'})).not.toBeInTheDocument();
