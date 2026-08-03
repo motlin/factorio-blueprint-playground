@@ -11,6 +11,7 @@ import {
 	extractPrototypeNames,
 	extractEntityModuleSlots,
 	extractPrototypeUpgrades,
+	extractUpgradeFuelItems,
 	extractUpgradeModuleItems,
 	extractVisiblePlaceResults,
 	parseBaseSupplement,
@@ -152,6 +153,7 @@ const upgradeEntityItems = [
 	...new Set([...extractVisiblePlaceResults(baseItemSource), ...extractVisiblePlaceResults(spaceAgeItemSource)]),
 ].sort();
 const upgradeModuleItems = extractUpgradeModuleItems([...factorioDataSources.values()]);
+const upgradeFuelItems = extractUpgradeFuelItems([...factorioDataSources.values()]);
 const upgradeEntityNames = new Set(upgradeEntityItems);
 const entityModuleSlots = Object.fromEntries(
 	Object.entries(extractEntityModuleSlots([...factorioDataSources.values()])).filter(([name]) =>
@@ -165,6 +167,7 @@ const gameDataOutput = `${JSON.stringify(
 		nextUpgrades,
 		pickerSignals,
 		upgradeEntityItems,
+		upgradeFuelItems,
 		upgradeModuleItems,
 		virtualSignals,
 	},
@@ -187,6 +190,7 @@ console.log(
 console.log(`Generated ${pickerSignals.length.toString()} categorized signals for the signal picker.`);
 console.log(`Generated ${upgradeEntityItems.length.toString()} placeable Upgrade Planner entities.`);
 console.log(`Generated ${upgradeModuleItems.length.toString()} Upgrade Planner module items.`);
+console.log(`Generated ${upgradeFuelItems.length.toString()} Upgrade Planner fuel items.`);
 console.log(
 	`Generated module-slot counts for ${Object.keys(entityModuleSlots).length.toString()} Upgrade Planner entities.`,
 );

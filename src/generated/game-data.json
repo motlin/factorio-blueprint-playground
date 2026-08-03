@@ -10186,6 +10186,28 @@
 		"wooden-chest",
 		"yumako-tree"
 	],
+	"upgradeFuelItems": [
+		"bioflux",
+		"biter-egg",
+		"carbon",
+		"coal",
+		"fusion-power-cell",
+		"jelly",
+		"jellynut",
+		"jellynut-seed",
+		"nuclear-fuel",
+		"nutrients",
+		"pentapod-egg",
+		"rocket-fuel",
+		"solid-fuel",
+		"spoilage",
+		"tree-seed",
+		"uranium-fuel-cell",
+		"wood",
+		"yumako",
+		"yumako-mash",
+		"yumako-seed"
+	],
 	"upgradeModuleItems": [
 		"speed-module",
 		"speed-module-2",

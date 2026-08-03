@@ -64,6 +64,7 @@ const pickerSignals: readonly SignalID[] = gameData.pickerSignals.map(({name, ty
 
 const upgradeEntityItemNames = new Set(gameData.upgradeEntityItems);
 const upgradeModuleNames = new Set(gameData.upgradeModuleItems);
+const upgradeFuelNames = new Set(gameData.upgradeFuelItems);
 const pickerSignalLayouts = new Map(
 	gameData.pickerSignals.map(({group, hidden, name, subgroup, type}, index) => [
 		`${type}:${name}`,
@@ -234,7 +235,7 @@ export function isUpgradeSourceOption(signal: SignalID): boolean {
 	const type = normalizedSignalType(signal);
 	return (
 		(type === 'entity' && upgradeEntityNames.has(signal.name)) ||
-		(type === 'item' && upgradeModuleNames.has(signal.name))
+		(type === 'item' && (upgradeModuleNames.has(signal.name) || upgradeFuelNames.has(signal.name)))
 	);
 }
 
@@ -242,6 +243,7 @@ export function upgradeSourceOptions(currentSource?: SignalID): SignalID[] {
 	const generatedOptions = [
 		...upgradeEntityGroups.flatMap(({members}) => members.map(({name}): SignalID => ({type: 'entity', name}))),
 		...gameData.upgradeModuleItems.map((name): SignalID => ({type: 'item', name})),
+		...gameData.upgradeFuelItems.map((name): SignalID => ({type: 'item', name})),
 	].sort(comparePickerSignalOrder);
 	return appendCurrentOption(generatedOptions, currentSource);
 }
@@ -275,6 +277,9 @@ export function replaceUpgradeTarget(currentTarget: SignalID | undefined, nextTa
 export function upgradeTargetOptions(source: UpgradeSourceSignal): SignalID[] {
 	if (normalizedSignalType(source) === 'item' && upgradeModuleNames.has(source.name)) {
 		return gameData.upgradeModuleItems.map((name) => ({type: 'item', name}));
+	}
+	if (normalizedSignalType(source) === 'item' && upgradeFuelNames.has(source.name)) {
+		return gameData.upgradeFuelItems.map((name) => ({type: 'item', name}));
 	}
 	if (normalizedSignalType(source) !== 'entity') {
 		return [];

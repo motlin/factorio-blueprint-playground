@@ -2553,6 +2553,34 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		]);
 	});
 
+	test('offers fuel sources and restricts their Select upgrade targets to the fuel family', async () => {
+		const user = userEvent.setup();
+		render(<TransformPanel blueprint={blueprint} />);
+
+		openUpgradePlanner();
+		await user.click(firstEmptyMappingSourceButton());
+		await chooseSignal(user, 'Coal');
+		await user.click(screen.getByRole('button', {name: 'Choose target for Coal'}));
+
+		const targetPicker = screen.getByRole('dialog', {name: 'Select upgrade'});
+		const labels = within(targetPicker)
+			.getAllByRole('button', {name: /^Choose /})
+			.map((button) => button.getAttribute('aria-label'));
+		expect({
+			count: labels.length,
+			hasBelts: labels.some((label) => label?.includes('belt') === true),
+			hasModules: labels.some((label) => label?.includes('module') === true),
+			rocketFuel: labels.includes('Choose Rocket fuel'),
+			solidFuel: labels.includes('Choose Solid fuel'),
+		}).toStrictEqual({
+			count: 20,
+			hasBelts: false,
+			hasModules: false,
+			rocketFuel: true,
+			solidFuel: true,
+		});
+	});
+
 	test('edits a module limit in the Select upgrade extras and shows it on the target slot', async () => {
 		const user = userEvent.setup();
 		render(<TransformPanel blueprint={blueprint} />);

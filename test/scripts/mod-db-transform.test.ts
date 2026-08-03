@@ -10,6 +10,7 @@ import {
 	extractPrototypeNames,
 	extractEntityModuleSlots,
 	extractPrototypeUpgrades,
+	extractUpgradeFuelItems,
 	extractUpgradeModuleItems,
 	extractVisiblePlaceResults,
 	parseFactorioLabDataset,
@@ -125,6 +126,20 @@ describe('transformDatasets', () => {
 			{from: 'transport-belt', to: 'fast-transport-belt'},
 			{from: 'fast-transport-belt', to: 'express-transport-belt'},
 		]);
+	});
+
+	it('extracts non-hidden fueled item prototypes and skips fluids', () => {
+		const sources = [
+			`data:extend({
+				{type = "item", name = "coal", fuel_value = "4MJ", stack_size = 50},
+				{type = "item", name = "solid-fuel", fuel_value = "12MJ", stack_size = 50},
+				{type = "item", name = "hidden-fuel", fuel_value = "1MJ", hidden = true},
+				{type = "fluid", name = "crude-oil", fuel_value = "100kJ"},
+				{type = "item", name = "iron-plate", stack_size = 100}
+			})`,
+		];
+
+		expect(extractUpgradeFuelItems(sources)).toStrictEqual(['coal', 'solid-fuel']);
 	});
 
 	it('extracts entity module-slot counts with later definitions overriding earlier ones', () => {

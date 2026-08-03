@@ -81,6 +81,7 @@ interface LuaUpgradeFrame {
 
 interface LuaPrototypeFrame {
 	group: string | undefined;
+	hasFuelValue: boolean;
 	hidden: boolean | undefined;
 	itemPrototype: boolean;
 	name: string | undefined;
@@ -186,6 +187,7 @@ function extractLiteralPrototypeFrames(sources: readonly string[]): LuaPrototype
 			if (token.kind === LuaTokenKind.OpeningBrace) {
 				frames.push({
 					group: undefined,
+					hasFuelValue: false,
 					hidden: undefined,
 					itemPrototype: false,
 					name: undefined,
@@ -215,6 +217,10 @@ function extractLiteralPrototypeFrames(sources: readonly string[]): LuaPrototype
 			}
 			if (token.value === 'stack_size') {
 				frame.itemPrototype = true;
+				continue;
+			}
+			if (token.value === 'fuel_value') {
+				frame.hasFuelValue = true;
 				continue;
 			}
 			if (
@@ -257,6 +263,34 @@ export function extractUpgradeModuleItems(sources: readonly string[]): string[] 
 		({name, subgroup, type}) =>
 			type === 'module' || (type === 'item' && subgroup === 'module' && name === 'empty-module-slot'),
 	);
+}
+
+/**
+ * UpgradeData::acceptableForUpgradeSource(ItemPrototype) admits any non-hidden
+ * item with a positive fuel value, and sourceAndDestinationCompatible pairs
+ * fuel with fuel; fluids also carry fuel_value but are not items.
+ */
+export function extractUpgradeFuelItems(sources: readonly string[]): string[] {
+	return extractMatchingFueledPrototypeNames(sources);
+}
+
+function extractMatchingFueledPrototypeNames(sources: readonly string[]): string[] {
+	const fueled = new Map<string, LuaPrototypeFrame>();
+	for (const prototype of extractLiteralPrototypeFrames(sources)) {
+		if (
+			prototype.name === undefined ||
+			prototype.hidden === true ||
+			prototype.type === 'fluid' ||
+			!prototype.hasFuelValue
+		) {
+			continue;
+		}
+		const existing = fueled.get(prototype.name);
+		if (existing === undefined || prototypeMetadataScore(prototype) > prototypeMetadataScore(existing)) {
+			fueled.set(prototype.name, prototype);
+		}
+	}
+	return [...fueled.keys()].sort();
 }
 
 export function extractPickerSignals(
