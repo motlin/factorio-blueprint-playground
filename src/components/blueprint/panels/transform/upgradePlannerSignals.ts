@@ -235,6 +235,32 @@ export function moduleEntityFilterOptions(): SignalID[] {
 }
 
 /**
+ * UpgradeHelpers::getAvailableModuleSlots: an entity destination exposes the
+ * Entity settings module-slot editor when its prototype has module slots. The
+ * generated counts use the base prototype value; quality slot bonuses are not
+ * modeled.
+ */
+export function entityModuleSlotCount(signal: SignalID): number {
+	if (normalizedSignalType(signal) !== 'entity') {
+		return 0;
+	}
+	const counts: Record<string, number> = gameData.entityModuleSlots;
+	return counts[signal.name] ?? 0;
+}
+
+/**
+ * Per-slot module candidates mirror the game's module-only ChooseButton filter;
+ * an empty position is a cleared slot, so the empty-module-slot item is not a
+ * candidate. Allowed-effects filtering is not modeled and every module is
+ * offered.
+ */
+export function moduleSlotOptions(): SignalID[] {
+	return gameData.upgradeModuleItems
+		.filter((name) => name !== 'empty-module-slot')
+		.map((name): SignalID => ({type: 'item', name}));
+}
+
+/**
  * UpgradeHelpers::shouldEnableModuleLimit: the Module limit extras apply only
  * to true module destinations, never to the empty module slot.
  */

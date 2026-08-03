@@ -11,14 +11,16 @@ import {BlueprintLabelIcons} from './BlueprintLabelIcons';
 import {BlueprintTitleEditor} from './BlueprintTitleEditor';
 import {SignalPickerDialog} from './SignalPickerDialog';
 import {UpgradeMappingGrid, type PositionedUpgradeMapping} from './UpgradeMappingGrid';
-import {UpgradeDestinationExtras} from './UpgradeDestinationExtras';
+import {UpgradeDestinationExtras, UpgradeEntitySettingsExtras} from './UpgradeDestinationExtras';
 import {UpgradeSourceExtras} from './UpgradeSourceExtras';
 import {
 	chatIconPickerOptions,
 	entityFilterAllowed,
+	entityModuleSlotCount,
 	isUpgradeTargetSelectionAllowed,
 	moduleEntityFilterOptions,
 	moduleLimitAllowed,
+	moduleSlotOptions,
 	signalIdentity,
 	signalPrototypeIdentity,
 	signalTitle,
@@ -557,6 +559,8 @@ function UpgradeMappingsEditor({
 	const [pendingModuleLimit, setPendingModuleLimit] = useState<number>();
 	const [pendingEntityFilter, setPendingEntityFilter] = useState<SignalID>();
 	const [choosingEntityFilter, setChoosingEntityFilter] = useState(false);
+	const [pendingModuleSlots, setPendingModuleSlots] = useState<(SignalID | null)[]>();
+	const [choosingModuleSlotIndex, setChoosingModuleSlotIndex] = useState<number>();
 	const sourcePickerMapping = mappings.find((mapping) => mapping.mappingId === sourcePicker?.mappingId);
 	const targetPickerMapping = mappings.find((mapping) => mapping.mappingId === targetPicker?.mappingId);
 	const sourceSelectionAllowed = (sourceSignal: UpgradeSourceSignal): boolean => {
@@ -608,14 +612,36 @@ function UpgradeMappingsEditor({
 					title="Select upgrade"
 					options={targetPickerOptions}
 					qualityMode="target"
-					extrasFrame={(pendingSignal) =>
-						pendingSignal !== undefined && moduleLimitAllowed(pendingSignal) ? (
-							<UpgradeDestinationExtras
-								moduleLimit={pendingModuleLimit}
-								onModuleLimitChange={setPendingModuleLimit}
-							/>
-						) : null
-					}
+					extrasFrame={(pendingSignal) => {
+						if (pendingSignal === undefined) {
+							return null;
+						}
+						if (moduleLimitAllowed(pendingSignal)) {
+							return (
+								<UpgradeDestinationExtras
+									moduleLimit={pendingModuleLimit}
+									onModuleLimitChange={setPendingModuleLimit}
+								/>
+							);
+						}
+						const slotCount = entityModuleSlotCount(pendingSignal);
+						if (slotCount > 0) {
+							return (
+								<UpgradeEntitySettingsExtras
+									moduleSlots={pendingModuleSlots?.slice(0, slotCount)}
+									slotCount={slotCount}
+									onModuleSlotChoose={setChoosingModuleSlotIndex}
+									onModuleSlotClear={(index) => {
+										setPendingModuleSlots((slots) =>
+											slots?.map((slot, slotIndex) => (slotIndex === index ? null : slot)),
+										);
+									}}
+									onModuleSlotsChange={setPendingModuleSlots}
+								/>
+							);
+						}
+						return null;
+					}}
 					isSelectionAllowed={(target) =>
 						targetPickerMapping?.from === undefined ||
 						isUpgradeTargetSelectionAllowed(targetPickerMapping.from, target)
@@ -624,9 +650,23 @@ function UpgradeMappingsEditor({
 						setTargetPicker(undefined);
 					}}
 					onChoose={(target) => {
+						const slotCount = entityModuleSlotCount(target);
+						const moduleSlots =
+							slotCount > 0 && pendingModuleSlots !== undefined
+								? pendingModuleSlots
+										.slice(0, slotCount)
+										.concat(
+											Array.from(
+												{length: Math.max(0, slotCount - pendingModuleSlots.length)},
+												() => null,
+											),
+										)
+										.map((slot) => slot ?? {})
+								: undefined;
 						onTargetChange(targetPicker.mappingId, targetPicker.slotIndex, {
 							...target,
 							module_limit: moduleLimitAllowed(target) ? pendingModuleLimit : undefined,
+							module_slots: moduleSlots,
 						});
 						setTargetPicker(undefined);
 					}}
@@ -663,6 +703,23 @@ function UpgradeMappingsEditor({
 							module_filter: entityFilterAllowed(sourceSignal) ? pendingEntityFilter : undefined,
 						});
 						setSourcePicker(undefined);
+					}}
+				/>
+			)}
+			{choosingModuleSlotIndex === undefined ? null : (
+				<SignalPickerDialog
+					confirmationMode="immediate"
+					initialSignal={pendingModuleSlots?.[choosingModuleSlotIndex] ?? undefined}
+					title="Choose module"
+					options={moduleSlotOptions()}
+					onClose={() => {
+						setChoosingModuleSlotIndex(undefined);
+					}}
+					onChoose={(module) => {
+						setPendingModuleSlots((slots) =>
+							slots?.map((slot, slotIndex) => (slotIndex === choosingModuleSlotIndex ? module : slot)),
+						);
+						setChoosingModuleSlotIndex(undefined);
 					}}
 				/>
 			)}

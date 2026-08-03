@@ -2590,6 +2590,56 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		).toBe('Edit entity filter, currently Assembling machine 2');
 	});
 
+	test('edits an entity destination module-slot plan through the Entity settings extras', async () => {
+		const user = userEvent.setup();
+		render(<TransformPanel blueprint={blueprint} />);
+
+		openUpgradePlanner();
+		fireEvent.contextMenu(screen.getByRole('button', {name: 'Choose source, currently Assembling machine 1'}));
+		fireEvent.contextMenu(screen.getByRole('button', {name: 'Choose source, currently Assembling machine 2'}));
+		await user.click(firstEmptyMappingSourceButton());
+		await user.click(screen.getByRole('button', {name: 'Rare quality'}));
+		await chooseSignal(user, 'Assembling machine 1');
+		const newRow = screen.getByRole('listitem', {name: 'Incomplete mapping from Assembling machine 1'});
+		await user.click(within(newRow).getByRole('button', {name: 'Choose target for Assembling machine 1'}));
+
+		const targetPicker = screen.getByRole('dialog', {name: 'Select upgrade'});
+		expect(within(targetPicker).queryByRole('checkbox', {name: 'Module slots'})).toBe(null);
+
+		await user.click(within(targetPicker).getByRole('button', {name: 'Choose Assembling machine 2'}));
+		await user.click(within(targetPicker).getByRole('checkbox', {name: 'Module slots'}));
+		const slotButtons = within(targetPicker).getAllByRole('button', {name: /^Choose module for slot /});
+		expect(slotButtons).toHaveLength(2);
+
+		await user.click(slotButtons[0]);
+		await user.click(
+			within(screen.getByRole('dialog', {name: 'Choose module'})).getByRole('button', {
+				name: 'Choose Speed module',
+			}),
+		);
+		await user.click(within(targetPicker).getByRole('button', {name: 'Confirm'}));
+
+		await user.click(
+			within(
+				screen.getByRole('listitem', {name: 'Mapping from Assembling machine 1 to Assembling machine 2'}),
+			).getByRole('button', {name: 'Choose target for Assembling machine 1'}),
+		);
+		const reopened = screen.getByRole('dialog', {name: 'Select upgrade'});
+		expect({
+			checked: within(reopened).getByRole<HTMLInputElement>('checkbox', {name: 'Module slots'}).checked,
+			slotOne: within(reopened)
+				.getByRole('button', {name: 'Edit module slot 1, currently Speed module'})
+				.getAttribute('aria-label'),
+			slotTwo: within(reopened)
+				.getByRole('button', {name: 'Choose module for slot 2'})
+				.getAttribute('aria-label'),
+		}).toStrictEqual({
+			checked: true,
+			slotOne: 'Edit module slot 1, currently Speed module',
+			slotTwo: 'Choose module for slot 2',
+		});
+	});
+
 	test('offers fuel sources and restricts their Select upgrade targets to the fuel family', async () => {
 		const user = userEvent.setup();
 		render(<TransformPanel blueprint={blueprint} />);

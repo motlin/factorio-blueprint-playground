@@ -3853,6 +3853,16 @@ body {
 	width: calc(64px * var(--factorio-ui-density));
 }
 
+/* UpgradeDestinationSelectListGui builds the module-slot plan as an
+   eight-column slot table. */
+.upgrade-destination-extras__slots {
+	display: grid;
+	grid-template-columns: repeat(8, calc(40px * var(--factorio-ui-density)));
+	gap: 0;
+	width: max-content;
+	margin-top: calc(6px * var(--factorio-ui-density));
+}
+
 .icon-replacement-editor__add {
 	margin-top: var(--transform-frame-gap);
 	padding: var(--transform-content-space) var(--transform-edge-space);
