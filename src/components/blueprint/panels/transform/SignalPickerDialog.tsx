@@ -601,13 +601,22 @@ export function SignalPickerDialog({
 				<div className="panel-hole transform-picker">
 					<div className="transform-picker__body">
 						{availableCategories.length > 1 ? (
+							/* filter_group_tab stretches to fill a single row; only
+							   multi-row layouts fall back to fixed-width
+							   filter_group_slot_tab columns. */
 							<div
 								className="transform-picker__tabs"
 								role="tablist"
 								aria-label="Signal categories"
 								aria-orientation="horizontal"
+								data-tab-rows={
+									availableCategories.length <= categoryColumnCount ? 'single' : 'multiple'
+								}
 								style={{
-									gridTemplateColumns: `repeat(${categoryColumnCount.toString()}, ${gameUiSpec.styles.filterGroupTabWidth.toString()}px)`,
+									gridTemplateColumns:
+										availableCategories.length <= categoryColumnCount
+											? `repeat(${availableCategories.length.toString()}, minmax(${gameUiSpec.styles.filterGroupTabWidth.toString()}px, 1fr))`
+											: `repeat(${categoryColumnCount.toString()}, ${gameUiSpec.styles.filterGroupTabWidth.toString()}px)`,
 								}}
 							>
 								{availableCategories.map((category, categoryIndex) => {
@@ -621,7 +630,11 @@ export function SignalPickerDialog({
 												categoryButtons.current[categoryIndex] = button;
 											}}
 											className="transform-picker__tab"
-											data-factorio-style="filter_group_tab"
+											data-factorio-style={
+												availableCategories.length <= categoryColumnCount
+													? 'filter_group_tab'
+													: 'filter_group_slot_tab'
+											}
 											aria-controls={gridId}
 											aria-label={category.label}
 											aria-selected={category.id === resolvedActiveCategoryId}
@@ -629,7 +642,7 @@ export function SignalPickerDialog({
 											tabIndex={category.id === resolvedActiveCategoryId ? 0 : -1}
 											title={category.label}
 											style={{
-												width: gameUiSpec.styles.filterGroupTabWidth,
+												minWidth: gameUiSpec.styles.filterGroupTabWidth,
 												height: gameUiSpec.styles.filterGroupTabHeight,
 											}}
 											onClick={() => {

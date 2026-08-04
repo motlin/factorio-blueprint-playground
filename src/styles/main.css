@@ -4054,6 +4054,17 @@ body {
 		inset 0 1px 1px #9b989b;
 }
 
+/* Single-row tabs grow when selected (increase_height_when_selected); the
+   multi-row slot-tab layout disables the growth. */
+.transform-picker__tabs[data-tab-rows='single'] .transform-picker__tab[aria-selected='true'] {
+	height: calc(100% + 4px) !important;
+	margin-bottom: -4px;
+}
+
+.transform-picker__tabs[data-tab-rows='single'] {
+	overflow: visible;
+}
+
 .transform-picker__tab:focus-visible {
 	z-index: 2;
 	outline: 2px solid #fff0cc;
