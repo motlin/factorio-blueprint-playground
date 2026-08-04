@@ -4079,10 +4079,12 @@ body {
 	gap: 0;
 	min-width: 400px;
 	max-width: 100%;
-	max-height: min(400px, 58vh);
+	max-height: 58vh;
 	padding: 0;
 	overflow-x: hidden;
 	overflow-y: auto;
+	/* A classic scrollbar must not consume the tenth slot column. */
+	scrollbar-gutter: stable;
 }
 
 .transform-picker__grid-padding {

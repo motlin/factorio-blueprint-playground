@@ -92,7 +92,6 @@ import {useDialogFocus} from './useDialogFocus';
  */
 const gridColumnCount = gameUiSpec.utilityConstants.selectSlotRowCount;
 const categoryColumnCount = gameUiSpec.utilityConstants.selectGroupRowCount;
-const maximumVisibleGridRows = gameUiSpec.utilityConstants.selectSlotRowCount;
 type PickerSignal = UpgradeQualitySignal;
 type PickerCategoryId = string;
 type QualityMode = 'source' | 'target';
@@ -327,18 +326,15 @@ export function SignalPickerDialog({
 			: availableCategories.find((category) => category.id === resolvedActiveCategoryId);
 	const filteredOptions = activeCategory === undefined ? [] : (categoryOptions.get(activeCategory.id) ?? []);
 	const gridCells = signalGridCells(filteredOptions);
+	/* SelectListGui::setupMinimalSize: the tallest category establishes the
+	   stable pane height with no visible-row cap; the stylesheet still clamps
+	   to the viewport. */
 	const stableGridRows = Math.max(
 		1,
-		Math.min(
-			maximumVisibleGridRows,
-			Math.max(
-				1,
-				...availableCategories.map((category) =>
-					Math.ceil(
-						signalGridCells(visibleOptions.filter((signal) => category.id === categoryForSignal(signal).id))
-							.length / gridColumnCount,
-					),
-				),
+		...availableCategories.map((category) =>
+			Math.ceil(
+				signalGridCells(visibleOptions.filter((signal) => category.id === categoryForSignal(signal).id))
+					.length / gridColumnCount,
 			),
 		),
 	);
