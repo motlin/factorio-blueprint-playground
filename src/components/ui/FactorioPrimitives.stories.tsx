@@ -532,7 +532,7 @@ export const ScrollFrameStates: Story = {
 			isScrollable: true,
 			ownerCount: 1,
 			scrollbarColor: 'rgb(111, 109, 111) rgb(36, 35, 36)',
-			scrollbarGutter: 'stable',
+			scrollbarGutter: 'auto',
 			style: 'deep_slots_scroll_pane',
 			verticalOverflow: 'auto',
 		});

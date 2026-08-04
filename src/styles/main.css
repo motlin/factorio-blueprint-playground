@@ -357,17 +357,31 @@ body {
 	overflow: auto;
 }
 
+/* deep_slots_scroll_pane: no padding, minimal_height = one 40px slot, and a
+   40px deep-slot background tiling; deep_scroll_pane scrollbars go outside
+   the content region (approximated with auto gutter). */
 .factorio-scroll-frame {
 	box-sizing: border-box;
 	min-width: 0;
-	min-height: 0;
+	min-height: calc(40px * var(--factorio-ui-density));
 	max-height: min(440px, 58vh);
-	padding: calc(7px * var(--factorio-ui-density));
+	padding: 0;
 	overflow-x: hidden;
 	overflow-y: auto;
 	overscroll-behavior: contain;
+	background:
+		repeating-linear-gradient(
+			90deg,
+			rgb(255 255 255 / 3%) 0 1px,
+			transparent 1px calc(40px * var(--factorio-ui-density))
+		),
+		repeating-linear-gradient(
+			0deg,
+			rgb(255 255 255 / 3%) 0 1px,
+			transparent 1px calc(40px * var(--factorio-ui-density))
+		),
+		var(--factorio-ui-dark);
 	scrollbar-color: #6f6d6f #242324;
-	scrollbar-gutter: stable;
 	scrollbar-width: auto;
 }
 
