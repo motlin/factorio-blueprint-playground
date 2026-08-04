@@ -3102,6 +3102,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		await user.clear(screen.getByRole('textbox', {name: 'Blueprint description'}));
 		await user.type(screen.getByRole('textbox', {name: 'Blueprint description'}), 'New description');
 		await user.click(screen.getByRole('button', {name: 'Edit icon 1'}));
+		await user.click(screen.getByRole('button', {name: 'Rare quality'}));
 		await searchSignals(user, 'yellow');
 		await chooseSignal(user, 'Signal yellow');
 		fireEvent.contextMenu(screen.getByRole('button', {name: 'Edit icon 2'}));
@@ -3130,7 +3131,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 									version: 0,
 									description: 'New description',
 									icons: [
-										{index: 1, signal: {type: 'virtual', name: 'signal-yellow'}},
+										{index: 1, signal: {type: 'virtual', name: 'signal-yellow', quality: 'rare'}},
 										{index: 3, signal: {type: 'virtual', name: 'signal-green'}},
 									],
 									label: 'Blue starter',
