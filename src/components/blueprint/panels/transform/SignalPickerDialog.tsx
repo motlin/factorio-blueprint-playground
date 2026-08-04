@@ -297,6 +297,7 @@ export function SignalPickerDialog({
 		visibleOptions.length === 0 ? undefined : categoryForSignal(initialSignal ?? visibleOptions[0]).id;
 	const [activeCategoryId, setActiveCategoryId] = useState<PickerCategoryId | undefined>(initialCategoryId);
 	const [search, setSearch] = useState(initialSearch);
+	const [rejectionMessage, setRejectionMessage] = useState('');
 	const [searchVisible, setSearchVisible] = useState(initialSearch !== '');
 	const [selectedSignal, setSelectedSignal] = useState<PickerSignal | undefined>(
 		initialSignal === undefined ||
@@ -682,7 +683,7 @@ export function SignalPickerDialog({
 											className="transform-picker__option"
 											data-picker-cell="signal"
 											aria-label={`Choose ${signalName(signal)}`}
-											disabled={!allowed}
+											aria-disabled={!allowed}
 											selected={signalPrototypeIdentity(signal) === selectedIdentity}
 											tabIndex={optionIndex === tabbableOptionIndex ? 0 : -1}
 											title={signalTitle(signal)}
@@ -691,6 +692,11 @@ export function SignalPickerDialog({
 												updateInspectedSignal();
 											}}
 											onClick={() => {
+												if (!allowed) {
+													setRejectionMessage(`${signalName(signal)} cannot be chosen here.`);
+													return;
+												}
+												setRejectionMessage('');
 												if (confirmationMode === 'immediate') {
 													chooseSignal(signal);
 												} else {
@@ -734,6 +740,9 @@ export function SignalPickerDialog({
 									</p>
 								) : null}
 							</FactorioScrollFrame>
+							<div role="status" aria-live="polite" className="transform-visually-hidden">
+								{rejectionMessage}
+							</div>
 							<div
 								ref={signalNameReference}
 								className="transform-picker__signal-name"

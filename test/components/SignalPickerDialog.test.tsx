@@ -190,7 +190,7 @@ test('moves keyboard focus by grid geometry while skipping inaccessible targets'
 		tabIndex: disabledOption.tabIndex,
 	}).toStrictEqual({
 		ariaDisabled: 'true',
-		disabled: true,
+		disabled: false,
 		tabIndex: -1,
 	});
 });
@@ -264,7 +264,7 @@ test('exposes rest, selected, disabled, and quality-badge option states', () => 
 	}).toStrictEqual({
 		disabled: {
 			ariaDisabled: 'true',
-			disabled: true,
+			disabled: false,
 			quality: 'https://factorio-icon-cdn.pages.dev/quality/epic.webp',
 			tabIndex: -1,
 		},
@@ -1042,7 +1042,7 @@ test('keeps generated prototype order while search removes nonmatching prototype
 	]);
 });
 
-test('renders disallowed signals disabled and keeps the hovered or focused signal name readable', async () => {
+test('renders disallowed signals red but clickable with rejection feedback and a readable name readout', async () => {
 	const user = userEvent.setup();
 	render(
 		<SignalPickerDialog
@@ -1071,12 +1071,19 @@ test('renders disallowed signals disabled and keeps the hovered or focused signa
 	expect(screen.getByRole('status', {name: 'Inspected signal: Iron plate'}).textContent).toBe('Iron plate');
 	fireEvent.blur(iron);
 	expect(document.querySelector('.transform-picker__signal-name')?.textContent).toBe('\u00a0');
+	await user.click(processingUnit);
 	expect({
+		processingUnitAriaDisabled: processingUnit.getAttribute('aria-disabled'),
 		processingUnitDisabled: processingUnit.disabled,
 		processingUnitTabIndex: processingUnit.tabIndex,
+		rejection: [...document.querySelectorAll('[role="status"]')].some(
+			(status) => status.textContent === 'Processing unit cannot be chosen here.',
+		),
 	}).toStrictEqual({
-		processingUnitDisabled: true,
+		processingUnitAriaDisabled: 'true',
+		processingUnitDisabled: false,
 		processingUnitTabIndex: -1,
+		rejection: true,
 	});
 });
 

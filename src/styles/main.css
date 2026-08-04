@@ -4053,8 +4053,13 @@ body {
 		0 0 0 2px rgb(227 152 39 / 65%);
 }
 
-.transform-picker__option:disabled [data-testid='icon'] {
-	opacity: 0.45;
+/* SelectListGui::updateDisabledStateOfSlot swaps disallowed options to
+   red_slot_button; they stay clickable and report why selection failed. */
+.transform-picker__option[aria-disabled='true'] {
+	background: #a03c3c;
+	box-shadow:
+		inset 1px 1px 0 #cf7d7d,
+		inset -2px -2px 0 #571d1d;
 }
 
 .transform-picker__option [data-testid='quality'] {

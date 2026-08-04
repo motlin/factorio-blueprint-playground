@@ -80,6 +80,7 @@ export function FactorioInventorySlot({
 	size,
 	style,
 	type = 'button',
+	'aria-disabled': ariaDisabled,
 	...buttonProps
 }: FactorioInventorySlotProps) {
 	const slotSize = `calc(${(size ?? gameUiSpec.styles.slotSize).toString()}px * var(--factorio-ui-density, 1))`;
@@ -89,7 +90,7 @@ export function FactorioInventorySlot({
 			ref={ref}
 			type={type}
 			disabled={disabled}
-			aria-disabled={disabled ?? false}
+			aria-disabled={ariaDisabled ?? disabled ?? false}
 			aria-pressed={selected}
 			data-factorio-style={gameUiSpec.styles.bindings.slotButton}
 			className={classes('factorio-inventory-slot', className)}
