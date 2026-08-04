@@ -1195,14 +1195,14 @@ test('keeps required confirmation disabled and ignores Enter until a valid signa
 		<SignalPickerDialog
 			confirmationMode="required"
 			title="Required confirmation"
-			options={[qualitySignal, {type: 'entity', name: 'transport-belt'}]}
+			options={[qualitySignal, {type: 'entity', name: 'test-entity-sibling'}]}
 			onChoose={onChoose}
 			onClose={vi.fn<() => void>()}
 		/>,
 	);
 
 	const confirm = screen.getByRole<HTMLButtonElement>('button', {name: 'Confirm'});
-	const grid = screen.getByRole('region', {name: 'Logistics choices'});
+	const grid = screen.getByRole('region', {name: 'Unsorted choices'});
 	grid.focus();
 	fireEvent.keyDown(grid, {key: 'Enter'});
 	expect({
@@ -1334,8 +1334,8 @@ describe('SignalPickerDialog golden cancellation and focus source contracts', ()
 test('lets tab clicks change the grid after an exact search match activates a category', async () => {
 	const user = userEvent.setup();
 	const options: SignalID[] = [
-		{type: 'entity', name: 'iron-plate-conveyor'},
-		{type: 'item', name: 'iron-plate'},
+		{type: 'entity', name: 'pumpjack'},
+		{type: 'entity', name: 'pump'},
 	];
 	render(
 		<SignalPickerDialog
@@ -1348,13 +1348,13 @@ test('lets tab clicks change the grid after an exact search match activates a ca
 	);
 
 	await user.click(screen.getByRole('button', {name: 'Search'}));
-	await user.type(screen.getByRole('searchbox', {name: 'Search'}), 'Iron plate');
+	await user.type(screen.getByRole('searchbox', {name: 'Search'}), 'Pump');
 	expect(
 		screen.getAllByRole('button', {name: /^Choose /}).map((button) => button.getAttribute('aria-label')),
-	).toStrictEqual(['Choose Iron plate']);
+	).toStrictEqual(['Choose Pump']);
 
-	await user.click(screen.getByRole('tab', {name: 'Logistics'}));
+	await user.click(screen.getByRole('tab', {name: 'Production'}));
 	expect(
 		screen.getAllByRole('button', {name: /^Choose /}).map((button) => button.getAttribute('aria-label')),
-	).toStrictEqual(['Choose Iron plate conveyor']);
+	).toStrictEqual(['Choose Pumpjack']);
 });

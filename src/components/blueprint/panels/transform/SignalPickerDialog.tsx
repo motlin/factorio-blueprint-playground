@@ -156,34 +156,17 @@ function signalTitle(signal: PickerSignal): string {
 	return `${signalName(signal)}\n${normalizedSignalType(signal)}:${signal.name}${quality}`;
 }
 
+/**
+ * SelectListGui::updateItems reads the prototype's registered group; the only
+ * fallback is CorePrototypes::otherItemSubGroup's group. Qualities are placed
+ * by the same generated layout that positions them in the picker.
+ */
 function categoryIdForSignal(signal: SignalID): PickerCategoryId {
 	const generatedGroup = signalPickerGroup(signal);
 	if (generatedGroup !== undefined) {
 		return generatedGroup;
 	}
-	const type = normalizedSignalType(signal);
-	if (type === 'item' || type === 'entity') {
-		return 'logistics';
-	}
-	if (type === 'recipe') {
-		return 'production';
-	}
-	if (type === 'fluid') {
-		return 'fluids';
-	}
-	if (type === 'virtual' || type === 'virtual-signal') {
-		return 'signals';
-	}
-	if (type === 'tile') {
-		return 'tiles';
-	}
-	if (type === 'planet' || type === 'space-location') {
-		return 'environment';
-	}
-	if (type === 'equipment') {
-		return 'combat';
-	}
-	if (type === 'quality') {
+	if (normalizedSignalType(signal) === 'quality') {
 		return 'effects';
 	}
 	return 'other';
