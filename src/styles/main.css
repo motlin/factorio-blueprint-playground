@@ -201,13 +201,15 @@ body {
 	color: #171717;
 }
 
+/* slot_button: size 40, padding 0 — bevels are drawn by the sprite, not by
+   shrinking the interior. */
 .factorio-inventory-slot {
 	position: relative;
 	display: grid;
 	box-sizing: border-box;
 	flex: 0 0 auto;
-	padding: calc(4px * var(--factorio-ui-density));
-	border: 1px solid var(--factorio-ui-border);
+	padding: 0;
+	border: 0;
 	background: #414041;
 	box-shadow:
 		inset 1px 1px 0 #777,
@@ -234,14 +236,23 @@ body {
 		inset -2px -2px 0 #5b320d;
 }
 
+/* slot_button clicked_graphical_set is its own state, darker than hover. */
+.factorio-inventory-slot:active:not(:disabled),
+.factorio-inventory-slot[data-visual-state='active']:not(:disabled) {
+	z-index: 1;
+	background: #b16925;
+	box-shadow:
+		inset 1px 1px 0 #914905,
+		inset -2px -2px 0 #cb833f;
+}
+
+/* slot_button selected and selected_hovered sets equal the hovered set. */
 .factorio-inventory-slot[aria-pressed='true'] {
 	z-index: 1;
-	background: var(--factorio-ui-selected);
+	background: #d88716;
 	box-shadow:
 		inset 1px 1px 0 #ffd37a,
 		inset -2px -2px 0 #5b320d;
-	outline: 2px solid #ffc451;
-	outline-offset: -2px;
 }
 
 .factorio-frame {

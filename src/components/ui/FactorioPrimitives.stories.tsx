@@ -114,14 +114,22 @@ function DensityMatrix({density}: {density: number}) {
 						2
 					</FactorioInventorySlot>
 				</StateCell>
+				<StateCell label="Pressed">
+					<FactorioInventorySlot
+						aria-label={`${density.toString()}x pressed slot`}
+						data-visual-state="active"
+					>
+						3
+					</FactorioInventorySlot>
+				</StateCell>
 				<StateCell label="Selected">
 					<FactorioInventorySlot aria-label={`${density.toString()}x selected slot`} selected>
-						3
+						4
 					</FactorioInventorySlot>
 				</StateCell>
 				<StateCell label="Disabled">
 					<FactorioInventorySlot aria-label={`${density.toString()}x disabled slot`} disabled>
-						4
+						5
 					</FactorioInventorySlot>
 				</StateCell>
 			</div>
