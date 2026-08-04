@@ -4201,10 +4201,47 @@ body {
 	gap: 0;
 }
 
-.upgrade-quality-controls--picker .factorio-inventory-slot {
-	width: calc(28px * var(--factorio-ui-density)) !important;
-	height: calc(28px * var(--factorio-ui-density)) !important;
+/* tool_button: 28px square icon control with standard button states
+   (QualitySelector::setupButton uses iconButton with toolButton()). The
+   comparator dropdown metrics remain literals documented against
+   train_schedule_circuit_condition_comparator_dropdown. */
+.factorio-tool-button {
+	display: grid;
+	box-sizing: border-box;
+	width: calc(28px * var(--factorio-ui-density));
+	height: calc(28px * var(--factorio-ui-density));
 	padding: calc(2px * var(--factorio-ui-density));
+	border: 0;
+	background: var(--factorio-ui-control-face);
+	box-shadow:
+		inset 1px 1px 0 #9d9d9d,
+		inset -1px -1px 0 #515151;
+	cursor: pointer;
+	place-items: center;
+}
+
+.factorio-tool-button:hover:not(:disabled) {
+	background: #8b6745;
+}
+
+.factorio-tool-button:active:not(:disabled) {
+	background: #b16925;
+	box-shadow:
+		inset 1px 1px 0 #914905,
+		inset -1px -1px 0 #cb833f;
+}
+
+.factorio-tool-button[aria-pressed='true'] {
+	background: #d88716;
+	box-shadow:
+		inset 1px 1px 0 #ffd37a,
+		inset -1px -1px 0 #5b320d;
+}
+
+.factorio-tool-button:focus-visible {
+	z-index: 1;
+	outline: 2px solid var(--factorio-ui-accent);
+	outline-offset: -2px;
 }
 
 .upgrade-quality-controls__condition {
