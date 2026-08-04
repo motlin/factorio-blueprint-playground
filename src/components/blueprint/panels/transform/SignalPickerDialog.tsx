@@ -93,22 +93,6 @@ import {useDialogFocus} from './useDialogFocus';
 const gridColumnCount = gameUiSpec.utilityConstants.selectSlotRowCount;
 const categoryColumnCount = gameUiSpec.utilityConstants.selectGroupRowCount;
 const maximumVisibleGridRows = gameUiSpec.utilityConstants.selectSlotRowCount;
-const hiddenPrototypeNames = new Set([
-	'bottomless-chest',
-	'electric-energy-interface',
-	'fluid-unknown',
-	'infinity-cargo-wagon',
-	'infinity-chest',
-	'infinity-pipe',
-	'item-unknown',
-	'linked-chest',
-	'proxy-container',
-	'recipe-unknown',
-	'signal-unknown',
-	'space-location-unknown',
-	'tile-unknown',
-]);
-
 type PickerSignal = UpgradeQualitySignal;
 type PickerCategoryId = string;
 type QualityMode = 'source' | 'target';
@@ -137,6 +121,7 @@ export interface SignalPickerDialogProps {
 	confirmationMode: SignalPickerConfirmationMode;
 	extrasFrame?: (pendingSignal: PickerSignal | undefined) => ReactNode;
 	includeHiddenSignals?: boolean;
+	includeParameterSignals?: boolean;
 	initialQuality?: UpgradeQualitySelection;
 	initialSearch?: string;
 	initialSignal?: PickerSignal;
@@ -214,13 +199,12 @@ function categoryForSignal(signal: SignalID): PickerCategory {
 	return category;
 }
 
-function isHiddenPrototype(signal: SignalID): boolean {
-	return (
-		signalPickerHidden(signal) ||
-		signal.name === 'parameter-' ||
-		signal.name.endsWith('-unknown') ||
-		hiddenPrototypeNames.has(signal.name)
-	);
+/**
+ * IncludeParameters is a source policy independent of IncludeHidden; both
+ * planner pickers admit hidden prototypes while excluding parameters.
+ */
+function isParameterSignal(signal: SignalID): boolean {
+	return signal.name === 'parameter-' || /^parameter-\d+$/.test(signal.name);
 }
 
 function signalWithCurrentQuality(
@@ -261,6 +245,7 @@ export function SignalPickerDialog({
 	confirmationMode,
 	extrasFrame,
 	includeHiddenSignals = false,
+	includeParameterSignals = false,
 	initialQuality,
 	initialSearch = '',
 	initialSignal,
@@ -283,8 +268,15 @@ export function SignalPickerDialog({
 		hovered: SignalID | undefined;
 	}>({focused: undefined, hovered: undefined});
 	const visibleOptions = useMemo(
-		() => canonicalPickerOptions(options.filter((signal) => includeHiddenSignals || !isHiddenPrototype(signal))),
-		[includeHiddenSignals, options],
+		() =>
+			canonicalPickerOptions(
+				options.filter(
+					(signal) =>
+						(includeHiddenSignals || !signalPickerHidden(signal)) &&
+						(includeParameterSignals || !isParameterSignal(signal)),
+				),
+			),
+		[includeHiddenSignals, includeParameterSignals, options],
 	);
 	const availableCategories = useMemo(
 		() =>

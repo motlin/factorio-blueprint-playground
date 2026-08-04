@@ -1,4 +1,4 @@
-import {fireEvent, render, screen, within} from '@testing-library/react';
+import {cleanup, fireEvent, render, screen, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {useState} from 'react';
 import {describe, expect, test, vi} from 'vite-plus/test';
@@ -907,6 +907,23 @@ test('filters hidden prototypes by default and admits them only through the expl
 		screen.getAllByRole('button', {name: /^Choose /}).map((button) => button.getAttribute('aria-label')),
 	).toStrictEqual(['Choose Iron plate']);
 
+	await user.click(screen.getByRole('tab', {name: 'Unsorted'}));
+	expect(
+		screen.getAllByRole('button', {name: /^Choose /}).map((button) => button.getAttribute('aria-label')),
+	).toStrictEqual(['Choose Fluid unknown']);
+
+	cleanup();
+	render(
+		<SignalPickerDialog
+			confirmationMode="required"
+			includeHiddenSignals
+			includeParameterSignals
+			title="All prototypes and parameters"
+			options={hiddenOptions}
+			onChoose={vi.fn<SignalPickerDialogProps['onChoose']>()}
+			onClose={vi.fn<() => void>()}
+		/>,
+	);
 	await user.click(screen.getByRole('tab', {name: 'Unsorted'}));
 	expect(
 		screen.getAllByRole('button', {name: /^Choose /}).map((button) => button.getAttribute('aria-label')),
