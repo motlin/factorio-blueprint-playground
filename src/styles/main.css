@@ -37,10 +37,11 @@ body {
 	position: relative;
 	display: inline-flex;
 	box-sizing: border-box;
-	min-height: calc(36px * var(--factorio-ui-density));
+	min-width: calc(108px * var(--factorio-ui-density));
+	min-height: calc(28px * var(--factorio-ui-density));
 	align-items: center;
 	justify-content: center;
-	padding: calc(8px * var(--factorio-ui-density)) calc(12px * var(--factorio-ui-density));
+	padding: 0 calc(8px * var(--factorio-ui-density));
 	border: 0;
 	background: var(--factorio-button-rest);
 	box-shadow:
@@ -94,7 +95,7 @@ body {
 	box-shadow:
 		inset 1px 1px 0 var(--factorio-button-disabled-light),
 		inset -1px -1px 0 var(--factorio-button-disabled-dark);
-	color: #818181;
+	color: rgb(179 179 179);
 	cursor: default;
 	filter: grayscale(0.75);
 }
@@ -124,6 +125,9 @@ body {
 	--factorio-button-disabled-dark: #47764a;
 }
 
+/* Source button font colors are black in all states, but black on the grey
+   control face fails WCAG contrast; the web keeps lighter text as an
+   intentional accessibility deviation. */
 .factorio-button--neutral {
 	color: var(--factorio-ui-text);
 }
@@ -165,6 +169,15 @@ body {
 	background: transparent;
 	box-shadow: none;
 	color: var(--factorio-ui-text);
+}
+
+/* tool_button_red: 28px square with 2px padding for icon-only red controls. */
+.factorio-button--delete {
+	width: calc(28px * var(--factorio-ui-density));
+	min-width: calc(28px * var(--factorio-ui-density));
+	height: calc(28px * var(--factorio-ui-density));
+	min-height: calc(28px * var(--factorio-ui-density));
+	padding: calc(2px * var(--factorio-ui-density));
 }
 
 .factorio-button--search svg,

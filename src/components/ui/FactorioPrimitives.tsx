@@ -18,7 +18,7 @@ function classes(...values: Array<string | undefined>): string {
 const factorioButtonStyleByKind: Record<FactorioButtonKind, string> = {
 	[FactorioButtonKind.Neutral]: 'button',
 	[FactorioButtonKind.Confirm]: 'green_button',
-	[FactorioButtonKind.Delete]: 'red_button',
+	[FactorioButtonKind.Delete]: 'tool_button_red',
 	[FactorioButtonKind.Search]: 'frame_action_button',
 	[FactorioButtonKind.Close]: 'frame_action_button',
 };

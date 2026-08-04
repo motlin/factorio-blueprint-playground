@@ -1421,7 +1421,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		).toStrictEqual([
 			{label: 'Copy planner string', style: 'button'},
 			{label: 'Export planner string', style: 'button'},
-			{label: 'Discard local planner', style: 'red_button'},
+			{label: 'Discard local planner', style: 'tool_button_red'},
 		]);
 
 		await user.click(within(toolbar).getByRole('button', {name: 'Copy planner string'}));
