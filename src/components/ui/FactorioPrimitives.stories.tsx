@@ -369,7 +369,7 @@ export const TooltipStates: Story = {
 			}),
 		).toStrictEqual([
 			{
-				backgroundColor: 'rgba(49, 48, 49, 0.94)',
+				backgroundColor: 'rgba(49, 48, 49, 0.88)',
 				bottomInsideViewport: true,
 				leftInsideViewport: true,
 				open: 'true',
@@ -379,7 +379,7 @@ export const TooltipStates: Story = {
 				topInsideViewport: true,
 			},
 			{
-				backgroundColor: 'rgba(49, 48, 49, 0.94)',
+				backgroundColor: 'rgba(49, 48, 49, 0.88)',
 				bottomInsideViewport: true,
 				leftInsideViewport: true,
 				open: 'true',

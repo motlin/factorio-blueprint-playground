@@ -440,7 +440,8 @@ body {
 	gap: calc(2px * var(--factorio-ui-density));
 	padding: 0 calc(4px * var(--factorio-ui-density));
 	border: 1px solid var(--factorio-ui-border);
-	background: rgb(49 48 49 / 94%);
+	/* tooltip_frame opacity 0.88 */
+	background: rgb(49 48 49 / 88%);
 	box-shadow:
 		inset 1px 1px 0 rgb(255 255 255 / 14%),
 		0 4px 12px rgb(0 0 0 / 78%);
@@ -469,10 +470,12 @@ body {
 	display: none;
 }
 
+/* tooltip_title_label is default-bold white; caption gold belongs to
+   frame_title only. */
 .factorio-tooltip__title {
 	display: block;
 	min-width: 0;
-	color: var(--factorio-ui-title);
+	color: #fff;
 	font-weight: 700;
 }
 
