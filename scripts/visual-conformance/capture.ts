@@ -124,6 +124,11 @@ async function inspectPage(page: Page): Promise<string[]> {
 					resolve();
 				});
 			});
+			if (document.activeElement !== element) {
+				// Inert or aria-hidden subtrees reject focus; controls the user
+				// cannot reach need no focus indicator.
+				continue;
+			}
 			const bounds = element.getBoundingClientRect();
 			if (
 				bounds.left < -1 ||
