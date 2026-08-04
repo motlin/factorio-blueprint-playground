@@ -37,11 +37,11 @@ body {
 	position: relative;
 	display: inline-flex;
 	box-sizing: border-box;
-	min-width: calc(108px * var(--factorio-ui-density));
-	min-height: calc(28px * var(--factorio-ui-density));
+	min-width: calc(var(--factorio-button-minimal-width, 108px) * var(--factorio-ui-density));
+	min-height: calc(var(--factorio-button-minimal-height, 28px) * var(--factorio-ui-density));
 	align-items: center;
 	justify-content: center;
-	padding: 0 calc(8px * var(--factorio-ui-density));
+	padding: 0 calc(var(--factorio-button-horizontal-padding, 8px) * var(--factorio-ui-density));
 	border: 0;
 	background: var(--factorio-button-rest);
 	box-shadow:
@@ -161,10 +161,10 @@ body {
    graphical set matches the frame background); only hover/click raise. */
 .factorio-button--search,
 .factorio-button--close {
-	width: calc(24px * var(--factorio-ui-density));
-	min-width: calc(24px * var(--factorio-ui-density));
-	height: calc(24px * var(--factorio-ui-density));
-	min-height: calc(24px * var(--factorio-ui-density));
+	width: calc(var(--factorio-frame-action-button-size, 24px) * var(--factorio-ui-density));
+	min-width: calc(var(--factorio-frame-action-button-size, 24px) * var(--factorio-ui-density));
+	height: calc(var(--factorio-frame-action-button-size, 24px) * var(--factorio-ui-density));
+	min-height: calc(var(--factorio-frame-action-button-size, 24px) * var(--factorio-ui-density));
 	padding: 0;
 	background: transparent;
 	box-shadow: none;
@@ -284,9 +284,13 @@ body {
 	display: flex;
 	box-sizing: border-box;
 	min-width: 0;
-	min-height: calc(32px * var(--factorio-ui-density));
+	min-height: calc(
+		(var(--factorio-frame-padding-top, 4px) * 2 + var(--factorio-header-filler-height, 24px)) *
+			var(--factorio-ui-density)
+	);
 	align-items: center;
-	padding: calc(4px * var(--factorio-ui-density)) calc(8px * var(--factorio-ui-density));
+	padding: calc(var(--factorio-frame-padding-top, 4px) * var(--factorio-ui-density))
+		calc(var(--factorio-frame-padding-left, 8px) * var(--factorio-ui-density));
 	background: var(--factorio-ui-dialog-face);
 }
 
@@ -301,16 +305,16 @@ body {
 	margin: calc(-3px * var(--factorio-ui-density)) 0 0;
 	padding-bottom: calc(3px * var(--factorio-ui-density));
 	color: var(--factorio-ui-title);
-	font-size: calc(18px * var(--factorio-ui-density));
+	font-size: calc(var(--factorio-frame-title-font-size, 18px) * var(--factorio-ui-density));
 	font-weight: 700;
-	line-height: calc(24px * var(--factorio-ui-density));
+	line-height: calc(var(--factorio-header-filler-height, 24px) * var(--factorio-ui-density));
 }
 
 .factorio-title-bar :where(h1, h2, h3, h4)::after {
 	min-width: calc(8px * var(--factorio-ui-density));
-	height: calc(24px * var(--factorio-ui-density));
+	height: calc(var(--factorio-header-filler-height, 24px) * var(--factorio-ui-density));
 	flex: 1 1 auto;
-	margin-left: calc(4px * var(--factorio-ui-density));
+	margin-left: calc(var(--factorio-draggable-space-left-margin, 4px) * var(--factorio-ui-density));
 	background: repeating-linear-gradient(
 		90deg,
 		rgb(0 0 0 / 16%) 0 calc(2px * var(--factorio-ui-density)),
@@ -435,13 +439,13 @@ body {
 	box-sizing: border-box;
 	width: max-content;
 	min-width: min(calc(50px * var(--factorio-ui-density)), calc(100vw - 20px));
-	max-width: min(calc(356px * var(--factorio-ui-density)), calc(100vw - 20px));
+	max-width: min(calc(var(--factorio-tooltip-max-width, 356px) * var(--factorio-ui-density)), calc(100vw - 20px));
 	flex-direction: column;
 	gap: calc(2px * var(--factorio-ui-density));
 	padding: 0 calc(4px * var(--factorio-ui-density));
 	border: 1px solid var(--factorio-ui-border);
 	/* tooltip_frame opacity 0.88 */
-	background: rgb(49 48 49 / 88%);
+	background: rgb(49 48 49 / var(--factorio-tooltip-opacity, 88%));
 	box-shadow:
 		inset 1px 1px 0 rgb(255 255 255 / 14%),
 		0 4px 12px rgb(0 0 0 / 78%);
