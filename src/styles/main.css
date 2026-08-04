@@ -153,21 +153,25 @@ body {
 	--factorio-button-disabled-dark: #8c4e4e;
 }
 
+/* frame_action_button: size 24, padding 0, flat at rest (its default
+   graphical set matches the frame background); only hover/click raise. */
 .factorio-button--search,
 .factorio-button--close {
-	width: calc(36px * var(--factorio-ui-density));
-	min-width: calc(36px * var(--factorio-ui-density));
-	height: calc(36px * var(--factorio-ui-density));
-	min-height: calc(36px * var(--factorio-ui-density));
-	padding: calc(6px * var(--factorio-ui-density));
+	width: calc(24px * var(--factorio-ui-density));
+	min-width: calc(24px * var(--factorio-ui-density));
+	height: calc(24px * var(--factorio-ui-density));
+	min-height: calc(24px * var(--factorio-ui-density));
+	padding: 0;
+	background: transparent;
+	box-shadow: none;
 	color: var(--factorio-ui-text);
 }
 
 .factorio-button--search svg,
 .factorio-button--close svg,
 .factorio-button--delete svg {
-	width: calc(18px * var(--factorio-ui-density));
-	height: calc(18px * var(--factorio-ui-density));
+	width: calc(16px * var(--factorio-ui-density));
+	height: calc(16px * var(--factorio-ui-density));
 }
 
 .factorio-button--search:hover:not(:disabled),

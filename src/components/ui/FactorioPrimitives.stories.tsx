@@ -242,8 +242,8 @@ export const ButtonStates: Story = {
 			['rgb(100, 100, 100)', 'rgb(139, 103, 69)', 'rgb(100, 100, 100)', 'rgb(177, 105, 37)', 'rgb(61, 61, 61)'],
 			['rgb(94, 182, 99)', 'rgb(146, 232, 151)', 'rgb(94, 182, 99)', 'rgb(63, 145, 70)', 'rgb(40, 74, 43)'],
 			['rgb(254, 90, 90)', 'rgb(255, 155, 155)', 'rgb(254, 90, 90)', 'rgb(196, 62, 62)', 'rgb(87, 31, 31)'],
-			['rgb(100, 100, 100)', 'rgb(139, 103, 69)', 'rgb(100, 100, 100)', 'rgb(177, 105, 37)', 'rgb(61, 61, 61)'],
-			['rgb(100, 100, 100)', 'rgb(139, 103, 69)', 'rgb(100, 100, 100)', 'rgb(177, 105, 37)', 'rgb(61, 61, 61)'],
+			['rgba(0, 0, 0, 0)', 'rgb(139, 103, 69)', 'rgba(0, 0, 0, 0)', 'rgb(177, 105, 37)', 'rgb(61, 61, 61)'],
+			['rgba(0, 0, 0, 0)', 'rgb(139, 103, 69)', 'rgba(0, 0, 0, 0)', 'rgb(177, 105, 37)', 'rgb(61, 61, 61)'],
 		]);
 		await expect(
 			buttonKinds.map(({kind}) => {
@@ -288,7 +288,7 @@ export const ButtonStates: Story = {
 				disabled: true,
 				disabledAria: 'true',
 				focusOutline: 'rgb(227, 152, 39)',
-				height: '36px',
+				height: '24px',
 				square: true,
 				style: 'frame_action_button',
 			},
@@ -296,7 +296,7 @@ export const ButtonStates: Story = {
 				disabled: true,
 				disabledAria: 'true',
 				focusOutline: 'rgb(227, 152, 39)',
-				height: '36px',
+				height: '24px',
 				square: true,
 				style: 'frame_action_button',
 			},
