@@ -19,7 +19,7 @@ function classes(...values: Array<string | undefined>): string {
  * Generated style.lua facts exposed as CSS custom properties so the stylesheet
  * consumes pinned source constants instead of duplicating them.
  */
-export const factorioStyleVariables: React.CSSProperties & Record<`--factorio-${string}`, string> = {
+const factorioStyleVariables: React.CSSProperties & Record<`--factorio-${string}`, string> = {
 	'--factorio-button-horizontal-padding': `${gameUiSpec.styles.buttonHorizontalPadding.toString()}px`,
 	'--factorio-button-minimal-height': `${gameUiSpec.styles.buttonMinimalHeight.toString()}px`,
 	'--factorio-button-minimal-width': `${gameUiSpec.styles.buttonMinimalWidth.toString()}px`,
