@@ -1167,13 +1167,35 @@ test('rejects quality controls in immediate-selection mode', () => {
 	}).toThrow('Immediate signal selection cannot include staged quality controls.');
 });
 
+test('preselects the only eligible option so confirmation is immediately available', () => {
+	const onChoose = vi.fn<SignalPickerDialogProps['onChoose']>();
+	render(
+		<SignalPickerDialog
+			confirmationMode="required"
+			title="Single option"
+			options={[qualitySignal]}
+			onChoose={onChoose}
+			onClose={vi.fn<() => void>()}
+		/>,
+	);
+
+	expect({
+		confirmDisabled: screen.getByRole<HTMLButtonElement>('button', {name: 'Confirm'}).disabled,
+		selected: screen.getByRole('button', {name: 'Choose Test entity'}).getAttribute('aria-pressed'),
+	}).toStrictEqual({
+		confirmDisabled: false,
+		selected: 'true',
+	});
+	cleanup();
+});
+
 test('keeps required confirmation disabled and ignores Enter until a valid signal is staged', () => {
 	const onChoose = vi.fn<SignalPickerDialogProps['onChoose']>();
 	render(
 		<SignalPickerDialog
 			confirmationMode="required"
 			title="Required confirmation"
-			options={[qualitySignal]}
+			options={[qualitySignal, {type: 'entity', name: 'transport-belt'}]}
 			onChoose={onChoose}
 			onClose={vi.fn<() => void>()}
 		/>,

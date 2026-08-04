@@ -697,7 +697,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			mappings: ['Mapping from Transport belt to Fast transport belt', 'Mapping from Fast inserter to Inserter'],
 			renderCommits: {
 				firstMapping: 6,
-				iconChange: 6,
+				iconChange: 7,
 				initial: 1,
 				loadEmptyPlanner: 4,
 				openPlanner: 1,

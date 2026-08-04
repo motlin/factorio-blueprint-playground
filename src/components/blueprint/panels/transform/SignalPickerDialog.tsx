@@ -350,6 +350,22 @@ export function SignalPickerDialog({
 		selectedOptionIndex >= 0 && optionAllowed(filteredOptions[selectedOptionIndex])
 			? selectedOptionIndex
 			: firstAllowedOptionIndex;
+	/* SelectListGui::checkPreselectOnlySlot: a picker with exactly one eligible
+	   option opens with it staged. Confirming an EMPTY value (allowed when the
+	   source AllowedFilterEmptiness is not Filled) stays unsupported; the web
+	   clears endpoints through their explicit right-click/Delete affordance
+	   instead. */
+	useEffect(() => {
+		if (selectedSignal !== undefined || visibleOptions.length !== 1) {
+			return;
+		}
+		const onlyOption = visibleOptions[0];
+		const staged = signalWithCurrentQuality(onlyOption, qualityMode, qualitySelection, qualityComparator);
+		if (isSelectionAllowed?.(staged) ?? true) {
+			setSelectedSignal(onlyOption);
+		}
+	}, [isSelectionAllowed, qualityComparator, qualityMode, qualitySelection, selectedSignal, visibleOptions]);
+
 	const confirmedSignal =
 		selectedSignal === undefined
 			? undefined
