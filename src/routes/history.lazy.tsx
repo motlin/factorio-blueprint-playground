@@ -1,4 +1,4 @@
-import {createLazyFileRoute} from '@tanstack/react-router';
+import {createLazyFileRoute, Link} from '@tanstack/react-router';
 import {useLiveQuery} from 'dexie-react-hooks';
 import {useState} from 'react';
 
@@ -8,52 +8,76 @@ import {downloadBlueprint, sanitizeFilename} from '../components/history/utils/f
 import {EmptyHistoryState} from '../components/history/views/EmptyHistoryState';
 import {LoadingState} from '../components/history/views/LoadingState';
 import {Button} from '../components/ui/Button';
+import {FactorioButton, FactorioButtonKind} from '../components/ui/FactorioUi';
 import {ErrorAlert} from '../components/ui/ErrorAlert';
 import {Panel} from '../components/ui/Panel';
 import {logger} from '../lib/sentry';
-import {BlueprintWrapper} from '../parsing/BlueprintWrapper';
-import {deserializeBlueprintNoThrow, serializeBlueprint} from '../parsing/blueprintParser';
-import type {BlueprintString, BlueprintStringWithIndex, Icon, SignalType} from '../parsing/types';
-import {type DatabaseBlueprint, db} from '../storage/db';
-
-const SIGNAL_TYPES = new Set<string>([
-	'item',
-	'fluid',
-	'virtual',
-	'entity',
-	'technology',
-	'recipe',
-	'item-group',
-	'tile',
-	'virtual-signal',
-	'achievement',
-	'equipment',
-	'planet',
-	'quality',
-	'utility',
-	'space-location',
-]);
-
-function toSignalType(type: string | undefined): SignalType | undefined {
-	if (type != null && SIGNAL_TYPES.has(type)) {
-		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- membership checked against SIGNAL_TYPES set above
-		return type as SignalType;
-	}
-	return undefined;
-}
+import {type BlueprintInfo, BlueprintWrapper} from '../parsing/BlueprintWrapper';
+import {deserializeBlueprint, deserializeBlueprintNoThrow, serializeBlueprint} from '../parsing/blueprintParser';
+import type {BlueprintString} from '../parsing/types';
+import {type BlueprintGameData, type DatabaseBlueprintType, db, type ImportHistoryRecord} from '../storage/db';
+import {makeBook, splitBook} from '../transform/bookOps';
 
 export const Route = createLazyFileRoute('/history')({
 	component: History,
 });
 
+const DATABASE_TYPE_BY_BLUEPRINT_TYPE: Record<BlueprintInfo['type'], DatabaseBlueprintType> = {
+	blueprint: 'blueprint',
+	'blueprint-book': 'blueprint_book',
+	'upgrade-planner': 'upgrade_planner',
+	'deconstruction-planner': 'deconstruction_planner',
+};
+
+function getGameData(blueprint: BlueprintString): BlueprintGameData {
+	const info = new BlueprintWrapper(blueprint).getInfo();
+	return {
+		type: DATABASE_TYPE_BY_BLUEPRINT_TYPE[info.type],
+		label: info.label,
+		description: info.description,
+		gameVersion: info.version.toString(),
+		icons: (info.icons ?? []).map((icon) => ({
+			type: icon.signal.type,
+			name: icon.signal.name,
+			...(icon.signal.quality === undefined ? {} : {quality: icon.signal.quality}),
+		})),
+	};
+}
+
+export async function addSplitBookToHistory(book: BlueprintString): Promise<ImportHistoryRecord[]> {
+	if (book.blueprint_book === undefined) {
+		throw new Error('Cannot split a blueprint that is not a book');
+	}
+
+	const addedBlueprints: ImportHistoryRecord[] = [];
+	for (const child of splitBook(book)) {
+		addedBlueprints.push(
+			await db.importToHistory({
+				data: serializeBlueprint(child),
+				gameData: getGameData(child),
+				fetchMethod: 'data',
+			}),
+		);
+	}
+
+	return addedBlueprints;
+}
+
+/**
+ * Browser import-history surface contract:
+ *
+ * Each successful import appends a row, including repeated imports of identical
+ * data. Rows retain source and selection metadata for reopening, but they are not
+ * Blueprint Library inventory slots. Explicitly saved planners and other records
+ * live in the separate ordered library store.
+ */
 function History() {
 	const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set<string>());
 	const [error, setError] = useState<Error | null>(null);
 
-	const blueprints = useLiveQuery<DatabaseBlueprint[]>(async () => {
+	const blueprints = useLiveQuery<ImportHistoryRecord[]>(async () => {
 		try {
-			const result = await db.blueprints.orderBy('metadata.lastUpdatedOn').reverse().toArray();
-			return result;
+			return await db.listHistory();
 		} catch (loadError: unknown) {
 			logger.error(
 				'Failed to load blueprint history',
@@ -69,13 +93,13 @@ function History() {
 
 	const isLoading = blueprints === undefined;
 
-	const toggleSelection = (sha: string): void => {
+	const toggleSelection = (id: string): void => {
 		setSelectedItems((prev: Set<string>) => {
 			const newSelection = new Set<string>(prev);
-			if (newSelection.has(sha)) {
-				newSelection.delete(sha);
+			if (newSelection.has(id)) {
+				newSelection.delete(id);
 			} else {
-				newSelection.add(sha);
+				newSelection.add(id);
 			}
 			return newSelection;
 		});
@@ -83,8 +107,7 @@ function History() {
 
 	const selectAll = (): void => {
 		if (blueprints == null) return;
-		const shaArray = blueprints.map((bp: DatabaseBlueprint): string => bp.metadata.sha);
-		setSelectedItems(new Set<string>(shaArray));
+		setSelectedItems(new Set<string>(blueprints.map((blueprint) => blueprint.id)));
 	};
 
 	const selectNone = (): void => {
@@ -94,7 +117,7 @@ function History() {
 	const downloadAsBook = (): void => {
 		try {
 			if (blueprints == null) return;
-			const selectedBlueprints = blueprints.filter((bp: DatabaseBlueprint) => selectedItems.has(bp.metadata.sha));
+			const selectedBlueprints = blueprints.filter((blueprint) => selectedItems.has(blueprint.id));
 			if (selectedBlueprints.length === 0) return;
 
 			// If only one blueprint is selected, download it directly
@@ -107,33 +130,15 @@ function History() {
 			}
 
 			const parsedBlueprints: BlueprintString[] = selectedBlueprints
-				.map((bp: DatabaseBlueprint) => deserializeBlueprintNoThrow(bp.metadata.data))
+				.map((blueprint) => deserializeBlueprintNoThrow(blueprint.metadata.data))
 				.filter((bp): bp is BlueprintString => bp !== null);
-
-			const versions = parsedBlueprints
-				.map((parsedBp) => new BlueprintWrapper(parsedBp))
-				.map((wrapper) => wrapper.getVersion());
-
-			const maxVersion: number = Math.max(0, ...versions);
-
-			const processedBlueprints: BlueprintStringWithIndex[] = parsedBlueprints.map((parsedBp, idx) => ({
-				index: idx,
-				...parsedBp,
-			}));
 
 			const date = new Date();
 			const formattedDate = formatDateForExport(date);
-
-			const blueprintBookData: BlueprintString = {
-				blueprint_book: {
-					item: 'blueprint-book',
-					label: `https://factorio-blueprint-playground.pages.dev/history Export on ${formattedDate}`,
-					icons: createBookIcons(selectedBlueprints),
-					blueprints: processedBlueprints,
-					active_index: 0,
-					version: maxVersion,
-				},
-			};
+			const blueprintBookData = makeBook(
+				parsedBlueprints,
+				`https://factorio-blueprint-playground.pages.dev/history Export on ${formattedDate}`,
+			);
 
 			const serializedBook = serializeBlueprint(blueprintBookData);
 			downloadBlueprint(serializedBook, 'blueprint-history-export');
@@ -150,6 +155,32 @@ function History() {
 		}
 	};
 
+	const splitSelectedBooks = async (): Promise<void> => {
+		if (blueprints == null) return;
+
+		const selectedBooks = blueprints.filter(
+			(blueprint) => selectedItems.has(blueprint.id) && blueprint.gameData.type === 'blueprint_book',
+		);
+		if (selectedBooks.length === 0) return;
+
+		try {
+			for (const book of selectedBooks) {
+				await addSplitBookToHistory(deserializeBlueprint(book.metadata.data));
+			}
+			setSelectedItems(new Set<string>());
+		} catch (splitError: unknown) {
+			logger.error(
+				'Failed to split blueprint books',
+				splitError instanceof Error ? splitError : new Error(String(splitError)),
+				{
+					context: 'History.splitSelectedBooks',
+					selectedCount: selectedBooks.length,
+				},
+			);
+			setError(splitError instanceof Error ? splitError : new Error('Failed to split blueprint books'));
+		}
+	};
+
 	const deleteSelected = async (): Promise<void> => {
 		const size: number = selectedItems.size;
 		if (size === 0) return;
@@ -162,7 +193,7 @@ function History() {
 
 		try {
 			const selectedItemsArray: string[] = Array.from(selectedItems);
-			await db.removeBulkBlueprints(selectedItemsArray);
+			await db.removeHistoryRecords(selectedItemsArray);
 			setSelectedItems(new Set<string>());
 		} catch (deleteError: unknown) {
 			logger.error(
@@ -176,37 +207,6 @@ function History() {
 			);
 			setError(deleteError instanceof Error ? deleteError : new Error('Failed to delete blueprints'));
 		}
-	};
-
-	const createBookIcons = (selectedBlueprints: DatabaseBlueprint[]): Icon[] => {
-		const icons: Icon[] = [];
-
-		// Take the first icon from the first 4 blueprints that have icons
-		for (const bp of selectedBlueprints) {
-			if (bp.gameData.icons.length > 0 && icons.length < 4) {
-				icons.push({
-					signal: {
-						type: toSignalType(bp.gameData.icons[0].type) ?? 'item',
-						name: bp.gameData.icons[0].name,
-					},
-					index: icons.length + 1,
-				});
-			}
-
-			if (icons.length >= 4) break;
-		}
-
-		if (icons.length === 0) {
-			icons.push({
-				signal: {
-					type: 'item',
-					name: 'blueprint-book',
-				},
-				index: 1,
-			});
-		}
-
-		return icons;
 	};
 
 	if (isLoading) {
@@ -234,23 +234,39 @@ function History() {
 		return <EmptyHistoryState />;
 	}
 
+	const selectedBookCount = blueprints.filter(
+		(blueprint) => selectedItems.has(blueprint.id) && blueprint.gameData.type === 'blueprint_book',
+	).length;
+
 	return (
 		<Panel title="Blueprint History">
-			<div>
-				<Button disabled={selectedItems.size === 0} onClick={downloadAsBook} data-testid="download-button">
+			<p className="history-library-note">
+				This is the full chronological History shelf. Explicitly saved blueprints, books, and planners live in
+				the <Link to="/library">Blueprint Library</Link>.
+			</p>
+			<div className="history-toolbar" role="toolbar" aria-label="History actions">
+				<FactorioButton
+					kind={FactorioButtonKind.Confirm}
+					disabled={selectedItems.size === 0}
+					onClick={downloadAsBook}
+					data-testid="download-button"
+				>
 					Download Selected as Book
-				</Button>
-				<Button
+				</FactorioButton>
+				<FactorioButton
 					disabled={selectedItems.size === 0}
 					onClick={() => void deleteSelected()}
 					data-testid="delete-button"
 				>
 					Delete Selected
-				</Button>
-				<Button onClick={selectAll}>Select All</Button>
-				<Button onClick={selectNone} disabled={selectedItems.size === 0}>
+				</FactorioButton>
+				<FactorioButton disabled={selectedBookCount === 0} onClick={() => void splitSelectedBooks()}>
+					Split Selected Books
+				</FactorioButton>
+				<FactorioButton onClick={selectAll}>Select All</FactorioButton>
+				<FactorioButton onClick={selectNone} disabled={selectedItems.size === 0}>
 					Clear Selection
-				</Button>
+				</FactorioButton>
 			</div>
 
 			<BlueprintHistoryTable

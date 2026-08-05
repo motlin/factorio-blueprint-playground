@@ -7,8 +7,7 @@ import type {BlueprintString} from '../../../parsing/types';
 import {ButtonGreen} from '../../ui/ButtonGreen';
 import {InsetLight} from '../../ui/InsetLight';
 import {Panel} from '../../ui/Panel';
-
-const IOS_DEVICE_REGEX = /ipad|ipod|iphone/i;
+import {copyToClipboard} from '../../history/utils/fileUtils';
 
 interface ExportActionsProps {
 	blueprint?: BlueprintString;
@@ -16,79 +15,9 @@ interface ExportActionsProps {
 	title: string;
 }
 
-async function copyToClipboard(text: string): Promise<boolean> {
-	// Try the modern Clipboard API first
-	try {
-		await navigator.clipboard.writeText(text);
-		return true;
-	} catch (err) {
-		console.error('Clipboard API failed:', err);
-	}
-
-	// If Clipboard API fails or isn't available, try ClipboardItem API
-	try {
-		const type = 'text/plain';
-		const blob = new Blob([text], {type});
-		const data = [new ClipboardItem({[type]: blob})];
-		await navigator.clipboard.write(data);
-		return true;
-	} catch (err) {
-		console.error('ClipboardItem API failed:', err);
-	}
-
-	// Final fallback using Selection API
-	try {
-		const textArea = document.createElement('textarea');
-		textArea.value = text;
-
-		// Avoid scrolling to bottom
-		textArea.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 2em;
-            height: 2em;
-            padding: 0;
-            border: none;
-            outline: none;
-            boxShadow: none;
-            background: transparent;
-        `;
-
-		document.body.appendChild(textArea);
-
-		if (IOS_DEVICE_REGEX.exec(navigator.userAgent)) {
-			// Handle iOS devices
-			textArea.contentEditable = 'true';
-			textArea.readOnly = false;
-
-			const range = document.createRange();
-			range.selectNodeContents(textArea);
-
-			const selection = window.getSelection();
-			if (selection) {
-				selection.removeAllRanges();
-				selection.addRange(range);
-				textArea.setSelectionRange(0, 999999);
-			}
-		} else {
-			// All other devices
-			textArea.select();
-		}
-
-		// oxlint-disable-next-line typescript/no-deprecated -- execCommand is the last-resort clipboard fallback for browsers lacking the async Clipboard API
-		const successful = document.execCommand('copy');
-		document.body.removeChild(textArea);
-
-		if (!successful) {
-			throw new Error('Copy command failed');
-		}
-
-		return true;
-	} catch (err) {
-		console.error('Selection API failed:', err);
-		return false;
-	}
+interface BlueprintExportButtonsProps {
+	blueprint: BlueprintString;
+	path?: string;
 }
 
 function getFilename(blueprint: BlueprintString, path?: string): string {
@@ -137,9 +66,7 @@ const ButtonWithIcon = ({icon: Icon, text, onClick}: ButtonWithIconProps) => (
 	</ButtonGreen>
 );
 
-const ExportActionsComponent = ({blueprint, path, title}: ExportActionsProps) => {
-	if (!blueprint) return null;
-
+function BlueprintExportButtons({blueprint, path}: BlueprintExportButtonsProps) {
 	const handleCopyString = () => {
 		const str = serializeBlueprint(blueprint);
 		void copyToClipboard(str);
@@ -157,14 +84,22 @@ const ExportActionsComponent = ({blueprint, path, title}: ExportActionsProps) =>
 	};
 
 	return (
+		<div className="flex-space-between">
+			<ButtonWithIcon icon={ClipboardCopy} text="Copy String" onClick={handleCopyString} />
+			<ButtonWithIcon icon={FileJson} text="Copy JSON" onClick={handleCopyJSON} />
+			<ButtonWithIcon icon={Download} text="Download String" onClick={handleDownloadString} />
+		</div>
+	);
+}
+
+const ExportActionsComponent = ({blueprint, path, title}: ExportActionsProps) => {
+	if (!blueprint) return null;
+
+	return (
 		<Panel title={`Export ${title}`}>
 			<InsetLight>
 				<h3>{title}</h3>
-				<div className="flex-space-between">
-					<ButtonWithIcon icon={ClipboardCopy} text="Copy String" onClick={handleCopyString} />
-					<ButtonWithIcon icon={FileJson} text="Copy JSON" onClick={handleCopyJSON} />
-					<ButtonWithIcon icon={Download} text="Download String" onClick={handleDownloadString} />
-				</div>
+				<BlueprintExportButtons blueprint={blueprint} path={path} />
 			</InsetLight>
 		</Panel>
 	);

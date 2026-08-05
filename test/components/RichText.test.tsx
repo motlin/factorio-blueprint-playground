@@ -32,8 +32,7 @@ describe('RichText', () => {
 		const mainIcon = within(wrapper).getByTestId('icon');
 		expect(mainIcon.getAttribute('src')).toBe('https://factorio-icon-cdn.pages.dev/item/iron-plate.webp');
 
-		const qualityIcon = within(wrapper).getByTestId('quality');
-		expect(qualityIcon.getAttribute('src')).toBe('https://factorio-icon-cdn.pages.dev/quality/normal.webp');
+		expect(within(wrapper).queryByTestId('quality')).toBeNull();
 	});
 
 	it('renders entities with quality correctly', () => {
@@ -73,9 +72,9 @@ describe('RichText', () => {
 			);
 
 			const qualityIcons = getAllByTestId('quality');
-			expect(qualityIcons.length).toBe(qualities.length);
+			expect(qualityIcons.length).toBe(qualities.length - 1);
 
-			qualities.forEach((quality, index) => {
+			qualities.slice(1).forEach((quality, index) => {
 				const icon = qualityIcons[index];
 				expect(icon.getAttribute('src')).toBe(`https://factorio-icon-cdn.pages.dev/quality/${quality}.webp`);
 			});
@@ -187,7 +186,7 @@ describe('RichText', () => {
 
 	it('handles mixed content correctly', () => {
 		const complexText =
-			'[item=iron-plate,quality=normal] Iron plate with [color=red]red[/color] text and [font=default-bold]bold[/font] styling';
+			'[item=iron-plate,quality=rare] Iron plate with [color=red]red[/color] text and [font=default-bold]bold[/font] styling';
 		const renderedResult = render(<RichText text={complexText} iconSize="large" />);
 
 		const richTextDiv = within(renderedResult.container).getByTestId('richtext');
@@ -200,16 +199,26 @@ describe('RichText', () => {
 		const mainIcon = within(wrapper).getByTestId('icon');
 		expect(mainIcon).toHaveAttribute('src', 'https://factorio-icon-cdn.pages.dev/item/iron-plate.webp');
 		expect(mainIcon).toHaveAttribute('title', 'item: iron-plate');
-		expect(mainIcon).toHaveAttribute('alt', 'iron-plate');
+		expect(mainIcon).toHaveAttribute('alt', '');
+		expect(mainIcon).toHaveAttribute('aria-hidden', 'true');
 		expect(mainIcon).toHaveAttribute('loading', 'lazy');
 		expect(mainIcon.className).not.toBe('');
+		expect(wrapper).toHaveAttribute('role', 'img');
+		expect(wrapper).toHaveAttribute('aria-label', 'item: iron-plate, Rare quality');
 
 		const qualityIcon = within(wrapper).getByTestId('quality');
-		expect(qualityIcon).toHaveAttribute('src', 'https://factorio-icon-cdn.pages.dev/quality/normal.webp');
-		expect(qualityIcon).toHaveAttribute('title', 'Quality: normal');
-		expect(qualityIcon).toHaveAttribute('alt', 'normal');
-		expect(qualityIcon).toHaveAttribute('loading', 'lazy');
-		expect(qualityIcon.className).not.toBe('');
+		expect(qualityIcon.className).toMatch(/\S/u);
+		expect({
+			alt: qualityIcon.getAttribute('alt'),
+			loading: qualityIcon.getAttribute('loading'),
+			src: qualityIcon.getAttribute('src'),
+			title: qualityIcon.getAttribute('title'),
+		}).toStrictEqual({
+			alt: '',
+			loading: 'lazy',
+			src: 'https://factorio-icon-cdn.pages.dev/quality/rare.webp',
+			title: 'Rare quality',
+		});
 
 		const formattedSpans = within(richTextDiv).getAllByTestId('formatted-text');
 		expect(formattedSpans).toHaveLength(5);

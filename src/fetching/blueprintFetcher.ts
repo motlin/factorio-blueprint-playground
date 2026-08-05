@@ -4,7 +4,7 @@ import {deserializeBlueprint} from '../parsing/blueprintParser';
 import type {BlueprintString} from '../parsing/types';
 
 const FACTORIO_SCHOOL_URL_REGEX = /(?:www\.)?factorio\.school\/view\/([^/\s#]+)/;
-const FACTORIO_PRINTS_URL_REGEX = /(?:www\.)?factorioprints\.com\/view\/([^/\s#]+)/;
+const FACTORIO_PRINTS_URL_REGEX = /(?:www\.)?factorioprints\.(?:com|xyz)\/view\/([^/\s#]+)/;
 const HTTP_URL_REGEX = /^https?:\/\//i;
 
 export type BlueprintFetchMethod = 'url' | 'json' | 'data';
@@ -282,6 +282,8 @@ const SOURCE_CONFIGS: Record<string, BlueprintFetchSource | undefined> = {
 	'www.factorio.school': factorioSchoolSourceConfig,
 	'factorioprints.com': factorioPrintsSourceConfig,
 	'www.factorioprints.com': factorioPrintsSourceConfig,
+	'factorioprints.xyz': factorioPrintsSourceConfig,
+	'www.factorioprints.xyz': factorioPrintsSourceConfig,
 	'cdn.factoriobin.com': factorioBinCdnSourceConfig,
 	'factoriobin.com': factorioBinDirectSourceConfig,
 	'www.factoriobin.com': factorioBinDirectSourceConfig,

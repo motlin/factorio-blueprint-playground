@@ -2,6 +2,7 @@ import {describe, expect, it} from 'vite-plus/test';
 
 import sourceLockJson from '../../../scripts/mod-db/source-lock.json';
 import {parseSourceLock} from '../../../scripts/mod-db/sources';
+import gameDataJson from '../../../src/generated/game-data.json';
 import databaseJson from '../../../src/generated/mod-db.json';
 import {classify} from '../../../src/parsing/modDetection/classify';
 import {extractNames} from '../../../src/parsing/modDetection/nameExtractor';
@@ -36,10 +37,69 @@ describe('generated mod database', () => {
 			generatedAt: database.generatedAt,
 			factoriolabCommit: database.factoriolabCommit,
 			factorioDataVersion: database.factorioDataVersion,
+			gameDataFactorioVersion: gameDataJson.factorioDataVersion,
+			nextUpgradeCount: gameDataJson.nextUpgrades.length,
+			pickerSignalCount: gameDataJson.pickerSignals.length,
+			pickerSignalLayouts: ['transport-belt', 'locomotive', 'loader'].map((name) =>
+				gameDataJson.pickerSignals.find((signal) => signal.type === 'item' && signal.name === name),
+			),
+			upgradeEntityItemCount: gameDataJson.upgradeEntityItems.length,
+			upgradeEntityItems: ['accumulator', 'assembling-machine-1', 'transport-belt', 'bottomless-chest'].map(
+				(name) => gameDataJson.upgradeEntityItems.includes(name),
+			),
+			upgradeModuleItems: gameDataJson.upgradeModuleItems,
+			virtualSignalCount: gameDataJson.virtualSignals.length,
 		}).toStrictEqual({
 			generatedAt: sourceLock.factorioLab.committedAt.slice(0, 10),
 			factoriolabCommit: sourceLock.factorioLab.commit,
 			factorioDataVersion: sourceLock.factorioData.version,
+			gameDataFactorioVersion: sourceLock.factorioData.version,
+			nextUpgradeCount: 14,
+			pickerSignalCount: 1249,
+			pickerSignalLayouts: [
+				{
+					group: 'logistics',
+					hidden: false,
+					name: 'transport-belt',
+					order: 'a[transport-belt]-a[transport-belt]',
+					subgroup: 'belt',
+					type: 'item',
+				},
+				{
+					group: 'logistics',
+					hidden: false,
+					name: 'locomotive',
+					order: 'c[rolling-stock]-a[locomotive]',
+					subgroup: 'train-transport',
+					type: 'item',
+				},
+				{
+					group: 'logistics',
+					hidden: true,
+					name: 'loader',
+					order: 'd[loader]-a[basic-loader]',
+					subgroup: 'belt',
+					type: 'item',
+				},
+			],
+			upgradeEntityItemCount: 112,
+			upgradeEntityItems: [true, true, true, false],
+			upgradeModuleItems: [
+				'speed-module',
+				'speed-module-2',
+				'speed-module-3',
+				'efficiency-module',
+				'efficiency-module-2',
+				'efficiency-module-3',
+				'productivity-module',
+				'productivity-module-2',
+				'productivity-module-3',
+				'quality-module',
+				'quality-module-2',
+				'quality-module-3',
+				'empty-module-slot',
+			],
+			virtualSignalCount: 155,
 		});
 	});
 
