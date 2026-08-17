@@ -180,6 +180,21 @@ describe('BlueprintDatabase', () => {
 		});
 	});
 
+	describe('removeBulkBlueprints', () => {
+		it('should remove an existing blueprint', async () => {
+			const blueprint = await db.addBlueprint(simpleBlueprint, {
+				type: 'blueprint',
+				label: 'Blueprint to Remove',
+				icons: [],
+			});
+
+			await db.removeBulkBlueprints([blueprint.metadata.sha]);
+
+			const removedBlueprint = await db.getBlueprint(blueprint.metadata.sha);
+			expect(removedBlueprint).toBeNull();
+		});
+	});
+
 	describe('listBlueprints', () => {
 		it('should return blueprints ordered by lastUpdatedOn in descending order', async () => {
 			await db.clearAll();

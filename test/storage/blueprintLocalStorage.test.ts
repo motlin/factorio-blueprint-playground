@@ -30,12 +30,7 @@ vi.mock('../../src/parsing/blueprintParser', () => {
 });
 
 import {deserializeBlueprint, type serializeBlueprint} from '../../src/parsing/blueprintParser';
-import {
-	addBlueprint,
-	isFunctionallyEquivalent,
-	updateBlueprint,
-	updateBlueprintMetadata,
-} from '../../src/state/blueprintLocalStorage';
+import {addBlueprint, isFunctionallyEquivalent, updateBlueprintMetadata} from '../../src/state/blueprintLocalStorage';
 import {type DatabaseBlueprint, db, generateSha} from '../../src/storage/db';
 import {readFixtureFile} from '../fixtures/utils';
 
@@ -202,26 +197,6 @@ describe('blueprintLocalStorage', () => {
 	});
 
 	describe('updateBlueprint', () => {
-		it('should update an existing blueprint', async () => {
-			const result = await updateBlueprint('test-sha', {
-				gameData: {
-					label: 'Updated Label',
-				},
-			});
-
-			expect(mockUpdateBlueprint).toHaveBeenCalledTimes(1);
-			expect(mockUpdateBlueprint).toHaveBeenCalledWith(
-				'test-sha',
-				{
-					gameData: {
-						label: 'Updated Label',
-					},
-				},
-				{updateTimestamp: true},
-			);
-			expect(result).toBeDefined();
-		});
-
 		it('should update metadata without affecting its position in history', async () => {
 			const result = await updateBlueprintMetadata('test-sha', {
 				selection: '1.2.3',
@@ -238,18 +213,6 @@ describe('blueprintLocalStorage', () => {
 				{updateTimestamp: false},
 			);
 			expect(result).toBeDefined();
-		});
-
-		it('should return null if blueprint does not exist', async () => {
-			mockUpdateBlueprint.mockResolvedValueOnce(null);
-
-			const result = await updateBlueprint('non-existent-sha', {
-				gameData: {
-					label: 'Updated Label',
-				},
-			});
-
-			expect(result).toBeNull();
 		});
 	});
 
@@ -283,11 +246,12 @@ describe('blueprintLocalStorage', () => {
 			// We need to ensure findBlueprintByData actually gets called with simpleBlueprint
 			mockFindBlueprintByData.mockReset();
 			const mockDataImplementation = async (data: string) => {
+				await Promise.resolve();
 				// Make sure we only return the existing blueprint for the test blueprint data
 				if (data === simpleBlueprint) {
-					return Promise.resolve(existingBlueprint);
+					return existingBlueprint;
 				}
-				return Promise.resolve(null);
+				return null;
 			};
 			mockFindBlueprintByData.mockImplementation(mockDataImplementation);
 

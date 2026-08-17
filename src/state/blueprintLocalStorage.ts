@@ -108,7 +108,7 @@ export async function addBlueprint(
 	return blueprint;
 }
 
-export async function updateBlueprint(
+async function updateBlueprint(
 	sha: string,
 	changes: {
 		metadata?: Partial<Omit<BlueprintStorageMetadata, 'sha'>>;
