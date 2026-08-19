@@ -94,10 +94,10 @@ interface UpgradePlannerDialogProps {
 
 interface UpgradePlannerRecordMetadataProps {
 	description: string;
-	icons: readonly SignalID[];
+	icons: readonly (SignalID | undefined)[];
 	label: string;
 	onDescriptionChange: (description: string) => void;
-	onIconsChange: (icons: SignalID[]) => void;
+	onIconsChange: (icons: Array<SignalID | undefined>) => void;
 	onLabelChange: (label: string) => void;
 }
 
@@ -365,7 +365,10 @@ export function UpgradePlannerDialog({
 	const configurationHeadingId = useId();
 	const recordHeadingId = useId();
 	const [previewIconPickerIndex, setPreviewIconPickerIndex] = useState<number>();
-	const previewIconOptions = chatIconPickerOptions([...mappings.sourceOptions, ...recordMetadata.icons]);
+	const previewIconOptions = chatIconPickerOptions([
+		...mappings.sourceOptions,
+		...recordMetadata.icons.filter((icon): icon is SignalID => icon !== undefined),
+	]);
 	const dialogReference = useDialogFocus<HTMLElement>({
 		initialFocusSelector: '.upgrade-planner-dialog__scroll-region',
 		onClose,
@@ -444,6 +447,7 @@ export function UpgradePlannerDialog({
 								<div>
 									<BlueprintLabelIcons
 										icons={recordMetadata.icons}
+										itemName="upgrade-planner"
 										labelPrefix="preview icon"
 										onChange={recordMetadata.onIconsChange}
 										onChoose={setPreviewIconPickerIndex}
@@ -551,7 +555,7 @@ export function UpgradePlannerDialog({
 					}}
 					onChoose={(signal) => {
 						const next = [...recordMetadata.icons];
-						next[Math.min(previewIconPickerIndex, next.length)] = signal;
+						next[previewIconPickerIndex] = signal;
 						recordMetadata.onIconsChange(next);
 						setPreviewIconPickerIndex(undefined);
 					}}

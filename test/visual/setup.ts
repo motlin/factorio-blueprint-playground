@@ -165,6 +165,110 @@ export interface DialogViewportLayout {
 	titleColorMatchesPriorArt: boolean;
 }
 
+export interface BlueprintEditorViewportLayout {
+	backdropCoversViewport: boolean;
+	bodyFitsHorizontally: boolean;
+	dialogFitsViewport: boolean;
+	footerVisible: boolean;
+	headerVisible: boolean;
+	noPreviewRegion: boolean;
+	settingsFitsHorizontally: boolean;
+	settingsOwnsScrolling: boolean;
+	settingsSourceWidthHonored: boolean;
+	titleRowStaysOutsideScrollPane: boolean;
+}
+
+export async function inspectBlueprintEditorViewport(
+	testName: string,
+	html: string,
+	viewport: {height: number; width: number},
+): Promise<BlueprintEditorViewportLayout | undefined> {
+	if (skipBrowserTests || browser === null) {
+		return undefined;
+	}
+
+	const viewportPage = await browser.newPage({viewport});
+	const htmlPath = await renderToHtmlFile(
+		html,
+		`${testName}-${viewport.width.toString()}x${viewport.height.toString()}`,
+	);
+	try {
+		await viewportPage.goto(`file://${htmlPath}`);
+		await viewportPage.waitForSelector('.transform-workbench--blueprint');
+
+		return await viewportPage.evaluate(() => {
+			const dialog = document.querySelector<HTMLElement>('.transform-workbench--blueprint');
+			const backdrop = document.querySelector<HTMLElement>('.blueprint-editor__backdrop');
+			if (dialog === null || backdrop === null) {
+				throw new Error('Expected the Blueprint Editor dialog and backdrop.');
+			}
+			const body = dialog.querySelector<HTMLElement>(':scope > .blueprint-editor__layout');
+			const footer = dialog.querySelector<HTMLElement>(':scope > .transform-workbench__footer');
+			const header = dialog.querySelector<HTMLElement>(':scope > .transform-workbench__header');
+			const settings = dialog.querySelector<HTMLElement>('.blueprint-editor__settings');
+			const settingsScroll = dialog.querySelector<HTMLElement>('.blueprint-editor__settings-scroll');
+			const titleRow = dialog.querySelector<HTMLElement>('.blueprint-editor__title-row');
+			if (
+				body === null ||
+				footer === null ||
+				header === null ||
+				settings === null ||
+				settingsScroll === null ||
+				titleRow === null
+			) {
+				throw new Error('Expected the complete Blueprint Editor settings layout.');
+			}
+
+			const backdropBounds = backdrop.getBoundingClientRect();
+			const dialogBounds = dialog.getBoundingClientRect();
+			const footerBounds = footer.getBoundingClientRect();
+			const headerBounds = header.getBoundingClientRect();
+			const settingsBounds = settings.getBoundingClientRect();
+			const bodyStyle = getComputedStyle(body);
+			const dialogStyle = getComputedStyle(dialog);
+			const settingsStyle = getComputedStyle(settings);
+			const settingsScrollStyle = getComputedStyle(settingsScroll);
+			const bodyContentWidth =
+				body.clientWidth - Number.parseFloat(bodyStyle.paddingLeft) - Number.parseFloat(bodyStyle.paddingRight);
+			const settingsAvailableWidth =
+				bodyContentWidth -
+				Number.parseFloat(settingsStyle.marginLeft) -
+				Number.parseFloat(settingsStyle.marginRight);
+
+			return {
+				backdropCoversViewport:
+					backdropBounds.top === 0 &&
+					backdropBounds.right === window.innerWidth &&
+					backdropBounds.bottom === window.innerHeight &&
+					backdropBounds.left === 0,
+				bodyFitsHorizontally: body.scrollWidth <= body.clientWidth,
+				dialogFitsViewport:
+					dialogBounds.top >= 0 &&
+					dialogBounds.right <= window.innerWidth &&
+					dialogBounds.bottom <= window.innerHeight &&
+					dialogBounds.left >= 0,
+				footerVisible: footerBounds.bottom <= window.innerHeight,
+				headerVisible: headerBounds.top >= 0,
+				noPreviewRegion:
+					dialog.querySelector('[data-blueprint-preview]') === null &&
+					![...dialog.querySelectorAll('h1, h2, h3, h4, h5, h6')].some(
+						(heading) => heading.textContent.trim() === 'Preview',
+					),
+				settingsFitsHorizontally: settings.scrollWidth <= settings.clientWidth,
+				settingsOwnsScrolling:
+					settingsScrollStyle.overflowY === 'auto' &&
+					bodyStyle.overflow === 'hidden' &&
+					dialogStyle.overflow === 'hidden',
+				settingsSourceWidthHonored: Math.abs(settingsBounds.width - Math.min(432, settingsAvailableWidth)) <= 1,
+				titleRowStaysOutsideScrollPane:
+					titleRow.parentElement === settings && !settingsScroll.contains(titleRow),
+			};
+		});
+	} finally {
+		await Promise.all([viewportPage.close(), fs.rm(htmlPath, {force: true})]);
+	}
+}
+
 export async function inspectDialogViewport(
 	testName: string,
 	html: string,

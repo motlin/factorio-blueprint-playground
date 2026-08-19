@@ -26,15 +26,43 @@ test('opens the selectable title for editing with the labelled pencil control', 
 	const title = screen.getByText('Test reactor');
 	await user.tab();
 	await user.keyboard('{Enter}');
+	const input = screen.getByRole<HTMLInputElement>('textbox', {name: 'Blueprint title'});
+	const saveButton = screen.getByRole('button', {name: 'Save label'});
 
 	expect({
-		button: screen.queryByRole('button', {name: 'Edit blueprint title'}),
-		input: screen.getByRole<HTMLInputElement>('textbox', {name: 'Blueprint title'}).value,
-		selectableClass: title.className,
+		button: {
+			label: saveButton.getAttribute('aria-label'),
+			sourceStyle: saveButton.dataset.factorioSourceStyle,
+			title: saveButton.title,
+		},
+		editorSource: screen.getByTestId('blueprint-title-editor').dataset.factorioSource,
+		input: {
+			focused: document.activeElement,
+			maxLength: input.maxLength,
+			sourceStyle: input.dataset.factorioStyle,
+			value: input.value,
+		},
+		selectableLabel: {
+			className: title.className,
+			sourceStyle: title.dataset.factorioStyle,
+		},
 	}).toStrictEqual({
-		button: null,
-		input: 'Test reactor',
-		selectableClass: 'blueprint-editor__title',
+		button: {
+			label: 'Save label',
+			sourceStyle: 'mini_button_aligned_to_text_vertically_when_centered',
+			title: 'Save label',
+		},
+		editorSource: 'BlueprintLabelEdit',
+		input: {
+			focused: input,
+			maxLength: 200,
+			sourceStyle: 'textbox',
+			value: 'Test reactor',
+		},
+		selectableLabel: {
+			className: 'blueprint-editor__title',
+			sourceStyle: 'subheader_caption_label',
+		},
 	});
 });
 
@@ -99,4 +127,38 @@ test('cancels title editing with Escape without propagating to the editor', asyn
 		input: screen.queryByRole('textbox', {name: 'Blueprint title'}),
 		title: screen.getByText('Test reactor').textContent,
 	}).toStrictEqual({calls: [], editorEscapeCalls: [], input: null, title: 'Test reactor'});
+});
+
+test('shows the Factorio unnamed label and commits with the persistent pencil control', async () => {
+	const user = userEvent.setup();
+	const onLabelChange = vi.fn<(label: string) => void>();
+	const {rerender} = render(<BlueprintTitleEditor label="" onLabelChange={onLabelChange} />);
+
+	const unnamedTitle = screen.getByText('<Unnamed blueprint>');
+	expect({
+		editButton: screen.getByRole('button', {name: 'Edit blueprint title'}).title,
+		sourceStyle: unnamedTitle.dataset.factorioStyle,
+		title: unnamedTitle.textContent,
+	}).toStrictEqual({
+		editButton: 'Edit label',
+		sourceStyle: 'subheader_caption_label',
+		title: '<Unnamed blueprint>',
+	});
+
+	await user.click(screen.getByRole('button', {name: 'Edit blueprint title'}));
+	await user.type(screen.getByRole('textbox', {name: 'Blueprint title'}), 'Alice blueprint');
+	await user.click(screen.getByRole('button', {name: 'Save label'}));
+	rerender(<BlueprintTitleEditor label="Alice blueprint" onLabelChange={onLabelChange} />);
+
+	expect({
+		calls: onLabelChange.mock.calls,
+		editButton: screen.getByRole('button', {name: 'Edit blueprint title'}).title,
+		input: screen.queryByRole('textbox', {name: 'Blueprint title'}),
+		title: screen.getByText('Alice blueprint').textContent,
+	}).toStrictEqual({
+		calls: [['Alice blueprint']],
+		editButton: 'Edit label',
+		input: null,
+		title: 'Alice blueprint',
+	});
 });
