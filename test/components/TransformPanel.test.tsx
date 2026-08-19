@@ -551,7 +551,7 @@ describe('TransformPanel', () =>
 			},
 		).toStrictEqual(
 			{
-				bodyClass: 'transform-workbench__body upgrade-planner-dialog__scroll-region',
+				bodyClass: 'factorio-scroll-frame transform-workbench__body upgrade-planner-dialog__scroll-region',
 				bookWidePanel: 'panel-hole transform-workflow__section book-wide-replacements',
 				changeIn: null,
 				closeButton: 'Close Upgrade Planner',
@@ -1060,7 +1060,7 @@ describe('TransformPanel', () =>
 				description: 'Draft description',
 				navigation: [],
 				placedPlanner: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
-				removePlanner: '×',
+				removePlanner: '',
 				selector: null,
 			},
 		);
