@@ -26,7 +26,7 @@ interface UpgradeQualityControlsProps {
 	qualitySelection: UpgradeQualitySelection;
 }
 
-const anyQualityIconSource = 'https://factorio-icon-cdn.pages.dev/virtual-signal/signal-any-quality.webp';
+export const anyQualityIconSource = 'https://factorio-icon-cdn.pages.dev/virtual-signal/signal-any-quality.webp';
 
 function AnyQualityIcon() {
 	return (

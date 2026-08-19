@@ -1,7 +1,43 @@
+import {useState} from 'react';
+
 import type {ImportHistoryRecord} from '../../../storage/db';
 import {HistoryBlueprintRow} from '../../HistoryBlueprintRow';
 
+import type {SortDirection} from './SortIndicator';
 import {TableHeader} from './TableHeader';
+
+type SortColumn = 'label' | 'source' | 'type' | 'updated' | 'version';
+
+const sortKeys: Record<SortColumn, (record: ImportHistoryRecord) => number | string> = {
+	label: (record) => record.gameData.label ?? '',
+	source: (record) => record.metadata.fetchMethod ?? '',
+	type: (record) => record.gameData.type,
+	updated: (record) => record.metadata.lastUpdatedOn,
+	version: (record) => record.gameData.gameVersion ?? '',
+};
+
+function sortedBlueprints(
+	blueprints: readonly ImportHistoryRecord[],
+	column: SortColumn | undefined,
+	direction: SortDirection,
+): ImportHistoryRecord[] {
+	if (column === undefined || direction === null) {
+		return [...blueprints];
+	}
+	const key = sortKeys[column];
+	const factor = direction === 'asc' ? 1 : -1;
+	return [...blueprints].sort((left, right) => {
+		const leftKey = key(left);
+		const rightKey = key(right);
+		if (leftKey < rightKey) {
+			return -factor;
+		}
+		if (leftKey > rightKey) {
+			return factor;
+		}
+		return 0;
+	});
+}
 
 interface BlueprintHistoryTableProps {
 	blueprints: ImportHistoryRecord[];
@@ -22,18 +58,37 @@ interface BlueprintHistoryTableProps {
  * This table currently supplies only a browser-specific list presentation.
  */
 export function BlueprintHistoryTable({blueprints, selectedItems, toggleSelection}: BlueprintHistoryTableProps) {
+	const [sortColumn, setSortColumn] = useState<SortColumn>();
+	const [sortDirection, setSortDirection] = useState<SortDirection>(null);
+	const toggleSort = (column: SortColumn) => {
+		if (sortColumn !== column) {
+			setSortColumn(column);
+			setSortDirection('asc');
+			return;
+		}
+		setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+	};
+	const sortableHeader = (column: SortColumn, label: string) => (
+		<TableHeader
+			label={label}
+			sortDirection={sortColumn === column ? sortDirection : null}
+			onSort={() => {
+				toggleSort(column);
+			}}
+		/>
+	);
 	return (
 		<div className="history-grid">
 			<TableHeader label="" />
-			<TableHeader label="Type" />
-			<TableHeader label="Version" />
+			{sortableHeader('type', 'Type')}
+			{sortableHeader('version', 'Version')}
 			<TableHeader label="Icons" />
-			<TableHeader label="Label" />
-			<TableHeader label="Source" />
-			<TableHeader label="Updated" />
+			{sortableHeader('label', 'Label')}
+			{sortableHeader('source', 'Source')}
+			{sortableHeader('updated', 'Updated')}
 			<TableHeader label="Actions" />
 
-			{blueprints.map((blueprint) => {
+			{sortedBlueprints(blueprints, sortColumn, sortDirection).map((blueprint) => {
 				const isSelected = selectedItems.has(blueprint.id);
 				return (
 					<HistoryBlueprintRow

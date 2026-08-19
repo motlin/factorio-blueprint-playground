@@ -45,6 +45,7 @@ export function TextReplacementEditor({
 					{affectedCount} affected
 				</span>
 			</header>
+			<p className="text-replacement-editor__scope">Replaces text in titles and descriptions only.</p>
 			<div className="text-replacement-editor__fields">
 				<label htmlFor={findInputId}>Find</label>
 				<input

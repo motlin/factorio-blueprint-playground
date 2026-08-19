@@ -160,8 +160,10 @@ export interface DialogViewportLayout {
 	dialogFitsViewport: boolean;
 	footerVisible: boolean;
 	headerVisible: boolean;
-	mappingFitsHorizontally: boolean;
+	mapperOwnsHorizontalScrolling: boolean;
+	mappingSourceWidthHonored: boolean;
 	panelInsetsPreserved: boolean;
+	singleMapperScrollRegion: boolean;
 	titleColorMatchesPriorArt: boolean;
 }
 
@@ -289,18 +291,20 @@ export async function inspectDialogViewport(
 
 		return await viewportPage.evaluate(() => {
 			const dialog = document.querySelector<HTMLElement>('.upgrade-planner-dialog');
-			const body = document.querySelector<HTMLElement>('.upgrade-planner-dialog__scroll-region');
+			const body = document.querySelector<HTMLElement>('.upgrade-planner-dialog__body');
 			if (dialog === null || body === null) {
-				throw new Error('Expected the upgrade planner dialog and scroll region.');
+				throw new Error('Expected the upgrade planner dialog and body.');
 			}
-			const header = dialog.querySelector<HTMLElement>(':scope > .transform-workbench__header');
+			const header = dialog.querySelector<HTMLElement>(':scope > .upgrade-planner-dialog__title-bar');
 			const footer = dialog.querySelector<HTMLElement>(':scope > .transform-workbench__footer');
 			const closeControl = dialog.querySelector<HTMLElement>(
-				':scope > .transform-workbench__header .transform-dialog__close',
+				':scope > .upgrade-planner-dialog__title-bar .transform-dialog__close',
 			);
-			const title = dialog.querySelector<HTMLElement>(':scope > .transform-workbench__header h3');
+			const title = dialog.querySelector<HTMLElement>(':scope > .upgrade-planner-dialog__title-bar h3');
 			const mapping = dialog.querySelector<HTMLElement>('.upgrade-mapping-grid__slots');
-			const configuration = dialog.querySelector<HTMLElement>('.upgrade-planner-dialog__configuration');
+			const mapperScroll = dialog.querySelector<HTMLElement>('.upgrade-planner-dialog__scroll-region');
+			const editor = dialog.querySelector<HTMLElement>('.upgrade-planner-dialog__editor-shell');
+			const application = dialog.querySelector<HTMLElement>('.upgrade-planner-dialog__application');
 			const replacements = dialog.querySelector<HTMLElement>('.book-wide-replacements');
 			const backdrop = document.querySelector<HTMLElement>('.upgrade-planner-dialog__backdrop');
 			if (
@@ -309,7 +313,9 @@ export async function inspectDialogViewport(
 				closeControl === null ||
 				title === null ||
 				mapping === null ||
-				configuration === null ||
+				mapperScroll === null ||
+				editor === null ||
+				application === null ||
 				replacements === null ||
 				backdrop === null
 			) {
@@ -321,7 +327,10 @@ export async function inspectDialogViewport(
 			const dialogBounds = dialog.getBoundingClientRect();
 			const headerBounds = header.getBoundingClientRect();
 			const footerBounds = footer.getBoundingClientRect();
-			const configurationBounds = configuration.getBoundingClientRect();
+			const mapperScrollStyle = getComputedStyle(mapperScroll);
+			const mappingBounds = mapping.getBoundingClientRect();
+			const editorBounds = editor.getBoundingClientRect();
+			const applicationBounds = application.getBoundingClientRect();
 			const replacementsBounds = replacements.getBoundingClientRect();
 			const bodyStyle = getComputedStyle(body);
 			const closeStyle = getComputedStyle(closeControl);
@@ -346,8 +355,14 @@ export async function inspectDialogViewport(
 					dialogBounds.left >= 0,
 				footerVisible: footerBounds.bottom <= window.innerHeight,
 				headerVisible: headerBounds.top >= 0,
-				mappingFitsHorizontally: mapping.scrollWidth <= mapping.clientWidth,
-				panelInsetsPreserved: Math.abs(configurationBounds.left - replacementsBounds.left - 4) < 1,
+				mapperOwnsHorizontalScrolling:
+					mapperScrollStyle.overflowX === 'auto' && mapperScroll.scrollWidth >= mapperScroll.clientWidth,
+				mappingSourceWidthHonored: Math.abs(mappingBounds.width - 400) < 1,
+				panelInsetsPreserved:
+					Math.abs(applicationBounds.left - editorBounds.left - 4) < 1 &&
+					Math.abs(editorBounds.left - replacementsBounds.left) < 1,
+				singleMapperScrollRegion:
+					dialog.querySelectorAll('[data-factorio-style="mappers_scroll_pane"]').length === 1,
 				titleColorMatchesPriorArt: getComputedStyle(title).color === 'rgb(255, 230, 192)',
 			};
 		});

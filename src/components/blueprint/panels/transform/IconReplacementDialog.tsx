@@ -67,8 +67,10 @@ export function IconReplacementDialog({onChange, onClose, replacements, rootBlue
 	const headingId = useId();
 	const candidates = useMemo(() => metadataIconCandidates(rootBlueprint), [rootBlueprint]);
 	const [draftFrom, setDraftFrom] = useState<SignalID>();
+	const [draftTo, setDraftTo] = useState<SignalID>();
 	const [choosingSource, setChoosingSource] = useState(false);
 	const [choosingTarget, setChoosingTarget] = useState(false);
+	const [editing, setEditing] = useState<{endpoint: 'from' | 'to'; identity: string}>();
 	const availableCandidates = candidates.filter(
 		(candidate) =>
 			!replacements.some((replacement) => signalIdentity(replacement.from) === signalIdentity(candidate.signal)),
@@ -103,15 +105,21 @@ export function IconReplacementDialog({onChange, onClose, replacements, rootBlue
 						{replacements.map((replacement) => (
 							<div key={signalIdentity(replacement.from)} className="icon-replacement-editor__mapping">
 								<ReplacementEndpoint
-									label={`Source ${signalName(replacement.from)}`}
+									label={`Edit source, currently ${signalName(replacement.from)}`}
 									signal={replacement.from}
+									onClick={() => {
+										setEditing({endpoint: 'from', identity: signalIdentity(replacement.from)});
+									}}
 								/>
 								<span className="icon-replacement-editor__arrow" aria-hidden="true">
 									→
 								</span>
 								<ReplacementEndpoint
-									label={`Target ${signalName(replacement.to)}`}
+									label={`Edit target, currently ${signalName(replacement.to)}`}
 									signal={replacement.to}
+									onClick={() => {
+										setEditing({endpoint: 'to', identity: signalIdentity(replacement.from)});
+									}}
 								/>
 								<strong>{replacementCount(candidates, replacement.from)}</strong>
 								<FactorioButton
@@ -144,29 +152,25 @@ export function IconReplacementDialog({onChange, onClose, replacements, rootBlue
 						</span>
 						<ReplacementEndpoint
 							label="Choose target icon"
-							onClick={
-								draftFrom === undefined
-									? undefined
-									: () => {
-											setChoosingTarget(true);
-										}
-							}
+							signal={draftTo}
+							onClick={() => {
+								setChoosingTarget(true);
+							}}
 						/>
 						<strong>{draftCount}</strong>
-						{draftFrom === undefined ? (
+						{draftFrom === undefined && draftTo === undefined ? (
 							<span className="icon-replacement-editor__placeholder" aria-hidden="true" />
 						) : (
-							<button
-								type="button"
+							<FactorioButton
+								kind={FactorioButtonKind.Delete}
 								className="icon-replacement-editor__remove"
-								aria-label={`Clear source ${signalName(draftFrom)}`}
-								title={`Clear source ${signalName(draftFrom)}`}
+								aria-label="Dismiss new replacement"
+								title="Dismiss new replacement"
 								onClick={() => {
 									setDraftFrom(undefined);
+									setDraftTo(undefined);
 								}}
-							>
-								×
-							</button>
+							/>
 						)}
 					</div>
 				</div>
@@ -185,23 +189,104 @@ export function IconReplacementDialog({onChange, onClose, replacements, rootBlue
 						setChoosingSource(false);
 					}}
 					onChoose={(signal) => {
-						setDraftFrom(signal);
 						setChoosingSource(false);
+						const compatibleTarget =
+							draftTo !== undefined &&
+							targetOptions(signal).some((option) => signalIdentity(option) === signalIdentity(draftTo));
+						if (compatibleTarget) {
+							onChange([...replacements, {from: signal, to: draftTo}]);
+							setDraftFrom(undefined);
+							setDraftTo(undefined);
+						} else {
+							setDraftFrom(signal);
+							setDraftTo(undefined);
+						}
 					}}
 				/>
 			) : null}
-			{choosingTarget && draftFrom !== undefined ? (
+			{editing === undefined
+				? null
+				: (() => {
+						const editingReplacement = replacements.find(
+							(replacement) => signalIdentity(replacement.from) === editing.identity,
+						);
+						if (editingReplacement === undefined) {
+							throw new Error('The edited icon replacement no longer exists.');
+						}
+						if (editing.endpoint === 'from') {
+							return (
+								<SignalPickerDialog
+									confirmationMode="immediate"
+									title="Choose source icon used here"
+									initialSignal={editingReplacement.from}
+									options={[
+										...availableCandidates.map((candidate) => candidate.signal),
+										editingReplacement.from,
+									]}
+									onClose={() => {
+										setEditing(undefined);
+									}}
+									onChoose={(signal) => {
+										setEditing(undefined);
+										if (signalIdentity(signal) === editing.identity) {
+											return;
+										}
+										const targetStillValid = targetOptions(signal).some(
+											(option) =>
+												signalIdentity(option) === signalIdentity(editingReplacement.to),
+										);
+										const remaining = replacements.filter(
+											(replacement) => signalIdentity(replacement.from) !== editing.identity,
+										);
+										if (targetStillValid) {
+											onChange([...remaining, {from: signal, to: editingReplacement.to}]);
+										} else {
+											onChange(remaining);
+											setDraftFrom(signal);
+										}
+									}}
+								/>
+							);
+						}
+						return (
+							<SignalPickerDialog
+								confirmationMode="immediate"
+								title="Choose target icon"
+								initialSignal={editingReplacement.to}
+								options={targetOptions(editingReplacement.from)}
+								onClose={() => {
+									setEditing(undefined);
+								}}
+								onChoose={(signal) => {
+									setEditing(undefined);
+									onChange(
+										replacements.map((replacement) =>
+											signalIdentity(replacement.from) === editing.identity
+												? {from: replacement.from, to: signal}
+												: replacement,
+										),
+									);
+								}}
+							/>
+						);
+					})()}
+			{choosingTarget ? (
 				<SignalPickerDialog
 					confirmationMode="immediate"
 					title="Choose target icon"
-					options={targetOptions(draftFrom)}
+					options={draftFrom === undefined ? chatIconPickerOptions() : targetOptions(draftFrom)}
 					onClose={() => {
 						setChoosingTarget(false);
 					}}
 					onChoose={(signal) => {
-						onChange([...replacements, {from: draftFrom, to: signal}]);
-						setDraftFrom(undefined);
 						setChoosingTarget(false);
+						if (draftFrom === undefined) {
+							setDraftTo(signal);
+						} else {
+							onChange([...replacements, {from: draftFrom, to: signal}]);
+							setDraftFrom(undefined);
+							setDraftTo(undefined);
+						}
 					}}
 				/>
 			) : null}

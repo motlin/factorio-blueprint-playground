@@ -16,6 +16,22 @@
 	user-select: none;
 }
 
+.parameterArtwork {
+	box-sizing: border-box;
+	border: 2px solid #d7a34a;
+	border-radius: 4px;
+	background: linear-gradient(135deg, rgb(255 255 255 / 10%), transparent 45%), #252424;
+	box-shadow:
+		inset 1px 1px 0 #5e5b57,
+		inset -1px -1px 0 #111;
+	color: #f5d8a4;
+	font-size: 62.5%;
+	font-weight: 700;
+	line-height: 1;
+	place-content: center;
+	text-shadow: 0 1px 1px #000;
+}
+
 .iconParent > .iconQuality {
 	position: absolute;
 	z-index: 1;

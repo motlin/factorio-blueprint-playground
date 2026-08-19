@@ -254,7 +254,10 @@ export const SignalOptionStates: Story = {
 			'aria-pressed',
 			'true',
 		);
-		await expect(screen.getByRole('button', {name: 'Choose Processing unit'})).toBeDisabled();
+		await expect(screen.getByRole('button', {name: 'Choose Processing unit'})).toHaveAttribute(
+			'aria-disabled',
+			'true',
+		);
 		await expect(screen.getAllByTestId('quality')).toHaveLength(2);
 		await expect(screen.getByRole('status', {name: 'Inspected signal: Copper plate'})).toHaveTextContent(
 			'Copper plate',
