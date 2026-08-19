@@ -25,6 +25,7 @@ describe('UpgradeMappingRow', () =>
 						comparator: '≤',
 					}}
 					mappingId="mapping-belt"
+					slotIndex={2}
 					to={
 					{
 						type: 'entity',
@@ -69,6 +70,7 @@ describe('UpgradeMappingRow', () =>
 				{
 					draggable: row.getAttribute('draggable'),
 					key: row.getAttribute('data-mapping-key'),
+					slot: row.getAttribute('data-upgrade-mapping-slot'),
 					sourceTitle: source.title,
 					targetTitle: target.title,
 				},
@@ -88,8 +90,9 @@ describe('UpgradeMappingRow', () =>
 			{
 				attributes:
 				{
-					draggable: null,
+					draggable: 'true',
 					key: 'mapping-belt',
+					slot: '2',
 					sourceTitle: 'Transport belt\nentity:transport-belt\nQuality: ≤ rare',
 					targetTitle: 'Fast transport belt\nentity:fast-transport-belt\nQuality: = normal',
 				},
@@ -116,6 +119,7 @@ describe('UpgradeMappingRow', () =>
 				<UpgradeMappingRow
 					count={0}
 					mappingId="mapping-target-only"
+					slotIndex={0}
 					to={
 					{
 						type: 'entity',
