@@ -1,0 +1,229 @@
+{
+	"schemaVersion": 1,
+	"factorio": {
+		"tag": "2.1.12",
+		"commit": "4f08bb3d5d556d152784853c61f0996b7f11ffc9"
+	},
+	"references": [
+		{
+			"id": "BP-01",
+			"path": ".llm/game-ui-references/2.1.12/BP-01.png",
+			"status": "missing-local-file",
+			"description": "Blueprint Editor overview with title, action strip, icon slots, settings, preview, and save action.",
+			"dimensions": null,
+			"sha256": null,
+			"logicalScaleAnchor": "Inventory slots are 40 logical pixels at 100% Factorio UI scale.",
+			"sourceReferences": [
+				{
+					"path": "src/Gui/BlueprintSettingsGui.cpp",
+					"symbols": ["BlueprintSettingsGui::makePreviewTable", "BlueprintSettingsGui::makeComponentsFrame"]
+				}
+			],
+			"requiredBehavior": ["Editor hierarchy and control order match the game reference."]
+		},
+		{
+			"id": "BP-02",
+			"path": ".llm/game-ui-references/2.1.12/BP-02.png",
+			"status": "missing-local-file",
+			"description": "Blueprint Editor green Upgrade button and its tooltip.",
+			"dimensions": null,
+			"sha256": null,
+			"logicalScaleAnchor": "The tool button uses the source-defined Blueprint Settings action-slot geometry.",
+			"sourceReferences": [
+				{
+					"path": "src/Gui/BlueprintSettingsGui.cpp",
+					"symbols": ["BlueprintSettingsGui::makeUpgradeButton"]
+				}
+			],
+			"requiredBehavior": ["Upgrade action and tooltip states match the game reference."]
+		},
+		{
+			"id": "BP-03",
+			"path": ".llm/game-ui-references/2.1.12/BP-03.png",
+			"status": "missing-local-file",
+			"description": "Upgrade-planner selection library with Default Upgrade, stored planners, six-card rows, and view controls.",
+			"dimensions": null,
+			"sha256": null,
+			"logicalScaleAnchor": "Grid mode contains six source-defined large record cards per row.",
+			"sourceReferences": [
+				{
+					"path": "src/Gui/SelectUpgradePlannerGui.cpp",
+					"symbols": ["SelectUpgradePlannerGui::SelectUpgradePlannerGui"]
+				},
+				{
+					"path": "src/Gui/BlueprintsList.cpp",
+					"symbols": ["BlueprintsList"]
+				}
+			],
+			"requiredBehavior": ["Planner selection applies immediately in application mode."]
+		},
+		{
+			"id": "BP-04",
+			"path": ".llm/game-ui-references/2.1.12/BP-04.png",
+			"status": "missing-local-file",
+			"description": "Blueprint Editor with a selected planner held at the Upgrade button.",
+			"dimensions": null,
+			"sha256": null,
+			"logicalScaleAnchor": "The held planner occupies the same action-slot footprint as the Upgrade launcher.",
+			"sourceReferences": [
+				{
+					"path": "src/Gui/BlueprintSettingsGui.cpp",
+					"symbols": ["BlueprintSettingsGui::makeUpgradeButton"]
+				}
+			],
+			"requiredBehavior": ["Placed-planner state exposes apply and replacement actions."]
+		},
+		{
+			"id": "BP-05",
+			"path": ".llm/game-ui-references/2.1.12/BP-05.png",
+			"status": "missing-local-file",
+			"description": "Blueprint parametrisation window with evaluation-order guidance, parameter row, close, and confirm.",
+			"dimensions": null,
+			"sha256": null,
+			"logicalScaleAnchor": "Dialog controls use the source-defined frame and button metrics at 100% UI scale.",
+			"sourceReferences": [
+				{
+					"path": "src/Gui/BlueprintParametrisationGui.cpp",
+					"symbols": ["BlueprintParametrisationGui::BlueprintParametrisationGui"]
+				}
+			],
+			"requiredBehavior": ["Evaluation order, parameter controls, close, and confirm remain keyboard accessible."]
+		},
+		{
+			"id": "BP-06",
+			"path": ".llm/game-ui-references/2.1.12/BP-06.png",
+			"status": "missing-local-file",
+			"description": "Select-a-signal window with category tabs, ten-slot rows, search, quality strip, and confirm.",
+			"dimensions": null,
+			"sha256": null,
+			"logicalScaleAnchor": "Category tabs are 71 by 72 logical pixels and body rows contain ten slots.",
+			"sourceReferences": [
+				{
+					"path": "src/Gui/SelectListGui.cpp",
+					"symbols": ["SelectListGui::updateGroups", "SelectListGui::updateSlots"]
+				}
+			],
+			"requiredBehavior": ["Categories fill six-column rows and subgroup breaks pad ten-slot rows."]
+		},
+		{
+			"id": "BP-07",
+			"path": ".llm/game-ui-references/2.1.12/BP-07.png",
+			"status": "missing-local-file",
+			"description": "Blueprint component removal with tooltip, red zero-count slot, and modified preview.",
+			"dimensions": null,
+			"sha256": null,
+			"logicalScaleAnchor": "Component inventory slots are 40 logical pixels at 100% UI scale.",
+			"sourceReferences": [
+				{
+					"path": "src/Gui/BlueprintSettingsGui.cpp",
+					"symbols": ["BlueprintSettingsGui::makeComponentsFrame", "BlueprintSettingsGui::updateTotal"]
+				}
+			],
+			"requiredBehavior": ["Removed components remain visible, reversible, and described by a tooltip."]
+		},
+		{
+			"id": "BP-08",
+			"path": ".llm/game-ui-references/2.1.12/BP-08.png",
+			"status": "missing-local-file",
+			"description": "Blueprint Editor Filters section with Modules, Entities, and Tiles.",
+			"dimensions": null,
+			"sha256": null,
+			"logicalScaleAnchor": "Checkbox rows use the Blueprint Settings source-defined table spacing.",
+			"sourceReferences": [
+				{
+					"path": "src/Gui/BlueprintSettingsGui.cpp",
+					"symbols": ["BlueprintSettingsGui::updateCheckboxes"]
+				}
+			],
+			"requiredBehavior": ["Conditional filter categories reflect the blueprint contents."]
+		},
+		{
+			"id": "UP-01",
+			"path": ".llm/game-ui-references/2.1.12/UP-01.png",
+			"status": "missing-local-file",
+			"description": "Upgrade Planner mapper grid with title, tools, four From/To groups, and fixed inventory slots.",
+			"dimensions": null,
+			"sha256": null,
+			"logicalScaleAnchor": "Each mapper pair is 80 logical pixels and each row contains four pairs.",
+			"sourceReferences": [
+				{
+					"path": "src/Gui/UpgradeItemGui.cpp",
+					"symbols": ["UpgradeItemGui::refreshMappersTable", "UpgradeItemGui::getPaddedMappersCount"]
+				}
+			],
+			"requiredBehavior": ["Whole mapper pairs drag; visible up/down mapper buttons do not exist."]
+		},
+		{
+			"id": "UP-02",
+			"path": ".llm/game-ui-references/2.1.12/UP-02.png",
+			"status": "missing-local-file",
+			"description": "Set-the-filter source picker with category rows, subgroup rows, quality strip, and confirm.",
+			"dimensions": null,
+			"sha256": null,
+			"logicalScaleAnchor": "Category tabs are 71 by 72 logical pixels and body rows contain ten slots.",
+			"sourceReferences": [
+				{
+					"path": "src/Gui/UpgradeFilterSelectListGui.cpp",
+					"symbols": ["UpgradeFilterSelectListGui"]
+				}
+			],
+			"requiredBehavior": ["Confirming a From value returns to the planner without opening To."]
+		},
+		{
+			"id": "UP-03",
+			"path": ".llm/game-ui-references/2.1.12/UP-03.png",
+			"status": "missing-local-file",
+			"description": "Quality comparator menu with Any quality and the seven comparison operators.",
+			"dimensions": null,
+			"sha256": null,
+			"logicalScaleAnchor": "Comparator entries use the source-defined Quality Condition menu row height.",
+			"sourceReferences": [
+				{
+					"path": "src/Gui/QualityConditionGui.cpp",
+					"symbols": ["QualityConditionGui"]
+				},
+				{
+					"path": "src/Comparison.cpp",
+					"symbols": ["Comparison"]
+				}
+			],
+			"requiredBehavior": ["Any quality is represented by an empty condition."]
+		},
+		{
+			"id": "UP-04",
+			"path": ".llm/game-ui-references/2.1.12/UP-04.png",
+			"status": "missing-local-file",
+			"description": "Configured From slot for assembling-machine-2 with a less-than-or-equal Rare quality condition.",
+			"dimensions": null,
+			"sha256": null,
+			"logicalScaleAnchor": "Mapper endpoint slots use the source-defined 40 logical-pixel inventory slot.",
+			"sourceReferences": [
+				{
+					"path": "src/Gui/UpgradeItemGui.cpp",
+					"symbols": ["UpgradeItemGui::refreshMappersTable"]
+				},
+				{
+					"path": "src/Gui/QualityConditionGui.cpp",
+					"symbols": ["QualityConditionGui"]
+				}
+			],
+			"requiredBehavior": ["The configured source renders both signal and quality comparator."]
+		},
+		{
+			"id": "UP-05",
+			"path": ".llm/game-ui-references/2.1.12/UP-05.png",
+			"status": "missing-local-file",
+			"description": "Restricted Select-upgrade target picker with compatible assembler family and quality strip.",
+			"dimensions": null,
+			"sha256": null,
+			"logicalScaleAnchor": "Target results use source-defined ten-slot rows and the standard quality strip.",
+			"sourceReferences": [
+				{
+					"path": "src/Gui/UpgradeDestinationSelectListGui.cpp",
+					"symbols": ["UpgradeDestinationSelectListGui"]
+				}
+			],
+			"requiredBehavior": ["Only compatible upgrade targets can be selected."]
+		}
+	]
+}

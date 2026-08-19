@@ -96,6 +96,57 @@ export function FactorioFrame({
 	);
 }
 
+export interface FactorioDialogBackdropProps extends React.HTMLAttributes<HTMLDivElement> {
+	nested?: boolean;
+}
+
+export function FactorioDialogBackdrop({
+	children,
+	className,
+	nested = false,
+	...backdropProps
+}: FactorioDialogBackdropProps) {
+	return (
+		<div
+			{...backdropProps}
+			className={classes(
+				'factorio-dialog-backdrop',
+				nested ? 'factorio-dialog-backdrop--nested' : undefined,
+				className,
+			)}
+			data-factorio-dialog-layer={nested ? 'nested' : 'root'}
+		>
+			{children}
+		</div>
+	);
+}
+
+export interface FactorioDialogProps extends React.HTMLAttributes<HTMLElement> {
+	'aria-label': string;
+	ref?: React.Ref<HTMLElement>;
+}
+
+export function FactorioDialog({
+	'aria-label': ariaLabel,
+	children,
+	className,
+	ref,
+	...dialogProps
+}: FactorioDialogProps) {
+	return (
+		<section
+			{...dialogProps}
+			ref={ref}
+			className={classes('factorio-frame', 'factorio-frame--shallow', 'factorio-dialog', className)}
+			role="dialog"
+			aria-label={ariaLabel}
+			aria-modal="true"
+		>
+			{children}
+		</section>
+	);
+}
+
 export function FactorioTitleBar({children, className, ...headerProps}: React.HTMLAttributes<HTMLElement>) {
 	return (
 		<header {...headerProps} className={classes('factorio-title-bar', className)}>
