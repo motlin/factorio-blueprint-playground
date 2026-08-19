@@ -15,6 +15,7 @@ const storybookDirectory = path.join(repositoryRoot, 'storybook-static');
 const snapshotDirectory = path.join(repositoryRoot, 'test/visual/__snapshots__/storybook');
 const failureArtifactDirectory = path.join(repositoryRoot, 'test-results/visual-conformance');
 const updateSnapshots = process.argv.slice(2).includes('--update');
+const snapshotFailures: string[] = [];
 
 if (process.argv.slice(2).some((argument) => argument !== '--update') || process.argv.slice(2).length > 1) {
 	throw new Error('Usage: capture.ts [--update]');
@@ -124,6 +125,11 @@ async function inspectPage(page: Page): Promise<string[]> {
 					resolve();
 				});
 			});
+			if (document.activeElement !== element) {
+				// Inert or aria-hidden subtrees reject focus; controls the user
+				// cannot reach need no focus indicator.
+				continue;
+			}
 			const bounds = element.getBoundingClientRect();
 			if (
 				bounds.left < -1 ||
@@ -252,9 +258,18 @@ try {
 				snapshotDirectory,
 				`${storyId}--${viewport.width.toString()}x${viewport.height.toString()}.png`,
 			);
-			await compareSnapshot(snapshotPath, screenshot);
-			console.log(`✓ ${storyId} ${viewport.width.toString()}×${viewport.height.toString()}`);
+			// Collect every snapshot mismatch so one run reports (and uploads)
+			// all divergent captures instead of stopping at the first.
+			try {
+				await compareSnapshot(snapshotPath, screenshot);
+				console.log(`✓ ${storyId} ${viewport.width.toString()}×${viewport.height.toString()}`);
+			} catch (error) {
+				snapshotFailures.push(error instanceof Error ? error.message : String(error));
+			}
 		}
+	}
+	if (snapshotFailures.length > 0) {
+		throw new Error(snapshotFailures.join('\n'));
 	}
 } finally {
 	await browser.close();

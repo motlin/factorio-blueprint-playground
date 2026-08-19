@@ -171,8 +171,9 @@ body {
 	color: var(--factorio-ui-text);
 }
 
-/* tool_button_red: 28px square with 2px padding for icon-only red controls. */
-.factorio-button--delete {
+/* tool_button_red: 28px square with 2px padding for icon-only red controls.
+   Captioned delete buttons are red_button instead and keep the standard box. */
+.factorio-button--delete.factorio-button--icon-only {
 	width: calc(28px * var(--factorio-ui-density));
 	min-width: calc(28px * var(--factorio-ui-density));
 	height: calc(28px * var(--factorio-ui-density));
@@ -5702,6 +5703,10 @@ body {
 
 .transform-dialog--confirmation {
 	width: min(376px, 100%);
+}
+
+.transform-dialog--confirmation .transform-dialog__actions {
+	gap: 8px;
 }
 
 .blueprint-editor-close-confirmation__notice {
