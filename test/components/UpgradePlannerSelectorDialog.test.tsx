@@ -299,7 +299,7 @@ describe('UpgradePlannerSelectorDialog golden apply-only source contracts', () =
 			shell: {
 				dialogChildren: [
 					'factorio-title-bar transform-dialog__header upgrade-planner-selector__header',
-					'factorio-frame factorio-frame--shallow upgrade-planner-selector__inside-frame',
+					'factorio-frame factorio-frame--inside upgrade-planner-selector__inside-frame',
 				],
 				headerButtons: ['Search upgrade planners', 'Close upgrade planner selector'],
 				searchControlParent: 'upgrade-planner-selector__header-actions',
@@ -607,7 +607,7 @@ describe('UpgradePlannerSelectorDialog golden apply-only source contracts', () =
 					'factorio-frame factorio-frame--shallow transform-dialog upgrade-planner-selector upgrade-planner-selector--draft',
 				dialogChildren: [
 					'factorio-title-bar transform-dialog__header upgrade-planner-selector__header',
-					'factorio-frame factorio-frame--shallow upgrade-planner-selector__inside-frame',
+					'factorio-frame factorio-frame--inside upgrade-planner-selector__inside-frame',
 				],
 				gridClass: 'factorio-frame factorio-frame--deep upgrade-planner-selector__grid',
 				source: null,

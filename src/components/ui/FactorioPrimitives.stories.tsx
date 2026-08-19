@@ -182,6 +182,7 @@ function DensityMatrix({density}: {density: number}) {
 			<h3>Frames, title bar, scroll frame, tooltip, and quality badges</h3>
 			<div className="factorio-primitive-matrix__surfaces">
 				<FactorioFrame depth={FactorioFrameDepth.Shallow}>Shallow frame</FactorioFrame>
+				<FactorioFrame depth={FactorioFrameDepth.Inside}>Inside frame</FactorioFrame>
 				<FactorioFrame depth={FactorioFrameDepth.Deep}>Deep frame</FactorioFrame>
 				<div className="factorio-primitive-matrix__window">
 					<FactorioTitleBar>
@@ -289,8 +290,8 @@ export const ButtonStates: Story = {
 				disabledAria: 'true',
 				focusOutline: 'rgb(227, 152, 39)',
 				height: '28px',
-				square: true,
-				style: 'tool_button_red',
+				square: false,
+				style: 'red_button',
 			},
 			{
 				disabled: true,

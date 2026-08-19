@@ -261,7 +261,17 @@ export const MetadataEditor: Story = {
 		const editor = within(document.body).getByRole('dialog', {name: 'Edit upgrade planner'});
 		const heading = within(editor).getByRole('heading', {name: 'Edit upgrade planner'});
 		await expect(planner).toHaveAttribute('inert');
-		await expect(Math.round(heading.getBoundingClientRect().left - editor.getBoundingClientRect().left)).toBe(8);
+		const [header] = editor.getElementsByClassName('upgrade-planner-metadata__header');
+		const editorBox = editor.getBoundingClientRect();
+		const headerBox = header.getBoundingClientRect();
+		await expect(Math.round(heading.getBoundingClientRect().left - editorBox.left)).toBe(8);
+		await expect(Math.round(headerBox.left - editorBox.left)).toBe(0);
+		await expect(Math.round(editorBox.right - headerBox.right)).toBe(0);
+		await expect(
+			[...editor.children]
+				.filter((child) => child.classList.contains('factorio-frame'))
+				.map((child) => [...child.classList].filter((name) => name.startsWith('factorio-frame--'))),
+		).toStrictEqual([['factorio-frame--inside']]);
 		await expect(within(editor).getByRole('textbox', {name: 'Name'})).toHaveValue('Starter belt upgrades');
 		await expect(within(editor).getByRole('textbox', {name: 'Planner description'})).toHaveValue(
 			'Upgrade the starter belt line.',
@@ -309,7 +319,7 @@ export const SavedDeleteConfirmation: Story = {
 		const confirmation = within(document.body).getByRole('alertdialog', {name: 'Delete saved planner?'});
 		await expect(within(confirmation).getByRole('button', {name: 'Delete from Library'})).toHaveAttribute(
 			'data-factorio-style',
-			'tool_button_red',
+			'red_button',
 		);
 	},
 };
