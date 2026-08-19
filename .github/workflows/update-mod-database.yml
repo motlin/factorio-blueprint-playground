@@ -69,8 +69,8 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git fetch origin "$UPDATE_BRANCH:refs/remotes/origin/$UPDATE_BRANCH" || true
           git switch --create "$UPDATE_BRANCH"
-          git add scripts/mod-db/source-lock.json src/generated/mod-db.json
-          git commit --message 'Update the generated mod detection database from pinned sources.'
+          git add scripts/mod-db/source-lock.json src/generated/game-data.json src/generated/mod-db.json
+          git commit --message 'Update generated Factorio data from pinned sources.'
           git push --force-with-lease "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$UPDATE_BRANCH"
 
       - name: Open or refresh draft pull request

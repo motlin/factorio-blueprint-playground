@@ -18,6 +18,7 @@ import BlueprintSourceHandler from './blueprint/input/BlueprintSourceHandler';
 import {BlueprintInfoPanels} from './blueprint/panels/BlueprintInfoPanels';
 import {BasicInfoPanel} from './blueprint/panels/info/BasicInfoPanel';
 import {ParametersPanel} from './blueprint/panels/parameters/ParametersPanel';
+import {TransformPanel} from './blueprint/panels/transform/TransformPanel';
 import {BlueprintTree} from './blueprint/tree/BlueprintTree';
 import {ErrorAlert} from './ui/ErrorAlert';
 import {Panel} from './ui/Panel';
@@ -71,13 +72,9 @@ export function BlueprintPlayground() {
 				selection: path,
 			}),
 		});
-
-		if (pasted != null && pasted !== '' && rootBlueprint != null && isSuccess && existingBlueprint != null) {
-			void updateBlueprintMetadata(existingBlueprint.metadata.sha, {
-				selection: path,
-			});
-		}
 	};
+	const existingBlueprintSha = existingBlueprint?.metadata.sha;
+	const savedSelection = existingBlueprint?.metadata.selection;
 
 	useEffect(() => {
 		if (
@@ -85,15 +82,15 @@ export function BlueprintPlayground() {
 			selectedPath !== '' &&
 			pasted != null &&
 			pasted !== '' &&
-			rootBlueprint != null &&
 			isSuccess &&
-			existingBlueprint != null
+			existingBlueprintSha !== undefined &&
+			savedSelection !== selectedPath
 		) {
-			void updateBlueprintMetadata(existingBlueprint.metadata.sha, {
+			void updateBlueprintMetadata(existingBlueprintSha, {
 				selection: selectedPath,
 			});
 		}
-	}, [selectedPath, pasted, rootBlueprint, isSuccess, existingBlueprint]);
+	}, [selectedPath, pasted, isSuccess, existingBlueprintSha, savedSelection]);
 
 	return (
 		<div className="container">
@@ -128,6 +125,12 @@ export function BlueprintPlayground() {
 					{/* Right side */}
 					<div>
 						<ExportActions blueprint={selectedBlueprint} path={selectedPath} title="Selected Blueprint" />
+						<TransformPanel
+							key={selectedPath ?? ''}
+							blueprint={selectedBlueprint}
+							rootBlueprint={rootBlueprint}
+							selectedPath={selectedPath}
+						/>
 						<BasicInfoPanel blueprint={selectedBlueprint} />
 						<BlueprintInfoPanels blueprint={selectedBlueprint} />
 					</div>
