@@ -405,7 +405,7 @@ function mergePrototypes(
 	return [...prototypes.values()];
 }
 
-function requiredPrototypeField(prototype: LuaPrototype, field: 'icon' | 'order'): string {
+function requiredPrototypeField(prototype: LuaPrototype, field: 'group' | 'icon' | 'order'): string {
 	const value = prototype[field];
 	if (value === undefined) {
 		throw new Error(`Prototype ${prototype.type}:${prototype.name} has no literal ${field}.`);
@@ -456,14 +456,49 @@ function extractCategories(
 	sources: ReadonlyMap<string, string>,
 	locales: ReadonlyMap<string, string>,
 ): GameUiSpec['signals']['categories'] {
-	return mergePrototypes(sources, ITEM_GROUP_SOURCE_PATHS, (prototype) => prototype.type === 'item-group')
+	const prototypes = mergePrototypes(
+		sources,
+		ITEM_GROUP_SOURCE_PATHS,
+		(prototype) => prototype.type === 'item-group' || prototype.type === 'item-subgroup',
+	);
+	const subgroupsByGroup = new Map<string, LuaPrototype[]>();
+	for (const subgroup of prototypes.filter((prototype) => prototype.type === 'item-subgroup')) {
+		const group = requiredPrototypeField(subgroup, 'group');
+		const subgroups = subgroupsByGroup.get(group) ?? [];
+		subgroups.push(subgroup);
+		subgroupsByGroup.set(group, subgroups);
+	}
+
+	/*
+	 * The nested group → subgroup layout follows Teoxoy's Factorio Blueprint
+	 * Editor inventory exporter (MIT, commit 2bfc95e). Factorio 2.1.12 remains
+	 * the authoritative data source; the prior-art commit and blobs are recorded
+	 * in the generated provenance.
+	 */
+	return prototypes
+		.filter((prototype) => prototype.type === 'item-group')
 		.map((category) => ({
 			name: category.name,
 			label: requireLocale(locales, `item-group-name.${category.name}`),
 			order: requiredPrototypeField(category, 'order'),
 			icon: requiredPrototypeField(category, 'icon'),
+			subgroups: (subgroupsByGroup.get(category.name) ?? [])
+				.map((subgroup) => ({
+					name: subgroup.name,
+					order: requiredPrototypeField(subgroup, 'order'),
+				}))
+				.sort((left, right) => left.order.localeCompare(right.order) || left.name.localeCompare(right.name)),
 		}))
 		.sort((left, right) => left.order.localeCompare(right.order) || left.name.localeCompare(right.name));
+}
+
+function extractSubgroupStartsNewRow(selectListSource: string): true {
+	const subgroupRowPaddingContract =
+		/lastSubGroupID != this->itemIterator->getSubGroupID\(\)[\s\S]+while \(slotsInRow\+\+ % UtilityConstants::instance\(\)\.selectSlotRowCount != 0\)[\s\S]+slotTable << agui::empty;/;
+	if (!subgroupRowPaddingContract.test(selectListSource)) {
+		throw new Error('SelectListGui no longer pads each item subgroup to the next slot row.');
+	}
+	return true;
 }
 
 function addUpgrade(
@@ -622,6 +657,7 @@ export function buildGameUiSpec(sourceLock: GameUiSourceLock, sources: ReadonlyM
 			commit: sourceLock.commit,
 			locale: 'en',
 			sources: [...sourceLock.sources].sort((left, right) => left.path.localeCompare(right.path)),
+			priorArt: sourceLock.priorArt,
 		},
 		qualities: extractQualities(sources, locales),
 		qualityComparators: extractComparators(
@@ -634,6 +670,7 @@ export function buildGameUiSpec(sourceLock: GameUiSourceLock, sources: ReadonlyM
 		signals: {
 			typeOrder: extractSignalTypeOrder(requiredSource(sources, 'src/Gui/ChatIconIDIterator.cpp')),
 			categories: extractCategories(sources, locales),
+			subgroupStartsNewRow: extractSubgroupStartsNewRow(requiredSource(sources, 'src/Gui/SelectListGui.cpp')),
 		},
 		upgrades: extractUpgrades(sources),
 		utilityConstants: {
