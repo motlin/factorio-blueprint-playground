@@ -75,7 +75,7 @@ interface BlueprintEditorDialogProps
 	onModulesIncludedChange: (included: boolean) => void;
 	onStationNamesIncludedChange: (included: boolean) => void;
 	onParametersChange: (parameters: Parameter[]) => void;
-	onPlannerPlace: (choice: UpgradePlannerChoice, direction: UpgradeDirection) => void;
+	onApplyPlannerChoice: (choice: UpgradePlannerChoice, direction: UpgradeDirection) => void;
 	onSnapGridChange: (settings: BlueprintSnapGrid) => void;
 	onSortBookSelectedChange: (selected: boolean) => void;
 	onTilesIncludedChange: (included: boolean) => void;
@@ -128,7 +128,7 @@ export function BlueprintEditorDialog({
 	onModulesIncludedChange,
 	onStationNamesIncludedChange,
 	onParametersChange,
-	onPlannerPlace,
+	onApplyPlannerChoice,
 	onSnapGridChange,
 	onSortBookSelectedChange,
 	onTilesIncludedChange,
@@ -320,8 +320,7 @@ export function BlueprintEditorDialog({
 					}}
 					onChoose={(choice, direction) =>
 					{
-						setUpgradePlannerSelectorOpen(false);
-						onPlannerPlace(choice, direction);
+						onApplyPlannerChoice(choice, direction);
 					}}
 				/>
 			) : null}
