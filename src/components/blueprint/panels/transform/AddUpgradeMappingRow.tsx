@@ -16,6 +16,8 @@ export function AddUpgradeMappingRow({onSourceChoose, onTargetChoose, slotIndex}
 			className="upgrade-mapping-grid__pair upgrade-mapping-grid__pair--empty"
 			role="group"
 			aria-label={`Empty mapping slot ${(slotIndex + 1).toString()}`}
+			data-factorio-source="UpgradeItemGui::addEmptyMapper"
+			data-mapping-state="empty"
 		>
 			<SignalSlot label="Choose source for new mapping" onChoose={onSourceChoose} />
 			<SignalSlot label="Choose target for new mapping" onChoose={onTargetChoose} />

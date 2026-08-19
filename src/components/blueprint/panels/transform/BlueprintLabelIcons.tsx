@@ -72,7 +72,7 @@ export function BlueprintLabelIcons({
 			</span>
 			<div
 				className="blueprint-label-icons__slots"
-				aria-label="Blueprint label icon slots"
+				aria-label={`${recordLabel} preview icon slots`}
 				data-factorio-source="BlueprintSettingsGui::makePreviewTable"
 				data-factorio-style="slot_table"
 				role="group"

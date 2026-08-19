@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useId, useMemo, useRef, useState} from 'react';
+import {useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode} from 'react';
 import {createPortal} from 'react-dom';
 
 import gameUiSpec from '../../../../generated/game-ui-spec.json';
@@ -135,6 +135,7 @@ const pickerCategories: readonly PickerCategory[] = gameUiSpec.signals.categorie
 
 export interface SignalPickerDialogProps {
 	confirmationMode: SignalPickerConfirmationMode;
+	extrasFrame?: (pendingSignal: PickerSignal | undefined) => ReactNode;
 	includeHiddenSignals?: boolean;
 	initialQuality?: UpgradeQualitySelection;
 	initialSearch?: string;
@@ -258,6 +259,7 @@ function signalGridCells(options: readonly SignalID[]): GridCell[] {
 
 export function SignalPickerDialog({
 	confirmationMode,
+	extrasFrame,
 	includeHiddenSignals = false,
 	initialQuality,
 	initialSearch = '',
@@ -295,6 +297,7 @@ export function SignalPickerDialog({
 		visibleOptions.length === 0 ? undefined : categoryForSignal(initialSignal ?? visibleOptions[0]).id;
 	const [activeCategoryId, setActiveCategoryId] = useState<PickerCategoryId | undefined>(initialCategoryId);
 	const [search, setSearch] = useState(initialSearch);
+	const [rejectionMessage, setRejectionMessage] = useState('');
 	const [searchVisible, setSearchVisible] = useState(initialSearch !== '');
 	const [selectedSignal, setSelectedSignal] = useState<PickerSignal | undefined>(
 		initialSignal === undefined ||
@@ -324,14 +327,8 @@ export function SignalPickerDialog({
 	const matchingCategories = availableCategories.filter(
 		(category) => (categoryOptions.get(category.id)?.length ?? 0) > 0,
 	);
-	const exactMatchCategory = availableCategories.find((category) =>
-		(categoryOptions.get(category.id) ?? []).some(
-			(signal) => signalName(signal).toLowerCase() === normalizedSearch,
-		),
-	);
 	const resolvedActiveCategoryId =
-		exactMatchCategory?.id ??
-		((categoryOptions.get(activeCategoryId ?? '')?.length ?? 0) > 0 ? activeCategoryId : matchingCategories[0]?.id);
+		(categoryOptions.get(activeCategoryId ?? '')?.length ?? 0) > 0 ? activeCategoryId : matchingCategories[0]?.id;
 	const activeCategory: PickerCategory | undefined =
 		resolvedActiveCategoryId === undefined
 			? undefined
@@ -370,6 +367,7 @@ export function SignalPickerDialog({
 			? undefined
 			: signalWithCurrentQuality(selectedSignal, qualityMode, qualitySelection, qualityComparator);
 	const selectionAllowed = confirmedSignal !== undefined && (isSelectionAllowed?.(confirmedSignal) ?? true);
+	const pickerExtras = extrasFrame?.(confirmedSignal);
 	const chooseSignal = useCallback(
 		(signal: SignalID) => {
 			const signalWithQuality = signalWithCurrentQuality(
@@ -570,6 +568,16 @@ export function SignalPickerDialog({
 									value={search}
 									onChange={(event) => {
 										setSearch(event.currentTarget.value);
+										const normalized = event.currentTarget.value.trim().toLowerCase();
+										const exactMatch =
+											normalized === ''
+												? undefined
+												: visibleOptions.find(
+														(signal) => signalName(signal).toLowerCase() === normalized,
+													);
+										if (exactMatch !== undefined) {
+											setActiveCategoryId(categoryIdForSignal(exactMatch));
+										}
 										clearInspectedSignal();
 									}}
 								/>
@@ -675,7 +683,7 @@ export function SignalPickerDialog({
 											className="transform-picker__option"
 											data-picker-cell="signal"
 											aria-label={`Choose ${signalName(signal)}`}
-											disabled={!allowed}
+											aria-disabled={!allowed}
 											selected={signalPrototypeIdentity(signal) === selectedIdentity}
 											tabIndex={optionIndex === tabbableOptionIndex ? 0 : -1}
 											title={signalTitle(signal)}
@@ -684,6 +692,11 @@ export function SignalPickerDialog({
 												updateInspectedSignal();
 											}}
 											onClick={() => {
+												if (!allowed) {
+													setRejectionMessage(`${signalName(signal)} cannot be chosen here.`);
+													return;
+												}
+												setRejectionMessage('');
 												if (confirmationMode === 'immediate') {
 													chooseSignal(signal);
 												} else {
@@ -727,6 +740,9 @@ export function SignalPickerDialog({
 									</p>
 								) : null}
 							</FactorioScrollFrame>
+							<div role="status" aria-live="polite" className="transform-visually-hidden">
+								{rejectionMessage}
+							</div>
 							<div
 								ref={signalNameReference}
 								className="transform-picker__signal-name"
@@ -739,6 +755,11 @@ export function SignalPickerDialog({
 						</div>
 					</div>
 				</div>
+				{pickerExtras === null || pickerExtras === undefined ? null : (
+					<div className="transform-picker__extras" data-factorio-source="SelectListGui::addToExtrasFrame">
+						{pickerExtras}
+					</div>
+				)}
 				{confirmationMode === 'required' ? (
 					<footer className="transform-picker__footer" data-factorio-style="subfooter_frame">
 						{qualityMode === undefined ? null : (

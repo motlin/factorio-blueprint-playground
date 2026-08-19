@@ -1,6 +1,7 @@
-import {useState} from 'react';
+import {type CSSProperties, useState} from 'react';
 
-import type {SignalID, UpgradeSourceSignal} from '../../../../parsing/types';
+import gameUiSpec from '../../../../generated/game-ui-spec.json';
+import type {UpgradeSourceSignal, UpgradeTargetSignal} from '../../../../parsing/types';
 import {AddUpgradeMappingRow} from './AddUpgradeMappingRow';
 import {UpgradeMappingRow} from './UpgradeMappingRow';
 
@@ -9,7 +10,7 @@ export interface PositionedUpgradeMapping {
 	from?: UpgradeSourceSignal;
 	mappingId: string;
 	slotIndex: number;
-	to?: SignalID;
+	to?: UpgradeTargetSignal;
 }
 
 interface UpgradeMappingGridProps {
@@ -20,9 +21,21 @@ interface UpgradeMappingGridProps {
 	onMove: (mappingId: string, targetSlotIndex: number) => void;
 }
 
-const mappingsPerRow = 4;
-const minimumMappingSlots = 16;
+const mappingsPerRow = gameUiSpec.upgradePlanner.mappingsPerRow;
+const minimumMappingSlots = gameUiSpec.upgradePlanner.minimumMappingRows * mappingsPerRow;
 const mappingDragDataType = 'application/x-factorio-upgrade-mapping';
+const mappingTableWidth =
+	gameUiSpec.styles.mappingPairWidth * mappingsPerRow +
+	gameUiSpec.styles.mappingTableHorizontalSpacing.reduce((total, spacing) => total + spacing, 0);
+const mappingGridStyle: CSSProperties & Record<`--upgrade-mapping-${string}`, string> = {
+	'--upgrade-mapping-first-spacing': `${gameUiSpec.styles.mappingTableHorizontalSpacing[0].toString()}px`,
+	'--upgrade-mapping-pair-width': `${gameUiSpec.styles.mappingPairWidth.toString()}px`,
+	'--upgrade-mapping-second-spacing': `${gameUiSpec.styles.mappingTableHorizontalSpacing[1].toString()}px`,
+	'--upgrade-mapping-slot-width': `${gameUiSpec.styles.slotColumnHeaderWidth.toString()}px`,
+	'--upgrade-mapping-table-width': `${mappingTableWidth.toString()}px`,
+	'--upgrade-mapping-third-spacing': `${gameUiSpec.styles.mappingTableHorizontalSpacing[2].toString()}px`,
+	'--upgrade-mapping-vertical-spacing': `${gameUiSpec.styles.mappingTableVerticalSpacing.toString()}px`,
+};
 
 function paddedSlotCount(mappings: readonly PositionedUpgradeMapping[]): number {
 	const highestOccupiedSlot = Math.max(-1, ...mappings.map((mapping) => mapping.slotIndex));
@@ -72,13 +85,24 @@ export function UpgradeMappingGrid({
 	};
 
 	return (
-		<div className="upgrade-mapping-grid" role="group" aria-label="From and To mappings">
-			<div className="upgrade-mapping-grid__table">
+		<div
+			className="upgrade-mapping-grid"
+			role="group"
+			aria-label="From and To mappings"
+			data-factorio-source="UpgradeItemGui::MappersWidgets"
+			style={mappingGridStyle}
+		>
+			<div
+				className="upgrade-mapping-grid__table"
+				data-factorio-columns={mappingsPerRow}
+				data-factorio-minimum-rows={gameUiSpec.upgradePlanner.minimumMappingRows}
+				data-factorio-style={gameUiSpec.styles.bindings.mappingTable}
+			>
 				<div className="upgrade-mapping-grid__headings">
 					{Array.from({length: mappingsPerRow}, (_, index) => (
 						<div key={index}>
-							<span>From</span>
-							<span>To</span>
+							<span>{gameUiSpec.labels.upgradeFrom}</span>
+							<span>{gameUiSpec.labels.upgradeTo}</span>
 						</div>
 					))}
 				</div>
@@ -174,6 +198,7 @@ export function UpgradeMappingGrid({
 								<UpgradeMappingRow
 									key={mapping.mappingId}
 									{...mapping}
+									dragging={draggedMappingId === mapping.mappingId}
 									onChooseSource={() => {
 										onChooseSource(mapping.mappingId, slotIndex);
 									}}
