@@ -181,6 +181,10 @@ export const UpgradePlannerOnly: Story =
 			},
 		);
 
+		/*
+		 * The planner is already open, so the toolbar is inert and both tooltips
+		 * are pinned shut. Hovering and tabbing must not revive them.
+		 */
 		await userEvent.hover(button);
 		await expect(
 			{
@@ -189,7 +193,7 @@ export const UpgradePlannerOnly: Story =
 			},
 		).toStrictEqual(
 			{
-				open: 'true',
+				open: 'false',
 				text: 'Upgrade PlannerOpen the Upgrade Planner to create and edit upgrade mappings. U',
 			},
 		);
@@ -198,13 +202,13 @@ export const UpgradePlannerOnly: Story =
 		await userEvent.tab();
 		await expect(
 			{
-				focused: document.activeElement,
+				focusedButton: document.activeElement === button,
 				open: tooltip.dataset.factorioTooltipOpen,
 			},
 		).toStrictEqual(
 			{
-				focused: button,
-				open: 'true',
+				focusedButton: false,
+				open: 'false',
 			},
 		);
 
