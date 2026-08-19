@@ -259,7 +259,9 @@ export const MetadataEditor: Story = {
 		const planner = within(document.body).getByRole('dialog', {name: 'Upgrade Planner'});
 		await userEvent.click(within(planner).getByRole('button', {name: 'Edit planner name'}));
 		const editor = within(document.body).getByRole('dialog', {name: 'Edit upgrade planner'});
+		const heading = within(editor).getByRole('heading', {name: 'Edit upgrade planner'});
 		await expect(planner).toHaveAttribute('inert');
+		await expect(Math.round(heading.getBoundingClientRect().left - editor.getBoundingClientRect().left)).toBe(8);
 		await expect(within(editor).getByRole('textbox', {name: 'Name'})).toHaveValue('Starter belt upgrades');
 		await expect(within(editor).getByRole('textbox', {name: 'Planner description'})).toHaveValue(
 			'Upgrade the starter belt line.',

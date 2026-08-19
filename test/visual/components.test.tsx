@@ -1,6 +1,6 @@
 import {render} from '@testing-library/react';
 import type React from 'react';
-import {describe, it, vi} from 'vite-plus/test';
+import {describe, expect, it, vi} from 'vite-plus/test';
 
 import {ContentsPanel} from '../../src/components/blueprint/panels/contents/ContentsPanel';
 import {DeconstructionPlannerPanel} from '../../src/components/blueprint/panels/deconstruction/DeconstructionPlannerPanel';
@@ -8,9 +8,10 @@ import {BasicInfoPanel} from '../../src/components/blueprint/panels/info/BasicIn
 import {ParametersPanel} from '../../src/components/blueprint/panels/parameters/ParametersPanel';
 import {UpgradePlannerPanel} from '../../src/components/blueprint/panels/upgrade/UpgradePlannerPanel';
 import {BlueprintTree} from '../../src/components/blueprint/tree/BlueprintTree';
+import {ExportActions} from '../../src/components/blueprint/export/ExportActions';
 import type {BlueprintString} from '../../src/parsing/types';
 
-import {compareScreenshots} from './setup';
+import {compareScreenshots, inspectPageViewport, type PageViewportLayout} from './setup';
 
 function renderToStaticHTML(element: React.ReactElement): string {
 	const div = document.createElement('div');
@@ -27,6 +28,53 @@ function replaceIconUrls(html: string): string {
 }
 
 describe('Visual regression tests', () => {
+	it('keeps page navigation, export actions, and tree labels inside a 391px viewport', async () => {
+		const mockBlueprint = {
+			blueprint_book: {
+				item: 'blueprint-book',
+				version: 281479275675648,
+				label: 'Blueprint book with a label that must shrink inside the viewport',
+				active_index: 0,
+				blueprints: [],
+			},
+		};
+		const content = renderToStaticHTML(
+			<div className="container mt12">
+				<div className="container">
+					<ExportActions blueprint={mockBlueprint as unknown as BlueprintString} title="Root Blueprint" />
+					<BlueprintTree
+						rootBlueprint={mockBlueprint as unknown as BlueprintString}
+						selectedPath=""
+						onSelect={vi.fn<(path: string) => void>()}
+					/>
+				</div>
+			</div>,
+		);
+		const html = `
+			<div class="top-bar">
+				<div class="top-bar-inner">
+					<nav class="site-navigation">
+						<a class="blue nowrap">Blueprint Playground</a>
+						<span class="separator">|</span>
+						<a class="blue nowrap">Blueprint Library</a>
+						<span class="separator">|</span>
+						<a class="blue nowrap">Import History</a>
+					</nav>
+				</div>
+			</div>
+			${replaceIconUrls(content)}
+		`;
+		const layout = await inspectPageViewport('page-mobile-viewport', html, {height: 844, width: 391});
+		const expectedLayout: PageViewportLayout = {
+			documentFitsHorizontally: true,
+			exportButtonsFitHorizontally: true,
+			navigationFitsHorizontally: true,
+			treeLabelsFitHorizontally: true,
+		};
+
+		expect(layout).toStrictEqual(layout === undefined ? undefined : expectedLayout);
+	});
+
 	it('BasicInfoPanel renders consistently', async () => {
 		const mockBlueprint = {
 			blueprint: {
