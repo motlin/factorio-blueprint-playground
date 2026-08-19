@@ -238,7 +238,7 @@ describe('TransformPanel', () => {
 			bookWideReplacements: screen.getByRole('heading', {name: 'Book-wide replacements'}).textContent,
 			websiteLabel: within(configuration).getByText('Website extension').textContent,
 		}).toStrictEqual({
-			bodyClass: 'transform-workbench__body upgrade-planner-dialog__scroll-region',
+			bodyClass: 'factorio-scroll-frame transform-workbench__body upgrade-planner-dialog__scroll-region',
 			bookWidePanel: 'panel-hole transform-workflow__section book-wide-replacements',
 			changeIn: null,
 			closeButton: 'Close Upgrade Planner',
@@ -487,7 +487,7 @@ describe('TransformPanel', () => {
 			description: 'Draft description',
 			navigation: [],
 			placedPlanner: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
-			removePlanner: '×',
+			removePlanner: '',
 			selector: null,
 		});
 

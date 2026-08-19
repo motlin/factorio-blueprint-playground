@@ -11,6 +11,7 @@
 		"preview": "wrangler pages dev dist --port 5174",
 		"generate:routes": "tsr generate",
 		"generate:mod-db": "tsx scripts/mod-db/build-mod-db.ts",
+		"generate:game-ui-spec": "tsx scripts/game-ui-spec/build-game-ui-spec.ts",
 		"update:mod-db-sources": "tsx scripts/mod-db/update-source-lock.ts",
 		"corpus:fetch": "scripts/corpus/fetch-top-blueprints.sh",
 		"corpus:browser-check": "tsx scripts/corpus/browser-check.ts",

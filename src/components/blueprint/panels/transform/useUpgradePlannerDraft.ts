@@ -189,6 +189,32 @@ function applySession(
 	return transformedRoot;
 }
 
+/**
+ * Authoritative Upgrade Planner draft contract:
+ *
+ * - Draft state is an ordered array of mapper records with stable indexes and
+ *   independently optional From and To values. It preserves incomplete pairs,
+ *   internal holes, source quality conditions and module filters, destination
+ *   exact quality, module limits, and module-slot plans. Derived candidates,
+ *   exclusions, overrides, match counts, and visible rows are projections only.
+ * - A confirmed picker value replaces its endpoint in the draft immediately.
+ *   Clearing replaces only that endpoint; swapping replaces the two complete
+ *   indexed records. Loading or pasting a planner installs its indexed mapper
+ *   records as the new draft. UI-local optimistic values are reconciled from this
+ *   state after every mutation.
+ * - Changing From recomputes To eligibility. A compatible To and its compatible
+ *   options may survive; an incompatible To must be cleared before the updated
+ *   record becomes authoritative. The same rule applies to imported or restored
+ *   state that bypasses a picker.
+ * - Saving while editing an upgrade-planner entry commits the planner record at
+ *   its root-book path. Applying is a later, explicit operation against a
+ *   blueprint scope: upgrade interprets From to To and downgrade reverses the
+ *   same saved records. Save must not imply apply, and zero application matches
+ *   must not delete records.
+ *
+ * The current layered rule/exclusion/override session is transitional. It should
+ * converge on the direct record draft above before mapper widgets rely on it.
+ */
 export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}: UseUpgradePlannerDraftOptions) {
 	const [plannerOpen, setPlannerOpen] = useState(false);
 	const [draftChanged, setDraftChanged] = useState(false);

@@ -5,6 +5,7 @@ import {serializeBlueprint} from '../../../../parsing/blueprintParser';
 import type {BlueprintString} from '../../../../parsing/types';
 import {updateNestedBlueprint} from '../../../../transform/applyAtPath';
 import {ButtonGreen} from '../../../ui/ButtonGreen';
+import {FactorioButton, FactorioButtonKind} from '../../../ui/FactorioUi';
 
 interface BlueprintEditorActionsProps {
 	closeConfirmationOpen: boolean;
@@ -18,6 +19,21 @@ interface BlueprintEditorActionsProps {
 	selectedPath: string;
 }
 
+/**
+ * Commit contract from Factorio 2.1.12's setup and record-preview editors:
+ *
+ * - The footer exposes one green commit action, not an intermediate Apply step.
+ * - An explicit `NewBlueprint` versus `ExistingBlueprint` view mode owns
+ *   Create-versus-Commit wording. Transform sessions edit loaded data, so their
+ *   existing-root action is `Save blueprint`; a nested library entry is
+ *   `Save to book`.
+ * - Dirty close offers keep, discard, or that same commit action. Saving a nested
+ *   selection writes it back into the root book before navigation/export state is
+ *   replaced.
+ *
+ * Evidence: BlueprintSetupGui, BlueprintRecordPreviewEdit, and
+ * BlueprintToBeSetup.
+ */
 export function BlueprintEditorActions({
 	closeConfirmationOpen,
 	dirty,
@@ -60,9 +76,9 @@ export function BlueprintEditorActions({
 	return (
 		<>
 			<footer className="transform-workbench__footer transform-workbench__footer--actions blueprint-editor-actions">
-				<button type="button" className="transform-button" onClick={onClose}>
+				<FactorioButton className="transform-button" onClick={onClose}>
 					Cancel
-				</button>
+				</FactorioButton>
 				<p className="blueprint-editor-actions__scope">{scopeHelp}</p>
 				<ButtonGreen disabled={saveDisabled} onClick={saveBlueprint}>
 					{saveLabel}
@@ -71,34 +87,33 @@ export function BlueprintEditorActions({
 			{closeConfirmationOpen ? (
 				<div className="transform-dialog-backdrop transform-dialog-backdrop--confirmation">
 					<section
-						className="transform-dialog transform-dialog--confirmation"
+						className="factorio-frame factorio-frame--shallow transform-dialog transform-dialog--confirmation"
 						role="alertdialog"
 						aria-modal="true"
 						aria-labelledby="discard-blueprint-heading"
 					>
-						<header className="transform-dialog__header">
+						<header className="factorio-title-bar transform-dialog__header">
 							<h3 id="discard-blueprint-heading">Discard unsaved changes?</h3>
 						</header>
 						<p>Your changes have not been written back to the loaded blueprint or book.</p>
 						<div className="transform-dialog__actions">
-							<button
-								type="button"
+							<FactorioButton
 								className="transform-button"
 								onClick={() => {
 									onKeepEditing();
 								}}
 							>
 								Keep editing
-							</button>
-							<button
-								type="button"
-								className="transform-button transform-button--danger"
+							</FactorioButton>
+							<FactorioButton
+								kind={FactorioButtonKind.Delete}
+								className="transform-button"
 								onClick={() => {
 									onDiscard();
 								}}
 							>
 								Discard changes
-							</button>
+							</FactorioButton>
 							<ButtonGreen onClick={saveBlueprint}>{saveLabel}</ButtonGreen>
 						</div>
 					</section>
