@@ -297,7 +297,9 @@ export function UpgradePlannerSelectorDialog({
 			>
 				<FactorioTitleBar className="transform-dialog__header upgrade-planner-selector__header">
 					<h3 id={headingId}>
-						{includeEditingChoices ? 'Load an upgrade planner' : 'Select the upgrade planner to apply'}
+						{includeEditingChoices
+							? 'Choose a planner for this draft'
+							: 'Select the upgrade planner to apply'}
 					</h3>
 					<div className="upgrade-planner-selector__header-actions">
 						{includeEditingChoices ? null : (
@@ -309,8 +311,12 @@ export function UpgradePlannerSelectorDialog({
 						<FactorioButton
 							kind={FactorioButtonKind.Close}
 							className="transform-dialog__close"
-							aria-label="Close upgrade planner selector"
-							title="Close upgrade planner selector"
+							aria-label={
+								includeEditingChoices ? 'Close planner draft chooser' : 'Close upgrade planner selector'
+							}
+							title={
+								includeEditingChoices ? 'Close planner draft chooser' : 'Close upgrade planner selector'
+							}
 							onClick={() => {
 								onClose();
 							}}
@@ -324,7 +330,10 @@ export function UpgradePlannerSelectorDialog({
 					<div className="upgrade-planner-selector__subheader" data-factorio-style="subheader_frame">
 						<p id={instructionsId} className="upgrade-planner-selector__hint">
 							{includeEditingChoices ? (
-								<>Choose a planner to copy all of its mappings into the editable draft.</>
+								<>
+									Choosing a planner replaces this editable draft and returns to the Upgrade Planner.
+									It does not apply changes to the blueprint.
+								</>
 							) : (
 								<>
 									<span>Left-click</span> to apply as upgrade, <span>Right-click</span> to apply as
@@ -361,6 +370,7 @@ export function UpgradePlannerSelectorDialog({
 									instructionsId={instructionsId}
 									onChoose={() => {
 										onChoose(choice, 'upgrade');
+										onClose();
 									}}
 									onFocus={() => {
 										setActiveIndex(index);
