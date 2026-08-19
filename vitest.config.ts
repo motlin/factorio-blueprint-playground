@@ -14,6 +14,7 @@ export default mergeConfig(
 						name: 'unit',
 						globals: true,
 						environment: 'happy-dom',
+						maxWorkers: 2,
 						setupFiles: ['./test/setup.ts'],
 						exclude: ['.llm/**', 'node_modules/**'],
 					},
