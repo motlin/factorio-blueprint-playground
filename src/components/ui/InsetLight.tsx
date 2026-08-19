@@ -1,5 +1,9 @@
 import type React from 'react';
 
+import {FactorioFrame, FactorioFrameDepth} from './FactorioUi';
+
 export const InsetLight = ({children}: {children: React.ReactNode}) => (
-	<div className="panel-inset-lighter">{children}</div>
+	<FactorioFrame className="panel-inset-lighter" depth={FactorioFrameDepth.Deep}>
+		{children}
+	</FactorioFrame>
 );

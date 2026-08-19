@@ -8,6 +8,7 @@ import {
 	type MetadataIconCandidate,
 } from '../../../../transform/metadataSubstitution';
 import {ButtonGreen} from '../../../ui/ButtonGreen';
+import {FactorioButton, FactorioButtonKind} from '../../../ui/FactorioUi';
 import {SignalPickerDialog} from './SignalPickerDialog';
 import {SignalSlot} from './UpgradeMappingRow';
 import {normalizedSignalType, pickerSignals, signalIdentity, signalName} from './upgradePlannerSignals';
@@ -83,22 +84,20 @@ export function IconReplacementDialog({onChange, onClose, replacements, rootBlue
 		<div className="transform-dialog-backdrop">
 			<section
 				ref={dialogReference}
-				className="transform-dialog"
+				className="factorio-frame factorio-frame--shallow transform-dialog"
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby={headingId}
 			>
-				<header className="transform-dialog__header">
+				<header className="factorio-title-bar transform-dialog__header">
 					<h3 id={headingId}>Icon Replacements</h3>
-					<button
-						type="button"
+					<FactorioButton
+						kind={FactorioButtonKind.Close}
 						className="transform-dialog__close"
 						aria-label="Close Icon Replacements"
 						title="Close Icon Replacements"
 						onClick={onClose}
-					>
-						×
-					</button>
+					/>
 				</header>
 				<div className="panel-hole icon-replacement-editor">
 					<div className="icon-replacement-editor__mappings">
@@ -116,8 +115,8 @@ export function IconReplacementDialog({onChange, onClose, replacements, rootBlue
 									signal={replacement.to}
 								/>
 								<strong>{replacementCount(candidates, replacement.from)}</strong>
-								<button
-									type="button"
+								<FactorioButton
+									kind={FactorioButtonKind.Delete}
 									className="icon-replacement-editor__remove"
 									aria-label={`Remove replacement for ${signalName(replacement.from)}`}
 									title={`Remove replacement for ${signalName(replacement.from)}`}
@@ -129,9 +128,7 @@ export function IconReplacementDialog({onChange, onClose, replacements, rootBlue
 											),
 										);
 									}}
-								>
-									×
-								</button>
+								/>
 							</div>
 						))}
 					</div>

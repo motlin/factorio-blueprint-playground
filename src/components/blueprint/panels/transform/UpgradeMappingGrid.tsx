@@ -25,6 +25,25 @@ interface UpgradeMappingGridProps {
 const mappingsPerRow = 4;
 const minimumMappingSlots = 16;
 
+/**
+ * Ordered mapper-grid contract from Factorio 2.1.12 `UpgradeItemGui` and
+ * `UpgradeData`:
+ *
+ * - The table repeats four fixed From/To pairs per visual row and shows at least
+ *   four rows (16 pairs). It pads to a full row plus one spare row, up to 1,000
+ *   mapper indexes; it does not collapse into a variable-width action list.
+ * - A mapper index is record state. Empty indexes between populated or incomplete
+ *   pairs remain holes, while empty trailing indexes may be trimmed. Serialized
+ *   indexes and pasted zero-match mappings therefore survive display and save.
+ * - A drag moves or swaps the complete From/To pair, including quality and
+ *   module settings, with another populated or empty index. An accessible
+ *   keyboard move command must call the same authoritative pair-swap operation.
+ *   Rendering must never reorder by signal identity, match count, or completeness.
+ *
+ * `useUpgradePlannerDraft` supplies the ordered slots; this component only pads
+ * and renders them. The current candidate projection is transitional and must not
+ * be treated as the persistent model.
+ */
 function paddedSlotCount(candidates: readonly PositionedUpgradeCandidate[], draftSlotIndex?: number): number {
 	const highestOccupiedSlot = Math.max(
 		-1,
