@@ -387,7 +387,8 @@ export default defineConfig(
 		},
 		server:
 		{
-			port: 3000,
+			port: 5713,
+			strictPort: true,
 			allowedHosts: process.env['VITE_ALLOWED_HOSTS']?.split(',') ?? [],
 		},
 	},

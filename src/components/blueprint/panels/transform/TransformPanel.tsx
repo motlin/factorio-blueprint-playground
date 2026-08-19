@@ -1,5 +1,6 @@
 import {useNavigate} from '@tanstack/react-router';
 import {useId, useMemo, useState} from 'react';
+import {createPortal} from 'react-dom';
 
 import {BlueprintWrapper} from '../../../../parsing/BlueprintWrapper';
 import {serializeBlueprint} from '../../../../parsing/blueprintParser';
@@ -55,7 +56,7 @@ function UpgradePlannerDiscardConfirmation({
 		},
 	);
 
-	return (
+	return createPortal(
 		<div className="transform-dialog-backdrop transform-dialog-backdrop--confirmation">
 			<section
 				ref={confirmationReference}
@@ -81,7 +82,8 @@ function UpgradePlannerDiscardConfirmation({
 					</FactorioButton>
 				</div>
 			</section>
-		</div>
+		</div>,
+		document.body,
 	);
 }
 

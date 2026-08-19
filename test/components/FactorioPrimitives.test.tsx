@@ -156,7 +156,7 @@ test('binds each button variant to its Factorio style and default contents', () 
 		},
 		{
 			ariaDisabled: 'false',
-			className: 'factorio-button factorio-button--delete',
+			className: 'factorio-button factorio-button--delete factorio-button--icon-only',
 			contentsClassName: 'factorio-button__content',
 			factorioIcon: 'delete',
 			factorioStyle: 'tool_button_red',
@@ -164,7 +164,7 @@ test('binds each button variant to its Factorio style and default contents', () 
 		},
 		{
 			ariaDisabled: 'false',
-			className: 'factorio-button factorio-button--search',
+			className: 'factorio-button factorio-button--search factorio-button--icon-only',
 			contentsClassName: 'factorio-button__content',
 			factorioIcon: 'search',
 			factorioStyle: 'frame_action_button',
@@ -172,7 +172,7 @@ test('binds each button variant to its Factorio style and default contents', () 
 		},
 		{
 			ariaDisabled: 'false',
-			className: 'factorio-button factorio-button--close',
+			className: 'factorio-button factorio-button--close factorio-button--icon-only',
 			contentsClassName: 'factorio-button__content',
 			factorioIcon: 'close',
 			factorioStyle: 'frame_action_button',
