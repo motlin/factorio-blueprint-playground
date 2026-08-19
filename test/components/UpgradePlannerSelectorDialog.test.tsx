@@ -547,7 +547,7 @@ describe('UpgradePlannerSelectorDialog golden apply-only source contracts', () =
 			/>,
 		);
 
-		const dialog = screen.getByRole('dialog', {name: 'Load an upgrade planner'});
+		const dialog = screen.getByRole('dialog', {name: 'Choose a planner for this draft'});
 		const instructions = document.getElementById(dialog.getAttribute('aria-describedby') ?? '');
 		const grid = screen.getByRole('grid', {name: 'Upgrade planners'});
 		const tiles = within(grid).getAllByRole<HTMLButtonElement>('button');
@@ -571,6 +571,9 @@ describe('UpgradePlannerSelectorDialog golden apply-only source contracts', () =
 			},
 			instructions: instructions?.textContent,
 			shell: {
+				closeControl: within(dialog)
+					.getByRole('button', {name: 'Close planner draft chooser'})
+					.getAttribute('aria-label'),
 				dialogChildren: Array.from(dialog.children).map((child) => child.className),
 				source: dialog.getAttribute('data-factorio-source'),
 				subheaderStyle: dialog
@@ -594,8 +597,10 @@ describe('UpgradePlannerSelectorDialog golden apply-only source contracts', () =
 					verticalSpacing: '4px',
 				},
 			},
-			instructions: 'Choose a planner to copy all of its mappings into the editable draft.',
+			instructions:
+				'Choosing a planner replaces this editable draft and returns to the Upgrade Planner. It does not apply changes to the blueprint.',
 			shell: {
+				closeControl: 'Close planner draft chooser',
 				dialogChildren: [
 					'factorio-title-bar transform-dialog__header upgrade-planner-selector__header',
 					'factorio-frame factorio-frame--shallow upgrade-planner-selector__inside-frame',
@@ -611,6 +616,7 @@ describe('UpgradePlannerSelectorDialog golden apply-only source contracts', () =
 	test('keeps selection separate from roving focus and activates editor choices non-directionally', async () => {
 		const user = userEvent.setup();
 		const onChoose = vi.fn<(choice: UpgradePlannerChoice, direction: UpgradeDirection) => void>();
+		const onClose = vi.fn<() => void>();
 		render(
 			<UpgradePlannerSelectorDialog
 				dialogId="upgrade-planner-selector"
@@ -618,7 +624,7 @@ describe('UpgradePlannerSelectorDialog golden apply-only source contracts', () =
 				rootBlueprint={rootBlueprint}
 				selectedSource="pasted"
 				onChoose={onChoose}
-				onClose={vi.fn<() => void>()}
+				onClose={onClose}
 			/>,
 		);
 
@@ -647,9 +653,11 @@ describe('UpgradePlannerSelectorDialog golden apply-only source contracts', () =
 
 		expect({
 			activeElement: document.activeElement?.getAttribute('aria-label'),
+			closes: onClose.mock.calls,
 			selections: onChoose.mock.calls,
 		}).toStrictEqual({
 			activeElement: 'Paste upgrade planner…',
+			closes: [[]],
 			selections: [[{label: 'Paste upgrade planner…', source: 'pasted'}, 'upgrade']],
 		});
 	});

@@ -57,6 +57,7 @@ interface TransformInput {
 enum LuaTokenKind {
 	Identifier,
 	String,
+	Number,
 	OpeningBrace,
 	ClosingBrace,
 	Equals,
@@ -80,6 +81,7 @@ interface LuaUpgradeFrame {
 
 interface LuaPrototypeFrame {
 	group: string | undefined;
+	hasFuelValue: boolean;
 	hidden: boolean | undefined;
 	itemPrototype: boolean;
 	name: string | undefined;
@@ -185,6 +187,7 @@ function extractLiteralPrototypeFrames(sources: readonly string[]): LuaPrototype
 			if (token.kind === LuaTokenKind.OpeningBrace) {
 				frames.push({
 					group: undefined,
+					hasFuelValue: false,
 					hidden: undefined,
 					itemPrototype: false,
 					name: undefined,
@@ -214,6 +217,10 @@ function extractLiteralPrototypeFrames(sources: readonly string[]): LuaPrototype
 			}
 			if (token.value === 'stack_size') {
 				frame.itemPrototype = true;
+				continue;
+			}
+			if (token.value === 'fuel_value') {
+				frame.hasFuelValue = true;
 				continue;
 			}
 			if (
@@ -256,6 +263,34 @@ export function extractUpgradeModuleItems(sources: readonly string[]): string[] 
 		({name, subgroup, type}) =>
 			type === 'module' || (type === 'item' && subgroup === 'module' && name === 'empty-module-slot'),
 	);
+}
+
+/**
+ * UpgradeData::acceptableForUpgradeSource(ItemPrototype) admits any non-hidden
+ * item with a positive fuel value, and sourceAndDestinationCompatible pairs
+ * fuel with fuel; fluids also carry fuel_value but are not items.
+ */
+export function extractUpgradeFuelItems(sources: readonly string[]): string[] {
+	return extractMatchingFueledPrototypeNames(sources);
+}
+
+function extractMatchingFueledPrototypeNames(sources: readonly string[]): string[] {
+	const fueled = new Map<string, LuaPrototypeFrame>();
+	for (const prototype of extractLiteralPrototypeFrames(sources)) {
+		if (
+			prototype.name === undefined ||
+			prototype.hidden === true ||
+			prototype.type === 'fluid' ||
+			!prototype.hasFuelValue
+		) {
+			continue;
+		}
+		const existing = fueled.get(prototype.name);
+		if (existing === undefined || prototypeMetadataScore(prototype) > prototypeMetadataScore(existing)) {
+			fueled.set(prototype.name, prototype);
+		}
+	}
+	return [...fueled.keys()].sort();
 }
 
 export function extractPickerSignals(
@@ -414,6 +449,15 @@ function tokenizeLua(source: string): LuaToken[] {
 			tokens.push({kind: LuaTokenKind.Identifier, value: source.slice(start, cursor)});
 			continue;
 		}
+		if (/[0-9]/.test(character)) {
+			const start = cursor;
+			cursor += 1;
+			while (/[0-9A-Fa-fxX.]/.test(source[cursor] ?? '')) {
+				cursor += 1;
+			}
+			tokens.push({kind: LuaTokenKind.Number, value: source.slice(start, cursor)});
+			continue;
+		}
 		if (character === '{') {
 			tokens.push({kind: LuaTokenKind.OpeningBrace, value: character});
 		} else if (character === '}') {
@@ -478,6 +522,54 @@ export function extractHiddenPlaceResults(source: string): string[] {
 
 export function extractVisiblePlaceResults(source: string): string[] {
 	return extractPlaceResults(source, false);
+}
+
+/**
+ * Entity `module_slots` counts drive UpgradeDestinationSelectListGui's Entity
+ * settings extras: `UpgradeHelpers::getAvailableModuleSlots` gates the Module
+ * slots editor on `EntityPrototype::getModuleCount`. Later prototype
+ * definitions override earlier ones, matching data-stage load order.
+ */
+export function extractEntityModuleSlots(sources: readonly string[]): Record<string, number> {
+	const moduleSlots = new Map<string, number>();
+	for (const source of sources) {
+		const frames: {name: string | undefined; slots: number | undefined}[] = [];
+		const tokens = tokenizeLua(source);
+		for (let index = 0; index < tokens.length; index += 1) {
+			const token = tokens[index];
+			if (token.kind === LuaTokenKind.OpeningBrace) {
+				frames.push({name: undefined, slots: undefined});
+				continue;
+			}
+			if (token.kind === LuaTokenKind.ClosingBrace) {
+				const frame = frames.pop();
+				if (frame === undefined) {
+					throw new Error('Unexpected closing brace in Lua source.');
+				}
+				if (frame.name !== undefined && frame.slots !== undefined && frame.slots > 0) {
+					moduleSlots.set(frame.name, frame.slots);
+				}
+				continue;
+			}
+			if (token.kind !== LuaTokenKind.Identifier || tokens[index + 1]?.kind !== LuaTokenKind.Equals) {
+				continue;
+			}
+			const frame = frames.at(-1);
+			const value = tokens.at(index + 2);
+			if (frame === undefined || value === undefined) {
+				continue;
+			}
+			if (token.value === 'name' && value.kind === LuaTokenKind.String) {
+				frame.name = value.value;
+			} else if (token.value === 'module_slots' && value.kind === LuaTokenKind.Number) {
+				frame.slots = Number(value.value);
+			}
+		}
+		if (frames.length > 0) {
+			throw new Error('Unclosed table in Lua source.');
+		}
+	}
+	return Object.fromEntries([...moduleSlots.entries()].sort(([left], [right]) => left.localeCompare(right)));
 }
 
 export function extractPrototypeUpgrades(sources: readonly string[]): PrototypeUpgrade[] {

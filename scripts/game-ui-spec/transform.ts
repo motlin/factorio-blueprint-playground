@@ -306,8 +306,16 @@ function objectSignedIntegerField(source: string, name: string): number {
 	return Number(match[1]);
 }
 
+function cppStaticInteger(source: string, name: string): number {
+	const match = new RegExp(`static constexpr \\w+ ${name} = (\\d+);`).exec(source);
+	if (match === null) {
+		throw new Error(`Missing static integer: ${name}`);
+	}
+	return Number(match[1]);
+}
+
 function styleBlock(source: string, name: string): string {
-	const startMatch = new RegExp(`^\\s*${name}\\s*=\\s*\\{`, 'm').exec(source);
+	const startMatch = new RegExp(`^\\s*${name}\\s*=\\s*(?:--[^\\n]*\\n\\s*)?\\{`, 'm').exec(source);
 	if (startMatch === null) {
 		throw new Error(`Missing style block: ${name}`);
 	}
@@ -602,6 +610,8 @@ function extractStyleBindings(guiStyleSource: string, guiStyleHeader: string): G
 		slotButton,
 		filterSlotTable: binding('filterSlotTable'),
 		deepSlotsScrollPane: binding('deepSlotsScrollPane'),
+		mappingScrollPane: binding('mappersScrollPane'),
+		mappingTable: binding('mappersTable'),
 	};
 }
 
@@ -618,6 +628,10 @@ export function buildGameUiSpec(sourceLock: GameUiSourceLock, sources: ReadonlyM
 	const blueprintRecordSlotButton = styleBlock(styleSource, 'blueprint_record_slot_button');
 	const defaultTable = styleBlock(styleSource, 'table');
 	const labelUnderWidget = styleBlock(styleSource, 'label_under_widget');
+	const mappingTable = styleBlock(styleSource, 'mappers_table');
+	const mappingTableColumnWidths = styleBlock(mappingTable, 'column_widths');
+	const mappingTableHorizontalSpacing = styleBlock(mappingTable, 'horizontal_spacing');
+	const slotColumnHeader = styleBlock(styleSource, 'slot_column_header_label');
 	const slotTable = styleBlock(styleSource, 'slot_table');
 	const blueprintsListSource = requiredSource(sources, 'src/Gui/BlueprintsList.cpp');
 	for (const rowCount of ['blueprintBigSlotsPerRow', 'blueprintSmallSlotsPerRow']) {
@@ -655,6 +669,7 @@ export function buildGameUiSpec(sourceLock: GameUiSourceLock, sources: ReadonlyM
 		}
 	}
 	const upgradeItemGuiSource = requiredSource(sources, 'src/Gui/UpgradeItemGui.cpp');
+	const upgradeItemGuiHeader = requiredSource(sources, 'src/Gui/UpgradeItemGui.hpp');
 	for (const editorField of [
 		'UpgradeItemGui::getItemLabel(this->upgradeItem, this->upgradeRecord)',
 		'UpgradeItemGui::getUpgradeData(this->upgradeItem, this->upgradeRecord).description',
@@ -684,6 +699,8 @@ export function buildGameUiSpec(sourceLock: GameUiSourceLock, sources: ReadonlyM
 		labels: {
 			anyQuality: requireLocale(locales, '.quality-condition-any'),
 			qualitySelectionTooltip: requireLocale(locales, '.quality-selection-tooltip'),
+			upgradeFrom: requireLocale(locales, 'gui-upgrade.from'),
+			upgradeTo: requireLocale(locales, 'gui-upgrade.to'),
 		},
 		signals: {
 			typeOrder: extractSignalTypeOrder(requiredSource(sources, 'src/Gui/ChatIconIDIterator.cpp')),
@@ -691,6 +708,10 @@ export function buildGameUiSpec(sourceLock: GameUiSourceLock, sources: ReadonlyM
 			subgroupStartsNewRow: extractSubgroupStartsNewRow(requiredSource(sources, 'src/Gui/SelectListGui.cpp')),
 		},
 		upgrades: extractUpgrades(sources),
+		upgradePlanner: {
+			mappingsPerRow: cppStaticInteger(upgradeItemGuiHeader, 'mappersPerRow'),
+			minimumMappingRows: cppStaticInteger(upgradeItemGuiHeader, 'mappersMinRows'),
+		},
 		utilityConstants: {
 			blueprintBigSlotsPerRow: objectIntegerField(utilitySource, 'blueprint_big_slots_per_row'),
 			blueprintSmallSlotsPerRow: objectIntegerField(utilitySource, 'blueprint_small_slots_per_row'),
@@ -711,8 +732,14 @@ export function buildGameUiSpec(sourceLock: GameUiSourceLock, sources: ReadonlyM
 			labelUnderWidgetBottomMargin: objectSignedIntegerField(labelUnderWidget, 'bottom_margin'),
 			labelUnderWidgetHeight: objectIntegerField(labelUnderWidget, 'height'),
 			labelUnderWidgetTopMargin: objectSignedIntegerField(labelUnderWidget, 'top_margin'),
+			mappingPairWidth: objectIntegerField(mappingTableColumnWidths, 'width'),
+			mappingTableHorizontalSpacing: [...mappingTableHorizontalSpacing.matchAll(/spacing\s*=\s*(\d+)/g)].map(
+				(match) => Number(match[1]),
+			),
+			mappingTableVerticalSpacing: objectIntegerField(mappingTable, 'vertical_spacing'),
 			signalsTableColumnCount: Number(signalsTableConstructor),
 			signalsTableMinimumWidth: Number(signalsTableWidth),
+			slotColumnHeaderWidth: objectIntegerField(slotColumnHeader, 'width'),
 			bindings: extractStyleBindings(
 				requiredSource(sources, 'src/Gui/GuiStyle.cpp'),
 				requiredSource(sources, 'src/Gui/GuiStyle.hpp'),

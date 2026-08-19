@@ -32,6 +32,21 @@ export interface SignalID {
 
 export interface UpgradeSourceSignal extends SignalID {
 	comparator?: QualityComparator;
+	/**
+	 * UpgradeFilter::entityFilterKey: a module source may scope replacement to
+	 * one module-using entity, serialized as `module_filter`.
+	 */
+	module_filter?: SignalID & {comparator?: QualityComparator};
+}
+
+/**
+ * Upgrade planner mapper destinations serialize `module_limit` (omitted when
+ * zero) and `module_slots` (fixed-length list whose empty entries are empty
+ * objects), mirroring UpgradeDestination::save at Factorio 2.1.12.
+ */
+export interface UpgradeTargetSignal extends SignalID {
+	module_limit?: number;
+	module_slots?: Partial<SignalID>[];
 }
 
 export interface Icon {
@@ -300,7 +315,7 @@ export interface DeconstructionPlanner extends CommonFields {
 
 export interface UpgradeMapping {
 	from?: UpgradeSourceSignal;
-	to?: SignalID;
+	to?: UpgradeTargetSignal;
 	index: number;
 }
 

@@ -15,6 +15,7 @@ import {
 	type UpgradeDirection,
 } from '../../../../transform/upgradePlanner';
 import {FactorioButton, FactorioButtonKind} from '../../../ui/FactorioUi';
+import {copyToClipboard, downloadBlueprint} from '../../../history/utils/fileUtils';
 import {BlueprintEditorDialog} from './BlueprintEditorDialog';
 import {BlueprintLabelIcons} from './BlueprintLabelIcons';
 import {BlueprintToolbelt} from './BlueprintToolbelt';
@@ -308,6 +309,25 @@ export function TransformPanel({
 					onScopeChange={upgradeDraft.onScopeChange}
 					replacements={upgradeDraft.replacements}
 					recordMetadata={upgradeDraft.recordMetadata}
+					recordTools={{
+						deleteKind: upgradeDraft.libraryRecordId === undefined ? 'local' : 'saved',
+						onCopy: async () => {
+							const copied = await copyToClipboard(upgradeDraft.serializedPlannerDraft());
+							return copied;
+						},
+						onDelete: async () => {
+							if (upgradeDraft.libraryRecordId !== undefined) {
+								await db.deleteLibraryRecord({id: upgradeDraft.libraryRecordId});
+							}
+							upgradeDraft.discardPlanner();
+						},
+						onExport: () => {
+							downloadBlueprint(
+								upgradeDraft.serializedPlannerDraft(),
+								upgradeDraft.recordMetadata.label || 'upgrade-planner',
+							);
+						},
+					}}
 					saveDisabled={upgradeDraft.saveDisabled}
 					savePrompt={{
 						existingRecordName:

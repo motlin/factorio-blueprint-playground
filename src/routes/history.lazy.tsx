@@ -8,6 +8,7 @@ import {downloadBlueprint, sanitizeFilename} from '../components/history/utils/f
 import {EmptyHistoryState} from '../components/history/views/EmptyHistoryState';
 import {LoadingState} from '../components/history/views/LoadingState';
 import {Button} from '../components/ui/Button';
+import {FactorioButton, FactorioButtonKind} from '../components/ui/FactorioUi';
 import {ErrorAlert} from '../components/ui/ErrorAlert';
 import {Panel} from '../components/ui/Panel';
 import {logger} from '../lib/sentry';
@@ -243,24 +244,29 @@ function History() {
 				This is the full chronological History shelf. Explicitly saved blueprints, books, and planners live in
 				the <Link to="/library">Blueprint Library</Link>.
 			</p>
-			<div>
-				<Button disabled={selectedItems.size === 0} onClick={downloadAsBook} data-testid="download-button">
+			<div className="history-toolbar" role="toolbar" aria-label="History actions">
+				<FactorioButton
+					kind={FactorioButtonKind.Confirm}
+					disabled={selectedItems.size === 0}
+					onClick={downloadAsBook}
+					data-testid="download-button"
+				>
 					Download Selected as Book
-				</Button>
-				<Button
+				</FactorioButton>
+				<FactorioButton
 					disabled={selectedItems.size === 0}
 					onClick={() => void deleteSelected()}
 					data-testid="delete-button"
 				>
 					Delete Selected
-				</Button>
-				<Button disabled={selectedBookCount === 0} onClick={() => void splitSelectedBooks()}>
+				</FactorioButton>
+				<FactorioButton disabled={selectedBookCount === 0} onClick={() => void splitSelectedBooks()}>
 					Split Selected Books
-				</Button>
-				<Button onClick={selectAll}>Select All</Button>
-				<Button onClick={selectNone} disabled={selectedItems.size === 0}>
+				</FactorioButton>
+				<FactorioButton onClick={selectAll}>Select All</FactorioButton>
+				<FactorioButton onClick={selectNone} disabled={selectedItems.size === 0}>
 					Clear Selection
-				</Button>
+				</FactorioButton>
 			</div>
 
 			<BlueprintHistoryTable

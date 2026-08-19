@@ -64,6 +64,7 @@ const pickerSignals: readonly SignalID[] = gameData.pickerSignals.map(({name, ty
 
 const upgradeEntityItemNames = new Set(gameData.upgradeEntityItems);
 const upgradeModuleNames = new Set(gameData.upgradeModuleItems);
+const upgradeFuelNames = new Set(gameData.upgradeFuelItems);
 const pickerSignalLayouts = new Map(
 	gameData.pickerSignals.map(({group, hidden, name, subgroup, type}, index) => [
 		`${type}:${name}`,
@@ -211,11 +212,71 @@ export function signalPickerSubgroup(signal: SignalID): string {
 	return pickerSignalLayout(signal)?.subgroup ?? `unmapped-${normalizedSignalType(signal)}`;
 }
 
+/**
+ * UpgradeHelpers::getMaxModuleSlots caps the module-limit input at the largest
+ * module-slot count of any prototype; the web derives it from the generated
+ * per-entity counts.
+ */
+export const maxModuleSlots = Math.max(...Object.values(gameData.entityModuleSlots));
+
+/**
+ * UpgradeHelpers::shouldEnableEntityFilter: the From picker's entity-filter
+ * extras apply to module items and the empty module slot; candidates are
+ * limited to entities that use modules.
+ */
+export function entityFilterAllowed(signal: SignalID): boolean {
+	return normalizedSignalType(signal) === 'item' && upgradeModuleNames.has(signal.name);
+}
+
+export function moduleEntityFilterOptions(): SignalID[] {
+	return Object.keys(gameData.entityModuleSlots)
+		.map((name): SignalID => ({type: 'entity', name}))
+		.sort(comparePickerSignalOrder);
+}
+
+/**
+ * UpgradeHelpers::getAvailableModuleSlots: an entity destination exposes the
+ * Entity settings module-slot editor when its prototype has module slots. The
+ * generated counts use the base prototype value; quality slot bonuses are not
+ * modeled.
+ */
+export function entityModuleSlotCount(signal: SignalID): number {
+	if (normalizedSignalType(signal) !== 'entity') {
+		return 0;
+	}
+	const counts: Record<string, number> = gameData.entityModuleSlots;
+	return counts[signal.name] ?? 0;
+}
+
+/**
+ * Per-slot module candidates mirror the game's module-only ChooseButton filter;
+ * an empty position is a cleared slot, so the empty-module-slot item is not a
+ * candidate. Allowed-effects filtering is not modeled and every module is
+ * offered.
+ */
+export function moduleSlotOptions(): SignalID[] {
+	return gameData.upgradeModuleItems
+		.filter((name) => name !== 'empty-module-slot')
+		.map((name): SignalID => ({type: 'item', name}));
+}
+
+/**
+ * UpgradeHelpers::shouldEnableModuleLimit: the Module limit extras apply only
+ * to true module destinations, never to the empty module slot.
+ */
+export function moduleLimitAllowed(signal: SignalID): boolean {
+	return (
+		normalizedSignalType(signal) === 'item' &&
+		upgradeModuleNames.has(signal.name) &&
+		signal.name !== 'empty-module-slot'
+	);
+}
+
 export function isUpgradeSourceOption(signal: SignalID): boolean {
 	const type = normalizedSignalType(signal);
 	return (
 		(type === 'entity' && upgradeEntityNames.has(signal.name)) ||
-		(type === 'item' && upgradeModuleNames.has(signal.name))
+		(type === 'item' && (upgradeModuleNames.has(signal.name) || upgradeFuelNames.has(signal.name)))
 	);
 }
 
@@ -223,6 +284,7 @@ export function upgradeSourceOptions(currentSource?: SignalID): SignalID[] {
 	const generatedOptions = [
 		...upgradeEntityGroups.flatMap(({members}) => members.map(({name}): SignalID => ({type: 'entity', name}))),
 		...gameData.upgradeModuleItems.map((name): SignalID => ({type: 'item', name})),
+		...gameData.upgradeFuelItems.map((name): SignalID => ({type: 'item', name})),
 	].sort(comparePickerSignalOrder);
 	return appendCurrentOption(generatedOptions, currentSource);
 }
@@ -256,6 +318,9 @@ export function replaceUpgradeTarget(currentTarget: SignalID | undefined, nextTa
 export function upgradeTargetOptions(source: UpgradeSourceSignal): SignalID[] {
 	if (normalizedSignalType(source) === 'item' && upgradeModuleNames.has(source.name)) {
 		return gameData.upgradeModuleItems.map((name) => ({type: 'item', name}));
+	}
+	if (normalizedSignalType(source) === 'item' && upgradeFuelNames.has(source.name)) {
+		return gameData.upgradeFuelItems.map((name) => ({type: 'item', name}));
 	}
 	if (normalizedSignalType(source) !== 'entity') {
 		return [];

@@ -50,28 +50,23 @@ interface HistoryBlueprintRowProps {
  * separate explicit operation.
  */
 export function HistoryBlueprintRow({blueprint, isSelected, onToggleSelection}: HistoryBlueprintRowProps) {
-	const handleKeyDown = (event: React.KeyboardEvent) => {
-		if (event.key === 'Enter' || event.key === ' ') {
-			event.preventDefault();
-			onToggleSelection(blueprint.id);
-		}
-	};
+	const label = blueprint.gameData.label?.trim();
+	const rowName =
+		label === undefined || label === '' ? `Untitled ${blueprint.gameData.type.replace('_', ' ')}` : label;
 
 	return (
-		<button
-			type="button"
+		<div
 			key={blueprint.id}
 			className={`history-blueprint-item ${isSelected ? 'selected' : ''}`}
 			onClick={() => {
 				onToggleSelection(blueprint.id);
 			}}
-			onKeyDown={handleKeyDown}
-			aria-pressed={isSelected}
 			data-testid="blueprint-item"
 		>
-			{/* Checkbox column */}
+			{/* Checkbox column owns the row's accessible selection control */}
 			<BlueprintTableCheckbox
 				isSelected={isSelected}
+				label={`Select ${rowName}`}
 				onToggle={() => {
 					onToggleSelection(blueprint.id);
 				}}
@@ -143,6 +138,6 @@ Updated: ${new Date(blueprint.metadata.lastUpdatedOn).toLocaleString()}`}
 					<ButtonGreen onClick={() => undefined}>Open</ButtonGreen>
 				</Link>
 			</div>
-		</button>
+		</div>
 	);
 }

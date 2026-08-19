@@ -147,7 +147,7 @@ function openBlueprintEditor() {
 }
 
 async function choosePlanner(user: ReturnType<typeof userEvent.setup>, label: string) {
-	await user.click(screen.getByRole('button', {name: /Load planner, currently/}));
+	await user.click(screen.getByRole('button', {name: 'Load planner to replace draft'}));
 	await user.click(screen.getByRole('button', {name: label}));
 }
 
@@ -175,7 +175,7 @@ async function searchSignals(user: ReturnType<typeof userEvent.setup>, searchTex
 }
 
 function choosePlannerWithClicks(label: string) {
-	fireEvent.click(screen.getByRole('button', {name: /Load planner, currently/}));
+	fireEvent.click(screen.getByRole('button', {name: 'Load planner to replace draft'}));
 	fireEvent.click(screen.getByRole('button', {name: label}));
 }
 
@@ -335,6 +335,14 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			libraryRecords[index] = record;
 			return Promise.resolve(record);
 		});
+		vi.spyOn(db, 'deleteLibraryRecord').mockImplementation(async ({id}) => {
+			await Promise.resolve();
+			const index = libraryRecords.findIndex((record) => record.id === id);
+			if (index < 0) {
+				throw new Error(`Missing library record: ${id}`);
+			}
+			libraryRecords.splice(index, 1);
+		});
 	});
 
 	test('renders nothing without a blueprint or for a deconstruction planner', () => {
@@ -374,40 +382,105 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 
 		openUpgradePlanner();
 		const dialog = screen.getByRole('dialog', {name: 'Upgrade Planner'});
-		const configuration = within(dialog).getByRole('region', {name: 'Upgrade Planner configuration'});
+		const body = dialog.querySelector<HTMLElement>('.upgrade-planner-dialog__body');
+		if (body === null) {
+			throw new Error('Expected the Upgrade Planner body.');
+		}
+		const editor = within(dialog).getByRole('region', {name: 'Upgrade planner editor'});
+		const mapperScroll = within(editor).getByRole('region', {name: 'Upgrade mappings'});
+		const application = within(dialog)
+			.getByRole('heading', {name: 'Website application'})
+			.closest<HTMLElement>('section');
+		if (application === null) {
+			throw new Error('Expected the website application section.');
+		}
+		const loader = application.querySelector<HTMLElement>('.upgrade-planner-loader');
+		if (loader === null) {
+			throw new Error('Expected the planner draft loader.');
+		}
+		const loadPlanner = within(loader).getByRole('button', {name: 'Load planner to replace draft'});
+		const draftSource = within(loader).getByLabelText('Draft source: Default Upgrade');
 		const dialogHeading = within(dialog).getByRole('heading', {name: 'Upgrade Planner'});
+		const plannerContext = within(dialog).getByRole('navigation', {
+			name: 'Upgrade planner blueprint context',
+		});
+		const plannerScope = within(dialog).getByRole('radiogroup', {name: 'Apply mappings to'});
 		expect(dialog.getAttribute('aria-labelledby')).toBe(dialogHeading.id);
 		expect({
-			bodyClass: configuration.className,
-			bookWidePanel: within(configuration)
-				.getByRole('heading', {name: 'Book-wide replacements'})
-				.closest('section')?.className,
+			applicationExtension: application.dataset.websiteExtension,
+			bodyClass: body.className,
+			bookWidePanel: within(body).getByRole('heading', {name: 'Book-wide replacements'}).closest('section')
+				?.className,
 			changeIn: screen.queryByRole('group', {name: 'Change in'}),
 			closeButton: within(dialog).getByRole('button', {name: 'Close Upgrade Planner'}).getAttribute('aria-label'),
-			configurationPanel: within(configuration)
-				.getByRole('heading', {name: 'Upgrade mappings'})
-				.closest('section')?.className,
+			closeSource: within(dialog)
+				.getByRole('button', {name: 'Close Upgrade Planner'})
+				.getAttribute('data-factorio-source'),
+			context: plannerContext.textContent,
+			contextExtension: plannerContext.parentElement?.dataset.websiteExtension,
 			dialog: dialog.getAttribute('aria-modal'),
+			editorClass: editor.className,
+			editorStyle: editor.dataset.factorioStyle,
 			exportActions: ['Copy String', 'Copy JSON', 'Download String', 'Open in Playground'].map((name) =>
 				screen.queryByRole('button', {name}),
 			),
+			fillerStyle: editor.querySelector<HTMLElement>('.upgrade-planner-dialog__filler')?.dataset.factorioStyle,
 			footerElement: dialog.lastElementChild?.tagName,
-			fromToGroup: within(configuration)
-				.getByRole('group', {name: 'From and To mappings'})
-				.getAttribute('aria-label'),
+			footerExtension:
+				dialog.lastElementChild instanceof HTMLElement
+					? dialog.lastElementChild.dataset.websiteExtension
+					: undefined,
+			fromToGroup: within(editor).getByRole('group', {name: 'From and To mappings'}).getAttribute('aria-label'),
 			headerElement: dialog.firstElementChild?.tagName,
+			headerIcon: dialog.querySelector('.upgrade-planner-dialog__identity-icon img')?.getAttribute('src'),
+			headerSource: dialog.firstElementChild?.getAttribute('data-factorio-source'),
+			libraryState: within(dialog).getByLabelText('Planner library status').textContent,
 			liveResult: screen.queryByText('Live result'),
+			loader: {
+				button: {
+					describedSource: document
+						.getElementById(loadPlanner.getAttribute('aria-describedby') ?? '')
+						?.getAttribute('aria-label'),
+					expanded: loadPlanner.getAttribute('aria-expanded'),
+					text: loadPlanner.textContent,
+					websiteAction: loadPlanner.getAttribute('data-website-action'),
+				},
+				source: {
+					icon: draftSource.querySelector('img')?.getAttribute('src'),
+					label: draftSource.querySelector('strong')?.textContent,
+				},
+			},
+			loaderInsideEditor: within(editor).queryByText('Load planner'),
+			loaderExtension:
+				application.querySelector<HTMLElement>('.upgrade-planner-loader')?.dataset.websiteExtension,
+			mapperClass: mapperScroll.className,
+			mapperStyle: mapperScroll.dataset.factorioStyle,
+			mappingHeadingGroups: [...editor.querySelectorAll('.upgrade-mapping-grid__headings > div')].map(
+				(group) => group.textContent,
+			),
+			mappingSlots: editor.querySelectorAll('[data-upgrade-mapping-slot]').length,
 			modeButtons: ['Upgrade', 'Downgrade', 'Strip quality'].map((name) => screen.queryByRole('button', {name})),
+			nativeScopeSelect: within(dialog).queryByRole('combobox', {name: 'Apply to'}),
 			operationButtons: [
-				'Save Planner',
+				'Save to Library',
 				'Apply Upgrade to Current Blueprint',
 				'Apply Downgrade to Current Blueprint',
 			].map((name) => screen.queryByRole('button', {name})?.textContent ?? null),
 			preserveCapitalization: screen.queryByRole('checkbox', {name: 'Preserve capitalization'}),
-			sectionOrder: [...configuration.querySelectorAll('.upgrade-planner-dialog__content > section')].map(
-				(section) => section.querySelector('h4')?.textContent,
+			scopeExtension: plannerScope.dataset.websiteExtension,
+			scopeOptions: within(plannerScope)
+				.getAllByRole<HTMLInputElement>('radio')
+				.map((radio) => ({
+					checked: radio.checked,
+					disabled: radio.disabled,
+					label: radio.parentElement?.textContent,
+					value: radio.value,
+				})),
+			sectionOrder: [...body.children].map(
+				(section) =>
+					section.getAttribute('data-factorio-style') ?? section.getAttribute('data-website-extension'),
 			),
-			scrollTabIndex: configuration.tabIndex,
+			scrollTabIndex: mapperScroll.tabIndex,
 			sourceIcon: screen
 				.getByRole('button', {name: 'Choose source, currently Transport belt'})
 				.querySelector('img')
@@ -417,27 +490,65 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 				.querySelector('img')
 				?.getAttribute('src'),
 			bookWideReplacements: screen.getByRole('heading', {name: 'Book-wide replacements'}).textContent,
-			websiteLabel: within(configuration).getByText('Website extension').textContent,
+			websiteLabel: within(dialog).queryByText('Website extension')?.textContent,
 		}).toStrictEqual({
-			bodyClass: 'factorio-scroll-frame transform-workbench__body upgrade-planner-dialog__scroll-region',
+			applicationExtension: 'planner-application',
+			bodyClass: 'upgrade-planner-dialog__body',
 			bookWidePanel: 'panel-hole transform-workflow__section book-wide-replacements',
 			changeIn: null,
 			closeButton: 'Close Upgrade Planner',
-			configurationPanel: 'panel-hole upgrade-planner-dialog__configuration',
+			closeSource: 'GameGuiWithControllerInventory::closeButton',
+			context: 'This blueprint or book›Untitled blueprint',
+			contextExtension: 'planner-context',
 			dialog: 'true',
+			editorClass: 'factorio-frame factorio-frame--shallow upgrade-planner-dialog__editor-shell',
+			editorStyle: 'entity_frame',
 			exportActions: [null, null, null, null],
+			fillerStyle: 'entity_frame_filler',
 			footerElement: 'FOOTER',
+			footerExtension: 'planner-actions',
 			fromToGroup: 'From and To mappings',
 			headerElement: 'HEADER',
+			headerIcon: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
+			headerSource: 'UpgradeItemGui::UpgradeItemGui',
+			libraryState: 'Local draft · not in Blueprint Library',
 			liveResult: null,
+			loader: {
+				button: {
+					describedSource: 'Draft source: Default Upgrade',
+					expanded: 'false',
+					text: 'Load planner…',
+					websiteAction: 'replace-planner-draft',
+				},
+				source: {
+					icon: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
+					label: 'Default Upgrade',
+				},
+			},
+			loaderInsideEditor: null,
+			loaderExtension: 'planner-library-loader',
+			mapperClass: 'factorio-scroll-frame upgrade-planner-dialog__scroll-region',
+			mapperStyle: 'mappers_scroll_pane',
+			mappingHeadingGroups: ['FromTo', 'FromTo', 'FromTo', 'FromTo'],
+			mappingSlots: 20,
 			modeButtons: [null, null, null],
+			nativeScopeSelect: null,
 			operationButtons: [
-				'Save Planner',
+				'Save to Library',
 				'Apply Upgrade to Current Blueprint',
 				'Apply Downgrade to Current Blueprint',
 			],
 			preserveCapitalization: null,
-			sectionOrder: ['Planner record', 'Upgrade mappings', 'Book-wide replacements'],
+			scopeExtension: 'planner-application-scope',
+			scopeOptions: [
+				{
+					checked: true,
+					disabled: false,
+					label: 'Current selectionThis blueprint or book',
+					value: 'selection',
+				},
+			],
+			sectionOrder: ['entity_frame', 'planner-application', null],
 			scrollTabIndex: 0,
 			sourceIcon: 'https://factorio-icon-cdn.pages.dev/entity/transport-belt.webp',
 			targetIcon: 'https://factorio-icon-cdn.pages.dev/entity/fast-transport-belt.webp',
@@ -452,7 +563,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		const tool = screen.getByRole('button', {name: 'Open Upgrade Planner'});
 
 		await user.click(tool);
-		expect(document.activeElement).toBe(screen.getByRole('region', {name: 'Upgrade Planner configuration'}));
+		expect(document.activeElement).toBe(screen.getByRole('region', {name: 'Upgrade mappings'}));
 
 		await user.click(screen.getByRole('button', {name: 'Close Upgrade Planner'}));
 		await waitFor(() => {
@@ -467,9 +578,10 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 
 		await user.click(tool);
 		await user.click(screen.getByRole('button', {name: 'Edit planner name'}));
-		const plannerName = screen.getByRole('textbox', {name: 'Planner name'});
+		const plannerName = screen.getByRole('textbox', {name: 'Name'});
 		await user.clear(plannerName);
-		await user.type(plannerName, 'Dirty planner{Enter}');
+		await user.type(plannerName, 'Dirty planner');
+		await user.click(screen.getByRole('button', {name: 'Confirm planner metadata'}));
 		const closePlanner = screen.getByRole('button', {name: 'Close Upgrade Planner'});
 		await user.click(closePlanner);
 
@@ -543,7 +655,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		await choosePlanner(user, 'Empty Planner');
 		const loadEmptyPlannerCommitCount = commitsSincePreviousInteraction();
 
-		await user.selectOptions(screen.getByRole('combobox', {name: 'Apply to'}), 'root');
+		await user.click(screen.getByRole('radio', {name: /^Entire book/}));
 		const rootScopeCommitCount = commitsSincePreviousInteraction();
 		await user.click(firstEmptyMappingSourceButton());
 		await chooseSignal(user, 'Transport belt');
@@ -952,13 +1064,14 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		await user.click(screen.getByRole('button', {name: 'Rare quality'}));
 		await chooseSignal(user, 'Fast transport belt');
 		await user.click(screen.getByRole('button', {name: 'Edit planner name'}));
-		const plannerName = screen.getByRole('textbox', {name: 'Planner name'});
+		const plannerName = screen.getByRole('textbox', {name: 'Name'});
 		await user.clear(plannerName);
-		await user.type(plannerName, 'Rare belt upgrades{Enter}');
+		await user.type(plannerName, 'Rare belt upgrades');
 		await user.type(screen.getByRole('textbox', {name: 'Planner description'}), 'Rare belt line');
 		await user.click(screen.getByRole('button', {name: 'Choose preview icon 1'}));
 		await chooseSignal(user, 'Signal red');
-		await user.click(screen.getByRole('button', {name: 'Save Planner'}));
+		await user.click(screen.getByRole('button', {name: 'Confirm planner metadata'}));
+		await user.click(screen.getByRole('button', {name: 'Save to Library'}));
 		const savePrompt = screen.getByRole('dialog', {name: 'Save to Blueprint Library'});
 		expect({
 			dialogState: interactionState(),
@@ -1005,13 +1118,11 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			recordIcons: savedInput.gameData.icons,
 			recordLabel: savedInput.gameData.label,
 			savedRecord: screen.getByRole('status').textContent,
-			source: screen.getByRole('button', {
-				name: 'Load planner, currently Rare belt upgrades',
-			}).textContent,
+			source: screen.getByLabelText('Draft source: Rare belt upgrades').querySelector('strong')?.textContent,
 		}).toStrictEqual({
 			destination: {parentId: LIBRARY_ROOT_ID, position: 0},
 			dialogState: {
-				activeElement: {name: 'Save Planner', tagName: 'BUTTON'},
+				activeElement: {name: 'Save to Library', tagName: 'BUTTON'},
 				dialogStack: [
 					{
 						ariaHidden: null,
@@ -1097,19 +1208,20 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		await choosePlanner(user, 'Library belts');
 		await user.click(screen.getByRole('button', {name: 'Choose target for Transport belt'}));
 		await chooseSignal(user, 'Express transport belt');
-		expect(screen.getByText('Saved record: Library belts').textContent).toBe('Saved record: Library belts');
+		expect(screen.getByLabelText('Planner library status').textContent).toBe('Blueprint Library › Library belts');
 		await user.click(screen.getByRole('button', {name: 'Edit planner name'}));
-		const canceledName = screen.getByRole('textbox', {name: 'Planner name'});
+		const canceledName = screen.getByRole('textbox', {name: 'Name'});
 		await user.clear(canceledName);
-		await user.type(canceledName, 'Canceled name{Enter}');
-		await user.click(screen.getByRole('button', {name: 'Save Planner'}));
+		await user.type(canceledName, 'Canceled name');
+		await user.click(screen.getByRole('button', {name: 'Confirm planner metadata'}));
+		await user.click(screen.getByRole('button', {name: 'Save to Library'}));
 		const canceledPrompt = screen.getByRole('dialog', {name: 'Save to Blueprint Library'});
 		await user.click(within(canceledPrompt).getByRole('button', {name: 'Cancel Save'}));
 
 		expect({
 			navigation: navigate.mock.calls,
 			savePrompt: screen.queryByRole('dialog', {name: 'Save to Blueprint Library'}),
-			source: screen.getByRole('button', {name: 'Load planner, currently Library belts'}).textContent,
+			source: screen.getByLabelText('Draft source: Library belts').querySelector('strong')?.textContent,
 			target: screen.getByRole('button', {name: 'Choose target for Transport belt'}).title,
 			updateCalls: vi.mocked(db.updateLibraryRecord).mock.calls,
 		}).toStrictEqual({
@@ -1121,10 +1233,11 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		});
 
 		await user.click(screen.getByRole('button', {name: 'Edit planner name'}));
-		const updatedName = screen.getByRole('textbox', {name: 'Planner name'});
+		const updatedName = screen.getByRole('textbox', {name: 'Name'});
 		await user.clear(updatedName);
-		await user.type(updatedName, 'Express belt upgrades{Enter}');
-		await user.click(screen.getByRole('button', {name: 'Save Planner'}));
+		await user.type(updatedName, 'Express belt upgrades');
+		await user.click(screen.getByRole('button', {name: 'Confirm planner metadata'}));
+		await user.click(screen.getByRole('button', {name: 'Save to Library'}));
 		const updatePrompt = screen.getByRole('dialog', {name: 'Save to Blueprint Library'});
 		expect({
 			dialogState: interactionState(),
@@ -1161,9 +1274,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			id: updateInput.id,
 			navigation: navigate.mock.calls,
 			planner: parseUpgradePlanner(updateInput.content.data),
-			source: screen.getByRole('button', {
-				name: 'Load planner, currently Express belt upgrades',
-			}).textContent,
+			source: screen.getByLabelText('Draft source: Express belt upgrades').querySelector('strong')?.textContent,
 		}).toStrictEqual({
 			id: 'library-belts',
 			navigation: [],
@@ -1209,10 +1320,11 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		openUpgradePlanner();
 		await choosePlanner(user, 'Original planner');
 		await user.click(screen.getByRole('button', {name: 'Edit planner name'}));
-		const name = screen.getByRole('textbox', {name: 'Planner name'});
+		const name = screen.getByRole('textbox', {name: 'Name'});
 		await user.clear(name);
-		await user.type(name, 'Copied planner{Enter}');
-		await user.click(screen.getByRole('button', {name: 'Save Planner'}));
+		await user.type(name, 'Copied planner');
+		await user.click(screen.getByRole('button', {name: 'Confirm planner metadata'}));
+		await user.click(screen.getByRole('button', {name: 'Save to Library'}));
 		const prompt = screen.getByRole('dialog', {name: 'Save to Blueprint Library'});
 		await user.click(within(prompt).getByRole('button', {name: 'Save a Copy'}));
 
@@ -1275,18 +1387,108 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 
 		openUpgradePlanner();
 		await choosePlanner(user, 'Reloaded planner');
+		await user.click(screen.getByRole('button', {name: 'Edit planner name'}));
 
 		expect({
 			description: screen.getByRole<HTMLInputElement>('textbox', {name: 'Planner description'}).value,
 			iconTitle: screen.getByRole('button', {name: 'Edit preview icon 1'}).title,
-			name: screen.getByText('Reloaded planner', {selector: '.blueprint-editor__title'}).textContent,
-			state: screen.getByText('Saved record: Reloaded planner').textContent,
+			name: screen.getByRole<HTMLInputElement>('textbox', {name: 'Name'}).value,
+			state: screen.getByLabelText('Planner library status').textContent,
 		}).toStrictEqual({
 			description: 'Reloaded description',
 			iconTitle: 'Signal green\nvirtual:signal-green',
 			name: 'Reloaded planner',
-			state: 'Saved record: Reloaded planner',
+			state: 'Blueprint Library › Reloaded planner',
 		});
+	});
+
+	test('copies and exports the current planner draft and explicitly discards an unsaved record', async () => {
+		const user = userEvent.setup();
+		const originalClipboard = navigator.clipboard;
+		const writeText = vi.fn<(text: string) => Promise<void>>(async () => {});
+		Object.defineProperty(navigator, 'clipboard', {configurable: true, value: {writeText}});
+		const createObjectUrl = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:planner-export');
+		const revokeObjectUrl = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+		const anchorClick = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+		render(<TransformPanel blueprint={blueprint} />);
+
+		openUpgradePlanner();
+		const toolbar = screen.getByRole('toolbar', {name: 'Planner record tools'});
+		expect(
+			within(toolbar)
+				.getAllByRole('button')
+				.map((button) => ({label: button.getAttribute('aria-label'), style: button.dataset.factorioStyle})),
+		).toStrictEqual([
+			{label: 'Copy planner string', style: 'button'},
+			{label: 'Export planner string', style: 'button'},
+			{label: 'Discard local planner', style: 'red_button'},
+		]);
+
+		await user.click(within(toolbar).getByRole('button', {name: 'Copy planner string'}));
+		await screen.findByText('Planner string copied.');
+		const copiedPlanner = parseUpgradePlanner(writeText.mock.calls[0][0]);
+		expect({label: copiedPlanner.label, mappings: copiedPlanner.settings.mappers.length}).toStrictEqual({
+			label: 'Default Upgrade',
+			mappings: 14,
+		});
+
+		await user.click(within(toolbar).getByRole('button', {name: 'Export planner string'}));
+		expect({
+			anchorClicks: anchorClick.mock.calls.length,
+			blobType: (createObjectUrl.mock.calls[0][0] as Blob).type,
+			revoked: revokeObjectUrl.mock.calls,
+		}).toStrictEqual({anchorClicks: 1, blobType: 'text/plain', revoked: [['blob:planner-export']]});
+
+		const discard = within(toolbar).getByRole('button', {name: 'Discard local planner'});
+		await user.click(discard);
+		const confirmation = screen.getByRole('alertdialog', {name: 'Discard local planner?'});
+		expect(within(confirmation).getByText(/no Blueprint Library record/).textContent).toBe(
+			'This planner has no Blueprint Library record. Its local draft will be discarded.',
+		);
+		await user.click(within(confirmation).getByRole('button', {name: 'Keep planner'}));
+		await waitFor(() => {
+			expect(document.activeElement).toBe(discard);
+		});
+		await user.click(discard);
+		await user.click(
+			within(screen.getByRole('alertdialog', {name: 'Discard local planner?'})).getByRole('button', {
+				name: 'Discard local draft',
+			}),
+		);
+		await waitFor(() => {
+			expect(screen.queryByRole('dialog', {name: 'Upgrade Planner'})).toBeNull();
+		});
+		expect(vi.mocked(db.deleteLibraryRecord).mock.calls).toStrictEqual([]);
+		Object.defineProperty(navigator, 'clipboard', {configurable: true, value: originalClipboard});
+	});
+
+	test('deletes a loaded planner from its Blueprint Library location after confirmation', async () => {
+		const user = userEvent.setup();
+		const planner: UpgradePlanner = {
+			item: 'upgrade-planner',
+			label: 'Library planner',
+			version: 0,
+			settings: {mappers: []},
+		};
+		libraryRecords.push(storedPlanner('planner-to-delete', planner, 'Library planner', 0));
+		render(<TransformPanel blueprint={blueprint} />);
+
+		openUpgradePlanner();
+		await choosePlanner(user, 'Library planner');
+		await user.click(screen.getByRole('button', {name: 'Delete planner from Blueprint Library'}));
+		const confirmation = screen.getByRole('alertdialog', {name: 'Delete saved planner?'});
+		expect(within(confirmation).getByText(/loaded blueprint is not changed/).textContent).toBe(
+			'This removes the planner from the Blueprint Library. The loaded blueprint is not changed.',
+		);
+		await user.click(within(confirmation).getByRole('button', {name: 'Delete from Library'}));
+		await waitFor(() => {
+			expect(screen.queryByRole('dialog', {name: 'Upgrade Planner'})).toBeNull();
+		});
+		expect({
+			deleteCalls: vi.mocked(db.deleteLibraryRecord).mock.calls,
+			libraryRecords,
+			navigation: navigate.mock.calls,
+		}).toStrictEqual({deleteCalls: [[{id: 'planner-to-delete'}]], libraryRecords: [], navigation: []});
 	});
 
 	test('preserves unused mappings and unsupported serialized fields when planner metadata is updated', async () => {
@@ -1321,10 +1523,11 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		await choosePlanner(user, 'Opaque planner');
 		expect(screen.getByLabelText('0 matches').getAttribute('aria-label')).toBe('0 matches');
 		await user.click(screen.getByRole('button', {name: 'Edit planner name'}));
-		const name = screen.getByRole('textbox', {name: 'Planner name'});
+		const name = screen.getByRole('textbox', {name: 'Name'});
 		await user.clear(name);
-		await user.type(name, 'Renamed opaque planner{Enter}');
-		await user.click(screen.getByRole('button', {name: 'Save Planner'}));
+		await user.type(name, 'Renamed opaque planner');
+		await user.click(screen.getByRole('button', {name: 'Confirm planner metadata'}));
+		await user.click(screen.getByRole('button', {name: 'Save to Library'}));
 		await user.click(
 			within(screen.getByRole('dialog', {name: 'Save to Blueprint Library'})).getByRole('button', {
 				name: 'Update Planner',
@@ -1951,26 +2154,26 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			clearButton: screen.queryByRole('button', {name: /Clear source/}),
 			sourceImage: sourceSlot.querySelector('img'),
 			targetDisabled: targetSlot.getAttribute('aria-disabled'),
-		}).toStrictEqual({clearButton: null, sourceImage: null, targetDisabled: 'true'});
+		}).toStrictEqual({clearButton: null, sourceImage: null, targetDisabled: 'false'});
 
 		await user.click(sourceSlot);
 		await chooseSignal(user, 'Signal red');
 		expect({
-			clearButtonLabel: screen.getByRole('button', {name: 'Clear source Signal red'}).getAttribute('aria-label'),
+			clearButtonLabel: screen.getByRole('button', {name: 'Dismiss new replacement'}).getAttribute('aria-label'),
 			sourceImage: sourceSlot.querySelector('img')?.getAttribute('src'),
 			targetDisabled: targetSlot.getAttribute('aria-disabled'),
 		}).toStrictEqual({
-			clearButtonLabel: 'Clear source Signal red',
+			clearButtonLabel: 'Dismiss new replacement',
 			sourceImage: 'https://factorio-icon-cdn.pages.dev/virtual-signal/signal-red.webp',
 			targetDisabled: 'false',
 		});
 
-		await user.click(screen.getByRole('button', {name: 'Clear source Signal red'}));
+		await user.click(screen.getByRole('button', {name: 'Dismiss new replacement'}));
 		expect({
 			clearButton: screen.queryByRole('button', {name: /Clear source/}),
 			sourceImage: sourceSlot.querySelector('img'),
 			targetDisabled: targetSlot.getAttribute('aria-disabled'),
-		}).toStrictEqual({clearButton: null, sourceImage: null, targetDisabled: 'true'});
+		}).toStrictEqual({clearButton: null, sourceImage: null, targetDisabled: 'false'});
 	});
 
 	test('applies book operations to the live result', async () => {
@@ -2021,7 +2224,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		expect({
 			dialogState: interactionState(),
 			plannerActions: [
-				'Save Planner',
+				'Save to Library',
 				'Apply Upgrade to Current Blueprint',
 				'Apply Downgrade to Current Blueprint',
 			].map((name) => screen.queryByRole('button', {name})?.textContent ?? null),
@@ -2030,7 +2233,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			),
 		}).toStrictEqual({
 			dialogState: {
-				activeElement: {name: 'Upgrade Planner configuration', tagName: 'DIV'},
+				activeElement: {name: 'Upgrade mappings', tagName: 'DIV'},
 				dialogStack: [
 					{
 						ariaHidden: null,
@@ -2042,7 +2245,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 				],
 			},
 			plannerActions: [
-				'Save Planner',
+				'Save to Library',
 				'Apply Upgrade to Current Blueprint',
 				'Apply Downgrade to Current Blueprint',
 			],
@@ -2299,6 +2502,207 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		});
 	});
 
+	test('offers hidden module-slot candidates and blocks only exact duplicate sources in Set the filter', async () => {
+		const user = userEvent.setup();
+		render(<TransformPanel blueprint={blueprint} />);
+
+		openUpgradePlanner();
+		await user.click(firstEmptyMappingSourceButton());
+
+		const picker = screen.getByRole('dialog', {name: 'Set the filter'});
+		const duplicate = within(picker).getByRole('button', {name: 'Choose Transport belt'});
+		expect(duplicate.getAttribute('aria-disabled')).toBe('true');
+
+		await user.click(within(picker).getByRole('button', {name: 'Rare quality'}));
+		expect(duplicate.getAttribute('aria-disabled')).toBe('false');
+
+		await searchSignals(user, 'Empty module slot');
+		expect(
+			within(picker).getByRole('button', {name: 'Choose Empty module slot'}).getAttribute('aria-disabled'),
+		).toBe('false');
+	});
+
+	test('restricts Select upgrade for a module source to the module family including the empty slot', async () => {
+		const user = userEvent.setup();
+		render(<TransformPanel blueprint={blueprint} />);
+
+		openUpgradePlanner();
+		await user.click(firstEmptyMappingSourceButton());
+		await chooseSignal(user, 'Speed module');
+		await user.click(screen.getByRole('button', {name: 'Choose target for Speed module'}));
+
+		const targetPicker = screen.getByRole('dialog', {name: 'Select upgrade'});
+		expect(
+			within(targetPicker)
+				.getAllByRole('button', {name: /^Choose /})
+				.map((button) => button.getAttribute('aria-label')),
+		).toStrictEqual([
+			'Choose Speed module',
+			'Choose Speed module 2',
+			'Choose Speed module 3',
+			'Choose Efficiency module',
+			'Choose Efficiency module 2',
+			'Choose Efficiency module 3',
+			'Choose Productivity module',
+			'Choose Productivity module 2',
+			'Choose Productivity module 3',
+			'Choose Quality module',
+			'Choose Quality module 2',
+			'Choose Quality module 3',
+			'Choose Empty module slot',
+		]);
+	});
+
+	test('scopes a module source to one machine through the Set the filter entity-filter extras', async () => {
+		const user = userEvent.setup();
+		render(<TransformPanel blueprint={blueprint} />);
+
+		openUpgradePlanner();
+		await user.click(firstEmptyMappingSourceButton());
+		const sourcePicker = screen.getByRole('dialog', {name: 'Set the filter'});
+		expect(within(sourcePicker).queryByRole('button', {name: 'Choose entity filter'})).toBe(null);
+
+		await searchSignals(user, 'Speed module');
+		await user.click(within(sourcePicker).getByRole('button', {name: 'Choose Speed module'}));
+		await user.click(within(sourcePicker).getByRole('button', {name: 'Choose entity filter'}));
+
+		const entityPicker = screen.getByRole('dialog', {name: 'Choose entity filter'});
+		const labels = within(entityPicker)
+			.getAllByRole('button', {name: /^Choose /})
+			.map((button) => button.getAttribute('aria-label'));
+		expect({
+			hasAssembler: labels.includes('Choose Assembling machine 2'),
+			hasBelt: labels.includes('Choose Transport belt'),
+			hasModuleItem: labels.includes('Choose Speed module'),
+		}).toStrictEqual({
+			hasAssembler: true,
+			hasBelt: false,
+			hasModuleItem: false,
+		});
+		await user.click(within(entityPicker).getByRole('button', {name: 'Choose Assembling machine 2'}));
+		await user.click(within(sourcePicker).getByRole('button', {name: 'Confirm'}));
+
+		await user.click(screen.getByRole('button', {name: 'Choose source, currently Speed module'}));
+		expect(
+			screen
+				.getByRole('button', {name: 'Edit entity filter, currently Assembling machine 2'})
+				.getAttribute('aria-label'),
+		).toBe('Edit entity filter, currently Assembling machine 2');
+	});
+
+	test('edits an entity destination module-slot plan through the Entity settings extras', async () => {
+		const user = userEvent.setup();
+		render(<TransformPanel blueprint={blueprint} />);
+
+		openUpgradePlanner();
+		fireEvent.contextMenu(screen.getByRole('button', {name: 'Choose source, currently Assembling machine 1'}));
+		fireEvent.contextMenu(screen.getByRole('button', {name: 'Choose source, currently Assembling machine 2'}));
+		await user.click(firstEmptyMappingSourceButton());
+		await user.click(screen.getByRole('button', {name: 'Rare quality'}));
+		await chooseSignal(user, 'Assembling machine 1');
+		const newRow = screen.getByRole('listitem', {name: 'Incomplete mapping from Assembling machine 1'});
+		await user.click(within(newRow).getByRole('button', {name: 'Choose target for Assembling machine 1'}));
+
+		const targetPicker = screen.getByRole('dialog', {name: 'Select upgrade'});
+		expect(within(targetPicker).queryByRole('checkbox', {name: 'Module slots'})).toBe(null);
+
+		await user.click(within(targetPicker).getByRole('button', {name: 'Choose Assembling machine 2'}));
+		await user.click(within(targetPicker).getByRole('checkbox', {name: 'Module slots'}));
+		const slotButtons = within(targetPicker).getAllByRole('button', {name: /^Choose module for slot /});
+		expect(slotButtons).toHaveLength(2);
+
+		await user.click(slotButtons[0]);
+		await user.click(
+			within(screen.getByRole('dialog', {name: 'Choose module'})).getByRole('button', {
+				name: 'Choose Speed module',
+			}),
+		);
+		await user.click(within(targetPicker).getByRole('button', {name: 'Confirm'}));
+
+		await user.click(
+			within(
+				screen.getByRole('listitem', {name: 'Mapping from Assembling machine 1 to Assembling machine 2'}),
+			).getByRole('button', {name: 'Choose target for Assembling machine 1'}),
+		);
+		const reopened = screen.getByRole('dialog', {name: 'Select upgrade'});
+		expect({
+			checked: within(reopened).getByRole<HTMLInputElement>('checkbox', {name: 'Module slots'}).checked,
+			slotOne: within(reopened)
+				.getByRole('button', {name: 'Edit module slot 1, currently Speed module'})
+				.getAttribute('aria-label'),
+			slotTwo: within(reopened)
+				.getByRole('button', {name: 'Choose module for slot 2'})
+				.getAttribute('aria-label'),
+		}).toStrictEqual({
+			checked: true,
+			slotOne: 'Edit module slot 1, currently Speed module',
+			slotTwo: 'Choose module for slot 2',
+		});
+	});
+
+	test('offers fuel sources and restricts their Select upgrade targets to the fuel family', async () => {
+		const user = userEvent.setup();
+		render(<TransformPanel blueprint={blueprint} />);
+
+		openUpgradePlanner();
+		await user.click(firstEmptyMappingSourceButton());
+		await chooseSignal(user, 'Coal');
+		await user.click(screen.getByRole('button', {name: 'Choose target for Coal'}));
+
+		const targetPicker = screen.getByRole('dialog', {name: 'Select upgrade'});
+		const labels = within(targetPicker)
+			.getAllByRole('button', {name: /^Choose /})
+			.map((button) => button.getAttribute('aria-label'));
+		expect({
+			count: labels.length,
+			hasBelts: labels.some((label) => label?.includes('belt') === true),
+			hasModules: labels.some((label) => label?.includes('module') === true),
+			rocketFuel: labels.includes('Choose Rocket fuel'),
+			solidFuel: labels.includes('Choose Solid fuel'),
+		}).toStrictEqual({
+			count: 20,
+			hasBelts: false,
+			hasModules: false,
+			rocketFuel: true,
+			solidFuel: true,
+		});
+	});
+
+	test('edits a module limit in the Select upgrade extras and shows it on the target slot', async () => {
+		const user = userEvent.setup();
+		render(<TransformPanel blueprint={blueprint} />);
+
+		openUpgradePlanner();
+		await user.click(firstEmptyMappingSourceButton());
+		await chooseSignal(user, 'Speed module');
+		await user.click(screen.getByRole('button', {name: 'Choose target for Speed module'}));
+
+		const targetPicker = screen.getByRole('dialog', {name: 'Select upgrade'});
+		expect(within(targetPicker).queryByRole('checkbox', {name: 'Module limit'})).toBe(null);
+
+		await user.click(within(targetPicker).getByRole('button', {name: 'Choose Speed module 2'}));
+		await user.click(within(targetPicker).getByRole('checkbox', {name: 'Module limit'}));
+		const limitValue = within(targetPicker).getByRole('spinbutton', {name: 'Module limit value'});
+		fireEvent.change(limitValue, {target: {value: '2'}});
+		await user.click(within(targetPicker).getByRole('button', {name: 'Confirm'}));
+
+		const row = screen.getByRole('listitem', {name: 'Mapping from Speed module to Speed module 2'});
+		const target = within(row).getByRole('button', {name: 'Choose target for Speed module'});
+		expect(target.querySelector('.transform-signal-slot__count')?.textContent).toBe('2');
+
+		await user.click(target);
+		const reopenedPicker = screen.getByRole('dialog', {name: 'Select upgrade'});
+		expect({
+			limitChecked: within(reopenedPicker).getByRole<HTMLInputElement>('checkbox', {name: 'Module limit'})
+				.checked,
+			limitValue: within(reopenedPicker).getByRole<HTMLInputElement>('spinbutton', {name: 'Module limit value'})
+				.value,
+		}).toStrictEqual({
+			limitChecked: true,
+			limitValue: '2',
+		});
+	});
+
 	test('keeps an incomplete mapping row through picker cancellation until it is removed', async () => {
 		const user = userEvent.setup();
 		render(<TransformPanel blueprint={blueprint} />);
@@ -2342,7 +2746,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			plannerAriaHidden: null,
 			plannerInert: false,
 			source: 'Transport belt\nentity:transport-belt',
-			target: 'Choose target for Transport belt',
+			target: '',
 			targetPicker: null,
 		});
 
@@ -2390,7 +2794,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 
 		openUpgradePlanner();
 		await choosePlanner(user, 'Paste upgrade planner…');
-		fireEvent.change(screen.getByPlaceholderText('Paste an upgrade planner string or JSON'), {
+		fireEvent.change(screen.getByRole('textbox', {name: 'Planner string or JSON'}), {
 			target: {
 				value: JSON.stringify({
 					upgrade_planner: {
@@ -2461,7 +2865,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 
 		openUpgradePlanner();
 		await choosePlanner(user, 'Paste upgrade planner…');
-		fireEvent.change(screen.getByPlaceholderText('Paste an upgrade planner string or JSON'), {
+		fireEvent.change(screen.getByRole('textbox', {name: 'Planner string or JSON'}), {
 			target: {
 				value: JSON.stringify({
 					upgrade_planner: {
@@ -2598,7 +3002,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		}).toStrictEqual({
 			icon: null,
 			mappingKey: mappingKeyBeforeSourceEdit,
-			title: 'Choose target for Assembling machine 1',
+			title: '',
 		});
 		await user.click(clearedTarget);
 
@@ -2980,7 +3384,10 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		render(<TransformPanel blueprint={selectedBlueprint} rootBlueprint={rootBlueprint} selectedPath="1" />);
 
 		openUpgradePlanner();
-		const scope = screen.getByRole<HTMLSelectElement>('combobox', {name: 'Apply to'}).value;
+		const scope = within(screen.getByRole('radiogroup', {name: 'Apply mappings to'})).getByRole<HTMLInputElement>(
+			'radio',
+			{checked: true},
+		).value;
 		await applyPlanner(user);
 
 		expect({
@@ -3063,7 +3470,9 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 
 		openUpgradePlanner();
 		expect({
-			entityScope: screen.getByRole<HTMLSelectElement>('combobox', {name: 'Apply to'}).value,
+			entityScope: within(
+				screen.getByRole('radiogroup', {name: 'Apply mappings to'}),
+			).getByRole<HTMLInputElement>('radio', {checked: true}).value,
 			replacementScope: screen.getByText(
 				'Always applies to titles, descriptions, and label icons throughout the entire root book, regardless of the selected blueprint.',
 			).textContent,
@@ -3177,7 +3586,10 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 
 		openUpgradePlanner();
 		expect({
-			scope: screen.getByRole<HTMLSelectElement>('combobox', {name: 'Apply to'}).value,
+			scope: within(screen.getByRole('radiogroup', {name: 'Apply mappings to'})).getByRole<HTMLInputElement>(
+				'radio',
+				{checked: true},
+			).value,
 			status: screen.getByLabelText('1 match').getAttribute('aria-label'),
 		}).toStrictEqual({scope: 'root', status: '1 match'});
 
@@ -3214,7 +3626,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		});
 	});
 
-	test('loads each planner-library source as an exact editable mapping draft', () => {
+	test('loads each planner-library source as an exact editable mapping draft', async () => {
 		const bookPlanner: UpgradePlanner = {
 			item: 'upgrade-planner',
 			label: "Alice's library planner",
@@ -3277,7 +3689,22 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		render(<TransformPanel blueprint={selectedBlueprint} rootBlueprint={rootBlueprint} selectedPath="1" />);
 
 		openUpgradePlanner();
-		fireEvent.click(screen.getByRole('button', {name: /Load planner, currently Default Upgrade/}));
+		const loadPlanner = screen.getByRole('button', {name: 'Load planner to replace draft'});
+		loadPlanner.focus();
+		fireEvent.click(loadPlanner);
+		const draftChooser = screen.getByRole('dialog', {name: 'Choose a planner for this draft'});
+		expect({
+			controls: loadPlanner.getAttribute('aria-controls'),
+			dialogId: draftChooser.id,
+			expanded: loadPlanner.getAttribute('aria-expanded'),
+			instructions: document.getElementById(draftChooser.getAttribute('aria-describedby') ?? '')?.textContent,
+		}).toStrictEqual({
+			controls: draftChooser.id,
+			dialogId: draftChooser.id,
+			expanded: 'true',
+			instructions:
+				'Choosing a planner replaces this editable draft and returns to the Upgrade Planner. It does not apply changes to the blueprint.',
+		});
 		expect(
 			within(screen.getByRole('grid', {name: 'Upgrade planners'}))
 				.getAllByRole('button')
@@ -3292,6 +3719,19 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		]);
 
 		fireEvent.click(screen.getByRole('button', {name: 'Empty Planner'}));
+		await waitFor(() => {
+			expect({
+				activeElement: document.activeElement?.getAttribute('aria-label'),
+				draftSource: screen.getByLabelText('Draft source: Empty Planner').querySelector('strong')?.textContent,
+				expanded: loadPlanner.getAttribute('aria-expanded'),
+				nestedDialog: screen.queryByRole('dialog', {name: 'Choose a planner for this draft'}),
+			}).toStrictEqual({
+				activeElement: 'Load planner to replace draft',
+				draftSource: 'Empty Planner',
+				expanded: 'false',
+				nestedDialog: null,
+			});
+		});
 		fireEvent.click(firstEmptyMappingSourceButton());
 		chooseSignalWithClicks('Transport belt');
 		fireEvent.click(screen.getByRole('button', {name: 'Choose target for Transport belt'}));
@@ -3302,15 +3742,11 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 
 		choosePlannerWithClicks("Alice's library planner");
 		const bookSourceButtons = screen.getAllByRole('button', {name: /Choose source, currently/});
+		const loadedDraftSource = screen.getByLabelText("Draft source: Alice's library planner");
 		expect({
 			loadedSource: {
-				icon: screen
-					.getByRole('button', {name: /Load planner, currently Alice's library planner/})
-					.querySelector('img')
-					?.getAttribute('src'),
-				label: screen.getByRole('button', {
-					name: /Load planner, currently Alice's library planner/,
-				}).textContent,
+				icon: loadedDraftSource.querySelector('img')?.getAttribute('src'),
+				label: loadedDraftSource.querySelector('strong')?.textContent,
 			},
 			mappings: bookSourceButtons.map((sourceButton) => ({
 				matchSummary: sourceButton.closest('[data-mapping-key]')?.querySelector('.transform-visually-hidden')
@@ -3378,7 +3814,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 
 		choosePlannerWithClicks('Default Upgrade');
 		expect({
-			label: screen.getByRole('button', {name: /Load planner, currently Default Upgrade/}).textContent,
+			label: screen.getByLabelText('Draft source: Default Upgrade').querySelector('strong')?.textContent,
 			target: screen.getByRole('button', {name: 'Choose target for Transport belt'}).title,
 		}).toStrictEqual({
 			label: 'Default Upgrade',
@@ -3387,15 +3823,146 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 
 		choosePlannerWithClicks('Paste upgrade planner…');
 		expect({
-			label: screen.getByRole('button', {
-				name: /Load planner, currently Paste upgrade planner/,
-			}).textContent,
-			pasteInput: screen.getByPlaceholderText('Paste an upgrade planner string or JSON').tagName,
+			label: screen.getByLabelText('Draft source: Paste upgrade planner…').querySelector('strong')?.textContent,
+			pasteInput: screen.getByRole('textbox', {name: 'Planner string or JSON'}).tagName,
 		}).toStrictEqual({
 			label: 'Paste upgrade planner…',
 			pasteInput: 'TEXTAREA',
 		});
 	}, 10_000);
+
+	test('keeps pasted planner parsing feedback distinct from mapping-rule validation', async () => {
+		const user = userEvent.setup();
+		render(<TransformPanel blueprint={blueprint} />);
+
+		openUpgradePlanner();
+		const mappingRegion = screen.getByRole('region', {name: 'Upgrade mappings'});
+		expect({
+			pastePanel: screen.queryByRole('region', {name: 'Paste planner definition'}),
+			pasteTextbox: screen.queryByRole('textbox', {name: 'Planner string or JSON'}),
+		}).toStrictEqual({pastePanel: null, pasteTextbox: null});
+
+		await choosePlanner(user, 'Paste upgrade planner…');
+		const pastePanel = screen.getByRole('region', {name: 'Paste planner definition'});
+		const pasteTextbox = screen.getByRole<HTMLTextAreaElement>('textbox', {name: 'Planner string or JSON'});
+		expect({
+			alert: within(pastePanel).queryByRole('alert'),
+			describedBy: document.getElementById(pasteTextbox.getAttribute('aria-describedby') ?? '')?.textContent,
+			extension: pastePanel.dataset.websiteExtension,
+			invalid: pasteTextbox.getAttribute('aria-invalid'),
+			state: pastePanel.dataset.validationState,
+		}).toStrictEqual({
+			alert: null,
+			describedBy: 'Paste an encoded upgrade planner string or its JSON representation.',
+			extension: 'planner-paste-import',
+			invalid: null,
+			state: 'empty',
+		});
+
+		fireEvent.change(pasteTextbox, {target: {value: '{'}});
+		expect({
+			alert: within(pastePanel).getByRole('alert').textContent,
+			invalid: pasteTextbox.getAttribute('aria-invalid'),
+			mappingCount: mappingRegion.querySelectorAll('[data-mapping-key]').length,
+			mappingRegionPreserved: screen.getByRole('region', {name: 'Upgrade mappings'}),
+			state: pastePanel.dataset.validationState,
+		}).toStrictEqual({
+			alert: 'JSON5: invalid end of input at 1:2',
+			invalid: 'true',
+			mappingCount: 0,
+			mappingRegionPreserved: mappingRegion,
+			state: 'invalid',
+		});
+
+		fireEvent.change(pasteTextbox, {
+			target: {
+				value: JSON.stringify({
+					upgrade_planner: {
+						item: 'upgrade-planner',
+						version: 0,
+						settings: {
+							mappers: [
+								{
+									index: 100,
+									from: {type: 'item', name: 'speed-module'},
+									to: {type: 'item', name: 'speed-module-2'},
+								},
+							],
+						},
+					},
+				}),
+			},
+		});
+		const zeroMatchMapping = screen.getByRole('button', {name: 'Choose source, currently Speed module'});
+		expect({
+			alert: within(pastePanel).queryByRole('alert'),
+			describedBy: document.getElementById(pasteTextbox.getAttribute('aria-describedby') ?? '')?.textContent,
+			invalid: pasteTextbox.getAttribute('aria-invalid'),
+			mapping: {
+				from: zeroMatchMapping.title,
+				matchSummary: zeroMatchMapping
+					.closest('[data-mapping-key]')
+					?.querySelector('.transform-visually-hidden')?.textContent,
+				to: screen.getByRole('button', {name: 'Choose target for Speed module'}).title,
+			},
+			state: pastePanel.dataset.validationState,
+		}).toStrictEqual({
+			alert: null,
+			describedBy: 'Planner loaded into the editable mapping grid.',
+			invalid: null,
+			mapping: {
+				from: 'Speed module\nitem:speed-module',
+				matchSummary: `0 matches. ${mappingInstructions}`,
+				to: 'Speed module 2\nitem:speed-module-2',
+			},
+			state: 'valid',
+		});
+
+		fireEvent.change(pasteTextbox, {
+			target: {
+				value: JSON.stringify({
+					upgrade_planner: {
+						item: 'upgrade-planner',
+						version: 0,
+						settings: {
+							mappers: [
+								{
+									index: 100,
+									from: {type: 'entity', name: 'transport-belt'},
+									to: {type: 'entity', name: 'fast-transport-belt'},
+								},
+								{
+									index: 200,
+									from: {type: 'entity', name: 'transport-belt'},
+									to: {type: 'entity', name: 'express-transport-belt'},
+								},
+							],
+						},
+					},
+				}),
+			},
+		});
+		expect({
+			fieldAlert: within(pastePanel).queryByRole('alert'),
+			globalAlert: screen.getByRole('alert').textContent,
+			invalid: pasteTextbox.getAttribute('aria-invalid'),
+			mappingCount: mappingRegion.querySelectorAll('[data-mapping-key]').length,
+			state: pastePanel.dataset.validationState,
+		}).toStrictEqual({
+			fieldAlert: null,
+			globalAlert: 'Upgrade planner defines more than one target for transport-belt.',
+			invalid: null,
+			mappingCount: 2,
+			state: 'valid',
+		});
+
+		await choosePlanner(user, 'Default Upgrade');
+		expect({
+			alert: screen.queryByRole('alert'),
+			pastePanel: screen.queryByRole('region', {name: 'Paste planner definition'}),
+			pasteTextbox: screen.queryByRole('textbox', {name: 'Planner string or JSON'}),
+		}).toStrictEqual({alert: null, pastePanel: null, pasteTextbox: null});
+	});
 
 	test('saves a pasted planner with a zero-match mapping and applies its matching rule', async () => {
 		const user = userEvent.setup();
@@ -3422,7 +3989,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 
 		await user.click(screen.getByRole('button', {name: 'Open Upgrade Planner'}));
 		await choosePlanner(user, 'Paste upgrade planner…');
-		fireEvent.change(screen.getByPlaceholderText('Paste an upgrade planner string or JSON'), {
+		fireEvent.change(screen.getByRole('textbox', {name: 'Planner string or JSON'}), {
 			target: {
 				value: JSON.stringify({upgrade_planner: pastedPlanner}),
 			},
@@ -3449,7 +4016,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			unmatchedMapping: `0 matches. ${mappingInstructions}`,
 		});
 
-		await user.click(screen.getByRole('button', {name: 'Save Planner'}));
+		await user.click(screen.getByRole('button', {name: 'Save to Library'}));
 		const savePrompt = screen.getByRole('dialog', {name: 'Save to Blueprint Library'});
 		await user.click(within(savePrompt).getByRole('button', {name: 'Save Planner'}));
 		await Promise.resolve();
@@ -3463,7 +4030,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			saveInput: {...saveInputMetadata, planner: parseUpgradePlanner(saveInputData)},
 		}).toStrictEqual({
 			dialogState: {
-				activeElement: {name: 'Save Planner', tagName: 'BUTTON'},
+				activeElement: {name: 'Save to Library', tagName: 'BUTTON'},
 				dialogStack: [
 					{
 						ariaHidden: null,
