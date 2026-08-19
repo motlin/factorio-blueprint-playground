@@ -53,6 +53,27 @@ fallow-check: install
 storybook *args: install
     vp run storybook {{args}}
 
+# Build an isolated Storybook review bundle
+build-storybook output="storybook-static": install
+    vp run build-storybook --output-dir {{output}}
+
+# Run tagged Storybook play functions and accessibility annotations
+storybook-test: install
+    {{ if ci != "" { "vp exec playwright install --with-deps chromium" } else { "vp exec playwright install chromium" } }}
+    vp run test:storybook
+
+# Validate the NDA-safe game-reference manifest without requiring local image files
+reference-manifest: install
+    vp run visual-conformance:references
+
+# Capture and compare the maintained Storybook visual-conformance states
+visual-conformance *args: install
+    {{ if ci != "" { "vp exec playwright install --with-deps chromium" } else { "vp exec playwright install chromium" } }}
+    vp run build-storybook --output-dir storybook-static
+    vp run visual-conformance:references
+    vp run test:storybook
+    vp run visual-conformance {{args}}
+
 # Run pre-commit hooks on all files (same as CI's pre-commit job)
 pre-commit: install
     pre-commit run --all-files
