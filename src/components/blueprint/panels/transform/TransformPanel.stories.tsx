@@ -192,8 +192,8 @@ export const BlueprintEditor: Story = {
 		await expect(canvas.getByRole('radio', {name: 'Absolute'})).toBeChecked();
 		await expect(canvas.getByRole('heading', {name: 'Components'})).toBeVisible();
 		await expect(canvas.getByRole('button', {name: /Transport belt, 1/})).toBeVisible();
-		await expect(canvas.getByRole('button', {name: 'Save Blueprint'})).toBeDisabled();
-		await expect(canvas.getByText('Commits changes to the existing blueprint record.')).toBeVisible();
+		await expect(canvas.getByRole('button', {name: 'Save blueprint'})).toBeDisabled();
+		await expect(canvas.getByText('Saves changes to this loaded root blueprint.')).toBeVisible();
 		await expect(canvas.queryByRole('heading', {name: 'Preview'})).not.toBeInTheDocument();
 		await userEvent.click(canvas.getByRole('button', {name: 'Upgrade items and entities in the blueprint'}));
 		await expect(canvas.getByRole('dialog', {name: 'Select the upgrade planner to apply'})).toBeVisible();

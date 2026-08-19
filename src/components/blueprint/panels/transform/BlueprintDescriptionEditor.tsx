@@ -1,5 +1,7 @@
 import {useId} from 'react';
 
+const maximumDescriptionSize = 500;
+
 interface BlueprintDescriptionEditorProps {
 	accessibleLabel?: string;
 	description: string;
@@ -17,15 +19,25 @@ export function BlueprintDescriptionEditor({
 	const headingId = `${descriptionId}-heading`;
 
 	return (
-		<section className="transform-workflow__section blueprint-description-editor" aria-labelledby={headingId}>
-			<h4 id={headingId}>
+		<section
+			className="transform-workflow__section blueprint-description-editor"
+			data-factorio-source="BlueprintSettingsGui::makeDescriptionFrame"
+			data-factorio-style="bordered_frame"
+			aria-labelledby={headingId}
+		>
+			<h4 id={headingId} className="blueprint-description-editor__heading" data-factorio-style="caption_label">
 				<label htmlFor={descriptionId}>{heading}</label>
 			</h4>
 			<div className="blueprint-description-editor__field">
 				<textarea
 					id={descriptionId}
 					aria-label={accessibleLabel}
+					data-factorio-source="BlueprintSettingsGui::descriptionEdit"
+					data-factorio-style="edit_blueprint_description_textbox"
+					maxLength={maximumDescriptionSize}
+					spellCheck={false}
 					value={description}
+					wrap="soft"
 					onChange={(event) => {
 						onDescriptionChange(event.currentTarget.value);
 					}}

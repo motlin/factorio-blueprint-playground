@@ -183,7 +183,9 @@ export function blueprintFilterAnalysis(
 		categories.trains,
 		categories.vehicles,
 	].filter(Boolean).length;
-	const multipleStructuralCategories = structuralCategoryCount > 1;
+	// BlueprintSettingsGui::updateCheckboxes only exposes structural filters
+	// when at least two of these four independently removable categories exist.
+	const showStructuralFilters = structuralCategoryCount > 1;
 
 	const capturedDraft = sourceMode === BlueprintEditorSourceMode.CapturedDraft;
 	const defaults: BlueprintFilterCategories = {
@@ -191,23 +193,23 @@ export function blueprintFilterAnalysis(
 		fuel: true,
 		modules: true,
 		stationNames: true,
-		tiles: !capturedDraft || !categories.tiles || !multipleStructuralCategories || capturedOnSpacePlatform,
-		trains: !capturedDraft || (!multipleStructuralCategories && categories.trains),
-		vehicles: !capturedDraft || (!multipleStructuralCategories && categories.vehicles),
+		tiles: !capturedDraft || !categories.tiles || !showStructuralFilters || capturedOnSpacePlatform,
+		trains: !capturedDraft || (!showStructuralFilters && categories.trains),
+		vehicles: !capturedDraft || (!showStructuralFilters && categories.vehicles),
 	};
 	const visible: BlueprintFilterCategories = {
-		entities: multipleStructuralCategories && categories.entities,
+		entities: showStructuralFilters && categories.entities,
 		fuel: categories.fuel,
 		modules: categories.modules,
 		stationNames: categories.stationNames,
-		tiles: multipleStructuralCategories && categories.tiles,
-		trains: multipleStructuralCategories && categories.trains,
-		vehicles: multipleStructuralCategories && categories.vehicles,
+		tiles: showStructuralFilters && categories.tiles,
+		trains: showStructuralFilters && categories.trains,
+		vehicles: showStructuralFilters && categories.vehicles,
 	};
 	return {
 		categories,
 		defaults,
-		showGroup: categories.modules || categories.stationNames || categories.fuel || multipleStructuralCategories,
+		showGroup: categories.modules || categories.stationNames || categories.fuel || showStructuralFilters,
 		visible,
 	};
 }

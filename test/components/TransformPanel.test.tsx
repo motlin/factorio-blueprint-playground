@@ -621,13 +621,17 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 
 		openBlueprintEditor();
 		const dialog = screen.getByRole('dialog', {name: 'Blueprint Editor'});
+		const settings = screen.getByRole('region', {name: 'Blueprint settings'});
+		const settingsScroll = settings.querySelector('.blueprint-editor__settings-scroll');
 		expect({
 			bookWideReplacements: screen.queryByRole('heading', {name: 'Book-wide replacements'}),
 			bodyClass: dialog.querySelector('.transform-workbench__body')?.className,
+			bodySource: dialog.querySelector('.transform-workbench__body')?.getAttribute('data-factorio-source'),
 			cleanup: screen.queryByRole('heading', {name: 'Cleanup'}),
 			components: screen.getByRole('heading', {name: 'Components'}).textContent,
 			description: screen.getByRole('textbox', {name: 'Blueprint description'}).textContent,
 			dialog: dialog.getAttribute('aria-modal'),
+			dialogSource: dialog.getAttribute('data-factorio-source'),
 			footerElement: dialog.lastElementChild?.tagName,
 			filters: ['Modules', 'Entities', 'Trains', 'Tiles'].map(
 				(name) => screen.getByRole<HTMLInputElement>('checkbox', {name}).checked,
@@ -640,24 +644,36 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			title: dialog.querySelector('.blueprint-editor__title')?.textContent,
 			plannerMappings: screen.queryByRole('group', {name: 'Planner operation'}),
 			preview: screen.queryByRole('heading', {name: 'Preview'}),
+			previewRegion: dialog.querySelector('[data-blueprint-preview]'),
 			saveDestination: screen.queryByLabelText('Save destination'),
+			settingsHeadings: [...(settingsScroll?.querySelectorAll('h4') ?? [])].map((heading) =>
+				heading.textContent.trim(),
+			),
+			settingsScrollStyle: settingsScroll?.getAttribute('data-factorio-style'),
+			settingsSource: settings.getAttribute('data-factorio-source'),
 			textReplacement: screen.queryByRole('checkbox', {name: /Text replacement/}),
 		}).toStrictEqual({
 			bookWideReplacements: null,
 			bodyClass: 'transform-workbench__body blueprint-editor__layout',
+			bodySource: 'BlueprintSetupGui::insetFrameContainerHorizontalFlow',
 			cleanup: null,
 			components: 'Components',
 			description: '',
 			dialog: 'true',
+			dialogSource: 'BlueprintSetupGui::BlueprintSetupGui',
 			footerElement: 'FOOTER',
 			filters: [true, true, true, true],
 			headerElement: 'HEADER',
 			iconReplacements: null,
 			iconSlots: ['Choose icon 1', 'Choose icon 2', 'Choose icon 3', 'Choose icon 4'],
-			title: 'Untitled blueprint',
+			title: '<Unnamed blueprint>',
 			plannerMappings: null,
 			preview: null,
+			previewRegion: null,
 			saveDestination: null,
+			settingsHeadings: ['Icon', 'Description', 'Snap to grid', 'Components', 'Filters'],
+			settingsScrollStyle: 'scroll_pane_under_subheader',
+			settingsSource: 'BlueprintSettingsGui::BlueprintSettingsGui',
 			textReplacement: null,
 		});
 	});
@@ -676,7 +692,9 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			disabled: upgradeButton.disabled,
 			expanded: upgradeButton.getAttribute('aria-expanded'),
 			icon: upgradeButton.querySelector('img')?.getAttribute('src'),
+			iconSize: upgradeButton.querySelector('[data-factorio-icon-size]')?.getAttribute('data-factorio-icon-size'),
 			inTitleRow: upgradeButton.closest('.blueprint-editor__title-row') !== null,
+			title: upgradeButton.title,
 			toolbarActions: [
 				...screen.getByRole('toolbar', {name: 'Blueprint editor actions'}).querySelectorAll('button'),
 			].map((button) => button.getAttribute('aria-label')),
@@ -685,15 +703,17 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			disabled: false,
 			expanded: 'false',
 			icon: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
+			iconSize: 'small',
 			inTitleRow: true,
+			title: 'Upgrade items and entities in the blueprint.',
 			toolbarActions: [
 				'Upgrade items and entities in the blueprint',
-				'Choose upgrade planner for toolbar slot',
 				'Parametrise or reconfigure the blueprint',
+				'Choose or drop an upgrade planner to hold',
 			],
 		});
 
-		await user.click(upgradeButton);
+		expect(fireEvent.contextMenu(upgradeButton)).toBe(false);
 		const selector = screen.getByRole('dialog', {name: 'Select the upgrade planner to apply'});
 		expect({
 			blueprintEditorAriaHidden: blueprintEditor.getAttribute('aria-hidden'),
@@ -777,7 +797,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		render(<TransformPanel blueprint={blueprint} />);
 
 		openBlueprintEditor();
-		const emptySlot = screen.getByRole('button', {name: 'Choose upgrade planner for toolbar slot'});
+		const emptySlot = screen.getByRole('button', {name: 'Choose or drop an upgrade planner to hold'});
 		emptySlot.focus();
 		await user.keyboard('{Enter}');
 		expect(
@@ -792,7 +812,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		});
 		expect({
 			error: screen.getByRole('alert').textContent,
-			slot: screen.getByRole('button', {name: 'Choose upgrade planner for toolbar slot'}).textContent,
+			slot: screen.getByRole('button', {name: 'Choose or drop an upgrade planner to hold'}).textContent,
 		}).toStrictEqual({
 			error: 'Drop an encoded or JSON upgrade planner.',
 			slot: '+',
@@ -804,11 +824,11 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			},
 		});
 		const placedSlot = screen.getByRole('button', {
-			name: "Change placed upgrade planner, currently Alice's dropped planner",
+			name: "Held upgrade planner Alice's dropped planner; click to replace",
 		});
 		expect({
 			apply: screen
-				.getByRole('button', {name: "Apply Alice's dropped planner as upgrade"})
+				.getByRole('button', {name: 'Upgrade items and entities in the blueprint'})
 				.getAttribute('aria-controls'),
 			error: screen.queryByRole('alert'),
 			icon: placedSlot.querySelector('img')?.getAttribute('src'),
@@ -820,24 +840,21 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			navigation: [],
 		});
 
-		const removeButton = screen.getByRole('button', {
-			name: "Remove Alice's dropped planner from toolbar slot",
-		});
-		removeButton.focus();
-		await user.keyboard('{Enter}');
+		placedSlot.focus();
+		await user.keyboard('{Delete}');
 		expect({
 			apply: screen
 				.getByRole('button', {
 					name: 'Upgrade items and entities in the blueprint',
 				})
 				.getAttribute('aria-expanded'),
-			remove: screen.queryByRole('button', {
-				name: "Remove Alice's dropped planner from toolbar slot",
+			heldPlanner: screen.queryByRole('button', {
+				name: "Held upgrade planner Alice's dropped planner; click to replace",
 			}),
-			slot: screen.getByRole('button', {name: 'Choose upgrade planner for toolbar slot'}).textContent,
+			slot: screen.getByRole('button', {name: 'Choose or drop an upgrade planner to hold'}).textContent,
 		}).toStrictEqual({
 			apply: 'false',
-			remove: null,
+			heldPlanner: null,
 			slot: '+',
 		});
 	});
@@ -1364,8 +1381,8 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		render(<TransformPanel blueprint={blueprint} />);
 
 		openBlueprintEditor();
-		expect(screen.getByRole<HTMLButtonElement>('button', {name: 'Save Blueprint'}).disabled).toBe(true);
-		await user.click(screen.getByRole('button', {name: 'Close'}));
+		expect(screen.getByRole<HTMLButtonElement>('button', {name: 'Save blueprint'}).disabled).toBe(true);
+		await user.click(screen.getByRole('button', {name: 'Close Blueprint Editor'}));
 
 		expect({
 			dialog: screen.queryByRole('dialog', {name: 'Blueprint Editor'}),
@@ -1392,7 +1409,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 
 		const editorTool = screen.getByRole('button', {name: 'Open Blueprint Editor'});
 		await user.click(editorTool);
-		const createButton = screen.getByRole<HTMLButtonElement>('button', {name: 'Create Blueprint'});
+		const createButton = screen.getByRole<HTMLButtonElement>('button', {name: 'Create blueprint'});
 		expect({
 			createDisabled: createButton.disabled,
 			dialogState: interactionState(),
@@ -1469,7 +1486,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			{checked: false, label: 'Trains'},
 			{checked: false, label: 'Vehicles'},
 		]);
-		await user.click(screen.getByRole('button', {name: 'Create Blueprint'}));
+		await user.click(screen.getByRole('button', {name: 'Create blueprint'}));
 
 		expect(onBlueprintCommit.mock.calls).toStrictEqual([
 			[
@@ -1500,11 +1517,143 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		openBlueprintEditor();
 		fireEvent.click(screen.getByRole('button', {name: 'Close Blueprint Editor'}));
 		expect({
-			confirmation: screen.queryByRole('alertdialog', {name: 'There are uncommitted changes'}),
+			confirmation: screen.queryByRole('alertdialog', {name: 'Confirmation'}),
 			dialog: screen.queryByRole('dialog', {name: 'Blueprint Editor'}),
 			navigation: navigate.mock.calls,
 		}).toStrictEqual({confirmation: null, dialog: null, navigation: []});
 	});
+
+	test.each([
+		{
+			blueprint: {
+				blueprint: {item: 'blueprint', label: "Alice's new blueprint", version: 0},
+			} satisfies BlueprintString,
+			expected: {
+				breadcrumb: "Alice's new blueprint",
+				caption: 'Set up new blueprint',
+				contextLabel: 'New blueprint',
+			},
+			name: 'new root blueprint',
+			rootBlueprint: undefined,
+			selectedPath: '',
+			sourceMode: BlueprintEditorSourceMode.CapturedDraft,
+		},
+		{
+			blueprint: {
+				blueprint: {item: 'blueprint', label: "Alice's existing blueprint", version: 0},
+			} satisfies BlueprintString,
+			expected: {
+				breadcrumb: "Alice's existing blueprint",
+				caption: 'Blueprint item',
+				contextLabel: 'Existing blueprint',
+			},
+			name: 'existing blueprint item',
+			rootBlueprint: undefined,
+			selectedPath: '',
+			sourceMode: BlueprintEditorSourceMode.ExistingRecord,
+		},
+		{
+			blueprint: {
+				blueprint_book: {
+					item: 'blueprint-book',
+					label: "Alice's library book",
+					version: 0,
+					blueprints: [],
+				},
+			} satisfies BlueprintString,
+			expected: {
+				breadcrumb: "Alice's library book",
+				caption: 'Blueprint book in the blueprint library',
+				contextLabel: 'Blueprint library record',
+			},
+			name: 'blueprint library book',
+			rootBlueprint: undefined,
+			selectedPath: '',
+			sourceMode: BlueprintEditorSourceMode.ExistingRecord,
+		},
+		{
+			blueprint: {
+				blueprint: {item: 'blueprint', label: "Bob's child blueprint", version: 0},
+			} satisfies BlueprintString,
+			expected: {
+				breadcrumb: "Alice's library book › Bob's child blueprint",
+				caption: 'Blueprint in the blueprint library',
+				contextLabel: 'Child blueprint record',
+			},
+			name: 'child blueprint record',
+			rootBlueprint: {
+				blueprint_book: {
+					item: 'blueprint-book',
+					label: "Alice's library book",
+					version: 0,
+					blueprints: [
+						{
+							index: 100,
+							blueprint: {item: 'blueprint', label: "Bob's child blueprint", version: 0},
+						},
+					],
+				},
+			} satisfies BlueprintString,
+			selectedPath: '1',
+			sourceMode: BlueprintEditorSourceMode.ExistingRecord,
+		},
+	])(
+		'labels the $name context and routes X through confirmClose',
+		({blueprint: contextBlueprint, expected, rootBlueprint, selectedPath, sourceMode}) => {
+			render(
+				<TransformPanel
+					blueprint={contextBlueprint}
+					blueprintEditorSourceMode={sourceMode}
+					rootBlueprint={rootBlueprint}
+					selectedPath={selectedPath}
+				/>,
+			);
+
+			openBlueprintEditor();
+			const dialog = screen.getByRole('dialog', {name: 'Blueprint Editor'});
+			const context = within(dialog).getByRole('navigation', {name: 'Blueprint context'});
+			const close = within(dialog).getByRole('button', {name: 'Close Blueprint Editor'});
+			const closeDescription = document.getElementById(close.getAttribute('aria-describedby') ?? '');
+			const caption = within(dialog).getByRole('heading', {name: expected.caption});
+
+			expect({
+				caption: {
+					source: caption.dataset.factorioSource,
+					text: caption.textContent,
+				},
+				close: {
+					action: close.dataset.factorioCloseAction,
+					description: closeDescription?.textContent.trim(),
+					source: close.dataset.factorioSource,
+					title: close.title,
+				},
+				context: [...context.children].map((part) => ({
+					current: part.getAttribute('aria-current'),
+					text: part.textContent,
+				})),
+				contextExtension: context.dataset.websiteExtension,
+				dialogDescription: dialog.getAttribute('aria-describedby'),
+			}).toStrictEqual({
+				caption: {
+					source: 'BlueprintSetupGui::getTitle',
+					text: expected.caption,
+				},
+				close: {
+					action: 'request-close',
+					description: 'Uncommitted changes require confirmation before they are discarded.',
+					source: 'BlueprintSetupGui::confirmClose',
+					title: 'Close Blueprint Editor (asks before discarding changes)',
+				},
+				context: [
+					{current: null, text: expected.contextLabel},
+					{current: null, text: '›'},
+					{current: 'page', text: expected.breadcrumb},
+				],
+				contextExtension: 'record-context',
+				dialogDescription: context.id,
+			});
+		},
+	);
 
 	test('keeps or discards dirty title, icon, description, and filter drafts on every close path', async () => {
 		const user = userEvent.setup();
@@ -1548,7 +1697,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		await user.click(screen.getByRole('checkbox', {name: 'Tiles'}));
 
 		fireEvent.keyDown(screen.getByRole('dialog', {name: 'Blueprint Editor'}), {key: 'Escape'});
-		const firstConfirmation = screen.getByRole('alertdialog', {name: 'There are uncommitted changes'});
+		const firstConfirmation = screen.getByRole('alertdialog', {name: 'Confirmation'});
 		await waitFor(() => {
 			expect({
 				buttons: within(firstConfirmation)
@@ -1557,9 +1706,9 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 				dialogState: interactionState(),
 				navigation: navigate.mock.calls,
 			}).toStrictEqual({
-				buttons: ['Keep Editing', 'Discard', 'Commit'],
+				buttons: ['Cancel', 'Discard changes'],
 				dialogState: {
-					activeElement: {name: 'Keep Editing', tagName: 'BUTTON'},
+					activeElement: {name: 'Cancel', tagName: 'BUTTON'},
 					dialogStack: [
 						{
 							ariaHidden: 'true',
@@ -1572,7 +1721,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 							ariaHidden: null,
 							inert: false,
 							modal: 'true',
-							name: 'There are uncommitted changes',
+							name: 'Confirmation',
 							role: 'alertdialog',
 						},
 					],
@@ -1581,7 +1730,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			});
 		});
 
-		await user.click(within(firstConfirmation).getByRole('button', {name: 'Keep Editing'}));
+		await user.click(within(firstConfirmation).getByRole('button', {name: 'Cancel'}));
 		await Promise.resolve();
 		expect({
 			description: screen.getByRole<HTMLTextAreaElement>('textbox', {name: 'Blueprint description'}).value,
@@ -1611,8 +1760,8 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		});
 
 		await user.click(screen.getByRole('button', {name: 'Close Blueprint Editor'}));
-		const secondConfirmation = screen.getByRole('alertdialog', {name: 'There are uncommitted changes'});
-		await user.click(within(secondConfirmation).getByRole('button', {name: 'Discard'}));
+		const secondConfirmation = screen.getByRole('alertdialog', {name: 'Confirmation'});
+		await user.click(within(secondConfirmation).getByRole('button', {name: 'Discard changes'}));
 		await Promise.resolve();
 		expect({
 			dialogState: interactionState(),
@@ -1632,7 +1781,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 				(name) => screen.getByRole<HTMLInputElement>('checkbox', {name}).checked,
 			),
 			icon: screen.getByRole('button', {name: 'Edit icon 1'}).getAttribute('title'),
-			saveDisabled: screen.getByRole<HTMLButtonElement>('button', {name: 'Save Blueprint'}).disabled,
+			saveDisabled: screen.getByRole<HTMLButtonElement>('button', {name: 'Save blueprint'}).disabled,
 			title: screen.getByText('Alice', {selector: '.blueprint-editor__title'}).textContent,
 		}).toStrictEqual({
 			description: 'Source description',
@@ -1670,11 +1819,40 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		render(<TransformPanel blueprint={parameterizedBlueprint} />);
 
 		openBlueprintEditor();
-		await user.click(screen.getByRole('button', {name: 'Parametrise or reconfigure the blueprint'}));
-		await user.clear(screen.getByRole('textbox', {name: 'Parameter 1 name'}));
-		await user.type(screen.getByRole('textbox', {name: 'Parameter 1 name'}), 'Any plate');
+		const editor = screen.getByRole('dialog', {name: 'Blueprint Editor'});
+		const parameterButton = screen.getByRole('button', {name: 'Parametrise or reconfigure the blueprint'});
+		await user.click(parameterButton);
+		const parameterDialog = screen.getByRole('dialog', {name: 'Blueprint parametrisation'});
+		const parameterName = screen.getByRole('textbox', {name: 'Parameter 1 name'});
+		expect({
+			activeElement: document.activeElement,
+			editorAriaHidden: editor.getAttribute('aria-hidden'),
+			editorInert: editor.inert,
+			expanded: parameterButton.getAttribute('aria-expanded'),
+			parameterDialogId: parameterDialog.id,
+		}).toStrictEqual({
+			activeElement: parameterName,
+			editorAriaHidden: 'true',
+			editorInert: true,
+			expanded: 'true',
+			parameterDialogId: parameterButton.getAttribute('aria-controls'),
+		});
+		await user.clear(parameterName);
+		await user.type(parameterName, 'Any plate');
 		await user.click(screen.getByRole('button', {name: 'Confirm'}));
-		await user.click(screen.getByRole('button', {name: 'Save Blueprint'}));
+		await waitFor(() => {
+			expect(document.activeElement).toBe(parameterButton);
+		});
+		expect({
+			editorAriaHidden: editor.getAttribute('aria-hidden'),
+			editorInert: editor.inert,
+			expanded: parameterButton.getAttribute('aria-expanded'),
+		}).toStrictEqual({
+			editorAriaHidden: null,
+			editorInert: false,
+			expanded: 'false',
+		});
+		await user.click(screen.getByRole('button', {name: 'Save blueprint'}));
 
 		expect(navigate).toHaveBeenCalledExactlyOnceWith({
 			to: '/',
@@ -1718,7 +1896,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			contextMenuAllowed,
 			count: removedComponent.querySelector('.blueprint-components__count')?.textContent,
 			navigation: navigate.mock.calls,
-			saveDisabled: screen.getByRole<HTMLButtonElement>('button', {name: 'Save Blueprint'}).disabled,
+			saveDisabled: screen.getByRole<HTMLButtonElement>('button', {name: 'Save blueprint'}).disabled,
 		}).toStrictEqual({
 			contextMenuAllowed: false,
 			count: '0',
@@ -1730,14 +1908,14 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		const restoredComponent = screen.getByRole('button', {name: /Transport belt, 1/});
 		expect({
 			count: restoredComponent.querySelector('.blueprint-components__count')?.textContent,
-			saveDisabled: screen.getByRole<HTMLButtonElement>('button', {name: 'Save Blueprint'}).disabled,
+			saveDisabled: screen.getByRole<HTMLButtonElement>('button', {name: 'Save blueprint'}).disabled,
 		}).toStrictEqual({
 			count: '1',
 			saveDisabled: true,
 		});
 
 		fireEvent.keyDown(restoredComponent, {key: 'Delete'});
-		await user.click(screen.getByRole('button', {name: 'Save Blueprint'}));
+		await user.click(screen.getByRole('button', {name: 'Save blueprint'}));
 
 		expect(navigate).toHaveBeenCalledExactlyOnceWith({
 			to: '/',
@@ -1812,7 +1990,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 
 		openBlueprintEditor();
 		await user.click(screen.getByRole('checkbox', {name: 'Sort entries by label'}));
-		await user.click(screen.getByRole('button', {name: 'Save Blueprint'}));
+		await user.click(screen.getByRole('button', {name: 'Save blueprint'}));
 
 		expect(navigate).toHaveBeenCalledExactlyOnceWith({
 			to: '/',
@@ -2523,10 +2701,10 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		await searchSignals(user, 'yellow');
 		await chooseSignal(user, 'Signal yellow');
 		fireEvent.contextMenu(screen.getByRole('button', {name: 'Edit icon 2'}));
-		await user.click(screen.getByRole('button', {name: 'Choose icon 3'}));
+		await user.click(screen.getByRole('button', {name: 'Edit icon 3'}));
 		await searchSignals(user, 'green');
 		await chooseSignal(user, 'Signal green');
-		await user.click(screen.getByRole('button', {name: 'Save Blueprint'}));
+		await user.click(screen.getByRole('button', {name: 'Save blueprint'}));
 		await Promise.resolve();
 
 		expect({
@@ -2549,7 +2727,6 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 									description: 'New description',
 									icons: [
 										{index: 1, signal: {type: 'virtual', name: 'signal-yellow'}},
-										{index: 2, signal: {type: 'virtual', name: 'signal-blue'}},
 										{index: 3, signal: {type: 'virtual', name: 'signal-green'}},
 									],
 									label: 'Blue starter',
@@ -2580,7 +2757,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		openBlueprintEditor();
 		fireEvent.change(screen.getByRole('spinbutton', {name: 'Width'}), {target: {value: '16'}});
 		await user.click(screen.getByRole('radio', {name: 'Relative'}));
-		await user.click(screen.getByRole('button', {name: 'Save Blueprint'}));
+		await user.click(screen.getByRole('button', {name: 'Save blueprint'}));
 
 		expect(navigate).toHaveBeenCalledExactlyOnceWith({
 			to: '/',
@@ -2668,7 +2845,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 				navigation: navigate.mock.calls,
 			}).toStrictEqual({
 				dialogState: {
-					activeElement: {name: 'Keep Editing', tagName: 'BUTTON'},
+					activeElement: {name: 'Cancel', tagName: 'BUTTON'},
 					dialogStack: [
 						{
 							ariaHidden: 'true',
@@ -2681,7 +2858,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 							ariaHidden: null,
 							inert: false,
 							modal: 'true',
-							name: 'There are uncommitted changes',
+							name: 'Confirmation',
 							role: 'alertdialog',
 						},
 					],
@@ -2690,7 +2867,8 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			});
 		});
 
-		await user.click(screen.getByRole('button', {name: 'Commit'}));
+		await user.click(screen.getByRole('button', {name: 'Cancel'}));
+		await user.click(screen.getByRole('button', {name: 'Save blueprint'}));
 		await Promise.resolve();
 
 		expect({
@@ -2719,7 +2897,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		openBlueprintEditor();
 		expect({
 			icon: screen.getByRole('button', {name: 'Edit icon 1'}).getAttribute('title'),
-			saveDisabled: screen.getByRole<HTMLButtonElement>('button', {name: 'Save to Book'}).disabled,
+			saveDisabled: screen.getByRole<HTMLButtonElement>('button', {name: 'Save blueprint'}).disabled,
 			title: screen.getByText('New label', {selector: '.blueprint-editor__title'}).textContent,
 		}).toStrictEqual({
 			icon: 'Signal red\nvirtual:signal-red',
@@ -2734,6 +2912,9 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 
 		openBlueprintEditor();
 		const blueprintEditor = screen.getByRole('dialog', {name: 'Blueprint Editor'});
+		await user.click(screen.getByRole('button', {name: 'Edit blueprint title'}));
+		await user.clear(screen.getByRole('textbox', {name: 'Blueprint title'}));
+		await user.type(screen.getByRole('textbox', {name: 'Blueprint title'}), 'Dirty picker priority{Enter}');
 		await user.click(screen.getByRole('button', {name: 'Choose icon 1'}));
 		await searchSignals(user, 'q');
 		const search = screen.getByRole<HTMLInputElement>('searchbox', {name: 'Search'});
@@ -2761,6 +2942,17 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			blueprintEditor: screen.getByRole('dialog', {name: 'Blueprint Editor'}).getAttribute('aria-modal'),
 			picker: screen.queryByRole('dialog', {name: 'Choose label icon 1'}),
 		}).toStrictEqual({blueprintEditor: 'true', picker: null});
+
+		fireEvent.keyDown(window, {key: 'Escape', code: 'Escape'});
+		expect({
+			confirmation: screen.getByRole('alertdialog', {name: 'Confirmation'}).getAttribute('aria-modal'),
+			editorHidden: blueprintEditor.getAttribute('aria-hidden'),
+			title: screen.getByText('Dirty picker priority', {selector: '.blueprint-editor__title'}).textContent,
+		}).toStrictEqual({
+			confirmation: 'true',
+			editorHidden: 'true',
+			title: 'Dirty picker priority',
+		});
 	});
 
 	test('applies a transformation within the selected book path', async () => {
@@ -3367,7 +3559,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		openBlueprintEditor();
 		await user.click(screen.getByRole('checkbox', {name: 'Trains'}));
 		await user.click(screen.getByRole('checkbox', {name: 'Tiles'}));
-		await user.click(screen.getByRole('button', {name: 'Save Blueprint'}));
+		await user.click(screen.getByRole('button', {name: 'Save blueprint'}));
 
 		expect(navigate).toHaveBeenCalledExactlyOnceWith({
 			to: '/',
@@ -3394,7 +3586,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 
 		openBlueprintEditor();
 		await user.click(screen.getByRole('checkbox', {name: 'Entities'}));
-		await user.click(screen.getByRole('button', {name: 'Save Blueprint'}));
+		await user.click(screen.getByRole('button', {name: 'Save blueprint'}));
 
 		expect(navigate).toHaveBeenCalledExactlyOnceWith({
 			to: '/',

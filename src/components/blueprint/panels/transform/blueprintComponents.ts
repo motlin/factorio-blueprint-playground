@@ -1,3 +1,4 @@
+import gameData from '../../../../generated/game-data.json';
 import type {BlueprintString, Quality, SignalType} from '../../../../parsing/types';
 import {
 	countItems,
@@ -21,10 +22,19 @@ export function blueprintComponentName(component: Pick<BlueprintComponent, 'name
 	return words.slice(0, 1).toUpperCase() + words.slice(1);
 }
 
+const itemIdOrder = new Map<string, number>();
+for (const [index, signal] of gameData.pickerSignals.entries()) {
+	if (!itemIdOrder.has(signal.name)) {
+		itemIdOrder.set(signal.name, index);
+	}
+}
+
 function compareComponents(left: BlueprintComponent, right: BlueprintComponent): number {
 	return (
 		right.count - left.count ||
-		blueprintComponentName(left).localeCompare(blueprintComponentName(right)) ||
+		(itemIdOrder.get(left.name) ?? Number.MAX_SAFE_INTEGER) -
+			(itemIdOrder.get(right.name) ?? Number.MAX_SAFE_INTEGER) ||
+		left.name.localeCompare(right.name) ||
 		left.type.localeCompare(right.type) ||
 		(left.quality ?? 'normal').localeCompare(right.quality ?? 'normal')
 	);
