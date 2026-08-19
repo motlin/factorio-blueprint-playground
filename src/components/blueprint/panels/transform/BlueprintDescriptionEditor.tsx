@@ -8,6 +8,7 @@ interface BlueprintDescriptionEditorProps
 	description: string;
 	heading?: string;
 	onDescriptionChange: (description: string) => void;
+	variant?: 'section' | 'record-preview';
 }
 
 export function BlueprintDescriptionEditor({
@@ -15,6 +16,7 @@ export function BlueprintDescriptionEditor({
 	description,
 	heading = 'Description',
 	onDescriptionChange,
+	variant = 'section',
 }: BlueprintDescriptionEditorProps)
 {
 	const descriptionId = useId();
@@ -22,7 +24,7 @@ export function BlueprintDescriptionEditor({
 
 	return (
 		<section
-			className="transform-workflow__section blueprint-description-editor"
+			className={`transform-workflow__section blueprint-description-editor blueprint-description-editor--${variant}`}
 			data-factorio-source="BlueprintSettingsGui::makeDescriptionFrame"
 			data-factorio-style="bordered_frame"
 			aria-labelledby={headingId}

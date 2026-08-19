@@ -99,7 +99,7 @@ test('renders the item-backed composite and four independently addressable signa
 		screen.getByRole(
 			'group',
 			{
-				name: 'Blueprint label icon slots',
+				name: 'Blueprint book preview icon slots',
 			},
 		),
 	).getAllByRole('button');
@@ -113,7 +113,7 @@ test('renders the item-backed composite and four independently addressable signa
 					.getByRole(
 						'group',
 						{
-							name: 'Blueprint label icon slots',
+							name: 'Blueprint book preview icon slots',
 						},
 					)
 					.getAttribute('data-factorio-source'),

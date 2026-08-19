@@ -217,7 +217,7 @@ export const LoadPlanner: Story =
 		const dialog = page.getByRole(
 			'dialog',
 			{
-				name: 'Load an upgrade planner',
+				name: 'Choose a planner for this draft',
 			},
 		);
 		const grid = page.getByRole(
@@ -231,8 +231,15 @@ export const LoadPlanner: Story =
 			{
 				columns: grid.getAttribute('data-factorio-columns'),
 				dialogVisible: dialog.getClientRects().length > 0,
-				instructions: page.getByText('Choose a planner to copy all of its mappings into the editable draft.')
-					.textContent,
+				closeControl: page
+					.getByRole(
+						'button',
+						{
+							name: 'Close planner draft chooser',
+						},
+					)
+					.getAttribute('aria-label'),
+				instructionText: page.getByText(/Choosing a planner replaces this editable draft/).textContent,
 				tiles: within(grid)
 					.getAllByRole('button')
 					.map((tile) => (
@@ -245,9 +252,11 @@ export const LoadPlanner: Story =
 			},
 		).toStrictEqual(
 			{
+				closeControl: 'Close planner draft chooser',
 				columns: '6',
 				dialogVisible: true,
-				instructions: 'Choose a planner to copy all of its mappings into the editable draft.',
+				instructionText:
+					'Choosing a planner replaces this editable draft and returns to the Upgrade Planner. It does not apply changes to the blueprint.',
 				tiles: [
 					{
 						choiceKind: 'default',
