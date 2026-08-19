@@ -1,3 +1,5 @@
+import {useId} from 'react';
+
 import type {SignalID, UpgradeSourceSignal} from '../../../../parsing/types';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
 import {FactorioInventorySlot} from '../../../ui/FactorioUi';
@@ -5,6 +7,7 @@ import {signalName, signalTitle} from './upgradePlannerSignals';
 
 interface SignalSlotProps
 {
+	descriptionId?: string;
 	label: string;
 	onChoose?: () => void;
 	onClear?: () => void;
@@ -14,22 +17,30 @@ interface SignalSlotProps
 interface UpgradeMappingRowProps
 {
 	count: number;
+	dropTarget?: boolean;
 	from?: UpgradeSourceSignal;
 	mappingId: string;
 	onChooseSource: () => void;
 	onChooseTarget: () => void;
 	onClearSource: () => void;
 	onClearTarget: () => void;
+	slotIndex: number;
 	to?: SignalID;
 }
 
-export function SignalSlot({label, onChoose, onClear, signal}: SignalSlotProps)
+export function SignalSlot({descriptionId, label, onChoose, onClear, signal}: SignalSlotProps)
 {
 	return (
 		<FactorioInventorySlot
 			className={`transform-signal-slot${signal === undefined ? ' transform-signal-slot--empty' : ''}${
 				signal?.comparator === undefined ? '' : ' transform-signal-slot--condition'
 			}`}
+			aria-describedby={descriptionId}
+			aria-keyshortcuts={
+				descriptionId === undefined
+					? undefined
+					: 'Control+ArrowLeft Control+ArrowRight Control+ArrowUp Control+ArrowDown Delete Backspace'
+			}
 			aria-label={label}
 			disabled={onChoose === undefined}
 			title={signal === undefined ? label : signalTitle(signal)}
@@ -88,15 +99,18 @@ function mappingLabel(from: UpgradeSourceSignal | undefined, to: SignalID | unde
  */
 export function UpgradeMappingRow({
 	count,
+	dropTarget = false,
 	from,
 	mappingId,
 	onChooseSource,
 	onChooseTarget,
 	onClearSource,
 	onClearTarget,
+	slotIndex,
 	to,
 }: UpgradeMappingRowProps)
 {
+	const instructionsId = useId();
 	const label = mappingLabel(from, to);
 	const sourceName = from === undefined ? undefined : signalName(from);
 	const targetName = to === undefined ? undefined : signalName(to);
@@ -107,10 +121,14 @@ export function UpgradeMappingRow({
 				from === undefined || to === undefined ? ' upgrade-mapping-grid__pair--incomplete' : ''
 			}`}
 			data-mapping-key={mappingId}
+			data-drop-target={dropTarget || undefined}
+			data-upgrade-mapping-slot={slotIndex}
+			draggable
 			aria-label={label}
 			title={from === undefined || to === undefined ? label : `${sourceName} → ${targetName}`}
 		>
 			<SignalSlot
+				descriptionId={instructionsId}
 				label={
 					sourceName === undefined ? 'Choose source for mapping' : `Choose source, currently ${sourceName}`
 				}
@@ -119,6 +137,7 @@ export function UpgradeMappingRow({
 				onClear={from === undefined ? undefined : onClearSource}
 			/>
 			<SignalSlot
+				descriptionId={instructionsId}
 				label={
 					targetName === undefined
 						? sourceName === undefined
@@ -132,9 +151,9 @@ export function UpgradeMappingRow({
 				onChoose={onChooseTarget}
 				onClear={to === undefined ? undefined : onClearTarget}
 			/>
-			<span className="transform-visually-hidden">
-				{count.toString()} {count === 1 ? 'match' : 'matches'}. Focus an endpoint and press Delete to clear that
-				endpoint.
+			<span id={instructionsId} className="transform-visually-hidden">
+				{count.toString()} {count === 1 ? 'match' : 'matches'}. Drag this From and To pair to move it, or focus
+				either endpoint and press Control plus an arrow key. Press Delete to clear the focused endpoint.
 			</span>
 		</li>
 	);

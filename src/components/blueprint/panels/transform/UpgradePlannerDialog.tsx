@@ -63,6 +63,7 @@ interface UpgradePlannerMappings
 	error: string | undefined;
 	mappings: PositionedUpgradeMapping[];
 	onClearEndpoint: (mappingId: string, endpoint: 'from' | 'to') => void;
+	onMove: (mappingId: string, targetSlotIndex: number) => void;
 	onPlannerLoad: (choice: UpgradePlannerChoice) => void;
 	onPlannerInputChange: (value: string) => void;
 	onSourceChange: (mappingId: string | undefined, slotIndex: number, source: UpgradeSourceSignal) => void;
@@ -206,6 +207,7 @@ function UpgradeMappingsEditor({
 	error,
 	mappings,
 	onClearEndpoint,
+	onMove,
 	onPlannerLoad,
 	onPlannerInputChange,
 	onSourceChange,
@@ -320,6 +322,7 @@ function UpgradeMappingsEditor({
 						setSourcePicker(undefined);
 					}}
 					onClearEndpoint={onClearEndpoint}
+					onMove={onMove}
 				/>
 			</div>
 			{plannerSelectorOpen ? (

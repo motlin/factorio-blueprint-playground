@@ -45,6 +45,7 @@ const meta =
 		onChooseSource: fn(),
 		onChooseTarget: fn(),
 		onClearEndpoint: fn(),
+		onMove: fn(),
 	},
 	parameters: transformStoryParameters,
 	tags: ['autodocs'],
@@ -67,5 +68,7 @@ export const OrderedMappings: Story =
 			),
 		);
 		await expect(args.onChooseSource).toHaveBeenLastCalledWith('mapping-belt', 0);
+		await userEvent.keyboard('{Control>}{ArrowRight}{/Control}');
+		await expect(args.onMove).toHaveBeenLastCalledWith('mapping-belt', 1);
 	},
 };
