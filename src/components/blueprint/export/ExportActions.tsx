@@ -84,7 +84,7 @@ function BlueprintExportButtons({blueprint, path}: BlueprintExportButtonsProps) 
 	};
 
 	return (
-		<div className="flex-space-between">
+		<div className="blueprint-export-actions flex-space-between">
 			<ButtonWithIcon icon={ClipboardCopy} text="Copy String" onClick={handleCopyString} />
 			<ButtonWithIcon icon={FileJson} text="Copy JSON" onClick={handleCopyJSON} />
 			<ButtonWithIcon icon={Download} text="Download String" onClick={handleDownloadString} />

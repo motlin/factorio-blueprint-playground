@@ -307,18 +307,13 @@ export function BlueprintLibrary({historyRecords, libraryRecords, location, onLo
 										}}
 										type="button"
 										className="blueprint-library__book-navigation-button"
-										data-factorio-style={
-											entry.current
-												? 'mini_button_aligned_to_text_vertically_when_centered'
-												: 'mini_button_aligned_to_text_vertically'
-										}
+										data-factorio-style="mini_button_aligned_to_text_vertically"
 										aria-current={entry.current ? 'location' : undefined}
 										aria-label={
 											entry.current
 												? `Current book: ${entry.label}`
 												: `Go to book: ${entry.label}`
 										}
-										aria-pressed={entry.current}
 										onClick={() => {
 											if (!entry.current) {
 												navigateToBook(entry.bookId);
@@ -365,15 +360,6 @@ export function BlueprintLibrary({historyRecords, libraryRecords, location, onLo
 										role="status"
 										data-factorio-source="BlueprintShelfWidget::updateRecords"
 									>
-										<div className="blueprint-library__empty-slots" aria-hidden="true">
-											{Array.from({length: 10}, (_, slotIndex) => (
-												<span
-													key={slotIndex}
-													className="factorio-inventory-slot blueprint-library__empty-slot"
-													data-factorio-style="slot_button"
-												/>
-											))}
-										</div>
 										<div
 											className="blueprint-library__empty-copy"
 											data-website-extension="empty-shelf-help"
@@ -384,7 +370,7 @@ export function BlueprintLibrary({historyRecords, libraryRecords, location, onLo
 													? 'No blueprints saved yet'
 													: 'This blueprint book is empty'}
 											</strong>
-											<span>Saved blueprints and planners will appear in these slots.</span>
+											<span>Saved blueprints and planners will appear here.</span>
 										</div>
 									</div>
 								) : (

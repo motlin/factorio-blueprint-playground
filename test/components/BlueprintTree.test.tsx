@@ -50,6 +50,23 @@ describe('BlueprintTree Component', () => {
 		expect(treeRows[2].textContent).toContain('Second Blueprint');
 	});
 
+	it('renders labels directly after the record icon', () => {
+		const onSelect = vi.fn<(path: string) => void>();
+		const {container} = render(
+			<BlueprintTree rootBlueprint={testBlueprintData} selectedPath="" onSelect={onSelect} />,
+		);
+
+		const childClassNames = Array.from(container.querySelectorAll('.tree-row'), (row) =>
+			Array.from(row.children, (child) => child.className),
+		);
+
+		expect(childClassNames).toStrictEqual([
+			['flex flex-items-center', 'label'],
+			['flex flex-items-center', 'label'],
+			['flex flex-items-center', 'label'],
+		]);
+	});
+
 	it('calls onSelect when clicking blueprints', async () => {
 		const user = userEvent.setup();
 		const onSelect = vi.fn<(path: string) => void>();

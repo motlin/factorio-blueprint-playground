@@ -1,4 +1,14 @@
-import {useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent} from 'react';
+import {
+	useEffect,
+	useId,
+	useLayoutEffect,
+	useMemo,
+	useRef,
+	useState,
+	type DragEvent,
+	type KeyboardEvent,
+	type ReactNode,
+} from 'react';
 import {createPortal} from 'react-dom';
 
 import type {Parameter, SignalID} from '../../../../parsing/types';
@@ -23,6 +33,21 @@ interface BlueprintParameterizationDialogProps {
 	onConfirm: (parameters: Parameter[]) => void;
 	parameters: readonly Parameter[];
 	signalOptions: readonly SignalID[];
+}
+
+interface ParameterizationBodyProps {
+	children: ReactNode;
+	empty: boolean;
+}
+
+function ParameterizationBody({children, empty}: ParameterizationBodyProps) {
+	return empty ? (
+		<div className="blueprint-parameterization__empty-state">{children}</div>
+	) : (
+		<FactorioScrollFrame className="blueprint-parameterization__body" aria-label="Blueprint parameters">
+			{children}
+		</FactorioScrollFrame>
+	);
 }
 
 interface DialogAnchor {
@@ -553,7 +578,7 @@ export function BlueprintParameterizationDialog({
 							<span aria-hidden="true">ⓘ</span>
 						</button>
 					</div>
-					<FactorioScrollFrame className="blueprint-parameterization__body" aria-label="Blueprint parameters">
+					<ParameterizationBody empty={editableParameters.length === 0}>
 						{editableParameters.map(({index, parameter}, editableIndex) => {
 							const currentDependency = dependencyOption(parameter);
 							const currentSource = dependencySource(parameter);
@@ -658,7 +683,6 @@ export function BlueprintParameterizationDialog({
 										</label>
 										<input
 											id={`parameter-name-${index.toString()}`}
-											data-dialog-initial-focus={editableIndex === 0 ? 'true' : undefined}
 											type="text"
 											aria-label={`Parameter ${parameterNumber.toString()} name`}
 											value={parameter.name ?? ''}
@@ -841,20 +865,21 @@ export function BlueprintParameterizationDialog({
 								{unsupportedCount === 1 ? 'parameter is' : 'parameters are'} preserved unchanged.
 							</p>
 						)}
-					</FactorioScrollFrame>
+						<FactorioButton
+							kind={FactorioButtonKind.Neutral}
+							className="blueprint-parameterization__add"
+							data-dialog-initial-focus="true"
+							aria-label="Add parameter"
+							title="Add parameter"
+							onClick={addParameter}
+						>
+							<span aria-hidden="true">+</span>
+							<span>Add parameter</span>
+						</FactorioButton>
+					</ParameterizationBody>
 				</div>
 
 				<footer className="blueprint-parameterization__footer">
-					<FactorioButton
-						kind={FactorioButtonKind.Neutral}
-						className="blueprint-parameterization__add"
-						aria-label="Add parameter"
-						title="Add parameter"
-						onClick={addParameter}
-					>
-						<span aria-hidden="true">+</span>
-						<span>Add parameter</span>
-					</FactorioButton>
 					<FactorioButton
 						kind={FactorioButtonKind.Confirm}
 						className="transform-picker__confirm blueprint-parameterization__confirm"

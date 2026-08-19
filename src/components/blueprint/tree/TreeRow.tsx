@@ -1,8 +1,7 @@
 import type React from 'react';
 
 import {BlueprintWrapper} from '../../../parsing/BlueprintWrapper';
-import type {Icon} from '../../../parsing/types';
-import {FactorioIcon, Placeholder} from '../../core/icons/FactorioIcon';
+import {FactorioIcon} from '../../core/icons/FactorioIcon';
 import {RichText} from '../../core/text/RichText';
 
 import type {TreeNode} from './types';
@@ -17,14 +16,6 @@ export interface TreeRowProps {
 
 export const TreeRow = ({node, indentLevel, isSelected, isActive, onSelect}: TreeRowProps) => {
 	const wrapper = new BlueprintWrapper(node.blueprint);
-
-	function getIconElement(index: number) {
-		const icon: Icon | undefined = wrapper.getIcons().find((i) => i.index === index);
-		if (icon) {
-			return <FactorioIcon key={index} icon={icon.signal} size={'small'} />;
-		}
-		return <Placeholder key={index} size={'small'} />;
-	}
 
 	const classes = ['tree-row flex clickable', isSelected ? 'selected' : '', isActive ? 'active' : '']
 		.filter(Boolean)
@@ -57,11 +48,6 @@ export const TreeRow = ({node, indentLevel, isSelected, isActive, onSelect}: Tre
 		>
 			<div className="flex flex-items-center">
 				<FactorioIcon icon={{type: 'item', name: wrapper.getType()}} size={'small'} />
-				<div className="separator" />
-			</div>
-
-			<div className="flex flex-items-center">
-				{[1, 2, 3, 4].map((index) => getIconElement(index))}
 				<div className="separator" />
 			</div>
 

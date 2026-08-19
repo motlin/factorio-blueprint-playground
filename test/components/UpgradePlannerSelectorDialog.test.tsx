@@ -535,7 +535,7 @@ describe('UpgradePlannerSelectorDialog golden apply-only source contracts', () =
 		}).toStrictEqual({closes: [[]], selections: []});
 	});
 
-	test('presents editor Load choices as six-column planner records and explicit website extensions', () => {
+	test('presents editor Load choices as five-column planner records and explicit website extensions', () => {
 		render(
 			<UpgradePlannerSelectorDialog
 				dialogId="upgrade-planner-selector"
@@ -574,7 +574,9 @@ describe('UpgradePlannerSelectorDialog golden apply-only source contracts', () =
 				closeControl: within(dialog)
 					.getByRole('button', {name: 'Close planner draft chooser'})
 					.getAttribute('aria-label'),
+				dialogClass: dialog.className,
 				dialogChildren: Array.from(dialog.children).map((child) => child.className),
+				gridClass: grid.className,
 				source: dialog.getAttribute('data-factorio-source'),
 				subheaderStyle: dialog
 					.querySelector('.upgrade-planner-selector__subheader')
@@ -585,10 +587,10 @@ describe('UpgradePlannerSelectorDialog golden apply-only source contracts', () =
 		}).toStrictEqual({
 			applicationControls: {search: null, views: null},
 			geometry: {
-				columns: '6',
+				columns: '5',
 				factorioSource: 'BlueprintsList::addItem',
 				style: {
-					columns: '6',
+					columns: '5',
 					horizontalSpacing: '4px',
 					labelBottomMargin: '4px',
 					labelHeight: '40px',
@@ -601,10 +603,13 @@ describe('UpgradePlannerSelectorDialog golden apply-only source contracts', () =
 				'Choosing a planner replaces this editable draft and returns to the Upgrade Planner. It does not apply changes to the blueprint.',
 			shell: {
 				closeControl: 'Close planner draft chooser',
+				dialogClass:
+					'factorio-frame factorio-frame--shallow transform-dialog upgrade-planner-selector upgrade-planner-selector--draft',
 				dialogChildren: [
 					'factorio-title-bar transform-dialog__header upgrade-planner-selector__header',
 					'factorio-frame factorio-frame--shallow upgrade-planner-selector__inside-frame',
 				],
+				gridClass: 'factorio-frame factorio-frame--deep upgrade-planner-selector__grid',
 				source: null,
 				subheaderStyle: 'subheader_frame',
 				websiteExtension: 'upgrade-planner-draft-loader',
