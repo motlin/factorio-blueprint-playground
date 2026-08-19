@@ -1,0 +1,37 @@
+{
+	"blueprint": {
+		"item": "blueprint",
+		"label": "Train wire test",
+		"version": 0,
+		"entities": [
+			{"entity_number": 1, "name": "locomotive", "position": {"x": 0, "y": 0}},
+			{"entity_number": 2, "name": "cargo-wagon", "position": {"x": 0, "y": 7}},
+			{"entity_number": 3, "name": "fluid-wagon", "position": {"x": 0, "y": 14}},
+			{"entity_number": 4, "name": "artillery-wagon", "position": {"x": 0, "y": 21}},
+			{"entity_number": 10, "name": "train-stop", "position": {"x": 3, "y": 0}},
+			{"entity_number": 20, "name": "small-lamp", "position": {"x": 5, "y": 0}}
+		],
+		"wires": [
+			[1, 1, 10, 1],
+			[2, 1, 3, 1],
+			[10, 2, 20, 1]
+		],
+		"schedules": [
+			{
+				"locomotives": [1],
+				"schedule": {
+					"records": [
+						{
+							"station": "Test stop",
+							"wait_conditions": [{"compare_type": "and", "type": "time", "ticks": 300}]
+						}
+					]
+				}
+			}
+		],
+		"tiles": [
+			{"name": "landfill", "position": {"x": 0, "y": 0}},
+			{"name": "landfill", "position": {"x": 1, "y": 0}}
+		]
+	}
+}
