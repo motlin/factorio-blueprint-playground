@@ -38,8 +38,11 @@ describe('UpgradeMappingRow', () => {
 
 		expect({
 			attributes: {
+				className: row.className,
 				draggable: row.getAttribute('draggable'),
+				factorioSource: row.getAttribute('data-factorio-source'),
 				key: row.getAttribute('data-mapping-key'),
+				mappingState: row.getAttribute('data-mapping-state'),
 				slot: row.getAttribute('data-upgrade-mapping-slot'),
 				sourceTitle: source.title,
 				targetTitle: target.title,
@@ -48,6 +51,8 @@ describe('UpgradeMappingRow', () => {
 				.getAllByRole('button')
 				.map((button) => button.getAttribute('aria-label')),
 			comparator: source.querySelector('.transform-signal-slot__comparator')?.textContent,
+			sourceImages: [...source.querySelectorAll('img')].map((image) => image.getAttribute('src')),
+			targetImages: [...target.querySelectorAll('img')].map((image) => image.getAttribute('src')),
 			operations: {
 				chooseSource: onChooseSource.mock.calls,
 				chooseTarget: onChooseTarget.mock.calls,
@@ -56,20 +61,95 @@ describe('UpgradeMappingRow', () => {
 			},
 		}).toStrictEqual({
 			attributes: {
+				className: 'upgrade-mapping-grid__pair upgrade-mapping-grid__pair--complete',
 				draggable: 'true',
+				factorioSource: 'UpgradeItemGui::addEmptyMapper',
 				key: 'mapping-belt',
+				mappingState: 'complete',
 				slot: '2',
 				sourceTitle: 'Transport belt\nentity:transport-belt\nQuality: ≤ rare',
 				targetTitle: 'Fast transport belt\nentity:fast-transport-belt\nQuality: = normal',
 			},
 			buttonNames: ['Choose source, currently Transport belt', 'Choose target for Transport belt'],
 			comparator: '≤',
+			sourceImages: [
+				'https://factorio-icon-cdn.pages.dev/entity/transport-belt.webp',
+				'https://factorio-icon-cdn.pages.dev/quality/rare.webp',
+			],
+			targetImages: ['https://factorio-icon-cdn.pages.dev/entity/fast-transport-belt.webp'],
 			operations: {
 				chooseSource: [[]],
 				chooseTarget: [[]],
 				clearSource: [[]],
 				clearTarget: [[]],
 			},
+		});
+	});
+
+	test('exposes a stable whole-pair dragging state without adding a reorder control', () => {
+		render(
+			<ol>
+				<UpgradeMappingRow
+					count={1}
+					dragging
+					from={{type: 'entity', name: 'assembling-machine-2'}}
+					mappingId="mapping-assembler"
+					slotIndex={1}
+					to={{type: 'entity', name: 'assembling-machine-3'}}
+					onChooseSource={vi.fn<() => void>()}
+					onChooseTarget={vi.fn<() => void>()}
+					onClearSource={vi.fn<() => void>()}
+					onClearTarget={vi.fn<() => void>()}
+				/>
+			</ol>,
+		);
+
+		const row = screen.getByRole('listitem', {
+			name: 'Mapping from Assembling machine 2 to Assembling machine 3',
+		});
+		expect({
+			dragging: row.getAttribute('data-dragging'),
+			endpointButtons: within(row)
+				.getAllByRole('button')
+				.map((button) => button.getAttribute('aria-label')),
+			moveButton: within(row).queryByRole('button', {name: /Move mapping/}),
+		}).toStrictEqual({
+			dragging: 'true',
+			endpointButtons: [
+				'Choose source, currently Assembling machine 2',
+				'Choose target for Assembling machine 2',
+			],
+			moveButton: null,
+		});
+	});
+
+	test('marks a configured source without a quality condition as matching any quality', () => {
+		render(
+			<ol>
+				<UpgradeMappingRow
+					count={2}
+					from={{type: 'entity', name: 'transport-belt'}}
+					mappingId="mapping-any-quality"
+					slotIndex={0}
+					to={{type: 'entity', name: 'fast-transport-belt'}}
+					onChooseSource={vi.fn<() => void>()}
+					onChooseTarget={vi.fn<() => void>()}
+					onClearSource={vi.fn<() => void>()}
+					onClearTarget={vi.fn<() => void>()}
+				/>
+			</ol>,
+		);
+
+		const source = screen.getByRole('button', {name: 'Choose source, currently Transport belt'});
+		expect({
+			comparator: source.querySelector('.transform-signal-slot__comparator'),
+			sourceImages: [...source.querySelectorAll('img')].map((image) => image.getAttribute('src')),
+		}).toStrictEqual({
+			comparator: null,
+			sourceImages: [
+				'https://factorio-icon-cdn.pages.dev/entity/transport-belt.webp',
+				'https://factorio-icon-cdn.pages.dev/virtual-signal/signal-any-quality.webp',
+			],
 		});
 	});
 

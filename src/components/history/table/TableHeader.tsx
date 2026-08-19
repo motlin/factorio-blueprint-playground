@@ -15,8 +15,16 @@ export function TableHeader({label, className = 'history-header', sortDirection 
 	};
 
 	if (onSort) {
+		const sortStateLabel =
+			sortDirection === null ? label : `${label}, sorted ${sortDirection === 'asc' ? 'ascending' : 'descending'}`;
 		return (
-			<button className={`${className} sortable`} onClick={handleClick} type="button">
+			<button
+				className={`${className} sortable`}
+				aria-label={sortStateLabel}
+				data-sort-direction={sortDirection ?? undefined}
+				onClick={handleClick}
+				type="button"
+			>
 				{label}
 				<SortIndicator direction={sortDirection} />
 			</button>

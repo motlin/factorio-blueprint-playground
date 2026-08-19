@@ -62,6 +62,7 @@ export const FactorioIcon = ({decorative = false, id, icon, size}: FactorioIconP
 	const type = icon.type ?? 'item';
 
 	const sizeClass = size === 'small' ? styles.smallSquare : styles.largeSquare;
+	const parameterMatch = /^parameter-(\d+)$/.exec(icon.name);
 
 	const qualityNode = getQualityNode(icon);
 	const accessibleName =
@@ -79,15 +80,26 @@ export const FactorioIcon = ({decorative = false, id, icon, size}: FactorioIconP
 			aria-label={decorative ? undefined : accessibleName}
 			role={decorative ? undefined : 'img'}
 		>
-			<img
-				aria-hidden="true"
-				data-testid="icon"
-				loading="lazy"
-				className={styles.artwork}
-				src={getIconUrl(type, icon.name)}
-				alt=""
-				title={decorative ? undefined : `${type}: ${icon.name}`}
-			/>
+			{parameterMatch === null ? (
+				<img
+					aria-hidden="true"
+					data-testid="icon"
+					loading="lazy"
+					className={styles.artwork}
+					src={getIconUrl(type, icon.name)}
+					alt=""
+					title={decorative ? undefined : `${type}: ${icon.name}`}
+				/>
+			) : (
+				<span
+					aria-hidden="true"
+					data-testid="icon"
+					className={`${styles.artwork} ${styles.parameterArtwork}`}
+					title={decorative ? undefined : `${type}: ${icon.name}`}
+				>
+					{parameterMatch[1]}
+				</span>
+			)}
 			{qualityNode}
 		</div>
 	);
