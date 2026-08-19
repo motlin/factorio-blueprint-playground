@@ -1,5 +1,10 @@
 import type {Blueprint, BlueprintBook, BlueprintString, Icon, Parameter} from '../parsing/types';
 
+export enum BlueprintEditorSourceMode {
+	CapturedDraft = 'captured-draft',
+	ExistingRecord = 'existing-record',
+}
+
 export interface BlueprintEditorMetadata {
 	description: string;
 	icons: Icon[];

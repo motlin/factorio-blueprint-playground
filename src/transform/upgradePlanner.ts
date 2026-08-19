@@ -40,30 +40,65 @@ interface UpgradeRuleLookup {
 }
 
 const qualitySchema = z.enum(['normal', 'uncommon', 'rare', 'epic', 'legendary']);
-const signalSchema = z.object({
-	type: z.enum(['item', 'entity']).optional(),
-	name: z.string().min(1),
-	quality: qualitySchema.optional(),
-});
+const signalIdSchema = z
+	.object({
+		type: z
+			.enum([
+				'item',
+				'fluid',
+				'virtual',
+				'entity',
+				'technology',
+				'recipe',
+				'item-group',
+				'tile',
+				'virtual-signal',
+				'achievement',
+				'equipment',
+				'planet',
+				'quality',
+				'utility',
+				'space-location',
+			])
+			.optional(),
+		name: z.string().min(1),
+		quality: qualitySchema.optional(),
+	})
+	.loose();
+const signalSchema = z
+	.object({
+		type: z.enum(['item', 'entity']).optional(),
+		name: z.string().min(1),
+		quality: qualitySchema.optional(),
+	})
+	.loose();
 const upgradeSourceSignalSchema = signalSchema.extend({
 	comparator: z.enum(['=', '!=', '<', '<=', '>', '>=', '≠', '≤', '≥']).optional(),
 });
-const upgradeMappingSchema = z.object({
-	from: upgradeSourceSignalSchema.optional(),
-	to: signalSchema.optional(),
-	index: z.number().int().nonnegative(),
-});
-const upgradePlannerSchema = z.object({
-	item: z.literal('upgrade-planner'),
-	label: z.string().optional(),
-	version: z.number(),
-	settings: z.object({
-		description: z.string().optional(),
-		icons: z.array(z.object({signal: signalSchema, index: z.number().int().positive()})).optional(),
-		mappers: z.array(upgradeMappingSchema),
-	}),
-});
-const upgradePlannerStringSchema = z.object({upgrade_planner: upgradePlannerSchema});
+const upgradeMappingSchema = z
+	.object({
+		from: upgradeSourceSignalSchema.optional(),
+		to: signalSchema.optional(),
+		index: z.number().int().nonnegative(),
+	})
+	.loose();
+const upgradePlannerSchema = z
+	.object({
+		item: z.literal('upgrade-planner'),
+		label: z.string().optional(),
+		version: z.number(),
+		settings: z
+			.object({
+				description: z.string().optional(),
+				icons: z
+					.array(z.object({signal: signalIdSchema, index: z.number().int().positive()}).loose())
+					.optional(),
+				mappers: z.array(upgradeMappingSchema),
+			})
+			.loose(),
+	})
+	.loose();
+const upgradePlannerStringSchema = z.object({upgrade_planner: upgradePlannerSchema}).loose();
 
 const NEXT_UPGRADE_RULES: readonly UpgradeRule[] = gameUiSpec.upgrades.next.map(({from, to}) => ({
 	from: {type: 'entity', name: from},
