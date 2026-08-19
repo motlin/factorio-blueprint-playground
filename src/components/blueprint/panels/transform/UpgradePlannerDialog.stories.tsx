@@ -231,7 +231,7 @@ export const EditablePlanner: Story = {
 			recordTools: [
 				{label: 'Copy planner string', style: 'button'},
 				{label: 'Export planner string', style: 'button'},
-				{label: 'Discard local planner', style: 'red_button'},
+				{label: 'Discard local planner', style: 'tool_button_red'},
 			],
 			source: {
 				buttonText: 'Load planner…',
@@ -307,7 +307,7 @@ export const SavedDeleteConfirmation: Story = {
 		const confirmation = within(document.body).getByRole('alertdialog', {name: 'Delete saved planner?'});
 		await expect(within(confirmation).getByRole('button', {name: 'Delete from Library'})).toHaveAttribute(
 			'data-factorio-style',
-			'red_button',
+			'tool_button_red',
 		);
 	},
 };
