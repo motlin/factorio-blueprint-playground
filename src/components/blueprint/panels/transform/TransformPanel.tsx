@@ -14,6 +14,7 @@ import {
 	rulesFromUpgradePlanner,
 	type UpgradeDirection,
 } from '../../../../transform/upgradePlanner';
+import {FactorioButton, FactorioButtonKind} from '../../../ui/FactorioUi';
 import {BlueprintEditorDialog} from './BlueprintEditorDialog';
 import {BlueprintLabelIcons} from './BlueprintLabelIcons';
 import {BlueprintToolbelt} from './BlueprintToolbelt';
@@ -304,30 +305,26 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 			{upgradeDraft.discardConfirmationOpen ? (
 				<div className="transform-dialog-backdrop transform-dialog-backdrop--confirmation">
 					<section
-						className="transform-dialog transform-dialog--confirmation"
+						className="factorio-frame factorio-frame--shallow transform-dialog transform-dialog--confirmation"
 						role="alertdialog"
 						aria-modal="true"
 						aria-labelledby="discard-transform-heading"
 					>
-						<header className="transform-dialog__header">
+						<header className="factorio-title-bar transform-dialog__header">
 							<h3 id="discard-transform-heading">Discard unsaved changes?</h3>
 						</header>
 						<p>Your changes have not been written back to the loaded blueprint or book.</p>
 						<div className="transform-dialog__actions">
-							<button
-								type="button"
-								className="transform-button"
-								onClick={upgradeDraft.keepEditingPlanner}
-							>
+							<FactorioButton className="transform-button" onClick={upgradeDraft.keepEditingPlanner}>
 								Keep editing
-							</button>
-							<button
-								type="button"
-								className="transform-button transform-button--danger"
+							</FactorioButton>
+							<FactorioButton
+								kind={FactorioButtonKind.Delete}
+								className="transform-button"
 								onClick={upgradeDraft.discardPlanner}
 							>
 								Discard changes
-							</button>
+							</FactorioButton>
 						</div>
 					</section>
 				</div>

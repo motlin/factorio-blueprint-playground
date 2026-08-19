@@ -1,5 +1,6 @@
 import {useId, useMemo} from 'react';
 
+import gameUiSpec from '../../../../generated/game-ui-spec.json';
 import type {BlueprintString, SignalID} from '../../../../parsing/types';
 import {
 	blueprintComponentRemovalKey,
@@ -7,9 +8,10 @@ import {
 	type BlueprintComponentRemovalKey,
 } from '../../../../transform/componentRemoval';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
+import {FactorioInventorySlot} from '../../../ui/FactorioUi';
 import {aggregateBlueprintComponents, blueprintComponentName} from './blueprintComponents';
 
-const slotsPerRow = 10;
+const slotsPerRow = gameUiSpec.styles.signalsTableColumnCount;
 
 interface BlueprintComponentsGridProps {
 	blueprint: BlueprintString;
@@ -54,8 +56,7 @@ export function BlueprintComponentsGrid({
 									removed ? ' blueprint-components__slot--removed' : ''
 								}`}
 							>
-								<button
-									type="button"
+								<FactorioInventorySlot
 									className="blueprint-components__slot-button"
 									aria-label={
 										removed
@@ -90,14 +91,14 @@ export function BlueprintComponentsGrid({
 									<span className="blueprint-components__count" aria-hidden="true">
 										{removed ? '0' : component.count.toLocaleString()}
 									</span>
-								</button>
+								</FactorioInventorySlot>
 							</li>
 						);
 					})}
 					{Array.from({length: emptySlotCount}, (_, index) => (
 						<li
 							key={`empty-${index.toString()}`}
-							className="blueprint-components__slot blueprint-components__slot--empty"
+							className="factorio-inventory-slot blueprint-components__slot blueprint-components__slot--empty"
 							aria-hidden="true"
 						/>
 					))}

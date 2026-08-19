@@ -29,6 +29,21 @@ function sourceMetadata(blueprint: BlueprintString | undefined) {
 	return blueprintEditorMetadata(blueprint);
 }
 
+/**
+ * Transaction state derived from Factorio 2.1.12's setup model:
+ *
+ * - Opening creates a session-local copy of title, description, icons, snapping,
+ *   parameters, components, and conditional filters.
+ * - Child confirmations change that copy. They do not mutate the loaded source.
+ * - A clean close ends the session. A dirty close enters confirmation; keeping
+ *   returns to the same draft, while discarding resets it before closing.
+ * - The draft selected entry is reinserted at `selectedPath`, preserving its
+ *   containing root book. Only `BlueprintEditorActions` crosses the commit
+ *   boundary.
+ *
+ * This maps the temporary setup parameters and nested library-record identity in
+ * BlueprintSetupGui and BlueprintToBeSetup to browser state.
+ */
 export function useBlueprintEditorDraft({blueprint, rootBlueprint, selectedPath}: UseBlueprintEditorDraftOptions) {
 	const metadata = useMemo(() => sourceMetadata(blueprint), [blueprint]);
 	const sourceIcons = useMemo(

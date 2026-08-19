@@ -9,6 +9,22 @@ interface AddUpgradeMappingRowProps {
 	source?: UpgradeSourceSignal;
 }
 
+/**
+ * Empty/incomplete mapper contract:
+ *
+ * - Both fixed endpoint slots exist even when empty, and either endpoint may be
+ *   chosen first. From confirmation requires a prototype; a quality condition
+ *   cannot exist without that prototype. To is either empty or an exact
+ *   prototype-and-quality destination.
+ * - A source-only or target-only pair is valid editor state and retains its
+ *   mapper index. Clearing its remaining endpoint returns that index to an empty
+ *   hole; it does not compact later mappings.
+ * - Confirming From closes only its picker. To remains an explicit activation,
+ *   with choices immediately constrained by the confirmed From.
+ *
+ * The present source-only prop shape is transitional; later row work should
+ * represent both optional endpoints rather than disabling To on an empty From.
+ */
 export function AddUpgradeMappingRow({onRemove, onSourceChoose, onTargetChoose, source}: AddUpgradeMappingRowProps) {
 	const sourceName = source === undefined ? undefined : signalName(source);
 

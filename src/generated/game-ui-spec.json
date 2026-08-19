@@ -1,0 +1,1073 @@
+{
+	"schemaVersion": 1,
+	"sourceVersion": "2.1.12",
+	"provenance": {
+		"repository": "wube/Factorio",
+		"tag": "2.1.12",
+		"commit": "4f08bb3d5d556d152784853c61f0996b7f11ffc9",
+		"locale": "en",
+		"sources": [
+			{
+				"path": "data/base/locale/en/base.cfg",
+				"blob": "310ec1ace9a001a67178a65f12719c48103e4d22"
+			},
+			{
+				"path": "data/base/prototypes/categories/quality.lua",
+				"blob": "f7b2b8923ebcdc6d88677de2cecd60d3ae66a437"
+			},
+			{
+				"path": "data/base/prototypes/entity/circuit-network.lua",
+				"blob": "389eb8fea4ecb9b82dcb23583112f76e1bfed0b8"
+			},
+			{
+				"path": "data/base/prototypes/entity/crash-site.lua",
+				"blob": "24b3e6db75ae068985dc98272480905db055230a"
+			},
+			{
+				"path": "data/base/prototypes/entity/entities.lua",
+				"blob": "1f51421be5d3eedb296ae2f3bbb5fd1ba1933f6b"
+			},
+			{
+				"path": "data/base/prototypes/entity/fire.lua",
+				"blob": "2b03e69e3133d3b0493595642adaaaee2c631398"
+			},
+			{
+				"path": "data/base/prototypes/entity/mining-drill.lua",
+				"blob": "21f7f21c73b8bfd32249ff214395ff5c25cdf497"
+			},
+			{
+				"path": "data/base/prototypes/entity/trains.lua",
+				"blob": "8ca4c05de9d5cf66c5f09a9fb23e14fca951f795"
+			},
+			{
+				"path": "data/base/prototypes/entity/transport-belts.lua",
+				"blob": "3d48baf95fd1acdabffaaf223ffb680af3cca1ae"
+			},
+			{
+				"path": "data/base/prototypes/entity/turrets.lua",
+				"blob": "721b2cba012c1d7ef25333f3ca9ed960b80b1f1a"
+			},
+			{
+				"path": "data/base/prototypes/item-groups.lua",
+				"blob": "7f0496f8a5cbf4e56c46e670081dacc0af3ef9b1"
+			},
+			{
+				"path": "data/core/locale/en/core.cfg",
+				"blob": "6264e4d1cf9598dbf1b641c6246261ff8c088abd"
+			},
+			{
+				"path": "data/core/prototypes/style.lua",
+				"blob": "39ffe2a319963ddf0b192086fb1f90500a42c18e"
+			},
+			{
+				"path": "data/core/prototypes/utility-constants.lua",
+				"blob": "a51092b3a13638387b4fde8b6b12028e87f0929e"
+			},
+			{
+				"path": "data/quality/data.lua",
+				"blob": "2e18e9741144be9cffe8d1aab3b3c45ec9be5a1c"
+			},
+			{
+				"path": "data/quality/locale/en/quality.cfg",
+				"blob": "ad9e0453539facb1374c9f374fbda7eec4e90db7"
+			},
+			{
+				"path": "data/quality/prototypes/base-data-updates.lua",
+				"blob": "872e2dd34d8b81154cfa421c56be27c75d66aa06"
+			},
+			{
+				"path": "data/quality/prototypes/quality.lua",
+				"blob": "c254bae859acbdc7b7a5145b0d84aeee787a8ebb"
+			},
+			{
+				"path": "data/space-age/locale/en/space-age.cfg",
+				"blob": "92252eaae8e889a074264af5955e3808026b99bb"
+			},
+			{
+				"path": "data/space-age/prototypes/entity/big-mining-drill.lua",
+				"blob": "cd844bc2e3c8ffc4298718cb7d47c00fcab7d003"
+			},
+			{
+				"path": "data/space-age/prototypes/entity/entities.lua",
+				"blob": "726e21436ce804c236ece207bb49ae00d211b7a9"
+			},
+			{
+				"path": "data/space-age/prototypes/entity/transport-belts.lua",
+				"blob": "f50def8ed11fbb64788112d77fb88dcec5ba6e8f"
+			},
+			{
+				"path": "data/space-age/prototypes/entity/turrets.lua",
+				"blob": "fc573d7ce3f9051a26a643e4d0e420ce3789a23e"
+			},
+			{
+				"path": "data/space-age/prototypes/item-groups.lua",
+				"blob": "9c619f650157b017b75f0cd94f4827d8a34cc7c3"
+			},
+			{
+				"path": "libraries/CommonUtil/StringUtil.hpp",
+				"blob": "a7cb9ec6a9b71c03bfa4b6936b099d6d3e44e6a6"
+			},
+			{
+				"path": "src/Comparison.cpp",
+				"blob": "6be65eb23429258261beef0132b26929a6aec2e9"
+			},
+			{
+				"path": "src/Gui/ChatIconIDIterator.cpp",
+				"blob": "4e8d5e529057a25175c7449a386938b958bf3b2f"
+			},
+			{
+				"path": "src/Gui/GuiStyle.cpp",
+				"blob": "cf9ba8d4b1fa0d2bf532b703aa4d82f9155ed09b"
+			},
+			{
+				"path": "src/Gui/GuiStyle.hpp",
+				"blob": "2e6a5ed1703e9fe20b9b74b907b53fcc294e28db"
+			},
+			{
+				"path": "src/Gui/QualityConditionGui.cpp",
+				"blob": "1812cce69d6ff2db254873f86e40a066bfb821ff"
+			},
+			{
+				"path": "src/Gui/QualitySelector.cpp",
+				"blob": "4b17f091bd1c96e3a443bb442f4d6cb0a4e67656"
+			},
+			{
+				"path": "src/Gui/SignalsTable.cpp",
+				"blob": "e1cc4bfb957ea09c4f232fb1685d5f449a741fe8"
+			}
+		]
+	},
+	"qualities": [
+		{
+			"name": "normal",
+			"label": "Normal",
+			"level": 0,
+			"order": "a",
+			"icon": "__base__/graphics/icons/quality-normal.png",
+			"hidden": false,
+			"next": "uncommon"
+		},
+		{
+			"name": "uncommon",
+			"label": "Uncommon",
+			"level": 1,
+			"order": "b",
+			"icon": "__quality__/graphics/icons/quality-uncommon.png",
+			"hidden": false,
+			"next": "rare"
+		},
+		{
+			"name": "rare",
+			"label": "Rare",
+			"level": 2,
+			"order": "c",
+			"icon": "__quality__/graphics/icons/quality-rare.png",
+			"hidden": false,
+			"next": "epic"
+		},
+		{
+			"name": "epic",
+			"label": "Epic",
+			"level": 3,
+			"order": "d",
+			"icon": "__quality__/graphics/icons/quality-epic.png",
+			"hidden": false,
+			"next": "legendary"
+		},
+		{
+			"name": "legendary",
+			"label": "Legendary",
+			"level": 5,
+			"order": "e",
+			"icon": "__quality__/graphics/icons/quality-legendary.png",
+			"hidden": false
+		}
+	],
+	"qualityComparators": [">", "<", "=", "≥", "≤", "≠"],
+	"labels": {
+		"anyQuality": "Any quality"
+	},
+	"signals": {
+		"typeOrder": ["item", "entity", "fluid", "virtual", "recipe", "space-location", "quality"],
+		"categories": [
+			{
+				"name": "logistics",
+				"label": "Logistics",
+				"order": "a",
+				"icon": "__base__/graphics/item-group/logistics.png"
+			},
+			{
+				"name": "production",
+				"label": "Production",
+				"order": "b",
+				"icon": "__base__/graphics/item-group/production.png"
+			},
+			{
+				"name": "intermediate-products",
+				"label": "Intermediate products",
+				"order": "c",
+				"icon": "__base__/graphics/item-group/intermediate-products.png"
+			},
+			{
+				"name": "space",
+				"label": "Space",
+				"order": "d",
+				"icon": "__space-age__/graphics/item-group/space.png"
+			},
+			{
+				"name": "combat",
+				"label": "Combat",
+				"order": "e",
+				"icon": "__base__/graphics/item-group/military.png"
+			},
+			{
+				"name": "fluids",
+				"label": "Fluids",
+				"order": "f",
+				"icon": "__base__/graphics/item-group/fluids.png"
+			},
+			{
+				"name": "signals",
+				"label": "Signals",
+				"order": "g",
+				"icon": "__base__/graphics/item-group/signals.png"
+			},
+			{
+				"name": "enemies",
+				"label": "Enemies",
+				"order": "h",
+				"icon": "__core__/graphics/icons/category/enemies.png"
+			},
+			{
+				"name": "tiles",
+				"label": "Tiles",
+				"order": "i",
+				"icon": "__core__/graphics/icons/category/tiles-editor.png"
+			},
+			{
+				"name": "environment",
+				"label": "Environment",
+				"order": "l",
+				"icon": "__core__/graphics/icons/category/environment.png"
+			},
+			{
+				"name": "effects",
+				"label": "Effects",
+				"order": "y",
+				"icon": "__base__/graphics/item-group/effects.png"
+			},
+			{
+				"name": "other",
+				"label": "Unsorted",
+				"order": "z",
+				"icon": "__core__/graphics/icons/category/unsorted.png"
+			}
+		]
+	},
+	"upgrades": {
+		"groups": [
+			{
+				"name": "accumulator",
+				"members": [
+					{
+						"prototypeType": "accumulator",
+						"name": "accumulator"
+					}
+				]
+			},
+			{
+				"name": "agricultural-tower",
+				"members": [
+					{
+						"prototypeType": "agricultural-tower",
+						"name": "agricultural-tower"
+					}
+				]
+			},
+			{
+				"name": "ammo-turret",
+				"members": [
+					{
+						"prototypeType": "ammo-turret",
+						"name": "gun-turret"
+					}
+				]
+			},
+			{
+				"name": "arithmetic-combinator",
+				"members": [
+					{
+						"prototypeType": "arithmetic-combinator",
+						"name": "arithmetic-combinator"
+					}
+				]
+			},
+			{
+				"name": "artillery-turret",
+				"members": [
+					{
+						"prototypeType": "artillery-turret",
+						"name": "artillery-turret"
+					}
+				]
+			},
+			{
+				"name": "assembling-machine",
+				"members": [
+					{
+						"prototypeType": "assembling-machine",
+						"name": "assembling-machine-1"
+					},
+					{
+						"prototypeType": "assembling-machine",
+						"name": "assembling-machine-2"
+					},
+					{
+						"prototypeType": "assembling-machine",
+						"name": "assembling-machine-3"
+					}
+				]
+			},
+			{
+				"name": "asteroid-collector",
+				"members": [
+					{
+						"prototypeType": "asteroid-collector",
+						"name": "asteroid-collector"
+					}
+				]
+			},
+			{
+				"name": "beacon",
+				"members": [
+					{
+						"prototypeType": "beacon",
+						"name": "beacon"
+					}
+				]
+			},
+			{
+				"name": "big-electric-pole",
+				"members": [
+					{
+						"prototypeType": "electric-pole",
+						"name": "big-electric-pole"
+					}
+				]
+			},
+			{
+				"name": "big-mining-drill",
+				"members": [
+					{
+						"prototypeType": "mining-drill",
+						"name": "big-mining-drill"
+					}
+				]
+			},
+			{
+				"name": "biochamber",
+				"members": [
+					{
+						"prototypeType": "assembling-machine",
+						"name": "biochamber"
+					}
+				]
+			},
+			{
+				"name": "boiler",
+				"members": [
+					{
+						"prototypeType": "boiler",
+						"name": "boiler"
+					}
+				]
+			},
+			{
+				"name": "captive-biter-spawner",
+				"members": [
+					{
+						"prototypeType": "assembling-machine",
+						"name": "captive-biter-spawner"
+					}
+				]
+			},
+			{
+				"name": "centrifuge",
+				"members": [
+					{
+						"prototypeType": "assembling-machine",
+						"name": "centrifuge"
+					}
+				]
+			},
+			{
+				"name": "chemical-plant",
+				"members": [
+					{
+						"prototypeType": "assembling-machine",
+						"name": "chemical-plant"
+					}
+				]
+			},
+			{
+				"name": "constant-combinator",
+				"members": [
+					{
+						"prototypeType": "constant-combinator",
+						"name": "constant-combinator"
+					}
+				]
+			},
+			{
+				"name": "container",
+				"members": [
+					{
+						"prototypeType": "container",
+						"name": "bottomless-chest"
+					},
+					{
+						"prototypeType": "container",
+						"name": "crash-site-chest-1"
+					},
+					{
+						"prototypeType": "container",
+						"name": "crash-site-chest-2"
+					},
+					{
+						"prototypeType": "container",
+						"name": "iron-chest"
+					},
+					{
+						"prototypeType": "container",
+						"name": "steel-chest"
+					},
+					{
+						"prototypeType": "container",
+						"name": "wooden-chest"
+					},
+					{
+						"prototypeType": "logistic-container",
+						"name": "active-provider-chest"
+					},
+					{
+						"prototypeType": "logistic-container",
+						"name": "buffer-chest"
+					},
+					{
+						"prototypeType": "logistic-container",
+						"name": "passive-provider-chest"
+					},
+					{
+						"prototypeType": "logistic-container",
+						"name": "requester-chest"
+					},
+					{
+						"prototypeType": "logistic-container",
+						"name": "storage-chest"
+					},
+					{
+						"prototypeType": "proxy-container",
+						"name": "proxy-container"
+					},
+					{
+						"prototypeType": "temporary-container",
+						"name": "cargo-pod-container"
+					}
+				]
+			},
+			{
+				"name": "crusher",
+				"members": [
+					{
+						"prototypeType": "assembling-machine",
+						"name": "crusher"
+					}
+				]
+			},
+			{
+				"name": "cryogenic-plant",
+				"members": [
+					{
+						"prototypeType": "assembling-machine",
+						"name": "cryogenic-plant"
+					}
+				]
+			},
+			{
+				"name": "decider-combinator",
+				"members": [
+					{
+						"prototypeType": "decider-combinator",
+						"name": "decider-combinator"
+					}
+				]
+			},
+			{
+				"name": "electric-pole",
+				"members": [
+					{
+						"prototypeType": "electric-pole",
+						"name": "medium-electric-pole"
+					},
+					{
+						"prototypeType": "electric-pole",
+						"name": "small-electric-pole"
+					}
+				]
+			},
+			{
+				"name": "electromagnetic-plant",
+				"members": [
+					{
+						"prototypeType": "assembling-machine",
+						"name": "electromagnetic-plant"
+					}
+				]
+			},
+			{
+				"name": "flamethrower-turret",
+				"members": [
+					{
+						"prototypeType": "fluid-turret",
+						"name": "flamethrower-turret"
+					}
+				]
+			},
+			{
+				"name": "foundry",
+				"members": [
+					{
+						"prototypeType": "assembling-machine",
+						"name": "foundry"
+					}
+				]
+			},
+			{
+				"name": "furnace",
+				"members": [
+					{
+						"prototypeType": "furnace",
+						"name": "electric-furnace"
+					},
+					{
+						"prototypeType": "furnace",
+						"name": "steel-furnace"
+					},
+					{
+						"prototypeType": "furnace",
+						"name": "stone-furnace"
+					}
+				]
+			},
+			{
+				"name": "fusion-generator",
+				"members": [
+					{
+						"prototypeType": "fusion-generator",
+						"name": "fusion-generator"
+					}
+				]
+			},
+			{
+				"name": "fusion-reactor",
+				"members": [
+					{
+						"prototypeType": "fusion-reactor",
+						"name": "fusion-reactor"
+					}
+				]
+			},
+			{
+				"name": "heat-exchanger",
+				"members": [
+					{
+						"prototypeType": "boiler",
+						"name": "heat-exchanger"
+					}
+				]
+			},
+			{
+				"name": "heat-pipe",
+				"members": [
+					{
+						"prototypeType": "heat-pipe",
+						"name": "heat-pipe"
+					}
+				]
+			},
+			{
+				"name": "inserter",
+				"members": [
+					{
+						"prototypeType": "inserter",
+						"name": "bulk-inserter"
+					},
+					{
+						"prototypeType": "inserter",
+						"name": "burner-inserter"
+					},
+					{
+						"prototypeType": "inserter",
+						"name": "fast-inserter"
+					},
+					{
+						"prototypeType": "inserter",
+						"name": "inserter"
+					},
+					{
+						"prototypeType": "inserter",
+						"name": "stack-inserter"
+					}
+				]
+			},
+			{
+				"name": "lab",
+				"members": [
+					{
+						"prototypeType": "lab",
+						"name": "lab"
+					}
+				]
+			},
+			{
+				"name": "lamp",
+				"members": [
+					{
+						"prototypeType": "lamp",
+						"name": "small-lamp"
+					}
+				]
+			},
+			{
+				"name": "land-mine",
+				"members": [
+					{
+						"prototypeType": "land-mine",
+						"name": "land-mine"
+					}
+				]
+			},
+			{
+				"name": "laser-turret",
+				"members": [
+					{
+						"prototypeType": "electric-turret",
+						"name": "laser-turret"
+					}
+				]
+			},
+			{
+				"name": "linked-belts",
+				"members": [
+					{
+						"prototypeType": "linked-belt",
+						"name": "linked-belt"
+					}
+				]
+			},
+			{
+				"name": "loader",
+				"members": [
+					{
+						"prototypeType": "loader",
+						"name": "express-loader"
+					},
+					{
+						"prototypeType": "loader",
+						"name": "fast-loader"
+					},
+					{
+						"prototypeType": "loader",
+						"name": "loader"
+					},
+					{
+						"prototypeType": "loader",
+						"name": "turbo-loader"
+					}
+				]
+			},
+			{
+				"name": "long-handed-inserter",
+				"members": [
+					{
+						"prototypeType": "inserter",
+						"name": "long-handed-inserter"
+					}
+				]
+			},
+			{
+				"name": "mining-drill",
+				"members": [
+					{
+						"prototypeType": "mining-drill",
+						"name": "burner-mining-drill"
+					},
+					{
+						"prototypeType": "mining-drill",
+						"name": "electric-mining-drill"
+					}
+				]
+			},
+			{
+				"name": "offshore-pump",
+				"members": [
+					{
+						"prototypeType": "offshore-pump",
+						"name": "offshore-pump"
+					}
+				]
+			},
+			{
+				"name": "oil-refinery",
+				"members": [
+					{
+						"prototypeType": "assembling-machine",
+						"name": "oil-refinery"
+					}
+				]
+			},
+			{
+				"name": "pipe",
+				"members": [
+					{
+						"prototypeType": "pipe",
+						"name": "pipe"
+					},
+					{
+						"prototypeType": "pipe-to-ground",
+						"name": "pipe-to-ground"
+					},
+					{
+						"prototypeType": "pump",
+						"name": "pump"
+					},
+					{
+						"prototypeType": "valve",
+						"name": "one-way-valve"
+					},
+					{
+						"prototypeType": "valve",
+						"name": "overflow-valve"
+					},
+					{
+						"prototypeType": "valve",
+						"name": "top-up-valve"
+					}
+				]
+			},
+			{
+				"name": "power-switch",
+				"members": [
+					{
+						"prototypeType": "power-switch",
+						"name": "power-switch"
+					}
+				]
+			},
+			{
+				"name": "programmable-speaker",
+				"members": [
+					{
+						"prototypeType": "programmable-speaker",
+						"name": "programmable-speaker"
+					}
+				]
+			},
+			{
+				"name": "pumpjack",
+				"members": [
+					{
+						"prototypeType": "mining-drill",
+						"name": "pumpjack"
+					}
+				]
+			},
+			{
+				"name": "radar",
+				"members": [
+					{
+						"prototypeType": "radar",
+						"name": "radar"
+					}
+				]
+			},
+			{
+				"name": "rail-signal",
+				"members": [
+					{
+						"prototypeType": "rail-chain-signal",
+						"name": "rail-chain-signal"
+					},
+					{
+						"prototypeType": "rail-signal",
+						"name": "rail-signal"
+					}
+				]
+			},
+			{
+				"name": "reactor",
+				"members": [
+					{
+						"prototypeType": "reactor",
+						"name": "nuclear-reactor"
+					}
+				]
+			},
+			{
+				"name": "roboport",
+				"members": [
+					{
+						"prototypeType": "roboport",
+						"name": "roboport"
+					}
+				]
+			},
+			{
+				"name": "rocket-silo",
+				"members": [
+					{
+						"prototypeType": "rocket-silo",
+						"name": "rocket-silo"
+					}
+				]
+			},
+			{
+				"name": "selector-combinator",
+				"members": [
+					{
+						"prototypeType": "selector-combinator",
+						"name": "selector-combinator"
+					}
+				]
+			},
+			{
+				"name": "solar-panel",
+				"members": [
+					{
+						"prototypeType": "solar-panel",
+						"name": "solar-panel"
+					}
+				]
+			},
+			{
+				"name": "steam-engine",
+				"members": [
+					{
+						"prototypeType": "generator",
+						"name": "steam-engine"
+					},
+					{
+						"prototypeType": "generator",
+						"name": "steam-turbine"
+					}
+				]
+			},
+			{
+				"name": "storage-tank",
+				"members": [
+					{
+						"prototypeType": "storage-tank",
+						"name": "storage-tank"
+					}
+				]
+			},
+			{
+				"name": "substation",
+				"members": [
+					{
+						"prototypeType": "electric-pole",
+						"name": "substation"
+					}
+				]
+			},
+			{
+				"name": "tesla-turret",
+				"members": [
+					{
+						"prototypeType": "electric-turret",
+						"name": "tesla-turret"
+					}
+				]
+			},
+			{
+				"name": "thruster",
+				"members": [
+					{
+						"prototypeType": "thruster",
+						"name": "thruster"
+					}
+				]
+			},
+			{
+				"name": "train-stop",
+				"members": [
+					{
+						"prototypeType": "train-stop",
+						"name": "train-stop"
+					}
+				]
+			},
+			{
+				"name": "transport-belt",
+				"members": [
+					{
+						"prototypeType": "lane-splitter",
+						"name": "lane-splitter"
+					},
+					{
+						"prototypeType": "splitter",
+						"name": "express-splitter"
+					},
+					{
+						"prototypeType": "splitter",
+						"name": "fast-splitter"
+					},
+					{
+						"prototypeType": "splitter",
+						"name": "splitter"
+					},
+					{
+						"prototypeType": "splitter",
+						"name": "turbo-splitter"
+					},
+					{
+						"prototypeType": "transport-belt",
+						"name": "express-transport-belt"
+					},
+					{
+						"prototypeType": "transport-belt",
+						"name": "fast-transport-belt"
+					},
+					{
+						"prototypeType": "transport-belt",
+						"name": "transport-belt"
+					},
+					{
+						"prototypeType": "transport-belt",
+						"name": "turbo-transport-belt"
+					},
+					{
+						"prototypeType": "underground-belt",
+						"name": "express-underground-belt"
+					},
+					{
+						"prototypeType": "underground-belt",
+						"name": "fast-underground-belt"
+					},
+					{
+						"prototypeType": "underground-belt",
+						"name": "turbo-underground-belt"
+					},
+					{
+						"prototypeType": "underground-belt",
+						"name": "underground-belt"
+					}
+				]
+			},
+			{
+				"name": "wall",
+				"members": [
+					{
+						"prototypeType": "gate",
+						"name": "gate"
+					},
+					{
+						"prototypeType": "wall",
+						"name": "stone-wall"
+					}
+				]
+			}
+		],
+		"next": [
+			{
+				"prototypeType": "assembling-machine",
+				"from": "assembling-machine-1",
+				"to": "assembling-machine-2"
+			},
+			{
+				"prototypeType": "assembling-machine",
+				"from": "assembling-machine-2",
+				"to": "assembling-machine-3"
+			},
+			{
+				"prototypeType": "inserter",
+				"from": "inserter",
+				"to": "fast-inserter"
+			},
+			{
+				"prototypeType": "inserter",
+				"from": "fast-inserter",
+				"to": "bulk-inserter"
+			},
+			{
+				"prototypeType": "splitter",
+				"from": "splitter",
+				"to": "fast-splitter"
+			},
+			{
+				"prototypeType": "splitter",
+				"from": "fast-splitter",
+				"to": "express-splitter"
+			},
+			{
+				"prototypeType": "splitter",
+				"from": "express-splitter",
+				"to": "turbo-splitter"
+			},
+			{
+				"prototypeType": "furnace",
+				"from": "stone-furnace",
+				"to": "steel-furnace"
+			},
+			{
+				"prototypeType": "transport-belt",
+				"from": "transport-belt",
+				"to": "fast-transport-belt"
+			},
+			{
+				"prototypeType": "transport-belt",
+				"from": "fast-transport-belt",
+				"to": "express-transport-belt"
+			},
+			{
+				"prototypeType": "transport-belt",
+				"from": "express-transport-belt",
+				"to": "turbo-transport-belt"
+			},
+			{
+				"prototypeType": "underground-belt",
+				"from": "underground-belt",
+				"to": "fast-underground-belt"
+			},
+			{
+				"prototypeType": "underground-belt",
+				"from": "fast-underground-belt",
+				"to": "express-underground-belt"
+			},
+			{
+				"prototypeType": "underground-belt",
+				"from": "express-underground-belt",
+				"to": "turbo-underground-belt"
+			}
+		]
+	},
+	"utilityConstants": {
+		"selectGroupRowCount": 6,
+		"selectSlotRowCount": 10,
+		"qualitySelectorDropdownThreshold": 6
+	},
+	"styles": {
+		"slotSize": 40,
+		"filterGroupTabWidth": 71,
+		"filterGroupTabHeight": 72,
+		"filterSlotHorizontalSpacing": 0,
+		"filterSlotVerticalSpacing": 0,
+		"signalsTableColumnCount": 10,
+		"signalsTableMinimumWidth": 400,
+		"bindings": {
+			"slotButton": "slot_button",
+			"filterSlotTable": "filter_slot_table",
+			"deepSlotsScrollPane": "deep_slots_scroll_pane"
+		}
+	}
+}

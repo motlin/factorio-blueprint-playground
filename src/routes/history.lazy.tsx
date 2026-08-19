@@ -52,6 +52,28 @@ export async function addSplitBookToHistory(book: BlueprintString): Promise<Data
 	return addedBlueprints;
 }
 
+/**
+ * Browser Blueprint Library surface contract:
+ *
+ * - History is the browser's private shelf of saved records, not a separate
+ *   append-only concept competing with "saved planners". Blueprints, books, and
+ *   both planner types belong to this one model; an opened book navigates into
+ *   its ordered child records and back without losing the containing root.
+ * - Factorio exposes private and game shelf tabs and replaces the shelf body with
+ *   an opened-book view while retaining tab/browse history. This browser
+ *   currently has one private shelf, and `metadata.selection` plus the blueprint
+ *   tree are its corresponding book-navigation state.
+ * - Search matches record label or description. With no search, ordered empty
+ *   slots remain valid drop destinations; filtered results omit empty slots.
+ *   Library and planner-selector searches must use the same record metadata.
+ * - Open/edit acts on one record. Label, description, and icon saves replace that
+ *   record at its path; delete removes that record. `Split Selected Books` is an
+ *   explicit transformation that creates new shelf roots, never ordinary book
+ *   navigation.
+ *
+ * The current recency-sorted bulk history table is a transitional list view over
+ * this shelf contract.
+ */
 function History() {
 	const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set<string>());
 	const [error, setError] = useState<Error | null>(null);

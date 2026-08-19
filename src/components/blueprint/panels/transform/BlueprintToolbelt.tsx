@@ -1,6 +1,7 @@
 import {useEffect} from 'react';
 
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
+import {FactorioButton} from '../../../ui/FactorioUi';
 
 interface BlueprintToolbeltProps {
 	blueprintEditorAvailable: boolean;
@@ -60,9 +61,8 @@ export function BlueprintToolbelt({
 	return (
 		<div className="transform-toolbelt" role="toolbar" aria-label="Blueprint tools">
 			{blueprintEditorAvailable ? (
-				<button
-					type="button"
-					className="factorio-toolbar-button transform-toolbelt__button"
+				<FactorioButton
+					className="transform-toolbelt__button"
 					aria-label="Open Blueprint Editor"
 					aria-keyshortcuts="B"
 					aria-expanded={blueprintEditorOpen}
@@ -72,11 +72,10 @@ export function BlueprintToolbelt({
 					}}
 				>
 					<FactorioIcon icon={{type: 'item', name: 'blueprint'}} size="large" />
-				</button>
+				</FactorioButton>
 			) : null}
-			<button
-				type="button"
-				className="factorio-toolbar-button transform-toolbelt__button"
+			<FactorioButton
+				className="transform-toolbelt__button"
 				aria-label="Open Upgrade Planner"
 				aria-keyshortcuts="U"
 				aria-expanded={upgradePlannerOpen}
@@ -86,7 +85,7 @@ export function BlueprintToolbelt({
 				}}
 			>
 				<FactorioIcon icon={{type: 'item', name: 'upgrade-planner'}} size="large" />
-			</button>
+			</FactorioButton>
 		</div>
 	);
 }
