@@ -1,5 +1,7 @@
 export {
 	FactorioButton,
+	FactorioDialog,
+	FactorioDialogBackdrop,
 	FactorioFrame,
 	FactorioInventorySlot,
 	FactorioQualityBadge,

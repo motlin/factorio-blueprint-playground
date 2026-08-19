@@ -4,6 +4,8 @@ import {expect, within} from 'storybook/test';
 
 import {
 	FactorioButton,
+	FactorioDialog,
+	FactorioDialogBackdrop,
 	FactorioFrame,
 	FactorioInventorySlot,
 	FactorioQualityBadge,
@@ -96,6 +98,23 @@ function DensityMatrix({density}: {density: number}) {
 				<StateCell label="Close">
 					<FactorioButton kind={FactorioButtonKind.Close} aria-label="Close matrix" />
 				</StateCell>
+				<StateCell label="Close hover">
+					<FactorioButton
+						kind={FactorioButtonKind.Close}
+						aria-label="Hovered close control"
+						data-visual-state="hover"
+					/>
+				</StateCell>
+				<StateCell label="Close pressed">
+					<FactorioButton
+						kind={FactorioButtonKind.Close}
+						aria-label="Pressed close control"
+						data-visual-state="active"
+					/>
+				</StateCell>
+				<StateCell label="Close disabled">
+					<FactorioButton kind={FactorioButtonKind.Close} aria-label="Disabled close control" disabled />
+				</StateCell>
 			</div>
 
 			<h3>Frames, title bar, scroll frame, tooltip, and quality badges</h3>
@@ -145,5 +164,80 @@ export const StateMatrix: Story = {
 		).toStrictEqual([true, true]);
 		await expect(canvas.getAllByRole('button', {name: 'Search signals'}).length).toBe(2);
 		await expect(canvas.getAllByRole('button', {name: 'Close matrix'}).length).toBe(2);
+	},
+};
+
+function DialogChromeExample({nested}: {nested: boolean}) {
+	return (
+		<>
+			<FactorioDialogBackdrop>
+				<FactorioDialog aria-label="Inventory" aria-hidden={nested || undefined} inert={nested}>
+					<FactorioTitleBar>
+						<h2>Inventory</h2>
+						<FactorioButton kind={FactorioButtonKind.Close} aria-label="Close Inventory" />
+					</FactorioTitleBar>
+					<div className="factorio-dialog__body">
+						<p>Dialog content begins at Teoxoy’s twelve-pixel inset.</p>
+						<FactorioFrame depth={FactorioFrameDepth.Deep}>Inventory slots</FactorioFrame>
+					</div>
+				</FactorioDialog>
+			</FactorioDialogBackdrop>
+			{nested ? (
+				<FactorioDialogBackdrop nested>
+					<FactorioDialog aria-label="Choose an item">
+						<FactorioTitleBar>
+							<h2>Choose an item</h2>
+							<FactorioButton kind={FactorioButtonKind.Close} aria-label="Close item picker" />
+						</FactorioTitleBar>
+						<div className="factorio-dialog__body">
+							<p>The nested modal owns the active close control and focus state.</p>
+						</div>
+					</FactorioDialog>
+				</FactorioDialogBackdrop>
+			) : null}
+		</>
+	);
+}
+
+export const DialogChrome: Story = {
+	render: () => <DialogChromeExample nested={false} />,
+	play: async ({canvasElement}) => {
+		const canvas = within(canvasElement);
+		const dialog = canvas.getByRole('dialog', {name: 'Inventory'});
+		const titleBar = dialog.querySelector<HTMLElement>('.factorio-title-bar');
+		const closeButton = canvas.getByRole('button', {name: 'Close Inventory'});
+		if (titleBar === null) {
+			throw new Error('Expected the Inventory dialog title bar.');
+		}
+		await expect({
+			backgroundColor: getComputedStyle(dialog).backgroundColor,
+			closeHeight: getComputedStyle(closeButton).height,
+			closeWidth: getComputedStyle(closeButton).width,
+			titleMinHeight: getComputedStyle(titleBar).minHeight,
+			titlePadding: getComputedStyle(titleBar).padding,
+		}).toStrictEqual({
+			backgroundColor: 'rgb(48, 48, 48)',
+			closeHeight: '36px',
+			closeWidth: '36px',
+			titleMinHeight: '46px',
+			titlePadding: '10px 12px 12px',
+		});
+		closeButton.focus();
+		await expect(closeButton).toHaveFocus();
+	},
+};
+
+export const NestedDialogChrome: Story = {
+	render: () => <DialogChromeExample nested />,
+	play: async ({canvasElement}) => {
+		const canvas = within(canvasElement);
+		await expect(canvas.getByRole('dialog', {name: 'Choose an item'})).toBeVisible();
+		const closeButton = canvas.getByRole('button', {name: 'Close item picker'});
+		closeButton.focus();
+		await expect(closeButton).toHaveFocus();
+		await expect(canvas.getByLabelText('Inventory', {selector: '[role="dialog"]'})).toHaveAttribute(
+			'aria-hidden',
+			'true',
+		);
 	},
 };

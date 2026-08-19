@@ -27,6 +27,7 @@ const meta = {
 		onChooseSource: fn(),
 		onChooseTarget: fn(),
 		onClearEndpoint: fn(),
+		onMove: fn(),
 	},
 	parameters: transformStoryParameters,
 	tags: ['autodocs'],
@@ -40,5 +41,7 @@ export const OrderedMappings: Story = {
 		const canvas = within(canvasElement);
 		await userEvent.click(canvas.getByRole('button', {name: 'Choose source, currently Transport belt'}));
 		await expect(args.onChooseSource).toHaveBeenLastCalledWith('mapping-belt', 0);
+		await userEvent.keyboard('{Control>}{ArrowRight}{/Control}');
+		await expect(args.onMove).toHaveBeenLastCalledWith('mapping-belt', 1);
 	},
 };

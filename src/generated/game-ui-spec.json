@@ -120,6 +120,14 @@
 				"blob": "6be65eb23429258261beef0132b26929a6aec2e9"
 			},
 			{
+				"path": "src/Gui/BlueprintSettingsGui.cpp",
+				"blob": "a6c5c2107e09f91d2365fe1c8a678407738a610f"
+			},
+			{
+				"path": "src/Gui/BlueprintsList.cpp",
+				"blob": "8c268c557fb7675673198c19e7ca8bd5ddea8220"
+			},
+			{
 				"path": "src/Gui/ChatIconIDIterator.cpp",
 				"blob": "4e8d5e529057a25175c7449a386938b958bf3b2f"
 			},
@@ -140,6 +148,10 @@
 				"blob": "4b17f091bd1c96e3a443bb442f4d6cb0a4e67656"
 			},
 			{
+				"path": "src/Gui/SelectListGui.cpp",
+				"blob": "8a89d84c7c07afb28fbb5b82b110501929177c70"
+			},
+			{
 				"path": "src/Gui/SignalsTable.cpp",
 				"blob": "e1cc4bfb957ea09c4f232fb1685d5f449a741fe8"
 			},
@@ -151,7 +163,43 @@
 				"path": "src/Gui/UpgradeItemGui.hpp",
 				"blob": "ce72bcfe7c639c8b0046cba58ac4ba8dc5a81c1e"
 			}
-		]
+		],
+		"priorArt": {
+			"repository": "teoxoy/factorio-blueprint-editor",
+			"commit": "2bfc95e662cad19e2de89e72016181ca96fdbea6",
+			"license": "MIT",
+			"copyright": "Copyright (c) 2020 Tanasoaia Teodor Andrei",
+			"sources": [
+				{
+					"path": "packages/editor/src/UI/InventoryDialog.ts",
+					"blob": "a723eccca0ec00f07576d68cf4a4f3d30895e9af"
+				},
+				{
+					"path": "packages/editor/src/UI/controls/Button.ts",
+					"blob": "d4c4d06bcb29f6a5dc0e2941986d961563d6816d"
+				},
+				{
+					"path": "packages/editor/src/UI/controls/Dialog.ts",
+					"blob": "d9b4a6f8f5819f45dedac80ed7569c452db24820"
+				},
+				{
+					"path": "packages/editor/src/UI/controls/Panel.ts",
+					"blob": "b61a3482f13def5a24987cfd7f3f92000284c2ed"
+				},
+				{
+					"path": "packages/editor/src/UI/controls/functions.ts",
+					"blob": "f90851e00c6cd674a013fb357e932218e29fb3fd"
+				},
+				{
+					"path": "packages/editor/src/UI/style.ts",
+					"blob": "e64f65935b3dec845524bd995d1778955bc8a452"
+				},
+				{
+					"path": "packages/exporter/src/export-data/data-final-fixes.lua",
+					"blob": "48ee748a865b3c2113986a1a97134cbf63b3f540"
+				}
+			]
+		}
 	},
 	"qualities": [
 		{
@@ -210,75 +258,644 @@
 				"name": "logistics",
 				"label": "Logistics",
 				"order": "a",
-				"icon": "__base__/graphics/item-group/logistics.png"
+				"icon": "__base__/graphics/item-group/logistics.png",
+				"subgroups": [
+					{
+						"name": "storage",
+						"order": "a"
+					},
+					{
+						"name": "belt",
+						"order": "b"
+					},
+					{
+						"name": "inserter",
+						"order": "c"
+					},
+					{
+						"name": "energy-pipe-distribution",
+						"order": "d"
+					},
+					{
+						"name": "train-transport",
+						"order": "e"
+					},
+					{
+						"name": "transport",
+						"order": "f"
+					},
+					{
+						"name": "logistic-network",
+						"order": "g"
+					},
+					{
+						"name": "circuit-network",
+						"order": "h"
+					},
+					{
+						"name": "terrain",
+						"order": "i"
+					}
+				]
 			},
 			{
 				"name": "production",
 				"label": "Production",
 				"order": "b",
-				"icon": "__base__/graphics/item-group/production.png"
+				"icon": "__base__/graphics/item-group/production.png",
+				"subgroups": [
+					{
+						"name": "tool",
+						"order": "a"
+					},
+					{
+						"name": "energy",
+						"order": "b"
+					},
+					{
+						"name": "extraction-machine",
+						"order": "c"
+					},
+					{
+						"name": "smelting-machine",
+						"order": "d"
+					},
+					{
+						"name": "agriculture",
+						"order": "da"
+					},
+					{
+						"name": "production-machine",
+						"order": "e"
+					},
+					{
+						"name": "environmental-protection",
+						"order": "f"
+					},
+					{
+						"name": "module",
+						"order": "f"
+					},
+					{
+						"name": "space-related",
+						"order": "g"
+					}
+				]
 			},
 			{
 				"name": "intermediate-products",
 				"label": "Intermediate products",
 				"order": "c",
-				"icon": "__base__/graphics/item-group/intermediate-products.png"
+				"icon": "__base__/graphics/item-group/intermediate-products.png",
+				"subgroups": [
+					{
+						"name": "fluid-recipes",
+						"order": "a"
+					},
+					{
+						"name": "raw-resource",
+						"order": "b"
+					},
+					{
+						"name": "raw-material",
+						"order": "c"
+					},
+					{
+						"name": "barrel",
+						"order": "d"
+					},
+					{
+						"name": "fill-barrel",
+						"order": "e"
+					},
+					{
+						"name": "empty-barrel",
+						"order": "f"
+					},
+					{
+						"name": "intermediate-product",
+						"order": "g"
+					},
+					{
+						"name": "intermediate-recipe",
+						"order": "h"
+					},
+					{
+						"name": "uranium-processing",
+						"order": "i"
+					},
+					{
+						"name": "vulcanus-processes",
+						"order": "k"
+					},
+					{
+						"name": "fulgora-processes",
+						"order": "l"
+					},
+					{
+						"name": "agriculture-processes",
+						"order": "m"
+					},
+					{
+						"name": "agriculture-products",
+						"order": "n"
+					},
+					{
+						"name": "nauvis-agriculture",
+						"order": "o"
+					},
+					{
+						"name": "aquilo-processes",
+						"order": "p"
+					},
+					{
+						"name": "science-pack",
+						"order": "y"
+					},
+					{
+						"name": "internal-process",
+						"order": "z"
+					}
+				]
 			},
 			{
 				"name": "space",
 				"label": "Space",
 				"order": "d",
-				"icon": "__space-age__/graphics/item-group/space.png"
+				"icon": "__space-age__/graphics/item-group/space.png",
+				"subgroups": [
+					{
+						"name": "space-interactors",
+						"order": "a"
+					},
+					{
+						"name": "space-platform",
+						"order": "a"
+					},
+					{
+						"name": "space-rocket",
+						"order": "b"
+					},
+					{
+						"name": "space-environment",
+						"order": "f"
+					},
+					{
+						"name": "space-material",
+						"order": "g"
+					},
+					{
+						"name": "space-crushing",
+						"order": "h"
+					},
+					{
+						"name": "space-processing",
+						"order": "i"
+					},
+					{
+						"name": "planets",
+						"order": "j"
+					},
+					{
+						"name": "planet-connections",
+						"order": "k"
+					}
+				]
 			},
 			{
 				"name": "combat",
 				"label": "Combat",
 				"order": "e",
-				"icon": "__base__/graphics/item-group/military.png"
+				"icon": "__base__/graphics/item-group/military.png",
+				"subgroups": [
+					{
+						"name": "gun",
+						"order": "a"
+					},
+					{
+						"name": "ammo",
+						"order": "b"
+					},
+					{
+						"name": "capsule",
+						"order": "c"
+					},
+					{
+						"name": "armor",
+						"order": "d"
+					},
+					{
+						"name": "equipment",
+						"order": "e"
+					},
+					{
+						"name": "utility-equipment",
+						"order": "f"
+					},
+					{
+						"name": "military-equipment",
+						"order": "g"
+					},
+					{
+						"name": "defensive-structure",
+						"order": "h"
+					},
+					{
+						"name": "turret",
+						"order": "i"
+					},
+					{
+						"name": "ammo-category",
+						"order": "j"
+					}
+				]
 			},
 			{
 				"name": "fluids",
 				"label": "Fluids",
 				"order": "f",
-				"icon": "__base__/graphics/item-group/fluids.png"
+				"icon": "__base__/graphics/item-group/fluids.png",
+				"subgroups": [
+					{
+						"name": "fluid",
+						"order": "a"
+					}
+				]
 			},
 			{
 				"name": "signals",
 				"label": "Signals",
 				"order": "g",
-				"icon": "__base__/graphics/item-group/signals.png"
+				"icon": "__base__/graphics/item-group/signals.png",
+				"subgroups": [
+					{
+						"name": "virtual-signal-special",
+						"order": "a"
+					},
+					{
+						"name": "virtual-signal-number",
+						"order": "b"
+					},
+					{
+						"name": "virtual-signal-letter",
+						"order": "c"
+					},
+					{
+						"name": "virtual-signal-punctuation",
+						"order": "cb"
+					},
+					{
+						"name": "virtual-signal-math",
+						"order": "cd"
+					},
+					{
+						"name": "virtual-signal-color",
+						"order": "d"
+					},
+					{
+						"name": "virtual-signal",
+						"order": "e"
+					},
+					{
+						"name": "shapes",
+						"order": "f"
+					},
+					{
+						"name": "arrows",
+						"order": "g"
+					},
+					{
+						"name": "arrows-misc",
+						"order": "h"
+					},
+					{
+						"name": "pictographs",
+						"order": "i"
+					},
+					{
+						"name": "bullets",
+						"order": "j"
+					}
+				]
 			},
 			{
 				"name": "enemies",
 				"label": "Enemies",
 				"order": "h",
-				"icon": "__core__/graphics/icons/category/enemies.png"
+				"icon": "__core__/graphics/icons/category/enemies.png",
+				"subgroups": [
+					{
+						"name": "enemies",
+						"order": "a"
+					}
+				]
 			},
 			{
 				"name": "tiles",
 				"label": "Tiles",
 				"order": "i",
-				"icon": "__core__/graphics/icons/category/tiles-editor.png"
+				"icon": "__core__/graphics/icons/category/tiles-editor.png",
+				"subgroups": [
+					{
+						"name": "artificial-tiles",
+						"order": "a"
+					},
+					{
+						"name": "nauvis-tiles",
+						"order": "b"
+					},
+					{
+						"name": "vulcanus-tiles",
+						"order": "c"
+					},
+					{
+						"name": "gleba-water-tiles",
+						"order": "d-a"
+					},
+					{
+						"name": "gleba-tiles",
+						"order": "d-b"
+					},
+					{
+						"name": "fulgora-tiles",
+						"order": "e"
+					},
+					{
+						"name": "aquilo-tiles",
+						"order": "f"
+					},
+					{
+						"name": "special-tiles",
+						"order": "g"
+					}
+				]
 			},
 			{
 				"name": "environment",
 				"label": "Environment",
 				"order": "l",
-				"icon": "__core__/graphics/icons/category/environment.png"
+				"icon": "__core__/graphics/icons/category/environment.png",
+				"subgroups": [
+					{
+						"name": "cliffs",
+						"order": "a"
+					},
+					{
+						"name": "creatures",
+						"order": "a"
+					},
+					{
+						"name": "trees",
+						"order": "aa"
+					},
+					{
+						"name": "grass",
+						"order": "b"
+					},
+					{
+						"name": "mineable-fluids",
+						"order": "ba"
+					},
+					{
+						"name": "obstacles",
+						"order": "bb"
+					},
+					{
+						"name": "corpses",
+						"order": "c"
+					},
+					{
+						"name": "storage-remnants",
+						"order": "da"
+					},
+					{
+						"name": "belt-remnants",
+						"order": "db"
+					},
+					{
+						"name": "inserter-remnants",
+						"order": "dc"
+					},
+					{
+						"name": "energy-pipe-distribution-remnants",
+						"order": "dd"
+					},
+					{
+						"name": "train-transport-remnants",
+						"order": "de"
+					},
+					{
+						"name": "transport-remnants",
+						"order": "df"
+					},
+					{
+						"name": "logistic-network-remnants",
+						"order": "dg"
+					},
+					{
+						"name": "circuit-network-remnants",
+						"order": "dh"
+					},
+					{
+						"name": "energy-remnants",
+						"order": "di"
+					},
+					{
+						"name": "extraction-machine-remnants",
+						"order": "di"
+					},
+					{
+						"name": "smelting-machine-remnants",
+						"order": "dj"
+					},
+					{
+						"name": "agriculture-remnants",
+						"order": "dja"
+					},
+					{
+						"name": "production-machine-remnants",
+						"order": "dk"
+					},
+					{
+						"name": "environmental-protection-remnants",
+						"order": "dkb"
+					},
+					{
+						"name": "defensive-structure-remnants",
+						"order": "dl"
+					},
+					{
+						"name": "generic-remnants",
+						"order": "dl"
+					},
+					{
+						"name": "scorchmarks",
+						"order": "dm"
+					},
+					{
+						"name": "remnants",
+						"order": "dz"
+					},
+					{
+						"name": "wrecks",
+						"order": "e"
+					},
+					{
+						"name": "space-platform-remnants",
+						"order": "eb"
+					}
+				]
 			},
 			{
 				"name": "effects",
 				"label": "Effects",
 				"order": "y",
-				"icon": "__base__/graphics/item-group/effects.png"
+				"icon": "__base__/graphics/item-group/effects.png",
+				"subgroups": [
+					{
+						"name": "storage-explosions",
+						"order": "aa"
+					},
+					{
+						"name": "belt-explosions",
+						"order": "ab"
+					},
+					{
+						"name": "inserter-explosions",
+						"order": "ac"
+					},
+					{
+						"name": "energy-pipe-distribution-explosions",
+						"order": "ad"
+					},
+					{
+						"name": "train-transport-explosions",
+						"order": "ae"
+					},
+					{
+						"name": "transport-explosions",
+						"order": "af"
+					},
+					{
+						"name": "logistic-network-explosions",
+						"order": "ag"
+					},
+					{
+						"name": "circuit-network-explosions",
+						"order": "ah"
+					},
+					{
+						"name": "energy-explosions",
+						"order": "ba"
+					},
+					{
+						"name": "extraction-machine-explosions",
+						"order": "bb"
+					},
+					{
+						"name": "smelting-machine-explosions",
+						"order": "bc"
+					},
+					{
+						"name": "agriculture-explosions",
+						"order": "bca"
+					},
+					{
+						"name": "production-machine-explosions",
+						"order": "bd"
+					},
+					{
+						"name": "environmental-protection-explosions",
+						"order": "bdb"
+					},
+					{
+						"name": "module-explosions",
+						"order": "be"
+					},
+					{
+						"name": "campaign-explosions",
+						"order": "bf"
+					},
+					{
+						"name": "space-platform-explosions",
+						"order": "c"
+					},
+					{
+						"name": "gun-explosions",
+						"order": "ca"
+					},
+					{
+						"name": "defensive-structure-explosions",
+						"order": "cb"
+					},
+					{
+						"name": "capsule-explosions",
+						"order": "cc"
+					},
+					{
+						"name": "tree-explosions",
+						"order": "cd"
+					},
+					{
+						"name": "rock-explosions",
+						"order": "da"
+					},
+					{
+						"name": "ground-explosions",
+						"order": "db"
+					},
+					{
+						"name": "decorative-explosions",
+						"order": "dc"
+					},
+					{
+						"name": "enemy-death-explosions",
+						"order": "de"
+					},
+					{
+						"name": "fluid-explosions",
+						"order": "df"
+					},
+					{
+						"name": "explosions",
+						"order": "dg"
+					},
+					{
+						"name": "hit-effects",
+						"order": "e"
+					},
+					{
+						"name": "particles",
+						"order": "e"
+					}
+				]
 			},
 			{
 				"name": "other",
 				"label": "Unsorted",
 				"order": "z",
-				"icon": "__core__/graphics/icons/category/unsorted.png"
+				"icon": "__core__/graphics/icons/category/unsorted.png",
+				"subgroups": [
+					{
+						"name": "parameters",
+						"order": "a"
+					},
+					{
+						"name": "qualities",
+						"order": "b"
+					},
+					{
+						"name": "spawnables",
+						"order": "c"
+					},
+					{
+						"name": "other",
+						"order": "d"
+					}
+				]
 			}
-		]
+		],
+		"subgroupStartsNewRow": true
 	},
 	"upgrades": {
 		"groups": [
