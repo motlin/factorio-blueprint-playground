@@ -164,16 +164,13 @@ function mappingToRule(mapping: UpgradeMapping): UpgradeRule {
 	return {from: mapping.from, preserveQuality: false, to: mapping.to};
 }
 
+/**
+ * UpgradeData applies mappers in order with first-match semantics: reusing a
+ * source across mappers is legal (later duplicates are simply unreachable),
+ * so ordering is preserved and nothing is rejected here.
+ */
 function validateRules(rules: readonly UpgradeRule[]): UpgradeRule[] {
-	const sourceKeys = new Set<string>();
-	return rules.map((rule) => {
-		const key = requiredSourceKey(rule.from);
-		if (sourceKeys.has(key)) {
-			throw new Error(`Upgrade planner defines more than one target for ${rule.from.name}.`);
-		}
-		sourceKeys.add(key);
-		return rule;
-	});
+	return [...rules];
 }
 
 export function builtInUpgradeRules(direction: UpgradeDirection): UpgradeRule[] {
@@ -336,15 +333,25 @@ function applyRulesToBlueprint(blueprint: Blueprint, rules: UpgradeRuleLookup): 
 	return result;
 }
 
+function firstBySourceKey(entries: readonly (readonly [string, UpgradeRule])[]): Map<string, UpgradeRule> {
+	const lookup = new Map<string, UpgradeRule>();
+	for (const [key, rule] of entries) {
+		if (!lookup.has(key)) {
+			lookup.set(key, rule);
+		}
+	}
+	return lookup;
+}
+
 function createRuleLookup(rules: readonly UpgradeRule[]): UpgradeRuleLookup {
 	return {
 		conditional: rules.filter((rule) => rule.from.comparator !== undefined),
-		exact: new Map(
+		exact: firstBySourceKey(
 			rules
 				.filter((rule) => !rule.preserveQuality && rule.from.comparator === undefined)
 				.map((rule) => [requiredSignalKey(rule.from), rule]),
 		),
-		preserving: new Map(
+		preserving: firstBySourceKey(
 			rules.filter((rule) => rule.preserveQuality).map((rule) => [qualityAgnosticSignalKey(rule.from), rule]),
 		),
 	};

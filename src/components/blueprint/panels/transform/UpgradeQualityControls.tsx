@@ -2,7 +2,7 @@ import {useRef, useState, type ButtonHTMLAttributes, type CSSProperties, type Ke
 import {createPortal} from 'react-dom';
 
 import type {QualityComparator} from '../../../../parsing/types';
-import {FactorioInventorySlot, FactorioQualityBadge} from '../../../ui/FactorioUi';
+import {FactorioQualityBadge} from '../../../ui/FactorioUi';
 import {
 	anyQualityLabel,
 	explicitQuality,
@@ -324,18 +324,20 @@ function QualitySelector({
 	return upgradeQualities.map((quality) => {
 		const label = qualityLabel(quality);
 		return (
-			<FactorioInventorySlot
-				className="upgrade-quality-controls__quality"
+			<button
+				type="button"
+				className="upgrade-quality-controls__quality factorio-tool-button"
 				key={quality}
 				aria-label={label}
-				selected={qualitySelection === quality}
+				aria-pressed={qualitySelection === quality}
+				data-factorio-style="tool_button"
 				title={upgradeQualitySelectionTooltip(quality)}
 				onClick={() => {
 					onQualityChange(quality);
 				}}
 			>
 				<FactorioQualityBadge quality={quality} aria-hidden="true" />
-			</FactorioInventorySlot>
+			</button>
 		);
 	});
 }

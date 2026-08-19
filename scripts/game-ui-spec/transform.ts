@@ -298,6 +298,14 @@ function objectIntegerField(source: string, name: string): number {
 	return Number(match[1]);
 }
 
+function objectDecimalField(source: string, name: string): number {
+	const match = new RegExp(`${name}\\s*=\\s*(\\d+(?:\\.\\d+)?)`).exec(source);
+	if (match === null) {
+		throw new Error(`Missing decimal object field: ${name}`);
+	}
+	return Number(match[1]);
+}
+
 function objectSignedIntegerField(source: string, name: string): number {
 	const match = new RegExp(`^\\s*${name}\\s*=\\s*(-?\\d+)\\s*,?`, 'm').exec(source);
 	if (match === null) {
@@ -633,6 +641,26 @@ export function buildGameUiSpec(sourceLock: GameUiSourceLock, sources: ReadonlyM
 	const mappingTableHorizontalSpacing = styleBlock(mappingTable, 'horizontal_spacing');
 	const slotColumnHeader = styleBlock(styleSource, 'slot_column_header_label');
 	const slotTable = styleBlock(styleSource, 'slot_table');
+	const frameStyle = styleBlock(styleSource, 'frame');
+	const buttonStyle = styleBlock(styleSource, 'button');
+	const frameActionButton = styleBlock(styleSource, 'frame_action_button');
+	const headerFiller = styleBlock(frameStyle, 'header_filler_style');
+	const draggableSpaceHeader = styleBlock(styleSource, 'draggable_space_header');
+	const verticalScrollbar = styleBlock(styleSource, 'vertical_scrollbar');
+	const scrollbarThumb = styleBlock(verticalScrollbar, 'thumb_button_style');
+	const tooltipLabel = styleBlock(styleSource, 'tooltip_label');
+	const tooltipFrame = styleBlock(styleSource, 'tooltip_frame');
+	const framePadding = requiredMatch(
+		frameStyle,
+		/top_padding\s*=\s*(\d+),\s*right_padding\s*=\s*(\d+),\s*bottom_padding\s*=\s*(\d+),\s*left_padding\s*=\s*(\d+)/,
+		'frame content padding',
+	);
+	const fontsSource = requiredSource(sources, 'data/core/prototypes/fonts.lua');
+	const frameTitleFontSize = requiredMatch(
+		fontsSource,
+		/name\s*=\s*"heading-1"[\s\S]*?size\s*=\s*(\d+)/,
+		'heading-1 font size',
+	)[1];
 	const blueprintsListSource = requiredSource(sources, 'src/Gui/BlueprintsList.cpp');
 	for (const rowCount of ['blueprintBigSlotsPerRow', 'blueprintSmallSlotsPerRow']) {
 		if (!blueprintsListSource.includes(`UtilityConstants::instance().${rowCount}`)) {
@@ -740,6 +768,22 @@ export function buildGameUiSpec(sourceLock: GameUiSourceLock, sources: ReadonlyM
 			signalsTableColumnCount: Number(signalsTableConstructor),
 			signalsTableMinimumWidth: Number(signalsTableWidth),
 			slotColumnHeaderWidth: objectIntegerField(slotColumnHeader, 'width'),
+			buttonHorizontalPadding: objectIntegerField(buttonStyle, 'left_padding'),
+			buttonMinimalHeight: objectIntegerField(buttonStyle, 'minimal_height'),
+			buttonMinimalWidth: objectIntegerField(buttonStyle, 'minimal_width'),
+			draggableSpaceHeaderLeftMargin: objectIntegerField(draggableSpaceHeader, 'left_margin'),
+			frameActionButtonSize: objectIntegerField(frameActionButton, 'size'),
+			framePaddingBottom: Number(framePadding[3]),
+			framePaddingLeft: Number(framePadding[4]),
+			framePaddingRight: Number(framePadding[2]),
+			framePaddingTop: Number(framePadding[1]),
+			frameTitleFontSize: Number(frameTitleFontSize),
+			headerFillerHeight: objectIntegerField(headerFiller, 'height'),
+			scrollbarThumbWidth: objectIntegerField(scrollbarThumb, 'width'),
+			scrollbarWidth: objectIntegerField(verticalScrollbar, 'width'),
+			tooltipFrameOpacity: objectDecimalField(tooltipFrame, 'opacity'),
+			tooltipLabelMaximalWidth: objectIntegerField(tooltipLabel, 'maximal_width'),
+			tooltipLabelMinimalWidth: objectIntegerField(tooltipLabel, 'minimal_width'),
 			bindings: extractStyleBindings(
 				requiredSource(sources, 'src/Gui/GuiStyle.cpp'),
 				requiredSource(sources, 'src/Gui/GuiStyle.hpp'),

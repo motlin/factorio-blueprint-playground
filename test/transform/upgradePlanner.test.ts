@@ -570,7 +570,7 @@ describe('upgrade planner transforms', () => {
 		});
 	});
 
-	test('rejects incomplete and ambiguous configured mappings', () => {
+	test('rejects incomplete mappings and keeps repeated sources in first-match order', () => {
 		const incomplete: UpgradePlanner = {
 			item: 'upgrade-planner',
 			version: 0,
@@ -598,9 +598,32 @@ describe('upgrade planner transforms', () => {
 		expect(() => rulesFromUpgradePlanner(incomplete)).toThrow(
 			new Error('Upgrade planner mapping 100 must define both from and to.'),
 		);
-		expect(() => rulesFromUpgradePlanner(ambiguous)).toThrow(
-			new Error('Upgrade planner defines more than one target for transport-belt.'),
-		);
+		// UpgradeData applies mappers in order with first-match semantics, so a
+		// repeated source is legal and later duplicates are unreachable.
+		expect(rulesFromUpgradePlanner(ambiguous)).toStrictEqual([
+			{
+				from: {type: 'entity', name: 'transport-belt'},
+				preserveQuality: false,
+				to: {type: 'entity', name: 'fast-transport-belt'},
+			},
+			{
+				from: {type: 'entity', name: 'transport-belt'},
+				preserveQuality: false,
+				to: {type: 'entity', name: 'express-transport-belt'},
+			},
+		]);
+		expect(
+			applyUpgradeRules(
+				{
+					blueprint: {
+						item: 'blueprint',
+						version: 0,
+						entities: [{entity_number: 1, name: 'transport-belt', position: {x: 0, y: 0}}],
+					},
+				},
+				rulesFromUpgradePlanner(ambiguous),
+			).blueprint?.entities?.[0]?.name,
+		).toBe('fast-transport-belt');
 	});
 
 	test('finds labeled and nested upgrade planners with book-selection paths', () => {

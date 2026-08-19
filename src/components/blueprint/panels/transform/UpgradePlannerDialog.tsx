@@ -269,16 +269,21 @@ function UpgradePlannerMetadataEditor({
 			{pickerIndex === undefined ? null : (
 				<SignalPickerDialog
 					confirmationMode="required"
+					initialQuality={draftIcons[pickerIndex]?.quality ?? 'normal'}
 					initialSignal={draftIcons[pickerIndex]}
+					qualityMode="target"
 					title={`Choose planner preview icon ${(pickerIndex + 1).toString()}`}
 					options={pickerOptions}
 					onClose={() => {
 						setPickerIndex(undefined);
 					}}
 					onChoose={(signal) => {
+						const {comparator: _comparator, quality, ...prototype} = signal;
+						const icon =
+							quality === undefined || quality === 'normal' ? prototype : {...prototype, quality};
 						setDraftIcons((current) => {
 							const next = [...current];
-							next[pickerIndex] = signal;
+							next[pickerIndex] = icon;
 							return next;
 						});
 						setPickerIndex(undefined);
