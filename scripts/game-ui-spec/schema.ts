@@ -85,6 +85,7 @@ const gameUiSpecSchema = z.object(
 		labels: z.object(
 			{
 				anyQuality: z.string().min(1),
+				qualitySelectionTooltip: z.string().min(1),
 			},
 		),
 		signals: z.object(

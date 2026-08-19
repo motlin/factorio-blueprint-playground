@@ -225,13 +225,15 @@ describe('BlueprintRecordViews', () =>
 			{
 				description: document.getElementById(tooltipId ?? '')?.textContent,
 				listDescription: blueprintButton.textContent,
-				quality: within(blueprintButton).getByAltText('Legendary quality').getAttribute('src'),
+				quality: within(blueprintButton).getByTestId('quality').getAttribute('src'),
+				recordName: blueprintButton.getAttribute('aria-label'),
 			},
 		).toStrictEqual(
 			{
 				description: 'Quality factoryBlueprintBuilds modules.',
-				listDescription: 'Quality factoryBuilds modules.Quality factoryBlueprintBuilds modules.',
+				listDescription: 'Quality factoryBuilds modules.',
 				quality: 'https://factorio-icon-cdn.pages.dev/quality/legendary.webp',
+				recordName: 'Quality factory',
 			},
 		);
 
@@ -263,6 +265,54 @@ describe('BlueprintRecordViews', () =>
 				)
 				.getAttribute('aria-describedby'),
 		).not.toBeNull();
+	});
+
+	test('renders Factorio rich text inside record tooltips without leaving raw tags', () =>
+	{
+		render(
+			<BlueprintRecordViews
+				aria-label="Blueprint records"
+				records={[
+					{
+						...records[1],
+						gameData:
+						{
+							...records[1].gameData,
+							label: '[color=yellow]Quality factory[/color]',
+							description: 'Builds [item=productivity-module-3] modules.',
+						},
+					},
+				]}
+				onActivate={() => undefined}
+			/>,
+		);
+
+		const button = screen.getByRole(
+			'button',
+			{
+				name: '[color=yellow]Quality factory[/color]',
+			},
+		);
+		const tooltip = document.getElementById(button.getAttribute('aria-describedby') ?? '');
+		if (tooltip === null)
+		{
+			throw new Error('Expected the record tooltip to be linked by aria-describedby.');
+		}
+		expect(
+			{
+				icons: tooltip.querySelectorAll('[data-factorio-icon-size]').length,
+				rawTags: tooltip.textContent.includes('[item='),
+				richText: [...tooltip.querySelectorAll('[data-testid="richtext"]')].map(
+					(element) => element.textContent,
+				),
+			},
+		).toStrictEqual(
+			{
+				icons: 1,
+				rawTags: false,
+				richText: ['Quality factory', 'Builds  modules.'],
+			},
+		);
 	});
 
 	test('supports roving focus, actionability, activation, and Escape navigation', () =>

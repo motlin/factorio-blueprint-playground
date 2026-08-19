@@ -379,7 +379,7 @@ test('keeps nested picker focus in the top layer and returns it through the dial
 		},
 	);
 	const search = within(picker).getByRole(
-		'searchbox',
+		'button',
 		{
 			name: 'Search',
 		},

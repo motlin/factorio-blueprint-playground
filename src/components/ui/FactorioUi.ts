@@ -10,4 +10,10 @@ export
 	FactorioTitleBar,
 	FactorioTooltip,
 } from './FactorioPrimitives';
-export {FactorioButtonKind, FactorioFrameDepth} from './factorioPrimitiveTypes';
+export
+{
+	FactorioButtonKind,
+	FactorioFrameDepth,
+	FactorioTooltipPlacement,
+	factorioQualityLabel,
+} from './factorioPrimitiveTypes';

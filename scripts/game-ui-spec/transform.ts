@@ -900,6 +900,7 @@ export function buildGameUiSpec(sourceLock: GameUiSourceLock, sources: ReadonlyM
 			labels:
 			{
 				anyQuality: requireLocale(locales, '.quality-condition-any'),
+				qualitySelectionTooltip: requireLocale(locales, '.quality-selection-tooltip'),
 			},
 			signals:
 			{

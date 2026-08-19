@@ -359,23 +359,7 @@ async function chooseSignal(user: ReturnType<typeof userEvent.setup>, label: str
 		) === null
 	)
 	{
-		await user.clear(
-			screen.getByRole(
-				'searchbox',
-				{
-					name: 'Search',
-				},
-			),
-		);
-		await user.type(
-			screen.getByRole(
-				'searchbox',
-				{
-					name: 'Search',
-				},
-			),
-			label,
-		);
+		await searchSignals(user, label);
 	}
 	await user.click(
 		screen.getByRole(
@@ -395,6 +379,36 @@ async function chooseSignal(user: ReturnType<typeof userEvent.setup>, label: str
 	{
 		await user.click(confirm);
 	}
+}
+
+async function searchSignals(user: ReturnType<typeof userEvent.setup>, searchText: string)
+{
+	if (
+		screen.queryByRole(
+			'searchbox',
+			{
+				name: 'Search',
+			},
+		) === null
+	)
+	{
+		await user.click(
+			screen.getByRole(
+				'button',
+				{
+					name: 'Search',
+				},
+			),
+		);
+	}
+	const search = screen.getByRole(
+		'searchbox',
+		{
+			name: 'Search',
+		},
+	);
+	await user.clear(search);
+	await user.type(search, searchText);
 }
 
 function choosePlannerWithClicks(label: string)
@@ -447,6 +461,24 @@ function chooseSignalWithClicks(label: string)
 		) === null
 	)
 	{
+		if (
+			screen.queryByRole(
+				'searchbox',
+				{
+					name: 'Search',
+				},
+			) === null
+		)
+		{
+			fireEvent.click(
+				screen.getByRole(
+					'button',
+					{
+						name: 'Search',
+					},
+				),
+			);
+		}
 		fireEvent.change(
 			screen.getByRole(
 				'searchbox',
@@ -947,6 +979,141 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 		);
 		await waitFor(() =>
 		{
+			expect(document.activeElement).toBe(tool);
+		});
+	});
+
+	test('isolates the dirty-close confirmation and restores focus through the planner stack', async () =>
+	{
+		const user = userEvent.setup();
+		render(<TransformPanel blueprint={blueprint} />);
+		const tool = screen.getByRole(
+			'button',
+			{
+				name: 'Open Upgrade Planner',
+			},
+		);
+
+		await user.click(tool);
+		await user.click(
+			screen.getByRole(
+				'button',
+				{
+					name: 'Edit planner name',
+				},
+			),
+		);
+		const plannerName = screen.getByRole(
+			'textbox',
+			{
+				name: 'Planner name',
+			},
+		);
+		await user.clear(plannerName);
+		await user.type(plannerName, 'Dirty planner{Enter}');
+		const closePlanner = screen.getByRole(
+			'button',
+			{
+				name: 'Close Upgrade Planner',
+			},
+		);
+		await user.click(closePlanner);
+
+		const confirmation = screen.getByRole(
+			'alertdialog',
+			{
+				name: 'Discard unsaved changes?',
+			},
+		);
+		expect(interactionState()).toStrictEqual(
+			{
+				activeElement:
+				{
+					name: 'Keep editing',
+					tagName: 'BUTTON',
+				},
+				dialogStack: [
+					{
+						ariaHidden: 'true',
+						inert: true,
+						modal: 'true',
+						name: 'Upgrade Planner',
+						role: 'dialog',
+					},
+					{
+						ariaHidden: null,
+						inert: false,
+						modal: 'true',
+						name: 'Discard unsaved changes?',
+						role: 'alertdialog',
+					},
+				],
+			},
+		);
+
+		tool.focus();
+		expect(document.activeElement).toBe(
+			within(confirmation).getByRole(
+				'button',
+				{
+					name: 'Keep editing',
+				},
+			),
+		);
+
+		fireEvent.keyDown(
+			window,
+			{
+				key: 'Escape',
+			},
+		);
+		await waitFor(() =>
+		{
+			expect(
+				screen.queryByRole(
+					'alertdialog',
+					{
+						name: 'Discard unsaved changes?',
+					},
+				),
+			).toBeNull();
+			expect(document.activeElement).toBe(closePlanner);
+		});
+		expect(
+			screen.getByRole(
+				'dialog',
+				{
+					name: 'Upgrade Planner',
+				},
+			).inert,
+		).toBe(false);
+
+		await user.click(closePlanner);
+		await user.click(
+			within(
+				screen.getByRole(
+					'alertdialog',
+					{
+						name: 'Discard unsaved changes?',
+					},
+				),
+			).getByRole(
+				'button',
+				{
+					name: 'Discard changes',
+				},
+			),
+		);
+		await waitFor(() =>
+		{
+			expect(
+				screen.queryByRole(
+					'dialog',
+					{
+						name: 'Upgrade Planner',
+					},
+				),
+			).toBeNull();
 			expect(document.activeElement).toBe(tool);
 		});
 	});
@@ -3187,15 +3354,7 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 				},
 			),
 		);
-		await user.type(
-			screen.getByRole(
-				'searchbox',
-				{
-					name: 'Search',
-				},
-			),
-			'red',
-		);
+		await searchSignals(user, 'red');
 		await chooseSignal(user, 'Signal red');
 		await user.click(
 			screen.getByRole(
@@ -5304,15 +5463,7 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 				},
 			),
 		);
-		await user.type(
-			screen.getByRole(
-				'searchbox',
-				{
-					name: 'Search',
-				},
-			),
-			'yellow',
-		);
+		await searchSignals(user, 'yellow');
 		await chooseSignal(user, 'Signal yellow');
 		fireEvent.contextMenu(
 			screen.getByRole(
@@ -5330,15 +5481,7 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 				},
 			),
 		);
-		await user.type(
-			screen.getByRole(
-				'searchbox',
-				{
-					name: 'Search',
-				},
-			),
-			'green',
-		);
+		await searchSignals(user, 'green');
 		await chooseSignal(user, 'Signal green');
 		await user.click(
 			screen.getByRole(
@@ -5658,15 +5801,7 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 				},
 			),
 		);
-		await user.type(
-			screen.getByRole(
-				'searchbox',
-				{
-					name: 'Search',
-				},
-			),
-			'red',
-		);
+		await searchSignals(user, 'red');
 		await chooseSignal(user, 'Signal red');
 		await user.click(
 			screen.getByRole(
@@ -5811,13 +5946,13 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 				},
 			),
 		);
+		await searchSignals(user, 'q');
 		const search = screen.getByRole<HTMLInputElement>(
 			'searchbox',
 			{
 				name: 'Search',
 			},
 		);
-		await user.type(search, 'q');
 		expect(
 			{
 				blueprintEditorAriaHidden: blueprintEditor.getAttribute('aria-hidden'),
@@ -6149,15 +6284,7 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 				},
 			),
 		);
-		await user.type(
-			screen.getByRole(
-				'searchbox',
-				{
-					name: 'Search',
-				},
-			),
-			'blue',
-		);
+		await searchSignals(user, 'blue');
 		await chooseSignal(user, 'Signal blue');
 		await user.click(
 			screen.getByRole(
