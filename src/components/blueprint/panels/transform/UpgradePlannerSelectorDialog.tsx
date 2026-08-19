@@ -1,14 +1,21 @@
 import {useLiveQuery} from 'dexie-react-hooks';
-import {useEffect, useId, useMemo, useRef, useState} from 'react';
+import {useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties} from 'react';
 import {createPortal} from 'react-dom';
 
+import gameUiSpec from '../../../../generated/game-ui-spec.json';
 import {serializeBlueprint} from '../../../../parsing/blueprintParser';
 import type {BlueprintString, UpgradePlanner} from '../../../../parsing/types';
 import {findUpgradePlanners, parseUpgradePlanner, type UpgradeDirection} from '../../../../transform/upgradePlanner';
 import {db, type LibraryRecord} from '../../../../storage/db';
 import {BlueprintRecordViews} from '../../../library/BlueprintRecordViews';
 import type {BlueprintRecordModel} from '../../../library/blueprintRecordModel';
-import {FactorioButton, FactorioButtonKind} from '../../../ui/FactorioUi';
+import {
+	FactorioButton,
+	FactorioButtonKind,
+	FactorioDialogBackdrop,
+	FactorioFrame,
+	FactorioTitleBar,
+} from '../../../ui/FactorioUi';
 import {useDialogFocus} from './useDialogFocus';
 import {UpgradePlannerSelectorItem, type UpgradePlannerChoice} from './UpgradePlannerSelectorItem';
 
@@ -41,11 +48,33 @@ const DEFAULT_UPGRADE_RECORD: UpgradePlannerSelectorRecord = {
 	gameData: {
 		type: 'upgrade_planner',
 		label: DEFAULT_UPGRADE_CHOICE.label,
-		description: "Applies Factorio's automatic upgrade relationships.",
+		description: '',
 		icons: [],
 	},
 };
 const DEFAULT_UPGRADE_RECORDS = [DEFAULT_UPGRADE_RECORD];
+
+interface UpgradePlannerTileGridStyle extends CSSProperties {
+	'--blueprint-record-grid-columns': number;
+	'--blueprint-record-grid-horizontal-spacing': string;
+	'--blueprint-record-grid-vertical-spacing': string;
+	'--blueprint-record-label-bottom-margin': string;
+	'--blueprint-record-label-height': string;
+	'--blueprint-record-label-top-margin': string;
+	'--blueprint-record-slot-padding': string;
+	'--blueprint-record-slot-size': string;
+}
+
+const upgradePlannerTileGridStyle: UpgradePlannerTileGridStyle = {
+	'--blueprint-record-grid-columns': gameUiSpec.utilityConstants.blueprintBigSlotsPerRow,
+	'--blueprint-record-grid-horizontal-spacing': `${gameUiSpec.styles.defaultTableHorizontalSpacing.toString()}px`,
+	'--blueprint-record-grid-vertical-spacing': `${gameUiSpec.styles.defaultTableVerticalSpacing.toString()}px`,
+	'--blueprint-record-label-bottom-margin': `${gameUiSpec.styles.labelUnderWidgetBottomMargin.toString()}px`,
+	'--blueprint-record-label-height': `${gameUiSpec.styles.labelUnderWidgetHeight.toString()}px`,
+	'--blueprint-record-label-top-margin': `${gameUiSpec.styles.labelUnderWidgetTopMargin.toString()}px`,
+	'--blueprint-record-slot-padding': `${gameUiSpec.styles.blueprintRecordSlotPadding.toString()}px`,
+	'--blueprint-record-slot-size': `${gameUiSpec.styles.blueprintRecordSlotSize.toString()}px`,
+};
 
 function serializedPlanner(planner: UpgradePlanner): string {
 	const cachedPlanner = serializedPlannerCache.get(planner);
@@ -196,6 +225,8 @@ export function UpgradePlannerSelectorDialog({
 	const headingId = useId();
 	const instructionsId = useId();
 	const buttonReferences = useRef<Array<HTMLButtonElement | null>>([]);
+	const [searchControlTarget, setSearchControlTarget] = useState<HTMLDivElement>();
+	const [viewControlsTarget, setViewControlsTarget] = useState<HTMLDivElement>();
 	const libraryRecords = useLiveQuery(
 		async () => (await db.listLibraryTree()).filter((record) => record.gameData.type === 'upgrade_planner'),
 		[],
@@ -242,89 +273,129 @@ export function UpgradePlannerSelectorDialog({
 		const wrappedIndex = (nextIndex + choices.length) % choices.length;
 		setActiveIndex(wrappedIndex);
 	};
+	const captureSearchControlTarget = useCallback((target: HTMLDivElement | null) => {
+		setSearchControlTarget(target ?? undefined);
+	}, []);
+	const captureViewControlsTarget = useCallback((target: HTMLDivElement | null) => {
+		setViewControlsTarget(target ?? undefined);
+	}, []);
 
 	return createPortal(
-		<div className="transform-dialog-backdrop upgrade-planner-selector__backdrop">
+		<FactorioDialogBackdrop nested className="transform-dialog-backdrop upgrade-planner-selector__backdrop">
 			<section
 				ref={dialogReference}
 				id={dialogId}
 				className="factorio-frame factorio-frame--shallow transform-dialog upgrade-planner-selector"
+				data-factorio-source={
+					includeEditingChoices ? undefined : 'SelectUpgradePlannerGui::SelectUpgradePlannerGui'
+				}
+				data-website-extension={includeEditingChoices ? 'upgrade-planner-draft-loader' : undefined}
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby={headingId}
 				aria-describedby={instructionsId}
 			>
-				<header className="factorio-title-bar transform-dialog__header upgrade-planner-selector__header">
+				<FactorioTitleBar className="transform-dialog__header upgrade-planner-selector__header">
 					<h3 id={headingId}>
 						{includeEditingChoices ? 'Load an upgrade planner' : 'Select the upgrade planner to apply'}
 					</h3>
-					<FactorioButton
-						kind={FactorioButtonKind.Close}
-						className="transform-dialog__close"
-						aria-label="Close upgrade planner selector"
-						title="Close upgrade planner selector"
-						onClick={() => {
-							onClose();
-						}}
-					/>
-				</header>
-				<p id={instructionsId} className="upgrade-planner-selector__hint">
-					{includeEditingChoices ? (
-						<>Choose a planner to copy all of its mappings into the editable draft.</>
-					) : (
-						<>
-							<span>Left-click</span> to apply as upgrade. <span>Right-click</span> to apply as downgrade.
-							Enter applies as upgrade; Shift+Enter applies as downgrade.
-						</>
-					)}
-				</p>
-				{includeEditingChoices ? (
-					<div className="upgrade-planner-selector__grid" role="grid" aria-label="Upgrade planners">
-						{choices.map((choice, index) => (
-							<UpgradePlannerSelectorItem
-								key={choice.source}
-								active={index === activeIndex}
-								buttonRef={(button) => {
-									buttonReferences.current[index] = button;
-								}}
-								choice={choice}
-								choiceCount={choices.length}
-								index={index}
-								instructionsId={instructionsId}
-								onChoose={() => {
-									onChoose(choice, 'upgrade');
-								}}
-								onFocus={() => {
-									setActiveIndex(index);
-								}}
-								onMoveFocus={moveFocus}
-								selected={choice.source === selectedSource}
+					<div className="upgrade-planner-selector__header-actions">
+						{includeEditingChoices ? null : (
+							<div
+								ref={captureSearchControlTarget}
+								className="upgrade-planner-selector__search-control-target"
 							/>
-						))}
-					</div>
-				) : (
-					<div className="upgrade-planner-selector__records">
-						<BlueprintRecordViews
-							aria-label="Upgrade planners"
-							initialActiveRecordId={selectedSource}
-							onActivate={(record) => {
-								onChoose(record.choice, 'upgrade');
+						)}
+						<FactorioButton
+							kind={FactorioButtonKind.Close}
+							className="transform-dialog__close"
+							aria-label="Close upgrade planner selector"
+							title="Close upgrade planner selector"
+							onClick={() => {
 								onClose();
 							}}
-							onAlternateActivate={(record) => {
-								onChoose(record.choice, 'downgrade');
-								onClose();
-							}}
-							records={applicationRecords}
-							recordsWhenSearchEmpty={DEFAULT_UPGRADE_RECORDS}
-							recordInstructionsId={instructionsId}
-							searchLabel="Search upgrade planners"
-							searchResultNoun="upgrade planners"
 						/>
 					</div>
-				)}
+				</FactorioTitleBar>
+				<FactorioFrame
+					className="upgrade-planner-selector__inside-frame"
+					data-factorio-style="inside_shallow_frame"
+				>
+					<div className="upgrade-planner-selector__subheader" data-factorio-style="subheader_frame">
+						<p id={instructionsId} className="upgrade-planner-selector__hint">
+							{includeEditingChoices ? (
+								<>Choose a planner to copy all of its mappings into the editable draft.</>
+							) : (
+								<>
+									<span>Left-click</span> to apply as upgrade, <span>Right-click</span> to apply as
+									downgrade.
+								</>
+							)}
+						</p>
+						{includeEditingChoices ? null : (
+							<div
+								ref={captureViewControlsTarget}
+								className="upgrade-planner-selector__view-controls-target"
+							/>
+						)}
+					</div>
+					{includeEditingChoices ? (
+						<div
+							className="upgrade-planner-selector__grid"
+							role="grid"
+							aria-label="Upgrade planners"
+							data-factorio-columns={gameUiSpec.utilityConstants.blueprintBigSlotsPerRow}
+							data-factorio-source="BlueprintsList::addItem"
+							style={upgradePlannerTileGridStyle}
+						>
+							{choices.map((choice, index) => (
+								<UpgradePlannerSelectorItem
+									key={choice.source}
+									active={index === activeIndex}
+									buttonRef={(button) => {
+										buttonReferences.current[index] = button;
+									}}
+									choice={choice}
+									choiceCount={choices.length}
+									index={index}
+									instructionsId={instructionsId}
+									onChoose={() => {
+										onChoose(choice, 'upgrade');
+									}}
+									onFocus={() => {
+										setActiveIndex(index);
+									}}
+									onMoveFocus={moveFocus}
+									selected={choice.source === selectedSource}
+								/>
+							))}
+						</div>
+					) : (
+						<div className="upgrade-planner-selector__records">
+							<BlueprintRecordViews
+								aria-label="Upgrade planners"
+								initialActiveRecordId={selectedSource}
+								onActivate={(record) => {
+									onChoose(record.choice, 'upgrade');
+									onClose();
+								}}
+								onAlternateActivate={(record) => {
+									onChoose(record.choice, 'downgrade');
+									onClose();
+								}}
+								records={applicationRecords}
+								recordsWhenSearchEmpty={DEFAULT_UPGRADE_RECORDS}
+								recordInstructionsId={instructionsId}
+								searchControlTarget={searchControlTarget}
+								searchLabel="Search upgrade planners"
+								searchResultNoun="upgrade planners"
+								viewControlsTarget={viewControlsTarget}
+							/>
+						</div>
+					)}
+				</FactorioFrame>
 			</section>
-		</div>,
+		</FactorioDialogBackdrop>,
 		document.body,
 	);
 }

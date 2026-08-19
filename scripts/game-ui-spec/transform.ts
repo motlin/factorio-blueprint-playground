@@ -298,6 +298,14 @@ function objectIntegerField(source: string, name: string): number {
 	return Number(match[1]);
 }
 
+function objectSignedIntegerField(source: string, name: string): number {
+	const match = new RegExp(`^\\s*${name}\\s*=\\s*(-?\\d+)\\s*,?`, 'm').exec(source);
+	if (match === null) {
+		throw new Error(`Missing signed integer object field: ${name}`);
+	}
+	return Number(match[1]);
+}
+
 function styleBlock(source: string, name: string): string {
 	const startMatch = new RegExp(`^\\s*${name}\\s*=\\s*\\{`, 'm').exec(source);
 	if (startMatch === null) {
@@ -607,7 +615,16 @@ export function buildGameUiSpec(sourceLock: GameUiSourceLock, sources: ReadonlyM
 	const locales = combinedLocales(sources);
 	const utilitySource = requiredSource(sources, 'data/core/prototypes/utility-constants.lua');
 	const styleSource = requiredSource(sources, 'data/core/prototypes/style.lua');
+	const blueprintRecordSlotButton = styleBlock(styleSource, 'blueprint_record_slot_button');
+	const defaultTable = styleBlock(styleSource, 'table');
+	const labelUnderWidget = styleBlock(styleSource, 'label_under_widget');
 	const slotTable = styleBlock(styleSource, 'slot_table');
+	const blueprintsListSource = requiredSource(sources, 'src/Gui/BlueprintsList.cpp');
+	for (const rowCount of ['blueprintBigSlotsPerRow', 'blueprintSmallSlotsPerRow']) {
+		if (!blueprintsListSource.includes(`UtilityConstants::instance().${rowCount}`)) {
+			throw new Error(`Blueprint list no longer uses the configured ${rowCount} row count.`);
+		}
+	}
 	const signalsTableSource = requiredSource(sources, 'src/Gui/SignalsTable.cpp');
 	const signalsTableConstructor = requiredMatch(
 		signalsTableSource,
@@ -675,16 +692,25 @@ export function buildGameUiSpec(sourceLock: GameUiSourceLock, sources: ReadonlyM
 		},
 		upgrades: extractUpgrades(sources),
 		utilityConstants: {
+			blueprintBigSlotsPerRow: objectIntegerField(utilitySource, 'blueprint_big_slots_per_row'),
+			blueprintSmallSlotsPerRow: objectIntegerField(utilitySource, 'blueprint_small_slots_per_row'),
 			selectGroupRowCount: objectIntegerField(utilitySource, 'select_group_row_count'),
 			selectSlotRowCount: objectIntegerField(utilitySource, 'select_slot_row_count'),
 			qualitySelectorDropdownThreshold: objectIntegerField(utilitySource, 'quality_selector_dropdown_threshold'),
 		},
 		styles: {
+			blueprintRecordSlotPadding: objectIntegerField(blueprintRecordSlotButton, 'padding'),
+			blueprintRecordSlotSize: objectIntegerField(blueprintRecordSlotButton, 'size'),
+			defaultTableHorizontalSpacing: objectIntegerField(defaultTable, 'horizontal_spacing'),
+			defaultTableVerticalSpacing: objectIntegerField(defaultTable, 'vertical_spacing'),
 			slotSize: integerAssignment(styleSource, 'slot_size'),
 			filterGroupTabWidth: objectIntegerField(styleBlock(styleSource, 'filter_group_tab'), 'minimal_width'),
 			filterGroupTabHeight: objectIntegerField(styleBlock(styleSource, 'filter_group_tab'), 'height'),
 			filterSlotHorizontalSpacing: objectIntegerField(slotTable, 'horizontal_spacing'),
 			filterSlotVerticalSpacing: objectIntegerField(slotTable, 'vertical_spacing'),
+			labelUnderWidgetBottomMargin: objectSignedIntegerField(labelUnderWidget, 'bottom_margin'),
+			labelUnderWidgetHeight: objectIntegerField(labelUnderWidget, 'height'),
+			labelUnderWidgetTopMargin: objectSignedIntegerField(labelUnderWidget, 'top_margin'),
 			signalsTableColumnCount: Number(signalsTableConstructor),
 			signalsTableMinimumWidth: Number(signalsTableWidth),
 			bindings: extractStyleBindings(
