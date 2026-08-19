@@ -78,7 +78,7 @@ describe('generated game UI specification', () => {
 		expect({
 			qualities: specification.qualities,
 			qualityComparators: specification.qualityComparators,
-			anyQuality: specification.labels.anyQuality,
+			labels: specification.labels,
 			signalTypeOrder: specification.signals.typeOrder,
 			categoryOrder: specification.signals.categories.map(({name}) => name),
 			categoryLayouts: specification.signals.categories
@@ -141,7 +141,10 @@ describe('generated game UI specification', () => {
 				},
 			],
 			qualityComparators: ['>', '<', '=', '≥', '≤', '≠'],
-			anyQuality: 'Any quality',
+			labels: {
+				anyQuality: 'Any quality',
+				qualitySelectionTooltip: 'Quality: __1__',
+			},
 			signalTypeOrder: ['item', 'entity', 'fluid', 'virtual', 'recipe', 'space-location', 'quality'],
 			categoryOrder: [
 				'logistics',

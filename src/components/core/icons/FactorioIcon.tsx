@@ -1,5 +1,5 @@
 import type {SignalID, SignalType} from '../../../parsing/types';
-import {FactorioQualityBadge} from '../../ui/FactorioUi';
+import {FactorioQualityBadge, factorioQualityLabel} from '../../ui/FactorioUi';
 
 import styles from './FactorioIcon.module.css';
 
@@ -25,12 +25,13 @@ interface FactorioIconProps {
  * selected/disabled state and `SignalPickerDialog` owns quality selection.
  */
 function getQualityNode(icon: SignalID) {
-	if (!icon.quality) {
+	if (icon.quality === undefined || icon.quality === 'normal') {
 		return null;
 	}
 
 	return (
 		<FactorioQualityBadge
+			aria-hidden="true"
 			loading="lazy"
 			className={styles.iconQuality}
 			quality={icon.quality}
@@ -51,20 +52,28 @@ export const FactorioIcon = ({decorative = false, id, icon, size}: FactorioIconP
 	const sizeClass = size === 'small' ? styles.smallSquare : styles.largeSquare;
 
 	const qualityNode = getQualityNode(icon);
+	const accessibleName =
+		icon.quality === undefined || icon.quality === 'normal'
+			? `${type}: ${icon.name}`
+			: `${type}: ${icon.name}, ${factorioQualityLabel(icon.quality)}`;
 
 	return (
 		<div
 			data-testid="iconParent"
+			data-factorio-icon-size={size}
 			className={`${styles.iconParent} ${sizeClass}`}
 			id={id}
 			aria-hidden={decorative || undefined}
+			aria-label={decorative ? undefined : accessibleName}
+			role={decorative ? undefined : 'img'}
 		>
 			<img
+				aria-hidden="true"
 				data-testid="icon"
 				loading="lazy"
-				className={styles.icon}
+				className={styles.artwork}
 				src={`https://factorio-icon-cdn.pages.dev/${urlType}/${icon.name}.webp`}
-				alt={decorative ? '' : icon.name}
+				alt=""
 				title={decorative ? undefined : `${type}: ${icon.name}`}
 			/>
 			{qualityNode}
@@ -80,8 +89,12 @@ export const Placeholder = ({size}: PlaceholderProps) => {
 	const sizeClass = size === 'small' ? styles.smallSquare : styles.largeSquare;
 
 	return (
-		<div className={`${styles.iconParent} ${sizeClass}`}>
-			<div className={styles.icon} />
+		<div
+			className={`${styles.iconParent} ${sizeClass}`}
+			data-factorio-icon-size={size === 'small' ? 'small' : 'large'}
+			aria-hidden="true"
+		>
+			<span className={styles.artwork} />
 		</div>
 	);
 };

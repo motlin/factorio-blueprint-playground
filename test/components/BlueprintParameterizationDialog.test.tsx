@@ -186,7 +186,7 @@ test('keeps nested picker focus in the top layer and returns it through the dial
 
 	await user.click(valueInvoker);
 	const picker = screen.getByRole('dialog', {name: 'Choose value for Plate'});
-	const search = within(picker).getByRole('searchbox', {name: 'Search'});
+	const search = within(picker).getByRole('button', {name: 'Search'});
 	const confirm = within(picker).getByRole('button', {name: 'Confirm'});
 	expect({
 		activeElement: document.activeElement,

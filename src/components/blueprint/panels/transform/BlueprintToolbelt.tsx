@@ -1,7 +1,7 @@
 import {useEffect, useId, useRef} from 'react';
 
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
-import {FactorioButton, FactorioTooltip} from '../../../ui/FactorioUi';
+import {FactorioButton, FactorioTooltip, FactorioTooltipPlacement} from '../../../ui/FactorioUi';
 
 interface BlueprintToolbeltProps {
 	blueprintEditorAvailable: boolean;
@@ -86,8 +86,13 @@ export function BlueprintToolbelt({
 					>
 						<FactorioIcon decorative icon={{type: 'item', name: 'blueprint'}} size="large" />
 					</FactorioButton>
-					<FactorioTooltip id={blueprintEditorTooltipId} className="factorio-toolbar-tooltip">
-						Open the Blueprint Editor. (B)
+					<FactorioTooltip
+						id={blueprintEditorTooltipId}
+						className="factorio-toolbar-tooltip"
+						heading="Blueprint Editor"
+						placement={FactorioTooltipPlacement.Above}
+					>
+						Edit this blueprint or book. <span className="factorio-tooltip__shortcut">B</span>
 					</FactorioTooltip>
 				</div>
 			) : null}
@@ -106,8 +111,13 @@ export function BlueprintToolbelt({
 				>
 					<FactorioIcon decorative icon={{type: 'item', name: 'upgrade-planner'}} size="large" />
 				</FactorioButton>
-				<FactorioTooltip id={upgradePlannerTooltipId} className="factorio-toolbar-tooltip">
-					Upgrade items and entities in the blueprint. (U)
+				<FactorioTooltip
+					id={upgradePlannerTooltipId}
+					className="factorio-toolbar-tooltip"
+					heading="Upgrade Planner"
+					placement={FactorioTooltipPlacement.Above}
+				>
+					Create, edit, and apply upgrade mappings. <span className="factorio-tooltip__shortcut">U</span>
 				</FactorioTooltip>
 			</div>
 		</div>

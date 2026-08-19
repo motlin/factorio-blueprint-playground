@@ -28,6 +28,14 @@
 		{
 			"id": "ui-factorio-primitives--nested-dialog-chrome",
 			"requiredStates": ["rest", "focus"]
+		},
+		{
+			"id": "ui-factorio-primitives--scroll-frame-states",
+			"requiredStates": ["rest", "focus", "filled"]
+		},
+		{
+			"id": "ui-factorio-primitives--tooltip-states",
+			"requiredStates": ["hover", "focus", "filled"]
 		}
 	]
 }

@@ -1,10 +1,17 @@
-import {useCallback, useId, useMemo, useRef, useState} from 'react';
+import {useCallback, useEffect, useId, useMemo, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 
 import gameUiSpec from '../../../../generated/game-ui-spec.json';
 import type {QualityComparator, SignalID, SignalType} from '../../../../parsing/types';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
-import {FactorioButton, FactorioButtonKind, FactorioInventorySlot, FactorioScrollFrame} from '../../../ui/FactorioUi';
+import {
+	FactorioButton,
+	FactorioButtonKind,
+	FactorioDialogBackdrop,
+	FactorioInventorySlot,
+	FactorioScrollFrame,
+	FactorioTitleBar,
+} from '../../../ui/FactorioUi';
 import {
 	initialUpgradeQualitySelection,
 	signalWithUpgradeQuality,
@@ -12,7 +19,7 @@ import {
 	type UpgradeQualitySignal,
 } from './upgradeQuality';
 import {
-	comparePickerSignalOrder,
+	canonicalPickerOptions,
 	signalPickerGroup,
 	signalPickerHidden,
 	signalPickerSubgroup,
@@ -63,9 +70,10 @@ import {useDialogFocus} from './useDialogFocus';
  *
  * Transaction and focus
  *
- * - Clicking a slot stages signal and quality together. The green check or Enter
- *   confirms only a valid staged value; closing, Escape, or unmodified Q cancels
- *   without invoking `onChoose`. Q remains text input while search has focus.
+ * - Clicking a slot stages signal and quality together. Double-clicking that
+ *   slot, the green check, or Enter confirms only a valid staged value; closing,
+ *   Escape, or unmodified Q cancels without invoking `onChoose`. Q remains text
+ *   input while search has focus.
  * - Closing either way returns focus to the slot or button that opened the
  *   topmost picker. Parent dialogs stay inert until that picker is gone.
  * - Confirming a planner From value closes only Set the filter and leaves the
@@ -82,7 +90,8 @@ import {useDialogFocus} from './useDialogFocus';
  * 2.1.12; BE-6 and the July 23 Set the filter, comparator-menu, and restricted
  * Select upgrade captures.
  */
-const gridColumnCount = gameUiSpec.styles.signalsTableColumnCount;
+const gridColumnCount = gameUiSpec.utilityConstants.selectSlotRowCount;
+const categoryColumnCount = gameUiSpec.utilityConstants.selectGroupRowCount;
 const maximumVisibleGridRows = gameUiSpec.utilityConstants.selectSlotRowCount;
 const hiddenPrototypeNames = new Set([
 	'bottomless-chest',
@@ -111,11 +120,18 @@ interface PickerCategory {
 	label: string;
 }
 
-const pickerCategories: readonly PickerCategory[] = gameUiSpec.signals.categories.map(({label, name}) => ({
-	id: name,
-	icon: {type: 'item-group', name},
-	label,
-}));
+const pickerCategories: readonly PickerCategory[] = gameUiSpec.signals.categories.map(
+	({label, name}, index, categories) => {
+		if (categories.findIndex((category) => category.name === name) !== index) {
+			throw new Error(`Signal category ${name} occurs more than once in the generated UI specification.`);
+		}
+		return {
+			id: name,
+			icon: {type: 'item-group', name},
+			label,
+		};
+	},
+);
 
 export interface SignalPickerDialogProps {
 	confirmationMode: SignalPickerConfirmationMode;
@@ -256,13 +272,16 @@ export function SignalPickerDialog({
 	const headingId = useId();
 	const searchId = useId();
 	const gridId = useId();
+	const categoryButtons = useRef<Array<HTMLButtonElement | null>>([]);
 	const optionButtons = useRef<Array<HTMLButtonElement | null>>([]);
+	const searchReference = useRef<HTMLInputElement>(null);
 	const signalNameReference = useRef<HTMLDivElement>(null);
+	const inspectedSignalsReference = useRef<{
+		focused: SignalID | undefined;
+		hovered: SignalID | undefined;
+	}>({focused: undefined, hovered: undefined});
 	const visibleOptions = useMemo(
-		() =>
-			options
-				.filter((signal) => includeHiddenSignals || !isHiddenPrototype(signal))
-				.sort(comparePickerSignalOrder),
+		() => canonicalPickerOptions(options.filter((signal) => includeHiddenSignals || !isHiddenPrototype(signal))),
 		[includeHiddenSignals, options],
 	);
 	const availableCategories = useMemo(
@@ -276,6 +295,7 @@ export function SignalPickerDialog({
 		visibleOptions.length === 0 ? undefined : categoryForSignal(initialSignal ?? visibleOptions[0]).id;
 	const [activeCategoryId, setActiveCategoryId] = useState<PickerCategoryId | undefined>(initialCategoryId);
 	const [search, setSearch] = useState(initialSearch);
+	const [searchVisible, setSearchVisible] = useState(initialSearch !== '');
 	const [selectedSignal, setSelectedSignal] = useState<PickerSignal | undefined>(
 		initialSignal === undefined ||
 			!visibleOptions.some((signal) => signalPrototypeIdentity(signal) === signalPrototypeIdentity(initialSignal))
@@ -350,15 +370,41 @@ export function SignalPickerDialog({
 			? undefined
 			: signalWithCurrentQuality(selectedSignal, qualityMode, qualitySelection, qualityComparator);
 	const selectionAllowed = confirmedSignal !== undefined && (isSelectionAllowed?.(confirmedSignal) ?? true);
-	const clearInspectedSignal = () => {
-		if (signalNameReference.current !== null) {
-			signalNameReference.current.textContent = '\u00a0';
+	const chooseSignal = useCallback(
+		(signal: SignalID) => {
+			const signalWithQuality = signalWithCurrentQuality(
+				signal,
+				qualityMode,
+				qualitySelection,
+				qualityComparator,
+			);
+			if (!(isSelectionAllowed?.(signalWithQuality) ?? true)) {
+				return;
+			}
+			onChoose(signalWithQuality);
+		},
+		[isSelectionAllowed, onChoose, qualityComparator, qualityMode, qualitySelection],
+	);
+	const updateInspectedSignal = () => {
+		const readout = signalNameReference.current;
+		if (readout === null) {
+			return;
 		}
+		const inspectedSignal = inspectedSignalsReference.current.hovered ?? inspectedSignalsReference.current.focused;
+		if (inspectedSignal === undefined) {
+			readout.textContent = '\u00a0';
+			readout.removeAttribute('aria-label');
+			readout.removeAttribute('title');
+			return;
+		}
+		const inspectedSignalName = signalName(inspectedSignal);
+		readout.textContent = inspectedSignalName;
+		readout.setAttribute('aria-label', `Inspected signal: ${inspectedSignalName}`);
+		readout.title = inspectedSignalName;
 	};
-	const showInspectedSignal = (signal: SignalID) => {
-		if (signalNameReference.current !== null) {
-			signalNameReference.current.textContent = signalName(signal);
-		}
+	const clearInspectedSignal = () => {
+		inspectedSignalsReference.current = {focused: undefined, hovered: undefined};
+		updateInspectedSignal();
 	};
 
 	const confirmSelection = useCallback(() => {
@@ -369,10 +415,16 @@ export function SignalPickerDialog({
 	}, [confirmedSignal, onChoose, selectionAllowed]);
 	const dialogReference = useDialogFocus<HTMLElement>({
 		closeOnQ: true,
-		initialFocusSelector: 'input[type="search"]',
+		initialFocusSelector: initialSearch === '' ? '[data-picker-search-toggle]' : 'input[type="search"]',
 		onClose,
 		onEnter: confirmationMode === 'required' ? confirmSelection : undefined,
 	});
+	useEffect(() => {
+		if (searchVisible) {
+			searchReference.current?.focus();
+			searchReference.current?.select();
+		}
+	}, [searchVisible]);
 
 	const moveGridFocus = (event: React.KeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
 		let nextIndex: number | undefined;
@@ -430,40 +482,110 @@ export function SignalPickerDialog({
 		event.preventDefault();
 		optionButtons.current[nextIndex]?.focus();
 	};
+	const activateCategory = (category: PickerCategory, categoryIndex: number) => {
+		if ((categoryOptions.get(category.id)?.length ?? 0) === 0) {
+			return;
+		}
+		clearInspectedSignal();
+		setActiveCategoryId(category.id);
+		categoryButtons.current[categoryIndex]?.focus();
+	};
+	const moveCategoryFocus = (event: React.KeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
+		let candidateIndexes: number[] = [];
+		if (event.key === 'ArrowRight') {
+			candidateIndexes = Array.from(
+				{length: availableCategories.length - 1},
+				(_, offset) => (currentIndex + offset + 1) % availableCategories.length,
+			);
+		} else if (event.key === 'ArrowLeft') {
+			candidateIndexes = Array.from(
+				{length: availableCategories.length - 1},
+				(_, offset) => (currentIndex - offset - 1 + availableCategories.length) % availableCategories.length,
+			);
+		} else if (event.key === 'ArrowDown') {
+			candidateIndexes = [currentIndex + categoryColumnCount];
+		} else if (event.key === 'ArrowUp') {
+			candidateIndexes = [currentIndex - categoryColumnCount];
+		} else if (event.key === 'Home') {
+			candidateIndexes = availableCategories.map((_, index) => index);
+		} else if (event.key === 'End') {
+			candidateIndexes = availableCategories.map((_, index) => availableCategories.length - index - 1);
+		} else {
+			return;
+		}
+		const nextIndex = candidateIndexes.find(
+			(index) =>
+				index >= 0 &&
+				index < availableCategories.length &&
+				(categoryOptions.get(availableCategories[index].id)?.length ?? 0) > 0,
+		);
+		if (nextIndex === undefined || nextIndex === currentIndex) {
+			return;
+		}
+		event.preventDefault();
+		activateCategory(availableCategories[nextIndex], nextIndex);
+	};
+
+	if (confirmationMode === 'immediate' && qualityMode !== undefined) {
+		throw new Error('Immediate signal selection cannot include staged quality controls.');
+	}
 
 	return createPortal(
-		<div className="transform-dialog-backdrop transform-picker__backdrop">
+		<FactorioDialogBackdrop nested className="transform-dialog-backdrop transform-picker__backdrop">
 			<section
 				ref={dialogReference}
-				className="factorio-frame factorio-frame--shallow transform-dialog transform-dialog--picker"
+				className="factorio-frame factorio-frame--shallow factorio-dialog transform-dialog transform-dialog--picker"
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby={headingId}
 			>
-				<header className="factorio-title-bar transform-dialog__header transform-picker__header">
+				<FactorioTitleBar className="transform-dialog__header transform-picker__header">
 					<h3 id={headingId}>{title}</h3>
-					<label className="transform-picker__search" htmlFor={searchId}>
-						<span>Search</span>
-						<input
-							id={searchId}
-							type="search"
-							value={search}
-							onChange={(event) => {
-								setSearch(event.currentTarget.value);
-								clearInspectedSignal();
+					<div className="transform-picker__header-actions">
+						<div className="transform-picker__search-control">
+							<FactorioButton
+								kind={FactorioButtonKind.Search}
+								data-picker-search-toggle
+								aria-controls={searchId}
+								aria-expanded={searchVisible}
+								aria-label="Search"
+								title="Search"
+								onClick={(event) => {
+									if (searchVisible) {
+										setSearchVisible(false);
+										setSearch('');
+										clearInspectedSignal();
+										event.currentTarget.focus();
+									} else {
+										setSearchVisible(true);
+									}
+								}}
+							/>
+							<label className="transform-picker__search" htmlFor={searchId} hidden={!searchVisible}>
+								<span className="transform-visually-hidden">Search</span>
+								<input
+									ref={searchReference}
+									id={searchId}
+									type="search"
+									value={search}
+									onChange={(event) => {
+										setSearch(event.currentTarget.value);
+										clearInspectedSignal();
+									}}
+								/>
+							</label>
+						</div>
+						<FactorioButton
+							kind={FactorioButtonKind.Close}
+							className="transform-dialog__close"
+							aria-label={`Close ${title}`}
+							title={`Close ${title}`}
+							onClick={() => {
+								onClose();
 							}}
 						/>
-					</label>
-					<FactorioButton
-						kind={FactorioButtonKind.Close}
-						className="transform-dialog__close"
-						aria-label={`Close ${title}`}
-						title={`Close ${title}`}
-						onClick={() => {
-							onClose();
-						}}
-					/>
-				</header>
+					</div>
+				</FactorioTitleBar>
 				<div className="panel-hole transform-picker">
 					<div className="transform-picker__body">
 						{availableCategories.length > 1 ? (
@@ -471,28 +593,39 @@ export function SignalPickerDialog({
 								className="transform-picker__tabs"
 								role="tablist"
 								aria-label="Signal categories"
+								aria-orientation="horizontal"
 								style={{
-									gridTemplateColumns: `repeat(${gameUiSpec.utilityConstants.selectGroupRowCount.toString()}, ${gameUiSpec.styles.filterGroupTabWidth.toString()}px)`,
+									gridTemplateColumns: `repeat(${categoryColumnCount.toString()}, ${gameUiSpec.styles.filterGroupTabWidth.toString()}px)`,
 								}}
 							>
-								{availableCategories.map((category) => {
+								{availableCategories.map((category, categoryIndex) => {
 									const hasMatches = (categoryOptions.get(category.id)?.length ?? 0) > 0;
 									return (
 										<button
 											type="button"
 											role="tab"
 											key={category.id}
+											ref={(button) => {
+												categoryButtons.current[categoryIndex] = button;
+											}}
+											className="transform-picker__tab"
+											data-factorio-style="filter_group_tab"
 											aria-controls={gridId}
 											aria-label={category.label}
 											aria-selected={category.id === resolvedActiveCategoryId}
 											disabled={!hasMatches}
+											tabIndex={category.id === resolvedActiveCategoryId ? 0 : -1}
 											title={category.label}
 											style={{
 												width: gameUiSpec.styles.filterGroupTabWidth,
 												height: gameUiSpec.styles.filterGroupTabHeight,
 											}}
 											onClick={() => {
+												clearInspectedSignal();
 												setActiveCategoryId(category.id);
+											}}
+											onKeyDown={(event) => {
+												moveCategoryFocus(event, categoryIndex);
 											}}
 										>
 											<FactorioIcon decorative icon={category.icon} size="large" />
@@ -507,8 +640,10 @@ export function SignalPickerDialog({
 								id={gridId}
 								className="transform-picker__grid"
 								aria-label={`${activeCategory?.label ?? 'Signal'} choices`}
+								data-grid-columns={gridColumnCount}
 								style={{
 									columnGap: gameUiSpec.styles.filterSlotHorizontalSpacing,
+									gridTemplateColumns: `repeat(${gridColumnCount.toString()}, ${gameUiSpec.styles.slotSize.toString()}px)`,
 									rowGap: gameUiSpec.styles.filterSlotVerticalSpacing,
 									height: stableGridRows * gameUiSpec.styles.slotSize,
 									width: gameUiSpec.styles.signalsTableMinimumWidth,
@@ -520,6 +655,7 @@ export function SignalPickerDialog({
 											<span
 												key={cell.key}
 												className="transform-picker__grid-padding"
+												data-picker-cell="padding"
 												aria-hidden="true"
 											/>
 										);
@@ -537,56 +673,75 @@ export function SignalPickerDialog({
 												optionButtons.current[optionIndex] = button;
 											}}
 											className="transform-picker__option"
+											data-picker-cell="signal"
 											aria-label={`Choose ${signalName(signal)}`}
 											disabled={!allowed}
 											selected={signalPrototypeIdentity(signal) === selectedIdentity}
 											tabIndex={optionIndex === tabbableOptionIndex ? 0 : -1}
 											title={signalTitle(signal)}
-											onBlur={clearInspectedSignal}
+											onBlur={() => {
+												inspectedSignalsReference.current.focused = undefined;
+												updateInspectedSignal();
+											}}
 											onClick={() => {
 												if (confirmationMode === 'immediate') {
-													onChoose(
-														signalWithCurrentQuality(
-															signal,
-															qualityMode,
-															qualitySelection,
-															qualityComparator,
-														),
-													);
+													chooseSignal(signal);
 												} else {
 													setSelectedSignal(signal);
 												}
 											}}
+											onDoubleClick={() => {
+												if (confirmationMode === 'required') {
+													chooseSignal(signal);
+												}
+											}}
 											onFocus={() => {
-												showInspectedSignal(signal);
+												inspectedSignalsReference.current.focused = signal;
+												updateInspectedSignal();
 											}}
 											onKeyDown={(event) => {
 												moveGridFocus(event, optionIndex);
 											}}
 											onMouseEnter={() => {
-												showInspectedSignal(signal);
+												inspectedSignalsReference.current.hovered = signal;
+												updateInspectedSignal();
 											}}
-											onMouseLeave={clearInspectedSignal}
+											onMouseLeave={() => {
+												inspectedSignalsReference.current.hovered = undefined;
+												updateInspectedSignal();
+											}}
 										>
 											<FactorioIcon decorative icon={signal} size="large" />
 										</FactorioInventorySlot>
 									);
 								})}
 								{filteredOptions.length === 0 ? (
-									<p className="transform-picker__empty">No matching signals.</p>
+									<p
+										className="transform-picker__empty"
+										role="status"
+										aria-atomic="true"
+										aria-label="Nothing found"
+										aria-live="polite"
+									>
+										Nothing found
+									</p>
 								) : null}
 							</FactorioScrollFrame>
-							<div ref={signalNameReference} className="transform-picker__signal-name" aria-live="polite">
+							<div
+								ref={signalNameReference}
+								className="transform-picker__signal-name"
+								role="status"
+								aria-atomic="true"
+								aria-live="polite"
+							>
 								{'\u00a0'}
 							</div>
 						</div>
 					</div>
 				</div>
-				{qualityMode !== undefined || confirmationMode === 'required' ? (
-					<footer className="transform-picker__footer">
-						{qualityMode === undefined ? (
-							<span />
-						) : (
+				{confirmationMode === 'required' ? (
+					<footer className="transform-picker__footer" data-factorio-style="subfooter_frame">
+						{qualityMode === undefined ? null : (
 							<UpgradeQualityControls
 								mode={qualityMode}
 								qualityComparator={qualityComparator}
@@ -595,23 +750,24 @@ export function SignalPickerDialog({
 								onQualityChange={setQualitySelection}
 							/>
 						)}
-						{confirmationMode === 'required' ? (
-							<FactorioButton
-								kind={FactorioButtonKind.Confirm}
-								disabled={!selectionAllowed}
-								onClick={(event) => {
-									event.preventDefault();
-									confirmSelection();
-								}}
-							>
-								<span aria-hidden="true">✓</span>
-								<span className="transform-picker__confirm-label">Confirm</span>
-							</FactorioButton>
-						) : null}
+						<FactorioButton
+							kind={FactorioButtonKind.Confirm}
+							className="transform-picker__confirm"
+							data-factorio-control-style="item_and_count_select_confirm"
+							disabled={!selectionAllowed}
+							title="Confirm"
+							onClick={(event) => {
+								event.preventDefault();
+								confirmSelection();
+							}}
+						>
+							<span aria-hidden="true">✓</span>
+							<span className="transform-picker__confirm-label">Confirm</span>
+						</FactorioButton>
 					</footer>
 				) : null}
 			</section>
-		</div>,
+		</FactorioDialogBackdrop>,
 		document.body,
 	);
 }
