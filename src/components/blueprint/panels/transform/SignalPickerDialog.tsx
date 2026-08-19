@@ -92,23 +92,6 @@ import {useDialogFocus} from './useDialogFocus';
  */
 const gridColumnCount = gameUiSpec.utilityConstants.selectSlotRowCount;
 const categoryColumnCount = gameUiSpec.utilityConstants.selectGroupRowCount;
-const maximumVisibleGridRows = gameUiSpec.utilityConstants.selectSlotRowCount;
-const hiddenPrototypeNames = new Set([
-	'bottomless-chest',
-	'electric-energy-interface',
-	'fluid-unknown',
-	'infinity-cargo-wagon',
-	'infinity-chest',
-	'infinity-pipe',
-	'item-unknown',
-	'linked-chest',
-	'proxy-container',
-	'recipe-unknown',
-	'signal-unknown',
-	'space-location-unknown',
-	'tile-unknown',
-]);
-
 type PickerSignal = UpgradeQualitySignal;
 type PickerCategoryId = string;
 type QualityMode = 'source' | 'target';
@@ -137,6 +120,7 @@ export interface SignalPickerDialogProps {
 	confirmationMode: SignalPickerConfirmationMode;
 	extrasFrame?: (pendingSignal: PickerSignal | undefined) => ReactNode;
 	includeHiddenSignals?: boolean;
+	includeParameterSignals?: boolean;
 	initialQuality?: UpgradeQualitySelection;
 	initialSearch?: string;
 	initialSignal?: PickerSignal;
@@ -172,34 +156,17 @@ function signalTitle(signal: PickerSignal): string {
 	return `${signalName(signal)}\n${normalizedSignalType(signal)}:${signal.name}${quality}`;
 }
 
+/**
+ * SelectListGui::updateItems reads the prototype's registered group; the only
+ * fallback is CorePrototypes::otherItemSubGroup's group. Qualities are placed
+ * by the same generated layout that positions them in the picker.
+ */
 function categoryIdForSignal(signal: SignalID): PickerCategoryId {
 	const generatedGroup = signalPickerGroup(signal);
 	if (generatedGroup !== undefined) {
 		return generatedGroup;
 	}
-	const type = normalizedSignalType(signal);
-	if (type === 'item' || type === 'entity') {
-		return 'logistics';
-	}
-	if (type === 'recipe') {
-		return 'production';
-	}
-	if (type === 'fluid') {
-		return 'fluids';
-	}
-	if (type === 'virtual' || type === 'virtual-signal') {
-		return 'signals';
-	}
-	if (type === 'tile') {
-		return 'tiles';
-	}
-	if (type === 'planet' || type === 'space-location') {
-		return 'environment';
-	}
-	if (type === 'equipment') {
-		return 'combat';
-	}
-	if (type === 'quality') {
+	if (normalizedSignalType(signal) === 'quality') {
 		return 'effects';
 	}
 	return 'other';
@@ -214,13 +181,12 @@ function categoryForSignal(signal: SignalID): PickerCategory {
 	return category;
 }
 
-function isHiddenPrototype(signal: SignalID): boolean {
-	return (
-		signalPickerHidden(signal) ||
-		signal.name === 'parameter-' ||
-		signal.name.endsWith('-unknown') ||
-		hiddenPrototypeNames.has(signal.name)
-	);
+/**
+ * IncludeParameters is a source policy independent of IncludeHidden; both
+ * planner pickers admit hidden prototypes while excluding parameters.
+ */
+function isParameterSignal(signal: SignalID): boolean {
+	return signal.name === 'parameter-' || /^parameter-\d+$/.test(signal.name);
 }
 
 function signalWithCurrentQuality(
@@ -261,6 +227,7 @@ export function SignalPickerDialog({
 	confirmationMode,
 	extrasFrame,
 	includeHiddenSignals = false,
+	includeParameterSignals = false,
 	initialQuality,
 	initialSearch = '',
 	initialSignal,
@@ -283,8 +250,15 @@ export function SignalPickerDialog({
 		hovered: SignalID | undefined;
 	}>({focused: undefined, hovered: undefined});
 	const visibleOptions = useMemo(
-		() => canonicalPickerOptions(options.filter((signal) => includeHiddenSignals || !isHiddenPrototype(signal))),
-		[includeHiddenSignals, options],
+		() =>
+			canonicalPickerOptions(
+				options.filter(
+					(signal) =>
+						(includeHiddenSignals || !signalPickerHidden(signal)) &&
+						(includeParameterSignals || !isParameterSignal(signal)),
+				),
+			),
+		[includeHiddenSignals, includeParameterSignals, options],
 	);
 	const availableCategories = useMemo(
 		() =>
@@ -335,18 +309,15 @@ export function SignalPickerDialog({
 			: availableCategories.find((category) => category.id === resolvedActiveCategoryId);
 	const filteredOptions = activeCategory === undefined ? [] : (categoryOptions.get(activeCategory.id) ?? []);
 	const gridCells = signalGridCells(filteredOptions);
+	/* SelectListGui::setupMinimalSize: the tallest category establishes the
+	   stable pane height with no visible-row cap; the stylesheet still clamps
+	   to the viewport. */
 	const stableGridRows = Math.max(
 		1,
-		Math.min(
-			maximumVisibleGridRows,
-			Math.max(
-				1,
-				...availableCategories.map((category) =>
-					Math.ceil(
-						signalGridCells(visibleOptions.filter((signal) => category.id === categoryForSignal(signal).id))
-							.length / gridColumnCount,
-					),
-				),
+		...availableCategories.map((category) =>
+			Math.ceil(
+				signalGridCells(visibleOptions.filter((signal) => category.id === categoryForSignal(signal).id))
+					.length / gridColumnCount,
 			),
 		),
 	);
@@ -362,6 +333,22 @@ export function SignalPickerDialog({
 		selectedOptionIndex >= 0 && optionAllowed(filteredOptions[selectedOptionIndex])
 			? selectedOptionIndex
 			: firstAllowedOptionIndex;
+	/* SelectListGui::checkPreselectOnlySlot: a picker with exactly one eligible
+	   option opens with it staged. Confirming an EMPTY value (allowed when the
+	   source AllowedFilterEmptiness is not Filled) stays unsupported; the web
+	   clears endpoints through their explicit right-click/Delete affordance
+	   instead. */
+	useEffect(() => {
+		if (selectedSignal !== undefined || visibleOptions.length !== 1) {
+			return;
+		}
+		const onlyOption = visibleOptions[0];
+		const staged = signalWithCurrentQuality(onlyOption, qualityMode, qualitySelection, qualityComparator);
+		if (isSelectionAllowed?.(staged) ?? true) {
+			setSelectedSignal(onlyOption);
+		}
+	}, [isSelectionAllowed, qualityComparator, qualityMode, qualitySelection, selectedSignal, visibleOptions]);
+
 	const confirmedSignal =
 		selectedSignal === undefined
 			? undefined
@@ -597,13 +584,22 @@ export function SignalPickerDialog({
 				<div className="panel-hole transform-picker">
 					<div className="transform-picker__body">
 						{availableCategories.length > 1 ? (
+							/* filter_group_tab stretches to fill a single row; only
+							   multi-row layouts fall back to fixed-width
+							   filter_group_slot_tab columns. */
 							<div
 								className="transform-picker__tabs"
 								role="tablist"
 								aria-label="Signal categories"
 								aria-orientation="horizontal"
+								data-tab-rows={
+									availableCategories.length <= categoryColumnCount ? 'single' : 'multiple'
+								}
 								style={{
-									gridTemplateColumns: `repeat(${categoryColumnCount.toString()}, ${gameUiSpec.styles.filterGroupTabWidth.toString()}px)`,
+									gridTemplateColumns:
+										availableCategories.length <= categoryColumnCount
+											? `repeat(${availableCategories.length.toString()}, minmax(${gameUiSpec.styles.filterGroupTabWidth.toString()}px, 1fr))`
+											: `repeat(${categoryColumnCount.toString()}, ${gameUiSpec.styles.filterGroupTabWidth.toString()}px)`,
 								}}
 							>
 								{availableCategories.map((category, categoryIndex) => {
@@ -617,7 +613,11 @@ export function SignalPickerDialog({
 												categoryButtons.current[categoryIndex] = button;
 											}}
 											className="transform-picker__tab"
-											data-factorio-style="filter_group_tab"
+											data-factorio-style={
+												availableCategories.length <= categoryColumnCount
+													? 'filter_group_tab'
+													: 'filter_group_slot_tab'
+											}
 											aria-controls={gridId}
 											aria-label={category.label}
 											aria-selected={category.id === resolvedActiveCategoryId}
@@ -625,7 +625,7 @@ export function SignalPickerDialog({
 											tabIndex={category.id === resolvedActiveCategoryId ? 0 : -1}
 											title={category.label}
 											style={{
-												width: gameUiSpec.styles.filterGroupTabWidth,
+												minWidth: gameUiSpec.styles.filterGroupTabWidth,
 												height: gameUiSpec.styles.filterGroupTabHeight,
 											}}
 											onClick={() => {

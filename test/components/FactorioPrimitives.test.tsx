@@ -114,7 +114,7 @@ test('binds each button variant to its Factorio style and default contents', () 
 			className: 'factorio-button factorio-button--delete',
 			contentsClassName: 'factorio-button__content',
 			factorioIcon: 'delete',
-			factorioStyle: 'red_button',
+			factorioStyle: 'tool_button_red',
 			type: 'button',
 		},
 		{

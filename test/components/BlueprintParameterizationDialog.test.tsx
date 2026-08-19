@@ -143,7 +143,7 @@ test('shows editable ID rows and confirms unsupported number parameters unchange
 		regionClass: 'factorio-frame factorio-frame--deep factorio-scroll-frame blueprint-parameterization__body',
 		regionStyle: 'deep_slots_scroll_pane',
 		preserved: '1 unsupported parameter is preserved unchanged.',
-		removeStyles: ['red_button', 'red_button'],
+		removeStyles: ['tool_button_red', 'tool_button_red'],
 		reorderHandles: [
 			{
 				keyshortcuts: 'ArrowUp ArrowDown',
