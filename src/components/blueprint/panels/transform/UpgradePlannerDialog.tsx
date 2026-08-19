@@ -1,19 +1,26 @@
+import {Copy, ExternalLink} from 'lucide-react';
 import {useId, useState} from 'react';
 
-import type {BlueprintString, SignalID, UpgradeSourceSignal} from '../../../../parsing/types';
+import type {BlueprintString, SignalID, UpgradeSourceSignal, UpgradeTargetSignal} from '../../../../parsing/types';
 import type {UpgradeDirection} from '../../../../transform/upgradePlanner';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
 import {FactorioButton, FactorioButtonKind} from '../../../ui/FactorioUi';
-import {Textarea} from '../../../ui/Textarea';
 import {BookWideReplacements, type BookWideReplacementsProps} from './BookWideReplacements';
 import {BlueprintDescriptionEditor} from './BlueprintDescriptionEditor';
 import {BlueprintLabelIcons} from './BlueprintLabelIcons';
 import {BlueprintTitleEditor} from './BlueprintTitleEditor';
 import {SignalPickerDialog} from './SignalPickerDialog';
 import {UpgradeMappingGrid, type PositionedUpgradeMapping} from './UpgradeMappingGrid';
+import {UpgradeDestinationExtras, UpgradeEntitySettingsExtras} from './UpgradeDestinationExtras';
+import {UpgradeSourceExtras} from './UpgradeSourceExtras';
 import {
 	chatIconPickerOptions,
+	entityFilterAllowed,
+	entityModuleSlotCount,
 	isUpgradeTargetSelectionAllowed,
+	moduleEntityFilterOptions,
+	moduleLimitAllowed,
+	moduleSlotOptions,
 	signalIdentity,
 	signalPrototypeIdentity,
 	signalTitle,
@@ -34,7 +41,7 @@ import {useDialogFocus} from './useDialogFocus';
  *   definition. Picker confirmations, endpoint clearing, and pair reordering
  *   update that draft; they do not transform a blueprint.
  * - `UpgradeMappingGrid` owns ordered placement, `UpgradeMappingRow` owns a
- *   populated pair, `AddUpgradeMappingRow` owns empty or incomplete pairs,
+ *   populated or incomplete pair, `AddUpgradeMappingRow` owns empty pairs,
  *   `upgradePlannerSignals` owns endpoint eligibility and compatibility, and
  *   `useUpgradePlannerDraft` is the sole authoritative draft and commit boundary.
  *   This dialog only composes those parts and opens their pickers.
@@ -65,11 +72,32 @@ interface UpgradePlannerMappings {
 	onPlannerLoad: (choice: UpgradePlannerChoice) => void;
 	onPlannerInputChange: (value: string) => void;
 	onSourceChange: (mappingId: string | undefined, slotIndex: number, source: UpgradeSourceSignal) => void;
-	onTargetChange: (mappingId: string | undefined, slotIndex: number, target: SignalID) => void;
+	onTargetChange: (mappingId: string | undefined, slotIndex: number, target: UpgradeTargetSignal) => void;
 	plannerInput: string;
+	plannerInputError: string | undefined;
 	rootBlueprint: BlueprintString;
 	source: string;
 	sourceLabel: string;
+	sourceOptions: SignalID[];
+}
+
+interface UpgradePlannerLoaderProps {
+	error: string | undefined;
+	onPlannerLoad: (choice: UpgradePlannerChoice) => void;
+	onPlannerInputChange: (value: string) => void;
+	plannerInput: string;
+	plannerInputError: string | undefined;
+	rootBlueprint: BlueprintString;
+	source: string;
+	sourceLabel: string;
+}
+
+interface UpgradeMappingsEditorProps {
+	mappings: PositionedUpgradeMapping[];
+	onClearEndpoint: (mappingId: string, endpoint: 'from' | 'to') => void;
+	onMove: (mappingId: string, targetSlotIndex: number) => void;
+	onSourceChange: (mappingId: string | undefined, slotIndex: number, source: UpgradeSourceSignal) => void;
+	onTargetChange: (mappingId: string | undefined, slotIndex: number, target: UpgradeTargetSignal) => void;
 	sourceOptions: SignalID[];
 }
 
@@ -83,6 +111,7 @@ interface UpgradePlannerDialogProps {
 	onScopeChange: (scope: 'selection' | 'root') => void;
 	replacements: BookWideReplacementsProps;
 	recordMetadata: UpgradePlannerRecordMetadataProps;
+	recordTools: UpgradePlannerRecordToolsProps;
 	saveDisabled: boolean;
 	savePrompt: UpgradePlannerSavePromptProps;
 	savedRecordName?: string;
@@ -101,6 +130,13 @@ interface UpgradePlannerRecordMetadataProps {
 	onLabelChange: (label: string) => void;
 }
 
+interface UpgradePlannerRecordToolsProps {
+	deleteKind: 'local' | 'saved';
+	onCopy: () => Promise<boolean>;
+	onDelete: () => Promise<void>;
+	onExport: () => void;
+}
+
 interface UpgradePlannerSavePromptProps {
 	existingRecordName?: string;
 	label: string;
@@ -110,6 +146,211 @@ interface UpgradePlannerSavePromptProps {
 	onUpdateExisting?: () => void;
 	open: boolean;
 	pending: boolean;
+}
+
+interface UpgradePlannerMetadataEditorProps {
+	description: string;
+	icons: readonly (SignalID | undefined)[];
+	label: string;
+	onClose: () => void;
+	onConfirm: (metadata: {description: string; icons: Array<SignalID | undefined>; label: string}) => void;
+	signalOptions: readonly SignalID[];
+}
+
+function UpgradePlannerMetadataEditor({
+	description,
+	icons,
+	label,
+	onClose,
+	onConfirm,
+	signalOptions,
+}: UpgradePlannerMetadataEditorProps) {
+	const headingId = useId();
+	const nameId = useId();
+	const iconHeadingId = useId();
+	const [draftDescription, setDraftDescription] = useState(description);
+	const [draftIcons, setDraftIcons] = useState<Array<SignalID | undefined>>(() => [...icons]);
+	const [draftLabel, setDraftLabel] = useState(label);
+	const [pickerIndex, setPickerIndex] = useState<number>();
+	const pickerOptions = chatIconPickerOptions([
+		...signalOptions,
+		...draftIcons.filter((icon): icon is SignalID => icon !== undefined),
+	]);
+	const dialogReference = useDialogFocus<HTMLElement>({
+		initialFocusSelector: '.upgrade-planner-metadata__name',
+		onClose,
+	});
+
+	const confirm = () => {
+		onConfirm({description: draftDescription, icons: draftIcons, label: draftLabel});
+	};
+
+	return (
+		<div className="transform-dialog-backdrop upgrade-planner-metadata__backdrop">
+			<section
+				ref={dialogReference}
+				className="factorio-frame factorio-frame--shallow transform-dialog upgrade-planner-metadata"
+				role="dialog"
+				aria-modal="true"
+				aria-labelledby={headingId}
+				aria-hidden={pickerIndex === undefined ? undefined : true}
+				inert={pickerIndex !== undefined}
+			>
+				<header className="factorio-title-bar transform-dialog__header upgrade-planner-metadata__header">
+					<h3 id={headingId}>Edit upgrade planner</h3>
+					<FactorioButton
+						kind={FactorioButtonKind.Close}
+						aria-label="Close upgrade planner preview editor"
+						title="Close"
+						onClick={onClose}
+					/>
+				</header>
+				<div
+					className="factorio-frame factorio-frame--shallow upgrade-planner-metadata__record"
+					data-factorio-source="BlueprintRecordPreviewEdit"
+					data-factorio-style="entity_frame"
+				>
+					<label className="upgrade-planner-metadata__label" htmlFor={nameId}>
+						Name
+					</label>
+					<input
+						id={nameId}
+						className="upgrade-planner-metadata__name"
+						type="text"
+						maxLength={200}
+						value={draftLabel}
+						data-factorio-style="textbox"
+						onChange={(event) => {
+							setDraftLabel(event.currentTarget.value);
+						}}
+						onKeyDown={(event) => {
+							if (event.key === 'Enter') {
+								event.preventDefault();
+								confirm();
+							}
+						}}
+					/>
+					<BlueprintDescriptionEditor
+						accessibleLabel="Planner description"
+						description={draftDescription}
+						onDescriptionChange={setDraftDescription}
+						variant="record-preview"
+					/>
+					<h4
+						id={iconHeadingId}
+						className="upgrade-planner-metadata__label upgrade-planner-metadata__icon-label"
+					>
+						Icon <span title="Choose up to four preview icons.">ⓘ</span>
+					</h4>
+					<div className="upgrade-planner-metadata__icons" aria-labelledby={iconHeadingId}>
+						<BlueprintLabelIcons
+							icons={draftIcons}
+							itemName="upgrade-planner"
+							labelPrefix="preview icon"
+							onChange={setDraftIcons}
+							onChoose={setPickerIndex}
+							signalTitle={signalTitle}
+						/>
+					</div>
+				</div>
+				<footer className="upgrade-planner-metadata__footer">
+					<span className="upgrade-planner-metadata__drag-space" aria-hidden="true" />
+					<FactorioButton
+						kind={FactorioButtonKind.Confirm}
+						className="transform-picker__confirm"
+						aria-label="Confirm planner metadata"
+						title="Confirm"
+						onClick={confirm}
+					>
+						<span aria-hidden="true">✓</span>
+					</FactorioButton>
+				</footer>
+			</section>
+			{pickerIndex === undefined ? null : (
+				<SignalPickerDialog
+					confirmationMode="required"
+					initialSignal={draftIcons[pickerIndex]}
+					title={`Choose planner preview icon ${(pickerIndex + 1).toString()}`}
+					options={pickerOptions}
+					onClose={() => {
+						setPickerIndex(undefined);
+					}}
+					onChoose={(signal) => {
+						setDraftIcons((current) => {
+							const next = [...current];
+							next[pickerIndex] = signal;
+							return next;
+						});
+						setPickerIndex(undefined);
+					}}
+				/>
+			)}
+		</div>
+	);
+}
+
+function UpgradePlannerDeleteConfirmation({
+	deleteKind,
+	onCancel,
+	onDelete,
+}: Pick<UpgradePlannerRecordToolsProps, 'deleteKind' | 'onDelete'> & {onCancel: () => void}) {
+	const headingId = useId();
+	const [pending, setPending] = useState(false);
+	const [error, setError] = useState<string>();
+	const dialogReference = useDialogFocus<HTMLElement>({
+		initialFocusSelector: '[data-dialog-initial-focus="true"]',
+		onClose: () => {
+			if (!pending) {
+				onCancel();
+			}
+		},
+	});
+	const saved = deleteKind === 'saved';
+
+	return (
+		<div className="transform-dialog-backdrop transform-dialog-backdrop--confirmation">
+			<section
+				ref={dialogReference}
+				className="factorio-frame factorio-frame--shallow transform-dialog transform-dialog--confirmation"
+				role="alertdialog"
+				aria-modal="true"
+				aria-labelledby={headingId}
+			>
+				<header className="factorio-title-bar transform-dialog__header">
+					<h3 id={headingId}>{saved ? 'Delete saved planner?' : 'Discard local planner?'}</h3>
+				</header>
+				<p>
+					{saved
+						? 'This removes the planner from the Blueprint Library. The loaded blueprint is not changed.'
+						: 'This planner has no Blueprint Library record. Its local draft will be discarded.'}
+				</p>
+				{error === undefined ? null : (
+					<p className="alert alert-error" role="alert">
+						{error}
+					</p>
+				)}
+				<div className="transform-dialog__actions">
+					<FactorioButton data-dialog-initial-focus="true" disabled={pending} onClick={onCancel}>
+						Keep planner
+					</FactorioButton>
+					<FactorioButton
+						kind={FactorioButtonKind.Delete}
+						disabled={pending}
+						onClick={() => {
+							setPending(true);
+							setError(undefined);
+							void onDelete().catch((reason: unknown) => {
+								setPending(false);
+								setError(reason instanceof Error ? reason.message : 'Unable to delete planner.');
+							});
+						}}
+					>
+						{saved ? 'Delete from Library' : 'Discard local draft'}
+					</FactorioButton>
+				</div>
+			</section>
+		</div>
+	);
 }
 
 function UpgradePlannerSavePrompt({
@@ -190,25 +431,136 @@ function UpgradePlannerSavePrompt({
 	);
 }
 
-function UpgradeMappingsEditor({
+function UpgradePlannerLoader({
 	error,
-	mappings,
-	onClearEndpoint,
-	onMove,
 	onPlannerLoad,
 	onPlannerInputChange,
-	onSourceChange,
-	onTargetChange,
 	plannerInput,
+	plannerInputError,
 	rootBlueprint,
 	source,
 	sourceLabel,
-	sourceOptions,
-}: UpgradePlannerMappings) {
+}: UpgradePlannerLoaderProps) {
 	const plannerSelectorId = useId();
+	const plannerSourceId = useId();
+	const pasteHeadingId = useId();
+	const pasteInputId = useId();
+	const pasteStatusId = useId();
 	const [plannerSelectorOpen, setPlannerSelectorOpen] = useState(false);
+	const pasteState = plannerInput === '' ? 'empty' : plannerInputError === undefined ? 'valid' : 'invalid';
+	const pasteStatus =
+		pasteState === 'empty'
+			? 'Paste an encoded upgrade planner string or its JSON representation.'
+			: pasteState === 'valid'
+				? 'Planner loaded into the editable mapping grid.'
+				: plannerInputError;
+
+	return (
+		<>
+			<div className="upgrade-planner-loader" data-website-extension="planner-library-loader">
+				<div className="panel-hole-inner upgrade-planner-editor__source">
+					<div
+						id={plannerSourceId}
+						className="upgrade-planner-editor__source-identity"
+						aria-label={`Draft source: ${sourceLabel}`}
+					>
+						<span>Draft source</span>
+						<span className="upgrade-planner-editor__source-value">
+							<FactorioIcon decorative icon={{type: 'item', name: 'upgrade-planner'}} size="small" />
+							<strong title={sourceLabel}>{sourceLabel}</strong>
+						</span>
+					</div>
+					<FactorioButton
+						className="upgrade-planner-editor__source-button"
+						aria-controls={plannerSelectorId}
+						aria-describedby={plannerSourceId}
+						aria-expanded={plannerSelectorOpen}
+						aria-haspopup="dialog"
+						aria-label="Load planner to replace draft"
+						data-website-action="replace-planner-draft"
+						title="Choose a planner to replace this editable draft"
+						onClick={() => {
+							setPlannerSelectorOpen(true);
+						}}
+					>
+						Load planner…
+					</FactorioButton>
+				</div>
+				{source === 'pasted' ? (
+					<section
+						className="panel-hole-inner upgrade-planner-editor__paste"
+						data-validation-state={pasteState}
+						data-website-extension="planner-paste-import"
+						aria-labelledby={pasteHeadingId}
+					>
+						<header className="upgrade-planner-editor__paste-header">
+							<span className="upgrade-planner-editor__paste-extension">Website extension</span>
+							<h5 id={pasteHeadingId}>Paste planner definition</h5>
+						</header>
+						<label className="upgrade-planner-editor__paste-label" htmlFor={pasteInputId}>
+							Planner string or JSON
+						</label>
+						<textarea
+							id={pasteInputId}
+							value={plannerInput}
+							aria-describedby={pasteStatusId}
+							aria-invalid={pasteState === 'invalid' || undefined}
+							data-factorio-style="textbox"
+							placeholder="Paste an upgrade planner string or JSON"
+							rows={3}
+							onChange={(event) => {
+								onPlannerInputChange(event.currentTarget.value);
+							}}
+						/>
+						<p
+							id={pasteStatusId}
+							className="upgrade-planner-editor__paste-status"
+							aria-live={pasteState === 'invalid' ? undefined : 'polite'}
+							role={pasteState === 'invalid' ? 'alert' : undefined}
+						>
+							{pasteStatus}
+						</p>
+					</section>
+				) : null}
+				{error === undefined ? null : (
+					<p className="panel alert alert-error upgrade-planner-editor__error" role="alert">
+						{error}
+					</p>
+				)}
+			</div>
+			{plannerSelectorOpen ? (
+				<UpgradePlannerSelectorDialog
+					dialogId={plannerSelectorId}
+					includeEditingChoices
+					rootBlueprint={rootBlueprint}
+					selectedSource={source}
+					onClose={() => {
+						setPlannerSelectorOpen(false);
+					}}
+					onChoose={(choice) => {
+						onPlannerLoad(choice);
+					}}
+				/>
+			) : null}
+		</>
+	);
+}
+
+function UpgradeMappingsEditor({
+	mappings,
+	onClearEndpoint,
+	onMove,
+	onSourceChange,
+	onTargetChange,
+	sourceOptions,
+}: UpgradeMappingsEditorProps) {
 	const [sourcePicker, setSourcePicker] = useState<{mappingId?: string; slotIndex: number}>();
 	const [targetPicker, setTargetPicker] = useState<{mappingId?: string; slotIndex: number}>();
+	const [pendingModuleLimit, setPendingModuleLimit] = useState<number>();
+	const [pendingEntityFilter, setPendingEntityFilter] = useState<SignalID>();
+	const [choosingEntityFilter, setChoosingEntityFilter] = useState(false);
+	const [pendingModuleSlots, setPendingModuleSlots] = useState<(SignalID | null)[]>();
+	const [choosingModuleSlotIndex, setChoosingModuleSlotIndex] = useState<number>();
 	const sourcePickerMapping = mappings.find((mapping) => mapping.mappingId === sourcePicker?.mappingId);
 	const targetPickerMapping = mappings.find((mapping) => mapping.mappingId === targetPicker?.mappingId);
 	const sourceSelectionAllowed = (sourceSignal: UpgradeSourceSignal): boolean => {
@@ -232,73 +584,25 @@ function UpgradeMappingsEditor({
 
 	return (
 		<>
-			<div className="upgrade-planner-editor">
-				<div className="panel-hole-inner upgrade-planner-editor__source">
-					<strong>Load planner</strong>
-					<button
-						type="button"
-						className="upgrade-planner-editor__source-button"
-						aria-controls={plannerSelectorId}
-						aria-expanded={plannerSelectorOpen}
-						aria-haspopup="dialog"
-						aria-label={`Load planner, currently ${sourceLabel}`}
-						onClick={() => {
-							setPlannerSelectorOpen(true);
-						}}
-					>
-						<FactorioIcon icon={{type: 'item', name: 'upgrade-planner'}} size="small" />
-						<span>{sourceLabel}</span>
-					</button>
-				</div>
-				{source === 'pasted' ? (
-					<div className="upgrade-planner-editor__paste">
-						<label className="upgrade-planner-editor__paste-label">
-							<span>Planner string or JSON</span>
-							<Textarea
-								value={plannerInput}
-								onChange={onPlannerInputChange}
-								placeholder="Paste an upgrade planner string or JSON"
-								rows={3}
-							/>
-						</label>
-					</div>
-				) : null}
-				{error === undefined ? null : (
-					<p className="panel alert alert-error upgrade-planner-editor__error" role="alert">
-						{error}
-					</p>
-				)}
-				<UpgradeMappingGrid
-					mappings={mappings}
-					onChooseSource={(mappingId, slotIndex) => {
-						setSourcePicker({mappingId, slotIndex});
-						setTargetPicker(undefined);
-					}}
-					onChooseTarget={(mappingId, slotIndex) => {
-						setTargetPicker({mappingId, slotIndex});
-						setSourcePicker(undefined);
-					}}
-					onClearEndpoint={onClearEndpoint}
-					onMove={onMove}
-				/>
-			</div>
-			{plannerSelectorOpen ? (
-				<UpgradePlannerSelectorDialog
-					dialogId={plannerSelectorId}
-					includeEditingChoices
-					rootBlueprint={rootBlueprint}
-					selectedSource={source}
-					onClose={() => {
-						setPlannerSelectorOpen(false);
-					}}
-					onChoose={(choice) => {
-						onPlannerLoad(choice);
-						setSourcePicker(undefined);
-						setTargetPicker(undefined);
-						setPlannerSelectorOpen(false);
-					}}
-				/>
-			) : null}
+			<UpgradeMappingGrid
+				mappings={mappings}
+				onChooseSource={(mappingId, slotIndex) => {
+					setSourcePicker({mappingId, slotIndex});
+					setPendingEntityFilter(
+						mappings.find((mapping) => mapping.mappingId === mappingId)?.from?.module_filter,
+					);
+					setTargetPicker(undefined);
+				}}
+				onChooseTarget={(mappingId, slotIndex) => {
+					setTargetPicker({mappingId, slotIndex});
+					setPendingModuleLimit(
+						mappings.find((mapping) => mapping.mappingId === mappingId)?.to?.module_limit,
+					);
+					setSourcePicker(undefined);
+				}}
+				onClearEndpoint={onClearEndpoint}
+				onMove={onMove}
+			/>
 			{targetPicker === undefined ? null : (
 				<SignalPickerDialog
 					confirmationMode="required"
@@ -308,6 +612,36 @@ function UpgradeMappingsEditor({
 					title="Select upgrade"
 					options={targetPickerOptions}
 					qualityMode="target"
+					extrasFrame={(pendingSignal) => {
+						if (pendingSignal === undefined) {
+							return null;
+						}
+						if (moduleLimitAllowed(pendingSignal)) {
+							return (
+								<UpgradeDestinationExtras
+									moduleLimit={pendingModuleLimit}
+									onModuleLimitChange={setPendingModuleLimit}
+								/>
+							);
+						}
+						const slotCount = entityModuleSlotCount(pendingSignal);
+						if (slotCount > 0) {
+							return (
+								<UpgradeEntitySettingsExtras
+									moduleSlots={pendingModuleSlots?.slice(0, slotCount)}
+									slotCount={slotCount}
+									onModuleSlotChoose={setChoosingModuleSlotIndex}
+									onModuleSlotClear={(index) => {
+										setPendingModuleSlots((slots) =>
+											slots?.map((slot, slotIndex) => (slotIndex === index ? null : slot)),
+										);
+									}}
+									onModuleSlotsChange={setPendingModuleSlots}
+								/>
+							);
+						}
+						return null;
+					}}
 					isSelectionAllowed={(target) =>
 						targetPickerMapping?.from === undefined ||
 						isUpgradeTargetSelectionAllowed(targetPickerMapping.from, target)
@@ -316,7 +650,24 @@ function UpgradeMappingsEditor({
 						setTargetPicker(undefined);
 					}}
 					onChoose={(target) => {
-						onTargetChange(targetPicker.mappingId, targetPicker.slotIndex, target);
+						const slotCount = entityModuleSlotCount(target);
+						const moduleSlots =
+							slotCount > 0 && pendingModuleSlots !== undefined
+								? pendingModuleSlots
+										.slice(0, slotCount)
+										.concat(
+											Array.from(
+												{length: Math.max(0, slotCount - pendingModuleSlots.length)},
+												() => null,
+											),
+										)
+										.map((slot) => slot ?? {})
+								: undefined;
+						onTargetChange(targetPicker.mappingId, targetPicker.slotIndex, {
+							...target,
+							module_limit: moduleLimitAllowed(target) ? pendingModuleLimit : undefined,
+							module_slots: moduleSlots,
+						});
 						setTargetPicker(undefined);
 					}}
 				/>
@@ -329,16 +680,64 @@ function UpgradeMappingsEditor({
 					title="Set the filter"
 					options={sourcePickerOptions}
 					qualityMode="source"
+					extrasFrame={(pendingSignal) =>
+						pendingSignal !== undefined && entityFilterAllowed(pendingSignal) ? (
+							<UpgradeSourceExtras
+								entityFilter={pendingEntityFilter}
+								onChooseEntityFilter={() => {
+									setChoosingEntityFilter(true);
+								}}
+								onClearEntityFilter={() => {
+									setPendingEntityFilter(undefined);
+								}}
+							/>
+						) : null
+					}
 					isSelectionAllowed={sourceSelectionAllowed}
 					onClose={() => {
 						setSourcePicker(undefined);
 					}}
 					onChoose={(sourceSignal) => {
-						onSourceChange(sourcePicker.mappingId, sourcePicker.slotIndex, sourceSignal);
+						onSourceChange(sourcePicker.mappingId, sourcePicker.slotIndex, {
+							...sourceSignal,
+							module_filter: entityFilterAllowed(sourceSignal) ? pendingEntityFilter : undefined,
+						});
 						setSourcePicker(undefined);
 					}}
 				/>
 			)}
+			{choosingModuleSlotIndex === undefined ? null : (
+				<SignalPickerDialog
+					confirmationMode="immediate"
+					initialSignal={pendingModuleSlots?.[choosingModuleSlotIndex] ?? undefined}
+					title="Choose module"
+					options={moduleSlotOptions()}
+					onClose={() => {
+						setChoosingModuleSlotIndex(undefined);
+					}}
+					onChoose={(module) => {
+						setPendingModuleSlots((slots) =>
+							slots?.map((slot, slotIndex) => (slotIndex === choosingModuleSlotIndex ? module : slot)),
+						);
+						setChoosingModuleSlotIndex(undefined);
+					}}
+				/>
+			)}
+			{choosingEntityFilter ? (
+				<SignalPickerDialog
+					confirmationMode="immediate"
+					initialSignal={pendingEntityFilter}
+					title="Choose entity filter"
+					options={moduleEntityFilterOptions()}
+					onClose={() => {
+						setChoosingEntityFilter(false);
+					}}
+					onChoose={(entityFilter) => {
+						setPendingEntityFilter(entityFilter);
+						setChoosingEntityFilter(false);
+					}}
+				/>
+			) : null}
 		</>
 	);
 }
@@ -353,6 +752,7 @@ export function UpgradePlannerDialog({
 	onScopeChange,
 	replacements,
 	recordMetadata,
+	recordTools,
 	saveDisabled,
 	savePrompt,
 	savedRecordName,
@@ -362,13 +762,12 @@ export function UpgradePlannerDialog({
 	selectionScopeLabel,
 }: UpgradePlannerDialogProps) {
 	const dialogHeadingId = useId();
-	const configurationHeadingId = useId();
-	const recordHeadingId = useId();
-	const [previewIconPickerIndex, setPreviewIconPickerIndex] = useState<number>();
-	const previewIconOptions = chatIconPickerOptions([
-		...mappings.sourceOptions,
-		...recordMetadata.icons.filter((icon): icon is SignalID => icon !== undefined),
-	]);
+	const applicationHeadingId = useId();
+	const applicationScopeName = useId();
+	const [metadataEditorOpen, setMetadataEditorOpen] = useState(false);
+	const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
+	const [copyStatus, setCopyStatus] = useState<string>();
+	const childDialogOpen = savePrompt.open || metadataEditorOpen || deleteConfirmationOpen;
 	const dialogReference = useDialogFocus<HTMLElement>({
 		initialFocusSelector: '.upgrade-planner-dialog__scroll-region',
 		onClose,
@@ -382,123 +781,212 @@ export function UpgradePlannerDialog({
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby={dialogHeadingId}
-				aria-hidden={savePrompt.open || undefined}
-				inert={savePrompt.open}
+				aria-hidden={childDialogOpen || undefined}
+				inert={childDialogOpen}
 			>
-				<header className="factorio-title-bar transform-dialog__header transform-workbench__header">
-					<div className="transform-workbench__title">
-						<FactorioIcon icon={{type: 'item', name: 'upgrade-planner'}} size="large" />
-						<div>
-							<h3 id={dialogHeadingId}>Upgrade Planner</h3>
-							<span>{breadcrumb}</span>
-						</div>
-					</div>
-					<div
-						className="transform-workbench__status"
-						aria-label={`${matchCount.toString()} ${matchCount === 1 ? 'match' : 'matches'}`}
-					>
-						<strong>{matchCount}</strong>
-						<span>{matchCount === 1 ? 'match' : 'matches'}</span>
+				<header
+					className="factorio-title-bar transform-dialog__header upgrade-planner-dialog__title-bar"
+					data-factorio-source="UpgradeItemGui::UpgradeItemGui"
+				>
+					<div className="upgrade-planner-dialog__identity">
+						<span
+							className="upgrade-planner-dialog__identity-icon"
+							data-website-extension="planner-identity-icon"
+						>
+							<FactorioIcon decorative icon={{type: 'item', name: 'upgrade-planner'}} size="small" />
+						</span>
+						<h3 id={dialogHeadingId}>Upgrade Planner</h3>
 					</div>
 					<FactorioButton
 						kind={FactorioButtonKind.Close}
 						className="transform-dialog__close"
 						aria-label="Close Upgrade Planner"
+						data-factorio-source="GameGuiWithControllerInventory::closeButton"
+						data-factorio-close-action="request-close"
 						title="Close Upgrade Planner"
 						onClick={() => {
 							onClose();
 						}}
 					/>
 				</header>
-
-				<div
-					className="factorio-scroll-frame transform-workbench__body upgrade-planner-dialog__scroll-region"
-					role="region"
-					aria-label="Upgrade Planner configuration"
-					tabIndex={0}
-				>
-					<div className="upgrade-planner-dialog__content transform-workflow">
-						<section
-							className="panel-hole upgrade-planner-dialog__record"
-							aria-labelledby={recordHeadingId}
-						>
-							<header className="factorio-title-bar upgrade-planner-dialog__panel-heading">
-								<h4 id={recordHeadingId}>Planner record</h4>
-								<span className="upgrade-planner-dialog__record-state">
-									{savedRecordName === undefined
-										? 'Not saved to Blueprint Library'
-										: `Saved record: ${savedRecordName}`}
-								</span>
-							</header>
-							<div className="panel-hole-inner blueprint-editor__title-row">
-								<BlueprintTitleEditor
-									editLabel="Edit planner name"
-									emptyLabel="Planner name required"
-									inputLabel="Planner name"
-									label={recordMetadata.label}
-									onLabelChange={recordMetadata.onLabelChange}
-								/>
-							</div>
-							<section
-								className="transform-workflow__section blueprint-editor__icons upgrade-planner-dialog__preview-icons"
-								aria-labelledby="upgrade-planner-preview-icons-heading"
-							>
-								<h4 id="upgrade-planner-preview-icons-heading">Preview icons</h4>
-								<div>
-									<BlueprintLabelIcons
-										icons={recordMetadata.icons}
-										itemName="upgrade-planner"
-										labelPrefix="preview icon"
-										onChange={recordMetadata.onIconsChange}
-										onChoose={setPreviewIconPickerIndex}
-										signalTitle={signalTitle}
-									/>
-								</div>
-								<small>
-									These icons identify the saved planner record; changing them does not apply the
-									planner.
-								</small>
-							</section>
-							<BlueprintDescriptionEditor
-								accessibleLabel="Planner description"
-								description={recordMetadata.description}
-								onDescriptionChange={recordMetadata.onDescriptionChange}
-							/>
-						</section>
-						<section
-							className="panel-hole upgrade-planner-dialog__configuration"
-							aria-labelledby={configurationHeadingId}
-						>
-							<header className="factorio-title-bar upgrade-planner-dialog__panel-heading">
-								<h4 id={configurationHeadingId}>Upgrade mappings</h4>
-							</header>
-							<div className="panel-hole-inner transform-workflow__scope">
-								<label>
-									<strong>Apply mappings to</strong>
-									<select
-										aria-label="Apply to"
-										value={scope}
-										onChange={(event) => {
-											onScopeChange(event.currentTarget.value === 'root' ? 'root' : 'selection');
-										}}
-									>
-										<option value="selection" disabled={selectionScopeDisabled}>
-											{selectionScopeLabel}
-										</option>
-										{canChooseRootScope || selectionScopeDisabled ? (
-											<option value="root">Entire root book</option>
-										) : null}
-									</select>
-								</label>
-							</div>
-							<UpgradeMappingsEditor {...mappings} />
-						</section>
-
-						<BookWideReplacements {...replacements} />
-					</div>
+				<div className="upgrade-planner-dialog__context-strip" data-website-extension="planner-context">
+					<nav className="upgrade-planner-dialog__context" aria-label="Upgrade planner blueprint context">
+						<span className="upgrade-planner-dialog__context-label">
+							{scope === 'root' ? 'Entire root book' : selectionScopeLabel}
+						</span>
+						<span aria-hidden="true">›</span>
+						<span className="upgrade-planner-dialog__breadcrumb" aria-current="page">
+							{breadcrumb}
+						</span>
+					</nav>
+					<span className="upgrade-planner-dialog__library-state" aria-label="Planner library status">
+						{savedRecordName === undefined
+							? 'Local draft · not in Blueprint Library'
+							: `Blueprint Library › ${savedRecordName}`}
+					</span>
 				</div>
 
-				<footer className="transform-workbench__footer transform-workbench__footer--actions">
+				<div className="upgrade-planner-dialog__body">
+					<section
+						className="factorio-frame factorio-frame--shallow upgrade-planner-dialog__editor-shell"
+						data-factorio-style="entity_frame"
+						aria-label="Upgrade planner editor"
+					>
+						<header
+							className="factorio-title-bar upgrade-planner-dialog__record-subheader"
+							data-factorio-style="subheader_frame"
+						>
+							<div className="blueprint-editor__title-row upgrade-planner-dialog__name-group">
+								<BlueprintTitleEditor
+									editLabel="Edit planner name"
+									emptyLabel="Upgrade planner"
+									label={recordMetadata.label}
+									onLabelChange={recordMetadata.onLabelChange}
+									onEdit={() => {
+										setMetadataEditorOpen(true);
+									}}
+								/>
+							</div>
+							<div
+								className="upgrade-planner-dialog__record-tools"
+								role="toolbar"
+								aria-label="Planner record tools"
+							>
+								<FactorioButton
+									className="upgrade-planner-dialog__record-tool"
+									aria-label="Copy planner string"
+									data-factorio-source="UpgradeItemFrame::copy"
+									title="Copy this"
+									onClick={() => {
+										void recordTools.onCopy().then((copied) => {
+											setCopyStatus(
+												copied ? 'Planner string copied.' : 'Unable to copy planner string.',
+											);
+										});
+									}}
+								>
+									<Copy aria-hidden="true" />
+								</FactorioButton>
+								<FactorioButton
+									className="upgrade-planner-dialog__record-tool"
+									aria-label="Export planner string"
+									data-factorio-source="UpgradeItemFrame::exportSlot"
+									title="Export planner"
+									onClick={recordTools.onExport}
+								>
+									<ExternalLink aria-hidden="true" />
+								</FactorioButton>
+								<FactorioButton
+									kind={FactorioButtonKind.Delete}
+									className="upgrade-planner-dialog__record-tool"
+									aria-label={
+										recordTools.deleteKind === 'saved'
+											? 'Delete planner from Blueprint Library'
+											: 'Discard local planner'
+									}
+									data-factorio-source="UpgradeItemFrame::destroySlot"
+									title={
+										recordTools.deleteKind === 'saved'
+											? 'Delete saved planner'
+											: 'Discard local planner'
+									}
+									onClick={() => {
+										setDeleteConfirmationOpen(true);
+									}}
+								/>
+							</div>
+						</header>
+						{copyStatus === undefined ? null : (
+							<p className="transform-visually-hidden" role="status">
+								{copyStatus}
+							</p>
+						)}
+						{recordMetadata.description === '' ? null : (
+							<p className="upgrade-planner-dialog__record-description">{recordMetadata.description}</p>
+						)}
+						<div
+							className="factorio-scroll-frame upgrade-planner-dialog__scroll-region"
+							data-factorio-style="mappers_scroll_pane"
+							role="region"
+							aria-label="Upgrade mappings"
+							tabIndex={0}
+						>
+							<UpgradeMappingsEditor {...mappings} />
+						</div>
+						<div
+							className="upgrade-planner-dialog__filler"
+							data-factorio-style="entity_frame_filler"
+							aria-hidden="true"
+						/>
+					</section>
+
+					<section
+						className="panel-hole upgrade-planner-dialog__application"
+						data-website-extension="planner-application"
+						aria-labelledby={applicationHeadingId}
+					>
+						<header className="factorio-title-bar upgrade-planner-dialog__panel-heading">
+							<h4 id={applicationHeadingId}>Website application</h4>
+							<span aria-label={`${matchCount.toString()} ${matchCount === 1 ? 'match' : 'matches'}`}>
+								{`${matchCount.toString()} ${matchCount === 1 ? 'match' : 'matches'}`}
+							</span>
+						</header>
+						<div className="upgrade-planner-dialog__application-controls">
+							<fieldset
+								className="panel-hole-inner upgrade-planner-dialog__application-scope"
+								role="radiogroup"
+								data-website-extension="planner-application-scope"
+							>
+								<legend>Apply mappings to</legend>
+								<div className="upgrade-planner-dialog__scope-options">
+									<label data-selected={scope === 'selection' || undefined}>
+										<input
+											type="radio"
+											checked={scope === 'selection'}
+											data-factorio-style="radiobutton"
+											disabled={selectionScopeDisabled}
+											name={applicationScopeName}
+											value="selection"
+											onChange={() => {
+												onScopeChange('selection');
+											}}
+										/>
+										<span className="upgrade-planner-dialog__scope-copy">
+											<strong>Current selection</strong>
+											<small>{selectionScopeLabel}</small>
+										</span>
+									</label>
+									{canChooseRootScope || selectionScopeDisabled ? (
+										<label data-selected={scope === 'root' || undefined}>
+											<input
+												type="radio"
+												checked={scope === 'root'}
+												data-factorio-style="radiobutton"
+												name={applicationScopeName}
+												value="root"
+												onChange={() => {
+													onScopeChange('root');
+												}}
+											/>
+											<span className="upgrade-planner-dialog__scope-copy">
+												<strong>Entire book</strong>
+												<small>Every blueprint in the loaded root book</small>
+											</span>
+										</label>
+									) : null}
+								</div>
+							</fieldset>
+							<UpgradePlannerLoader {...mappings} />
+						</div>
+					</section>
+
+					<BookWideReplacements {...replacements} />
+				</div>
+
+				<footer
+					className="transform-workbench__footer transform-workbench__footer--actions upgrade-planner-dialog__website-actions"
+					data-website-extension="planner-actions"
+				>
 					<FactorioButton
 						className="transform-button"
 						onClick={() => {
@@ -520,7 +1008,7 @@ export function UpgradePlannerDialog({
 								savePrompt.onOpen();
 							}}
 						>
-							Save Planner
+							Save to Library
 						</FactorioButton>
 						<FactorioButton
 							className="transform-button"
@@ -544,23 +1032,32 @@ export function UpgradePlannerDialog({
 				</footer>
 			</section>
 			{savePrompt.open ? <UpgradePlannerSavePrompt {...savePrompt} /> : null}
-			{previewIconPickerIndex === undefined ? null : (
-				<SignalPickerDialog
-					confirmationMode="required"
-					initialSignal={recordMetadata.icons[previewIconPickerIndex]}
-					title={`Choose planner preview icon ${(previewIconPickerIndex + 1).toString()}`}
-					options={previewIconOptions}
+			{metadataEditorOpen ? (
+				<UpgradePlannerMetadataEditor
+					description={recordMetadata.description}
+					icons={recordMetadata.icons}
+					label={recordMetadata.label}
+					signalOptions={mappings.sourceOptions}
 					onClose={() => {
-						setPreviewIconPickerIndex(undefined);
+						setMetadataEditorOpen(false);
 					}}
-					onChoose={(signal) => {
-						const next = [...recordMetadata.icons];
-						next[previewIconPickerIndex] = signal;
-						recordMetadata.onIconsChange(next);
-						setPreviewIconPickerIndex(undefined);
+					onConfirm={(metadata) => {
+						recordMetadata.onLabelChange(metadata.label);
+						recordMetadata.onDescriptionChange(metadata.description);
+						recordMetadata.onIconsChange(metadata.icons);
+						setMetadataEditorOpen(false);
 					}}
 				/>
-			)}
+			) : null}
+			{deleteConfirmationOpen ? (
+				<UpgradePlannerDeleteConfirmation
+					deleteKind={recordTools.deleteKind}
+					onCancel={() => {
+						setDeleteConfirmationOpen(false);
+					}}
+					onDelete={recordTools.onDelete}
+				/>
+			) : null}
 		</div>
 	);
 }

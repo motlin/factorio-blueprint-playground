@@ -55,13 +55,13 @@ test('renders the item-backed composite and four independently addressable signa
 
 	const preview = screen.getByRole('img', {name: 'Blueprint book icon preview'});
 	const previewImages = within(preview).getAllByTestId('icon');
-	const slots = within(screen.getByRole('group', {name: 'Blueprint label icon slots'})).getAllByRole('button');
+	const slots = within(screen.getByRole('group', {name: 'Blueprint book preview icon slots'})).getAllByRole('button');
 	expect({
 		baseIcon: previewImages[0]?.getAttribute('src'),
 		factorioSources: [
 			preview.parentElement?.getAttribute('data-factorio-source'),
 			preview.getAttribute('data-factorio-source'),
-			screen.getByRole('group', {name: 'Blueprint label icon slots'}).getAttribute('data-factorio-source'),
+			screen.getByRole('group', {name: 'Blueprint book preview icon slots'}).getAttribute('data-factorio-source'),
 		],
 		previewCount: preview.getAttribute('data-preview-icon-count'),
 		previewIcons: previewImages.slice(1).map((image) => image.getAttribute('src')),

@@ -250,7 +250,9 @@
 	"qualityComparators": [">", "<", "=", "≥", "≤", "≠"],
 	"labels": {
 		"anyQuality": "Any quality",
-		"qualitySelectionTooltip": "Quality: __1__"
+		"qualitySelectionTooltip": "Quality: __1__",
+		"upgradeFrom": "From",
+		"upgradeTo": "To"
 	},
 	"signals": {
 		"typeOrder": ["item", "entity", "fluid", "virtual", "recipe", "space-location", "quality"],
@@ -1685,6 +1687,10 @@
 			}
 		]
 	},
+	"upgradePlanner": {
+		"mappingsPerRow": 4,
+		"minimumMappingRows": 4
+	},
 	"utilityConstants": {
 		"blueprintBigSlotsPerRow": 6,
 		"blueprintSmallSlotsPerRow": 10,
@@ -1705,12 +1711,18 @@
 		"labelUnderWidgetBottomMargin": 4,
 		"labelUnderWidgetHeight": 40,
 		"labelUnderWidgetTopMargin": -4,
+		"mappingPairWidth": 80,
+		"mappingTableHorizontalSpacing": [27, 26, 27],
+		"mappingTableVerticalSpacing": 0,
 		"signalsTableColumnCount": 10,
 		"signalsTableMinimumWidth": 400,
+		"slotColumnHeaderWidth": 40,
 		"bindings": {
 			"slotButton": "slot_button",
 			"filterSlotTable": "filter_slot_table",
-			"deepSlotsScrollPane": "deep_slots_scroll_pane"
+			"deepSlotsScrollPane": "deep_slots_scroll_pane",
+			"mappingScrollPane": "mappers_scroll_pane",
+			"mappingTable": "mappers_table"
 		}
 	}
 }

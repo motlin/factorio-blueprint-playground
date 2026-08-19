@@ -4,7 +4,7 @@ import {useState} from 'react';
 import {describe, expect, test} from 'vite-plus/test';
 
 import {BlueprintLibrary, type BlueprintLibraryLocation} from '../../src/components/library/BlueprintLibrary';
-import {LIBRARY_ROOT_ID, type LibraryRecord} from '../../src/storage/db';
+import {LIBRARY_ROOT_ID, type ImportHistoryRecord, type LibraryRecord} from '../../src/storage/db';
 
 const libraryRecords: LibraryRecord[] = [
 	{
@@ -58,6 +58,73 @@ function StatefulLibrary({initialLocation}: {initialLocation: BlueprintLibraryLo
 }
 
 describe('BlueprintLibrary', () => {
+	test('lists compact chronological history entries with a full-history link', () => {
+		const historyRecords: ImportHistoryRecord[] = [
+			{
+				id: 'import-1',
+				importedOn: Date.UTC(2026, 6, 22, 12, 0, 0),
+				metadata: {
+					sha: 'sha-1',
+					createdOn: 0,
+					lastUpdatedOn: 0,
+					data: 'imported-belts',
+					selection: '',
+					fetchMethod: 'data',
+				},
+				gameData: {type: 'blueprint', label: 'Imported belts', icons: []},
+			},
+			{
+				id: 'import-2',
+				importedOn: Date.UTC(2026, 6, 23, 8, 30, 0),
+				metadata: {
+					sha: 'sha-2',
+					createdOn: 0,
+					lastUpdatedOn: 0,
+					data: 'imported-book',
+					selection: '',
+					fetchMethod: 'data',
+				},
+				gameData: {type: 'blueprint_book', icons: []},
+			},
+		];
+		render(
+			<BlueprintLibrary
+				location={{shelf: 'history'}}
+				libraryRecords={libraryRecords}
+				historyRecords={historyRecords}
+				onLocationChange={() => undefined}
+			/>,
+		);
+
+		const panel = screen.getByRole('tabpanel', {name: 'Import history'});
+		expect({
+			entries: [...panel.querySelectorAll('li')].map((entry) => ({
+				label: entry.querySelector('strong')?.textContent,
+				time: entry.querySelector('time')?.getAttribute('datetime'),
+				type: entry.querySelector('span')?.textContent,
+			})),
+			link: within(panel).getByRole('link', {name: 'Open full history tools'}).getAttribute('href'),
+			scopeNote: within(panel).getByText(
+				'Chronological imports are separate from items explicitly saved to your Library.',
+			).textContent,
+		}).toStrictEqual({
+			entries: [
+				{
+					label: 'Imported belts',
+					time: '2026-07-22T12:00:00.000Z',
+					type: 'Blueprint',
+				},
+				{
+					label: 'Untitled blueprint book',
+					time: '2026-07-23T08:30:00.000Z',
+					type: 'Blueprint book',
+				},
+			],
+			link: '/history',
+			scopeNote: 'Chronological imports are separate from items explicitly saved to your Library.',
+		});
+	});
+
 	test('maps website shelves onto Factorio tabs with source-style selection and roving focus', () => {
 		render(<StatefulLibrary initialLocation={{shelf: 'library'}} />);
 

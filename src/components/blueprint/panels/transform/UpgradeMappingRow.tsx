@@ -1,11 +1,14 @@
 import {useId} from 'react';
 
-import type {SignalID, UpgradeSourceSignal} from '../../../../parsing/types';
+import type {SignalID, UpgradeSourceSignal, UpgradeTargetSignal} from '../../../../parsing/types';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
-import {FactorioInventorySlot} from '../../../ui/FactorioUi';
+import {FactorioInventorySlot, FactorioQualityBadge} from '../../../ui/FactorioUi';
+import {anyQualityIconSource} from './UpgradeQualityControls';
 import {signalName, signalTitle} from './upgradePlannerSignals';
 
 interface SignalSlotProps {
+	condition?: boolean;
+	cornerCount?: number;
 	descriptionId?: string;
 	label: string;
 	onChoose?: () => void;
@@ -13,8 +16,35 @@ interface SignalSlotProps {
 	signal?: UpgradeSourceSignal;
 }
 
+/**
+ * QualityCondition::draw: a configured From slot renders its quality condition
+ * at the bottom-left corner — the empty condition renders the any-quality
+ * sprite, `= normal` renders nothing, and every other condition renders the
+ * comparator (when not `=`) followed by the quality icon shifted right of it.
+ */
+function conditionOverlay(signal: UpgradeSourceSignal) {
+	if (signal.quality === undefined) {
+		return (
+			<span className="transform-signal-slot__condition" aria-hidden="true">
+				<img alt="" draggable={false} src={anyQualityIconSource} />
+			</span>
+		);
+	}
+	const comparator = signal.comparator ?? '=';
+	if (comparator === '=' && signal.quality === 'normal') {
+		return null;
+	}
+	return (
+		<span className="transform-signal-slot__condition" aria-hidden="true">
+			{comparator === '=' ? null : <span className="transform-signal-slot__comparator">{comparator}</span>}
+			<FactorioQualityBadge aria-hidden="true" draggable={false} quality={signal.quality} />
+		</span>
+	);
+}
+
 interface UpgradeMappingRowProps {
 	count: number;
+	dragging?: boolean;
 	dropTarget?: boolean;
 	from?: UpgradeSourceSignal;
 	mappingId: string;
@@ -23,14 +53,22 @@ interface UpgradeMappingRowProps {
 	onClearSource: () => void;
 	onClearTarget: () => void;
 	slotIndex: number;
-	to?: SignalID;
+	to?: UpgradeTargetSignal;
 }
 
-export function SignalSlot({descriptionId, label, onChoose, onClear, signal}: SignalSlotProps) {
+export function SignalSlot({
+	condition = false,
+	cornerCount,
+	descriptionId,
+	label,
+	onChoose,
+	onClear,
+	signal,
+}: SignalSlotProps) {
 	return (
 		<FactorioInventorySlot
 			className={`transform-signal-slot${signal === undefined ? ' transform-signal-slot--empty' : ''}${
-				signal?.comparator === undefined ? '' : ' transform-signal-slot--condition'
+				condition && signal !== undefined ? ' transform-signal-slot--condition' : ''
 			}`}
 			aria-describedby={descriptionId}
 			aria-keyshortcuts={
@@ -40,7 +78,7 @@ export function SignalSlot({descriptionId, label, onChoose, onClear, signal}: Si
 			}
 			aria-label={label}
 			disabled={onChoose === undefined}
-			title={signal === undefined ? label : signalTitle(signal)}
+			title={signal === undefined ? undefined : signalTitle(signal)}
 			onClick={() => {
 				onChoose?.();
 			}}
@@ -58,10 +96,17 @@ export function SignalSlot({descriptionId, label, onChoose, onClear, signal}: Si
 				}
 			}}
 		>
-			{signal === undefined ? null : <FactorioIcon icon={signal} size="large" />}
-			{signal?.comparator === undefined ? null : (
-				<span className="transform-signal-slot__comparator" aria-hidden="true">
-					{signal.comparator}
+			{signal === undefined ? null : (
+				<FactorioIcon
+					decorative
+					icon={condition ? {...signal, quality: undefined, comparator: undefined} : signal}
+					size="large"
+				/>
+			)}
+			{condition && signal !== undefined ? conditionOverlay(signal) : null}
+			{cornerCount === undefined || cornerCount === 0 ? null : (
+				<span className="transform-signal-slot__count" aria-hidden="true">
+					{cornerCount}
 				</span>
 			)}
 		</FactorioInventorySlot>
@@ -87,6 +132,7 @@ function mappingLabel(from: UpgradeSourceSignal | undefined, to: SignalID | unde
  */
 export function UpgradeMappingRow({
 	count,
+	dragging = false,
 	dropTarget = false,
 	from,
 	mappingId,
@@ -98,23 +144,27 @@ export function UpgradeMappingRow({
 	to,
 }: UpgradeMappingRowProps) {
 	const instructionsId = useId();
+	const incomplete = from === undefined || to === undefined;
 	const label = mappingLabel(from, to);
 	const sourceName = from === undefined ? undefined : signalName(from);
 	const targetName = to === undefined ? undefined : signalName(to);
 
 	return (
 		<li
-			className={`upgrade-mapping-grid__pair${
-				from === undefined || to === undefined ? ' upgrade-mapping-grid__pair--incomplete' : ''
-			}`}
+			className={`upgrade-mapping-grid__pair upgrade-mapping-grid__pair--${incomplete ? 'incomplete' : 'complete'}`}
+			aria-describedby={instructionsId}
 			data-mapping-key={mappingId}
+			data-mapping-state={incomplete ? 'incomplete' : 'complete'}
+			data-dragging={dragging || undefined}
 			data-drop-target={dropTarget || undefined}
+			data-factorio-source="UpgradeItemGui::addEmptyMapper"
 			data-upgrade-mapping-slot={slotIndex}
 			draggable
 			aria-label={label}
-			title={from === undefined || to === undefined ? label : `${sourceName} → ${targetName}`}
+			title={incomplete ? label : `${sourceName} → ${targetName}`}
 		>
 			<SignalSlot
+				condition
 				descriptionId={instructionsId}
 				label={
 					sourceName === undefined ? 'Choose source for mapping' : `Choose source, currently ${sourceName}`
@@ -124,6 +174,7 @@ export function UpgradeMappingRow({
 				onClear={from === undefined ? undefined : onClearSource}
 			/>
 			<SignalSlot
+				cornerCount={to?.module_limit}
 				descriptionId={instructionsId}
 				label={
 					targetName === undefined

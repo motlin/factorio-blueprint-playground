@@ -8,7 +8,9 @@ import {
 	extractHiddenPlaceResults,
 	extractPickerSignals,
 	extractPrototypeNames,
+	extractEntityModuleSlots,
 	extractPrototypeUpgrades,
+	extractUpgradeFuelItems,
 	extractUpgradeModuleItems,
 	extractVisiblePlaceResults,
 	parseFactorioLabDataset,
@@ -124,6 +126,52 @@ describe('transformDatasets', () => {
 			{from: 'transport-belt', to: 'fast-transport-belt'},
 			{from: 'fast-transport-belt', to: 'express-transport-belt'},
 		]);
+	});
+
+	it('extracts non-hidden fueled item prototypes and skips fluids', () => {
+		const sources = [
+			`data:extend({
+				{type = "item", name = "coal", fuel_value = "4MJ", stack_size = 50},
+				{type = "item", name = "solid-fuel", fuel_value = "12MJ", stack_size = 50},
+				{type = "item", name = "hidden-fuel", fuel_value = "1MJ", hidden = true},
+				{type = "fluid", name = "crude-oil", fuel_value = "100kJ"},
+				{type = "item", name = "iron-plate", stack_size = 100}
+			})`,
+		];
+
+		expect(extractUpgradeFuelItems(sources)).toStrictEqual(['coal', 'solid-fuel']);
+	});
+
+	it('extracts entity module-slot counts with later definitions overriding earlier ones', () => {
+		const sources = [
+			`data:extend({
+				{
+					type = "assembling-machine",
+					name = "assembling-machine-2",
+					module_slots = 2,
+					energy_usage = "150kW"
+				},
+				{
+					type = "furnace",
+					name = "stone-furnace",
+					result_inventory_size = 1
+				},
+				{
+					type = "lab",
+					name = "lab",
+					module_slots = 0
+				}
+			})`,
+			`data:extend({
+				{
+					type = "assembling-machine",
+					name = "assembling-machine-2",
+					module_slots = 4
+				}
+			})`,
+		];
+
+		expect(extractEntityModuleSlots(sources)).toStrictEqual({'assembling-machine-2': 4});
 	});
 
 	it('extracts prototype names in their game-defined order', () => {

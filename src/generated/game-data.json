@@ -1,4 +1,24 @@
 {
+	"entityModuleSlots": {
+		"assembling-machine-2": 2,
+		"assembling-machine-3": 4,
+		"beacon": 2,
+		"big-mining-drill": 4,
+		"biochamber": 4,
+		"biolab": 4,
+		"centrifuge": 2,
+		"chemical-plant": 3,
+		"crusher": 2,
+		"cryogenic-plant": 8,
+		"electric-furnace": 2,
+		"electric-mining-drill": 3,
+		"electromagnetic-plant": 5,
+		"foundry": 4,
+		"lab": 2,
+		"oil-refinery": 3,
+		"pumpjack": 2,
+		"rocket-silo": 4
+	},
 	"factorioDataVersion": "2.0.77",
 	"nextUpgrades": [
 		{
@@ -10165,6 +10185,28 @@
 		"underground-belt",
 		"wooden-chest",
 		"yumako-tree"
+	],
+	"upgradeFuelItems": [
+		"bioflux",
+		"biter-egg",
+		"carbon",
+		"coal",
+		"fusion-power-cell",
+		"jelly",
+		"jellynut",
+		"jellynut-seed",
+		"nuclear-fuel",
+		"nutrients",
+		"pentapod-egg",
+		"rocket-fuel",
+		"solid-fuel",
+		"spoilage",
+		"tree-seed",
+		"uranium-fuel-cell",
+		"wood",
+		"yumako",
+		"yumako-mash",
+		"yumako-seed"
 	],
 	"upgradeModuleItems": [
 		"speed-module",
