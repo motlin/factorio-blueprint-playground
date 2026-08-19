@@ -67,9 +67,36 @@ function updateDialogLayers() {
 	}
 }
 
+function registerDialog(dialog: HTMLElement) {
+	if (dialogStack.includes(dialog)) {
+		throw new Error('Dialog is already registered in the focus stack.');
+	}
+	dialogStack.push(dialog);
+	dialogStack.sort((left, right) => {
+		const position = left.compareDocumentPosition(right);
+		if ((position & Node.DOCUMENT_POSITION_FOLLOWING) !== 0) {
+			return -1;
+		}
+		if ((position & Node.DOCUMENT_POSITION_PRECEDING) !== 0) {
+			return 1;
+		}
+		return 0;
+	});
+	updateDialogLayers();
+}
+
+function unregisterDialog(dialog: HTMLElement) {
+	const dialogIndex = dialogStack.lastIndexOf(dialog);
+	if (dialogIndex < 0) {
+		throw new Error('Dialog is not registered in the focus stack.');
+	}
+	dialogStack.splice(dialogIndex, 1);
+	updateDialogLayers();
+}
+
 function focusableElements(dialog: HTMLElement): HTMLElement[] {
 	return [...dialog.querySelectorAll<HTMLElement>(focusableSelector)].filter(
-		(element) => element.hidden === false && element.getAttribute('aria-hidden') !== 'true',
+		(element) => element.closest('[hidden], [aria-hidden="true"], [inert]') === null,
 	);
 }
 
@@ -84,6 +111,28 @@ function isTextEditingTarget(target: EventTarget | null): boolean {
 		target instanceof HTMLSelectElement ||
 		(target instanceof HTMLElement && target.isContentEditable)
 	);
+}
+
+function isMultilineEditingTarget(target: EventTarget | null): boolean {
+	return (
+		target instanceof HTMLTextAreaElement ||
+		target instanceof HTMLSelectElement ||
+		(target instanceof HTMLElement && target.isContentEditable)
+	);
+}
+
+function initialFocusTarget(dialog: HTMLElement, initialFocusSelector: string): HTMLElement {
+	const focusable = focusableElements(dialog);
+	const requestedTarget = dialog.querySelector<HTMLElement>(initialFocusSelector);
+	if (requestedTarget !== null && focusable.includes(requestedTarget)) {
+		return requestedTarget;
+	}
+	const firstFocusable = focusable.at(0);
+	if (firstFocusable !== undefined) {
+		return firstFocusable;
+	}
+	dialog.tabIndex = -1;
+	return dialog;
 }
 
 function trapTabKey(dialog: HTMLElement, event: KeyboardEvent) {
@@ -135,14 +184,16 @@ export function useDialogFocus<T extends HTMLElement>({
 		) {
 			invokingElementReference.current = document.activeElement;
 		}
-		dialogStack.push(dialog);
-		updateDialogLayers();
-
-		const initialFocus = dialog.querySelector<HTMLElement>(initialFocusSelector) ?? focusableElements(dialog).at(0);
-		initialFocus?.focus();
+		registerDialog(dialog);
+		const dialogHadTabIndex = dialog.hasAttribute('tabindex');
+		const initialFocus = initialFocusTarget(dialog, initialFocusSelector);
+		let lastFocusedElement = initialFocus;
+		if (dialogStack.at(-1) === dialog) {
+			initialFocus.focus();
+		}
 
 		const handleKeyDown = (event: KeyboardEvent) => {
-			if (dialogStack.at(-1) !== dialog) {
+			if (event.defaultPrevented || dialogStack.at(-1) !== dialog || event.isComposing) {
 				return;
 			}
 			if (event.key === 'Tab') {
@@ -157,7 +208,9 @@ export function useDialogFocus<T extends HTMLElement>({
 				onEnterReference.current !== undefined &&
 				event.key === 'Enter' &&
 				isUnmodifiedKey(event) &&
-				!(event.target instanceof HTMLButtonElement);
+				!event.repeat &&
+				!(event.target instanceof HTMLButtonElement) &&
+				!isMultilineEditingTarget(event.target);
 			if (!shouldClose && !shouldConfirm) {
 				return;
 			}
@@ -171,15 +224,31 @@ export function useDialogFocus<T extends HTMLElement>({
 			}
 		};
 
+		const handleFocusIn = (event: FocusEvent) => {
+			if (dialogStack.at(-1) !== dialog) {
+				return;
+			}
+			if (event.target instanceof HTMLElement && dialog.contains(event.target)) {
+				lastFocusedElement = event.target;
+				return;
+			}
+			if (lastFocusedElement.isConnected && dialog.contains(lastFocusedElement)) {
+				lastFocusedElement.focus();
+			} else {
+				initialFocusTarget(dialog, initialFocusSelector).focus();
+			}
+		};
+
 		window.addEventListener('keydown', handleKeyDown, true);
+		document.addEventListener('focusin', handleFocusIn);
 		return () => {
 			window.removeEventListener('keydown', handleKeyDown, true);
-			const dialogIndex = dialogStack.lastIndexOf(dialog);
-			if (dialogIndex >= 0) {
-				dialogStack.splice(dialogIndex, 1);
-			}
+			document.removeEventListener('focusin', handleFocusIn);
+			unregisterDialog(dialog);
 			const nextTopmostDialog = dialogStack.at(-1);
-			updateDialogLayers();
+			if (!dialogHadTabIndex) {
+				dialog.removeAttribute('tabindex');
+			}
 			queueMicrotask(() => {
 				if (
 					(dialogStack.length === 0 || dialogStack.at(-1) === nextTopmostDialog) &&

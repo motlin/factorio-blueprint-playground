@@ -67,6 +67,7 @@ const gameUiSpecSchema = z.object({
 	qualityComparators: z.array(z.string().min(1)).min(1),
 	labels: z.object({
 		anyQuality: z.string().min(1),
+		qualitySelectionTooltip: z.string().min(1),
 	}),
 	signals: z.object({
 		typeOrder: z.array(z.string().min(1)).min(1),
