@@ -15,10 +15,29 @@ function classes(...values: Array<string | undefined>): string {
 	return values.filter((value) => value !== undefined && value !== '').join(' ');
 }
 
+/**
+ * Generated style.lua facts exposed as CSS custom properties so the stylesheet
+ * consumes pinned source constants instead of duplicating them.
+ */
+const factorioStyleVariables: React.CSSProperties & Record<`--factorio-${string}`, string> = {
+	'--factorio-button-horizontal-padding': `${gameUiSpec.styles.buttonHorizontalPadding.toString()}px`,
+	'--factorio-button-minimal-height': `${gameUiSpec.styles.buttonMinimalHeight.toString()}px`,
+	'--factorio-button-minimal-width': `${gameUiSpec.styles.buttonMinimalWidth.toString()}px`,
+	'--factorio-draggable-space-left-margin': `${gameUiSpec.styles.draggableSpaceHeaderLeftMargin.toString()}px`,
+	'--factorio-frame-action-button-size': `${gameUiSpec.styles.frameActionButtonSize.toString()}px`,
+	'--factorio-frame-padding-left': `${gameUiSpec.styles.framePaddingLeft.toString()}px`,
+	'--factorio-frame-padding-top': `${gameUiSpec.styles.framePaddingTop.toString()}px`,
+	'--factorio-frame-title-font-size': `${gameUiSpec.styles.frameTitleFontSize.toString()}px`,
+	'--factorio-header-filler-height': `${gameUiSpec.styles.headerFillerHeight.toString()}px`,
+	'--factorio-scrollbar-width': `${gameUiSpec.styles.scrollbarWidth.toString()}px`,
+	'--factorio-tooltip-max-width': `${gameUiSpec.styles.tooltipLabelMaximalWidth.toString()}px`,
+	'--factorio-tooltip-opacity': `${(gameUiSpec.styles.tooltipFrameOpacity * 100).toString()}%`,
+};
+
 const factorioButtonStyleByKind: Record<FactorioButtonKind, string> = {
 	[FactorioButtonKind.Neutral]: 'button',
 	[FactorioButtonKind.Confirm]: 'green_button',
-	[FactorioButtonKind.Delete]: 'red_button',
+	[FactorioButtonKind.Delete]: 'tool_button_red',
 	[FactorioButtonKind.Search]: 'frame_action_button',
 	[FactorioButtonKind.Close]: 'frame_action_button',
 };
@@ -112,7 +131,11 @@ export function FactorioFrame({
 	...frameProps
 }: FactorioFrameProps) {
 	return (
-		<div {...frameProps} className={classes('factorio-frame', `factorio-frame--${depth}`, className)}>
+		<div
+			{...frameProps}
+			className={classes('factorio-frame', `factorio-frame--${depth}`, className)}
+			style={{...factorioStyleVariables, ...frameProps.style}}
+		>
 			{children}
 		</div>
 	);
@@ -171,7 +194,11 @@ export function FactorioDialog({
 
 export function FactorioTitleBar({children, className, ...headerProps}: React.HTMLAttributes<HTMLElement>) {
 	return (
-		<header {...headerProps} className={classes('factorio-title-bar', className)}>
+		<header
+			{...headerProps}
+			className={classes('factorio-title-bar', className)}
+			style={{...factorioStyleVariables, ...headerProps.style}}
+		>
 			{children}
 		</header>
 	);

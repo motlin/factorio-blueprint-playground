@@ -37,10 +37,11 @@ body {
 	position: relative;
 	display: inline-flex;
 	box-sizing: border-box;
-	min-height: calc(36px * var(--factorio-ui-density));
+	min-width: calc(var(--factorio-button-minimal-width, 108px) * var(--factorio-ui-density));
+	min-height: calc(var(--factorio-button-minimal-height, 28px) * var(--factorio-ui-density));
 	align-items: center;
 	justify-content: center;
-	padding: calc(8px * var(--factorio-ui-density)) calc(12px * var(--factorio-ui-density));
+	padding: 0 calc(var(--factorio-button-horizontal-padding, 8px) * var(--factorio-ui-density));
 	border: 0;
 	background: var(--factorio-button-rest);
 	box-shadow:
@@ -94,7 +95,7 @@ body {
 	box-shadow:
 		inset 1px 1px 0 var(--factorio-button-disabled-light),
 		inset -1px -1px 0 var(--factorio-button-disabled-dark);
-	color: #818181;
+	color: rgb(179 179 179);
 	cursor: default;
 	filter: grayscale(0.75);
 }
@@ -124,6 +125,9 @@ body {
 	--factorio-button-disabled-dark: #47764a;
 }
 
+/* Source button font colors are black in all states, but black on the grey
+   control face fails WCAG contrast; the web keeps lighter text as an
+   intentional accessibility deviation. */
 .factorio-button--neutral {
 	color: var(--factorio-ui-text);
 }
@@ -153,21 +157,34 @@ body {
 	--factorio-button-disabled-dark: #8c4e4e;
 }
 
+/* frame_action_button: size 24, padding 0, flat at rest (its default
+   graphical set matches the frame background); only hover/click raise. */
 .factorio-button--search,
 .factorio-button--close {
-	width: calc(36px * var(--factorio-ui-density));
-	min-width: calc(36px * var(--factorio-ui-density));
-	height: calc(36px * var(--factorio-ui-density));
-	min-height: calc(36px * var(--factorio-ui-density));
-	padding: calc(6px * var(--factorio-ui-density));
+	width: calc(var(--factorio-frame-action-button-size, 24px) * var(--factorio-ui-density));
+	min-width: calc(var(--factorio-frame-action-button-size, 24px) * var(--factorio-ui-density));
+	height: calc(var(--factorio-frame-action-button-size, 24px) * var(--factorio-ui-density));
+	min-height: calc(var(--factorio-frame-action-button-size, 24px) * var(--factorio-ui-density));
+	padding: 0;
+	background: transparent;
+	box-shadow: none;
 	color: var(--factorio-ui-text);
+}
+
+/* tool_button_red: 28px square with 2px padding for icon-only red controls. */
+.factorio-button--delete {
+	width: calc(28px * var(--factorio-ui-density));
+	min-width: calc(28px * var(--factorio-ui-density));
+	height: calc(28px * var(--factorio-ui-density));
+	min-height: calc(28px * var(--factorio-ui-density));
+	padding: calc(2px * var(--factorio-ui-density));
 }
 
 .factorio-button--search svg,
 .factorio-button--close svg,
 .factorio-button--delete svg {
-	width: calc(18px * var(--factorio-ui-density));
-	height: calc(18px * var(--factorio-ui-density));
+	width: calc(16px * var(--factorio-ui-density));
+	height: calc(16px * var(--factorio-ui-density));
 }
 
 .factorio-button--search:hover:not(:disabled),
@@ -184,13 +201,15 @@ body {
 	color: #171717;
 }
 
+/* slot_button: size 40, padding 0 — bevels are drawn by the sprite, not by
+   shrinking the interior. */
 .factorio-inventory-slot {
 	position: relative;
 	display: grid;
 	box-sizing: border-box;
 	flex: 0 0 auto;
-	padding: calc(4px * var(--factorio-ui-density));
-	border: 1px solid var(--factorio-ui-border);
+	padding: 0;
+	border: 0;
 	background: #414041;
 	box-shadow:
 		inset 1px 1px 0 #777,
@@ -217,14 +236,23 @@ body {
 		inset -2px -2px 0 #5b320d;
 }
 
+/* slot_button clicked_graphical_set is its own state, darker than hover. */
+.factorio-inventory-slot:active:not(:disabled),
+.factorio-inventory-slot[data-visual-state='active']:not(:disabled) {
+	z-index: 1;
+	background: #b16925;
+	box-shadow:
+		inset 1px 1px 0 #914905,
+		inset -2px -2px 0 #cb833f;
+}
+
+/* slot_button selected and selected_hovered sets equal the hovered set. */
 .factorio-inventory-slot[aria-pressed='true'] {
 	z-index: 1;
-	background: var(--factorio-ui-selected);
+	background: #d88716;
 	box-shadow:
 		inset 1px 1px 0 #ffd37a,
 		inset -2px -2px 0 #5b320d;
-	outline: 2px solid #ffc451;
-	outline-offset: -2px;
 }
 
 .factorio-frame {
@@ -250,23 +278,49 @@ body {
 		inset 0 -1px 1px #686868;
 }
 
+/* frame: padding 4/8/8/8 with frame_header_flow bottom gap 4; the header
+   filler is 24px tall (header_filler_style), so the bar is 4 + 24 + 4. */
 .factorio-title-bar {
 	display: flex;
 	box-sizing: border-box;
 	min-width: 0;
-	min-height: calc(46px * var(--factorio-ui-density));
+	min-height: calc(
+		(var(--factorio-frame-padding-top, 4px) * 2 + var(--factorio-header-filler-height, 24px)) *
+			var(--factorio-ui-density)
+	);
 	align-items: center;
-	padding: calc(10px * var(--factorio-ui-density)) calc(12px * var(--factorio-ui-density))
-		calc(12px * var(--factorio-ui-density));
+	padding: calc(var(--factorio-frame-padding-top, 4px) * var(--factorio-ui-density))
+		calc(var(--factorio-frame-padding-left, 8px) * var(--factorio-ui-density));
 	background: var(--factorio-ui-dialog-face);
 }
 
+/* frame_title: heading-1 (18px bold) with top_margin -3 / bottom_padding 3;
+   the heading carries the stretchable draggable_space_header filler
+   (height 24, left_margin 4). */
 .factorio-title-bar :where(h1, h2, h3, h4) {
-	margin: 0;
+	display: flex;
+	min-width: 0;
+	flex: 1 1 auto;
+	align-items: center;
+	margin: calc(-3px * var(--factorio-ui-density)) 0 0;
+	padding-bottom: calc(3px * var(--factorio-ui-density));
 	color: var(--factorio-ui-title);
-	font-size: calc(20px * var(--factorio-ui-density));
-	font-weight: 500;
-	line-height: calc(24px * var(--factorio-ui-density));
+	font-size: calc(var(--factorio-frame-title-font-size, 18px) * var(--factorio-ui-density));
+	font-weight: 700;
+	line-height: calc(var(--factorio-header-filler-height, 24px) * var(--factorio-ui-density));
+}
+
+.factorio-title-bar :where(h1, h2, h3, h4)::after {
+	min-width: calc(8px * var(--factorio-ui-density));
+	height: calc(var(--factorio-header-filler-height, 24px) * var(--factorio-ui-density));
+	flex: 1 1 auto;
+	margin-left: calc(var(--factorio-draggable-space-left-margin, 4px) * var(--factorio-ui-density));
+	background: repeating-linear-gradient(
+		90deg,
+		rgb(0 0 0 / 16%) 0 calc(2px * var(--factorio-ui-density)),
+		rgb(255 255 255 / 4%) calc(2px * var(--factorio-ui-density)) calc(4px * var(--factorio-ui-density))
+	);
+	content: '';
 }
 
 .factorio-dialog-backdrop {
@@ -297,7 +351,7 @@ body {
 .factorio-dialog > .factorio-title-bar {
 	flex: 0 0 auto;
 	justify-content: space-between;
-	gap: 12px;
+	gap: calc(8px * var(--factorio-ui-density));
 }
 
 .factorio-dialog__body {
@@ -307,17 +361,31 @@ body {
 	overflow: auto;
 }
 
+/* deep_slots_scroll_pane: no padding, minimal_height = one 40px slot, and a
+   40px deep-slot background tiling; deep_scroll_pane scrollbars go outside
+   the content region (approximated with auto gutter). */
 .factorio-scroll-frame {
 	box-sizing: border-box;
 	min-width: 0;
-	min-height: 0;
+	min-height: calc(40px * var(--factorio-ui-density));
 	max-height: min(440px, 58vh);
-	padding: calc(7px * var(--factorio-ui-density));
+	padding: 0;
 	overflow-x: hidden;
 	overflow-y: auto;
 	overscroll-behavior: contain;
+	background:
+		repeating-linear-gradient(
+			90deg,
+			rgb(255 255 255 / 3%) 0 1px,
+			transparent 1px calc(40px * var(--factorio-ui-density))
+		),
+		repeating-linear-gradient(
+			0deg,
+			rgb(255 255 255 / 3%) 0 1px,
+			transparent 1px calc(40px * var(--factorio-ui-density))
+		),
+		var(--factorio-ui-dark);
 	scrollbar-color: #6f6d6f #242324;
-	scrollbar-gutter: stable;
 	scrollbar-width: auto;
 }
 
@@ -371,12 +439,13 @@ body {
 	box-sizing: border-box;
 	width: max-content;
 	min-width: min(calc(50px * var(--factorio-ui-density)), calc(100vw - 20px));
-	max-width: min(calc(356px * var(--factorio-ui-density)), calc(100vw - 20px));
+	max-width: min(calc(var(--factorio-tooltip-max-width, 356px) * var(--factorio-ui-density)), calc(100vw - 20px));
 	flex-direction: column;
 	gap: calc(2px * var(--factorio-ui-density));
 	padding: 0 calc(4px * var(--factorio-ui-density));
 	border: 1px solid var(--factorio-ui-border);
-	background: rgb(49 48 49 / 94%);
+	/* tooltip_frame opacity 0.88 */
+	background: rgb(49 48 49 / var(--factorio-tooltip-opacity, 88%));
 	box-shadow:
 		inset 1px 1px 0 rgb(255 255 255 / 14%),
 		0 4px 12px rgb(0 0 0 / 78%);
@@ -405,10 +474,12 @@ body {
 	display: none;
 }
 
+/* tooltip_title_label is default-bold white; caption gold belongs to
+   frame_title only. */
 .factorio-tooltip__title {
 	display: block;
 	min-width: 0;
-	color: var(--factorio-ui-title);
+	color: #fff;
 	font-weight: 700;
 }
 
@@ -535,19 +606,6 @@ body {
 
 .blueprint-library__title-bar {
 	flex: 0 0 auto;
-}
-
-.blueprint-library__title-bar::after {
-	height: calc(24px * var(--factorio-ui-density));
-	min-width: calc(48px * var(--factorio-ui-density));
-	flex: 1 1 auto;
-	margin-left: calc(12px * var(--factorio-ui-density));
-	background: repeating-linear-gradient(
-		90deg,
-		rgb(0 0 0 / 16%) 0 calc(2px * var(--factorio-ui-density)),
-		rgb(255 255 255 / 4%) calc(2px * var(--factorio-ui-density)) calc(4px * var(--factorio-ui-density))
-	);
-	content: '';
 }
 
 .blueprint-library__title-bar h1 {
@@ -3904,14 +3962,15 @@ body {
 	top: 50%;
 	right: calc(100% + 4px);
 	display: block;
-	width: min(260px, calc(100vw - 120px));
+	/* search_popup_textfield: width 104. */
+	width: min(calc(104px * var(--factorio-ui-density)), calc(100vw - 120px));
 	min-width: 0;
 	transform: translateY(-50%);
 }
 
 .transform-picker__search input {
 	width: 100%;
-	height: 36px;
+	height: calc(28px * var(--factorio-ui-density));
 	appearance: none;
 	font: inherit;
 }
@@ -3996,6 +4055,17 @@ body {
 		inset 0 1px 1px #9b989b;
 }
 
+/* Single-row tabs grow when selected (increase_height_when_selected); the
+   multi-row slot-tab layout disables the growth. */
+.transform-picker__tabs[data-tab-rows='single'] .transform-picker__tab[aria-selected='true'] {
+	height: calc(100% + 4px) !important;
+	margin-bottom: -4px;
+}
+
+.transform-picker__tabs[data-tab-rows='single'] {
+	overflow: visible;
+}
+
 .transform-picker__tab:focus-visible {
 	z-index: 2;
 	outline: 2px solid #fff0cc;
@@ -4021,10 +4091,12 @@ body {
 	gap: 0;
 	min-width: 400px;
 	max-width: 100%;
-	max-height: min(400px, 58vh);
+	max-height: 58vh;
 	padding: 0;
 	overflow-x: hidden;
 	overflow-y: auto;
+	/* A classic scrollbar must not consume the tenth slot column. */
+	scrollbar-gutter: stable;
 }
 
 .transform-picker__grid-padding {
@@ -4129,10 +4201,47 @@ body {
 	gap: 0;
 }
 
-.upgrade-quality-controls--picker .factorio-inventory-slot {
-	width: calc(28px * var(--factorio-ui-density)) !important;
-	height: calc(28px * var(--factorio-ui-density)) !important;
+/* tool_button: 28px square icon control with standard button states
+   (QualitySelector::setupButton uses iconButton with toolButton()). The
+   comparator dropdown metrics remain literals documented against
+   train_schedule_circuit_condition_comparator_dropdown. */
+.factorio-tool-button {
+	display: grid;
+	box-sizing: border-box;
+	width: calc(28px * var(--factorio-ui-density));
+	height: calc(28px * var(--factorio-ui-density));
 	padding: calc(2px * var(--factorio-ui-density));
+	border: 0;
+	background: var(--factorio-ui-control-face);
+	box-shadow:
+		inset 1px 1px 0 #9d9d9d,
+		inset -1px -1px 0 #515151;
+	cursor: pointer;
+	place-items: center;
+}
+
+.factorio-tool-button:hover:not(:disabled) {
+	background: #8b6745;
+}
+
+.factorio-tool-button:active:not(:disabled) {
+	background: #b16925;
+	box-shadow:
+		inset 1px 1px 0 #914905,
+		inset -1px -1px 0 #cb833f;
+}
+
+.factorio-tool-button[aria-pressed='true'] {
+	background: #d88716;
+	box-shadow:
+		inset 1px 1px 0 #ffd37a,
+		inset -1px -1px 0 #5b320d;
+}
+
+.factorio-tool-button:focus-visible {
+	z-index: 1;
+	outline: 2px solid var(--factorio-ui-accent);
+	outline-offset: -2px;
 }
 
 .upgrade-quality-controls__condition {
