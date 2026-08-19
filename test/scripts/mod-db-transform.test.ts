@@ -8,6 +8,8 @@ import spaceAgeDatasetJson from '../fixtures/factoriolab/spa.json';
 import {
 	extractHiddenPlaceResults,
 	extractPrototypeNames,
+	extractPrototypeUpgrades,
+	extractTopLevelPrototypeNames,
 	parseFactorioLabDataset,
 	transformDatasets,
 } from '../../scripts/mod-db/transform';
@@ -143,11 +145,44 @@ describe('transformDatasets', () => {
 			})
 		`;
 
-		expect(extractPrototypeNames(source)).toStrictEqual([
+		expect(extractTopLevelPrototypeNames(source)).toStrictEqual([
 			'entity-ghost',
 			'long-string-name',
 			'tile-ghost',
 			'tree-with-results',
 		]);
+	});
+
+	it('extracts table and data.raw next-upgrade assignments from Lua prototypes', () => {
+		const sources = [
+			`data:extend({
+				{
+					type = "transport-belt",
+					name = "transport-belt",
+					animation = { filename = "belt.png" },
+					next_upgrade = "fast-transport-belt"
+				},
+				-- { name = "commented-belt", next_upgrade = "ignored-belt" }
+			})`,
+			`data.raw["transport-belt"]["fast-transport-belt"].next_upgrade = "express-transport-belt"
+			-- data.raw["transport-belt"]["commented-belt"].next_upgrade = "ignored-belt"`,
+		];
+
+		expect(extractPrototypeUpgrades(sources)).toStrictEqual([
+			{from: 'transport-belt', to: 'fast-transport-belt'},
+			{from: 'fast-transport-belt', to: 'express-transport-belt'},
+		]);
+	});
+
+	it('extracts prototype names in their game-defined order', () => {
+		const sources = [
+			`data:extend({
+				{type = "virtual-signal", name = "signal-blue", order = "b"},
+				{type = "item", name = "ignored", order = "a"},
+				{type = "virtual-signal", name = "signal-red", order = "a"}
+			})`,
+		];
+
+		expect(extractPrototypeNames(sources, 'virtual-signal')).toStrictEqual(['signal-red', 'signal-blue']);
 	});
 });
