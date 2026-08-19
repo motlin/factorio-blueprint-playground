@@ -1,6 +1,7 @@
 import type {UpgradeSourceSignal} from '../../../../parsing/types';
 import type {UpgradeCandidate} from '../../../../transform/upgradePlanner';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
+import {FactorioInventorySlot} from '../../../ui/FactorioUi';
 import {signalName, signalTitle} from './upgradePlannerSignals';
 
 interface SignalSlotProps {
@@ -19,15 +20,31 @@ interface UpgradeMappingRowProps {
 	sourceKey: string;
 }
 
+/**
+ * Planner endpoint presentation and interaction contract:
+ *
+ * - From and To are independently editable slots in one mapper. From invokes the
+ *   source-filter profile and renders its quality comparator; To invokes the
+ *   exact destination profile. Neither slot owns a second quality selector.
+ * - Clearing one endpoint leaves the other endpoint and the mapper index intact.
+ *   Clearing the final endpoint turns the pair into a hole. Delete/context
+ *   actions must identify whether they clear an endpoint or the complete pair;
+ *   they must not silently discard an incomplete partner.
+ * - The pair, rather than either endpoint, is the drag/reorder unit. Source
+ *   quality conditions, optional module entity filter, target module limit, and
+ *   target module-slot plan travel with it.
+ *
+ * Endpoint validity is owned by `upgradePlannerSignals`, and confirmed mutations
+ * are owned by `useUpgradePlannerDraft`.
+ */
 export function SignalSlot({label, onClick, onContextMenu, signal}: SignalSlotProps) {
 	return (
-		<button
-			type="button"
+		<FactorioInventorySlot
 			className={`transform-signal-slot${signal === undefined ? ' transform-signal-slot--empty' : ''}${
 				signal?.comparator === undefined ? '' : ' transform-signal-slot--condition'
 			}`}
 			aria-label={label}
-			aria-disabled={onClick === undefined}
+			disabled={onClick === undefined}
 			title={signal === undefined ? label : signalTitle(signal)}
 			onClick={() => {
 				onClick?.();
@@ -45,7 +62,7 @@ export function SignalSlot({label, onClick, onContextMenu, signal}: SignalSlotPr
 					{signal.comparator}
 				</span>
 			)}
-		</button>
+		</FactorioInventorySlot>
 	);
 }
 

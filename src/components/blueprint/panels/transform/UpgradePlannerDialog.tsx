@@ -4,6 +4,7 @@ import type {BlueprintString, SignalID, UpgradeSourceSignal} from '../../../../p
 import type {UpgradeRule} from '../../../../transform/upgradePlanner';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
 import {ButtonGreen} from '../../../ui/ButtonGreen';
+import {FactorioButton, FactorioButtonKind} from '../../../ui/FactorioUi';
 import {Textarea} from '../../../ui/Textarea';
 import {BookWideReplacements, type BookWideReplacementsProps} from './BookWideReplacements';
 import {SignalPickerDialog} from './SignalPickerDialog';
@@ -17,6 +18,40 @@ import {
 } from './upgradePlannerSignals';
 import {UpgradePlannerSelectorDialog, type UpgradePlannerChoice} from './UpgradePlannerSelectorDialog';
 
+/**
+ * Factorio 2.1.12 Upgrade Planner editor source contract:
+ *
+ * Record editing
+ *
+ * - An upgrade item or library record owns one ordered mapper set. Every mapper
+ *   is one fixed From/To slot pair; upgrade, downgrade, quality, modules, and
+ *   fuels are not separate action lists or separate planner sections.
+ * - Opening a planner edits a draft of that record's label data and mapper
+ *   definition. Picker confirmations, endpoint clearing, and pair reordering
+ *   update that draft; they do not transform a blueprint.
+ * - `UpgradeMappingGrid` owns ordered placement, `UpgradeMappingRow` owns a
+ *   populated pair, `AddUpgradeMappingRow` owns empty or incomplete pairs,
+ *   `upgradePlannerSignals` owns endpoint eligibility and compatibility, and
+ *   `useUpgradePlannerDraft` is the sole authoritative draft and commit boundary.
+ *   This dialog only composes those parts and opens their pickers.
+ *
+ * Blueprint application
+ *
+ * - Applying a saved planner is a separate explicit operation. Upgrade reads the
+ *   same records From to To; downgrade reads them in reverse. Direction never
+ *   changes the editor shape or creates another mapper set.
+ * - A mapper remains part of the planner when the current blueprint has no
+ *   matches. Counts may describe a proposed application, but must not add,
+ *   remove, reorder, or otherwise become the source of editor rows.
+ * - Saving a planner definition and applying it to a selected blueprint/root are
+ *   distinct commands. The application selector may follow a save in this
+ *   product, but saving alone must not apply the planner.
+ *
+ * Evidence: UpgradeItemGui, UpgradeFilterSelectListGui,
+ * UpgradeDestinationSelectListGui, UpgradeRecord, UpgradeItem, UpgradeData, and
+ * its mapper value types at Factorio 2.1.12; UP-1 and the July 23 planner-grid,
+ * source-filter, quality-condition, and restricted-target captures.
+ */
 interface UpgradePlannerMappings {
 	candidates: PositionedUpgradeCandidate[];
 	error: string | undefined;
@@ -303,7 +338,7 @@ export function UpgradePlannerDialog({
 	return (
 		<div className="transform-dialog-backdrop transform-workbench-backdrop upgrade-planner-dialog__backdrop">
 			<section
-				className="transform-dialog transform-workbench transform-workbench--planner upgrade-planner-dialog"
+				className="factorio-frame factorio-frame--shallow transform-dialog transform-workbench transform-workbench--planner upgrade-planner-dialog"
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby={dialogHeadingId}
@@ -313,7 +348,7 @@ export function UpgradePlannerDialog({
 					}
 				}}
 			>
-				<header className="transform-dialog__header transform-workbench__header">
+				<header className="factorio-title-bar transform-dialog__header transform-workbench__header">
 					<div className="transform-workbench__title">
 						<FactorioIcon icon={{type: 'item', name: 'upgrade-planner'}} size="large" />
 						<div>
@@ -328,21 +363,19 @@ export function UpgradePlannerDialog({
 						<strong>{matchCount}</strong>
 						<span>{matchCount === 1 ? 'match' : 'matches'}</span>
 					</div>
-					<button
-						type="button"
+					<FactorioButton
+						kind={FactorioButtonKind.Close}
 						className="transform-dialog__close"
 						aria-label="Close Upgrade Planner"
 						title="Close Upgrade Planner"
 						onClick={() => {
 							onClose();
 						}}
-					>
-						×
-					</button>
+					/>
 				</header>
 
 				<div
-					className="transform-workbench__body upgrade-planner-dialog__scroll-region"
+					className="factorio-scroll-frame transform-workbench__body upgrade-planner-dialog__scroll-region"
 					role="region"
 					aria-label="Upgrade Planner configuration"
 					tabIndex={0}
@@ -352,7 +385,7 @@ export function UpgradePlannerDialog({
 							className="panel-hole upgrade-planner-dialog__configuration"
 							aria-labelledby={configurationHeadingId}
 						>
-							<header className="upgrade-planner-dialog__panel-heading">
+							<header className="factorio-title-bar upgrade-planner-dialog__panel-heading">
 								<h4 id={configurationHeadingId}>Upgrade mappings</h4>
 							</header>
 							<div className="panel-hole-inner transform-workflow__scope">
@@ -382,15 +415,14 @@ export function UpgradePlannerDialog({
 				</div>
 
 				<footer className="transform-workbench__footer transform-workbench__footer--actions">
-					<button
-						type="button"
+					<FactorioButton
 						className="transform-button"
 						onClick={() => {
 							onClose();
 						}}
 					>
 						Cancel
-					</button>
+					</FactorioButton>
 					<ButtonGreen disabled={saveDisabled} onClick={onSave}>
 						Save planner
 					</ButtonGreen>

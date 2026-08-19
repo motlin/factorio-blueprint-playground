@@ -1,6 +1,8 @@
 import {Pencil} from 'lucide-react';
 import {useState} from 'react';
 
+import {FactorioButton} from '../../../ui/FactorioUi';
+
 interface BlueprintTitleEditorProps {
 	label: string;
 	onLabelChange: (label: string) => void;
@@ -52,15 +54,14 @@ export function BlueprintTitleEditor({label, onLabelChange}: BlueprintTitleEdito
 			) : (
 				<>
 					<span className="blueprint-editor__title">{label === '' ? 'Untitled blueprint' : label}</span>
-					<button
-						type="button"
-						className="factorio-toolbar-button blueprint-editor__title-edit"
+					<FactorioButton
+						className="blueprint-editor__title-edit"
 						aria-label="Edit blueprint title"
 						title="Edit blueprint title"
 						onClick={beginEditing}
 					>
 						<Pencil size={14} aria-hidden="true" />
-					</button>
+					</FactorioButton>
 				</>
 			)}
 		</div>

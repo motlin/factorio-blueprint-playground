@@ -205,11 +205,18 @@ describe('RichText', () => {
 		expect(mainIcon.className).not.toBe('');
 
 		const qualityIcon = within(wrapper).getByTestId('quality');
-		expect(qualityIcon).toHaveAttribute('src', 'https://factorio-icon-cdn.pages.dev/quality/normal.webp');
-		expect(qualityIcon).toHaveAttribute('title', 'Quality: normal');
-		expect(qualityIcon).toHaveAttribute('alt', 'normal');
-		expect(qualityIcon).toHaveAttribute('loading', 'lazy');
-		expect(qualityIcon.className).not.toBe('');
+		expect(qualityIcon.className).toMatch(/\S/u);
+		expect({
+			alt: qualityIcon.getAttribute('alt'),
+			loading: qualityIcon.getAttribute('loading'),
+			src: qualityIcon.getAttribute('src'),
+			title: qualityIcon.getAttribute('title'),
+		}).toStrictEqual({
+			alt: 'Normal quality',
+			loading: 'lazy',
+			src: 'https://factorio-icon-cdn.pages.dev/quality/normal.webp',
+			title: 'Normal quality',
+		});
 
 		const formattedSpans = within(richTextDiv).getAllByTestId('formatted-text');
 		expect(formattedSpans).toHaveLength(5);

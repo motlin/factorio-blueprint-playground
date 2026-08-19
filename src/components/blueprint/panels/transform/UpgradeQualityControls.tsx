@@ -2,9 +2,12 @@ import {useState} from 'react';
 
 import type {QualityComparator} from '../../../../parsing/types';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
+import {FactorioInventorySlot} from '../../../ui/FactorioUi';
 import {
+	anyQualityLabel,
 	upgradeQualities,
 	upgradeQualityComparators,
+	upgradeQualityLabel,
 	type UpgradeQualityMode,
 	type UpgradeQualitySelection,
 } from './upgradeQuality';
@@ -43,20 +46,18 @@ function QualityComparatorControl({
 
 	return (
 		<div className="upgrade-quality-controls__condition">
-			<button
-				type="button"
+			<FactorioInventorySlot
 				className="upgrade-quality-controls__any"
-				aria-label="Any quality"
-				aria-pressed={qualitySelection === 'any'}
-				title="Any quality"
+				aria-label={anyQualityLabel}
+				selected={qualitySelection === 'any'}
+				title={anyQualityLabel}
 				onClick={() => {
 					onQualityChange('any');
 				}}
 			>
 				<AnyQualityIcon />
-			</button>
-			<button
-				type="button"
+			</FactorioInventorySlot>
+			<FactorioInventorySlot
 				className="upgrade-quality-controls__comparator-toggle"
 				aria-label={`Quality comparison: ${qualityComparator}`}
 				aria-expanded={menuOpen}
@@ -67,7 +68,7 @@ function QualityComparatorControl({
 				}}
 			>
 				<span aria-hidden="true">▾</span>
-			</button>
+			</FactorioInventorySlot>
 			{menuOpen ? (
 				<div className="upgrade-quality-controls__comparator-menu" role="menu" aria-label="Quality comparison">
 					{upgradeQualityComparators.map((comparator) => (
@@ -98,25 +99,33 @@ function QualityButtons({
 	qualitySelection: UpgradeQualitySelection;
 }) {
 	return upgradeQualities.map((quality) => {
-		const label = `${signalName({name: quality})} quality`;
+		const label = `${upgradeQualityLabel(quality)} quality`;
 		return (
-			<button
-				type="button"
+			<FactorioInventorySlot
 				className="upgrade-quality-controls__quality"
 				key={quality}
 				aria-label={label}
-				aria-pressed={qualitySelection === quality}
+				selected={qualitySelection === quality}
 				title={label}
 				onClick={() => {
 					onQualityChange(quality);
 				}}
 			>
 				<FactorioIcon icon={{type: 'quality', name: quality}} size="small" />
-			</button>
+			</FactorioInventorySlot>
 		);
 	});
 }
 
+/**
+ * Quality footer profile for `SignalPickerDialog`.
+ *
+ * Source mode represents Factorio's `QualityConditionGui`: Any plus an ordered
+ * comparator menu and the shared quality selector. Target mode, also used by
+ * local blueprint icons, represents `QualityGui`: one exact quality. A generated
+ * quality count may switch the selector from buttons to a dropdown, but must not
+ * introduce another quality state or picker.
+ */
 export function UpgradeQualityControls({
 	mode,
 	onComparatorChange,
