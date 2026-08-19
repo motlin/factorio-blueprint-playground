@@ -1,15 +1,7 @@
 import {describe, expect, test} from 'vite-plus/test';
 
 import {serializeBlueprint} from '../../src/parsing/blueprintParser';
-import type {BlueprintString, UpgradePlanner} from '../../src/parsing/types';
-import
-{
-	analyzeIconReplacements,
-	analyzeMetadataIcons,
-	analyzeMetadataSubstitution,
-	applyIconReplacements,
-	applyMetadataSubstitution,
-} from '../../src/transform/metadataSubstitution';
+import type {BlueprintString, Entity, UpgradePlanner} from '../../src/parsing/types';
 import
 {
 	analyzeUpgradeRules,
@@ -77,6 +69,90 @@ const configuredPlanner: UpgradePlanner =
 		],
 	},
 };
+
+const qualityComparisonEntities: Entity[] = [
+	{
+		entity_number: 100,
+		name: 'transport-belt',
+		position:
+		{
+			x: 0,
+			y: 0,
+		},
+	},
+	{
+		entity_number: 200,
+		name: 'transport-belt',
+		quality: 'uncommon',
+		position:
+		{
+			x: 1,
+			y: 0,
+		},
+	},
+	{
+		entity_number: 300,
+		name: 'transport-belt',
+		quality: 'rare',
+		position:
+		{
+			x: 2,
+			y: 0,
+		},
+	},
+	{
+		entity_number: 400,
+		name: 'transport-belt',
+		quality: 'epic',
+		position:
+		{
+			x: 3,
+			y: 0,
+		},
+	},
+	{
+		entity_number: 500,
+		name: 'transport-belt',
+		quality: 'legendary',
+		position:
+		{
+			x: 4,
+			y: 0,
+		},
+	},
+];
+
+const qualityComparisonBlueprint: BlueprintString =
+{
+	blueprint:
+	{
+		item: 'blueprint',
+		version: 0,
+		entities: qualityComparisonEntities,
+	},
+};
+
+function expectedQualityComparisonBlueprint(matchingEntityNumbers: readonly number[]): BlueprintString
+{
+	const matching = new Set(matchingEntityNumbers);
+	return {
+		blueprint:
+		{
+			item: 'blueprint',
+			version: 0,
+			entities: qualityComparisonEntities.map((entity) =>
+				matching.has(entity.entity_number)
+					?
+						{
+							...entity,
+							name: 'express-transport-belt',
+							quality: 'legendary',
+						}
+					: entity,
+			),
+		},
+	};
+}
 
 describe('upgrade planner transforms', () =>
 {
@@ -473,339 +549,382 @@ describe('upgrade planner transforms', () =>
 		]);
 	});
 
-	test('substitutes labels, descriptions, and icon names throughout a book while preserving case', () =>
+	test('applies configured mappings in forward and reverse directions', () =>
 	{
 		const input: BlueprintString =
 		{
-			blueprint_book:
+			blueprint:
 			{
-				item: 'blueprint-book',
-				label: "Alice's Red book",
-				description: 'red RED Red',
+				item: 'blueprint',
 				version: 0,
-				icons: [
+				entities: [
 					{
-						index: 1,
-						signal:
+						entity_number: 100,
+						name: 'assembling-machine-1',
+						quality: 'rare',
+						position:
 						{
-							type: 'virtual',
-							name: 'signal-red',
-						},
-					},
-				],
-				blueprints: [
-					{
-						index: 100,
-						blueprint:
-						{
-							item: 'blueprint',
-							label: '[virtual-signal=signal-red] Red balancer',
-							description: 'No match',
-							version: 0,
-							icons: [
-								{
-									index: 1,
-									signal:
-									{
-										type: 'virtual',
-										name: 'signal-green',
-									},
-								},
-							],
-						},
-					},
-					{
-						index: 200,
-						upgrade_planner:
-						{
-							item: 'upgrade-planner',
-							label: 'Red planner',
-							version: 0,
-							settings:
-							{
-								description: 'Replace red',
-								icons: [
-									{
-										index: 1,
-										signal:
-										{
-											type: 'virtual',
-											name: 'signal-red',
-										},
-									},
-								],
-								mappers: [],
-							},
-						},
-					},
-					{
-						index: 300,
-						deconstruction_planner:
-						{
-							item: 'deconstruction-planner',
-							version: 0,
-							settings:
-							{
-								description: 'RED only',
-								icons: [
-									{
-										index: 1,
-										signal:
-										{
-											type: 'virtual',
-											name: 'signal-red',
-										},
-									},
-								],
-							},
+							x: 0,
+							y: 0,
 						},
 					},
 				],
 			},
 		};
-		const substitution =
+		const upgraded: BlueprintString =
 		{
-			find: 'red',
-			replace: 'blue',
-			matchCase: false,
+			blueprint:
+			{
+				item: 'blueprint',
+				version: 0,
+				entities: [
+					{
+						entity_number: 100,
+						name: 'assembling-machine-2',
+						quality: 'epic',
+						position:
+						{
+							x: 0,
+							y: 0,
+						},
+					},
+				],
+			},
 		};
 
 		expect(
 			{
-				count: analyzeMetadataSubstitution(input, substitution),
-				result: applyMetadataSubstitution(input, substitution),
+				downgraded: applyUpgradeRules(upgraded, rulesFromUpgradePlanner(configuredPlanner, 'downgrade')),
+				upgraded: applyUpgradeRules(input, rulesFromUpgradePlanner(configuredPlanner, 'upgrade')),
 			},
 		).toStrictEqual(
 			{
-				count: 9,
-				result:
-				{
-					blueprint_book:
-					{
-						item: 'blueprint-book',
-						label: "Alice's Blue book",
-						description: 'blue BLUE Blue',
-						version: 0,
-						icons: [
-							{
-								index: 1,
-								signal:
-								{
-									type: 'virtual',
-									name: 'signal-red',
-								},
-							},
-						],
-						blueprints: [
-							{
-								index: 100,
-								blueprint:
-								{
-									item: 'blueprint',
-									label: '[virtual-signal=signal-blue] Blue balancer',
-									description: 'No match',
-									version: 0,
-									icons: [
-										{
-											index: 1,
-											signal:
-											{
-												type: 'virtual',
-												name: 'signal-green',
-											},
-										},
-									],
-								},
-							},
-							{
-								index: 200,
-								upgrade_planner:
-								{
-									item: 'upgrade-planner',
-									label: 'Blue planner',
-									version: 0,
-									settings:
-									{
-										description: 'Replace blue',
-										icons: [
-											{
-												index: 1,
-												signal:
-												{
-													type: 'virtual',
-													name: 'signal-red',
-												},
-											},
-										],
-										mappers: [],
-									},
-								},
-							},
-							{
-								index: 300,
-								deconstruction_planner:
-								{
-									item: 'deconstruction-planner',
-									version: 0,
-									settings:
-									{
-										description: 'BLUE only',
-										icons: [
-											{
-												index: 1,
-												signal:
-												{
-													type: 'virtual',
-													name: 'signal-red',
-												},
-											},
-										],
-									},
-								},
-							},
-						],
-					},
-				},
+				downgraded: input,
+				upgraded,
 			},
 		);
 	});
 
-	test('discovers and replaces metadata icons by typed signal identity', () =>
+	test('keeps pasted mappings available when the current blueprint has zero matches', () =>
 	{
 		const input: BlueprintString =
 		{
-			blueprint_book:
+			blueprint:
 			{
-				item: 'blueprint-book',
+				item: 'blueprint',
 				version: 0,
-				icons: [
+				entities: [
 					{
-						index: 1,
-						signal:
+						entity_number: 100,
+						name: 'stone-furnace',
+						position:
 						{
-							type: 'virtual',
-							name: 'signal-red',
-						},
-					},
-				],
-				blueprints: [
-					{
-						index: 100,
-						blueprint:
-						{
-							item: 'blueprint',
-							version: 0,
-							icons: [
-								{
-									index: 1,
-									signal:
-									{
-										type: 'virtual',
-										name: 'signal-red',
-									},
-								},
-								{
-									index: 2,
-									signal:
-									{
-										type: 'virtual',
-										name: 'signal-green',
-									},
-								},
-							],
+							x: 0,
+							y: 0,
 						},
 					},
 				],
 			},
 		};
-		const replacements = [
+		const planner: UpgradePlanner =
+		{
+			item: 'upgrade-planner',
+			label: "Alice's pasted planner",
+			version: 0,
+			settings:
 			{
-				from:
-				{
-					type: 'virtual' as const,
-					name: 'signal-red',
-				},
-				to:
-				{
-					type: 'virtual' as const,
-					name: 'signal-blue',
-				},
+				mappers: [
+					{
+						index: 100,
+						from:
+						{
+							type: 'entity',
+							name: 'transport-belt',
+						},
+						to:
+						{
+							type: 'entity',
+							name: 'fast-transport-belt',
+						},
+					},
+				],
 			},
-		];
+		};
+		const parsed = parseUpgradePlanner(
+			serializeBlueprint(
+				{
+					upgrade_planner: planner,
+				},
+			),
+		);
+		const rules = rulesFromUpgradePlanner(parsed);
 
 		expect(
 			{
-				candidates: analyzeMetadataIcons(input),
-				count: analyzeIconReplacements(input, replacements),
-				result: applyIconReplacements(input, replacements),
+				candidates: analyzeUpgradeRules(input, rules),
+				parsed,
+				result: applyUpgradeRules(input, rules),
+				rules,
+			},
+		).toStrictEqual(
+			{
+				candidates: [],
+				parsed: planner,
+				result: input,
+				rules: [
+					{
+						from:
+						{
+							type: 'entity',
+							name: 'transport-belt',
+						},
+						preserveQuality: false,
+						to:
+						{
+							type: 'entity',
+							name: 'fast-transport-belt',
+						},
+					},
+				],
+			},
+		);
+	});
+
+	test.each([
+		{
+			comparator: '=',
+			matchingEntityNumbers: [300],
+		},
+		{
+			comparator: '≠',
+			matchingEntityNumbers: [100, 200, 400, 500],
+		},
+		{
+			comparator: '<',
+			matchingEntityNumbers: [100, 200],
+		},
+		{
+			comparator: '≤',
+			matchingEntityNumbers: [100, 200, 300],
+		},
+		{
+			comparator: '>',
+			matchingEntityNumbers: [400, 500],
+		},
+		{
+			comparator: '≥',
+			matchingEntityNumbers: [300, 400, 500],
+		},
+	] as const)('applies the $comparator source quality comparator', ({comparator, matchingEntityNumbers}) =>
+	{
+		const rule: UpgradeRule =
+		{
+			from:
+			{
+				type: 'entity',
+				name: 'transport-belt',
+				quality: 'rare',
+				comparator,
+			},
+			preserveQuality: false,
+			to:
+			{
+				type: 'entity',
+				name: 'express-transport-belt',
+				quality: 'legendary',
+			},
+		};
+
+		expect(
+			{
+				candidates: analyzeUpgradeRules(qualityComparisonBlueprint, [rule]),
+				result: applyUpgradeRules(qualityComparisonBlueprint, [rule]),
 			},
 		).toStrictEqual(
 			{
 				candidates: [
 					{
-						count: 2,
-						signal:
-						{
-							type: 'virtual',
-							name: 'signal-red',
-						},
+						...rule,
+						count: matchingEntityNumbers.length,
 					},
-					{
-						count: 1,
-						signal:
+				],
+				result: expectedQualityComparisonBlueprint(matchingEntityNumbers),
+			},
+		);
+	});
+
+	test.each([
+		{
+			description: 'defaults an omitted target quality to normal',
+			from:
+			{
+				type: 'entity',
+				name: 'transport-belt',
+				quality: 'rare',
+			},
+			preserveQuality: false,
+			to:
+			{
+				type: 'entity',
+				name: 'fast-transport-belt',
+			},
+			expected:
+			{
+				blueprint:
+				{
+					item: 'blueprint',
+					version: 0,
+					entities: [
 						{
-							type: 'virtual',
-							name: 'signal-green',
+							entity_number: 100,
+							name: 'fast-transport-belt',
+							position:
+							{
+								x: 0,
+								y: 0,
+							},
+						},
+					],
+				},
+			},
+		},
+		{
+			description: 'sets an explicit target quality',
+			from:
+			{
+				type: 'entity',
+				name: 'transport-belt',
+				quality: 'rare',
+				comparator: '=',
+			},
+			preserveQuality: false,
+			to:
+			{
+				type: 'entity',
+				name: 'fast-transport-belt',
+				quality: 'legendary',
+			},
+			expected:
+			{
+				blueprint:
+				{
+					item: 'blueprint',
+					version: 0,
+					entities: [
+						{
+							entity_number: 100,
+							name: 'fast-transport-belt',
+							quality: 'legendary',
+							position:
+							{
+								x: 0,
+								y: 0,
+							},
+						},
+					],
+				},
+			},
+		},
+		{
+			description: 'changes quality without changing the prototype',
+			from:
+			{
+				type: 'entity',
+				name: 'transport-belt',
+				quality: 'rare',
+				comparator: '=',
+			},
+			preserveQuality: false,
+			to:
+			{
+				type: 'entity',
+				name: 'transport-belt',
+				quality: 'legendary',
+			},
+			expected:
+			{
+				blueprint:
+				{
+					item: 'blueprint',
+					version: 0,
+					entities: [
+						{
+							entity_number: 100,
+							name: 'transport-belt',
+							quality: 'legendary',
+							position:
+							{
+								x: 0,
+								y: 0,
+							},
+						},
+					],
+				},
+			},
+		},
+	] as const)('$description', ({expected, from, preserveQuality, to}) =>
+	{
+		const input: BlueprintString =
+		{
+			blueprint:
+			{
+				item: 'blueprint',
+				version: 0,
+				entities: [
+					{
+						entity_number: 100,
+						name: 'transport-belt',
+						quality: 'rare',
+						position:
+						{
+							x: 0,
+							y: 0,
 						},
 					},
 				],
-				count: 2,
-				result:
-				{
-					blueprint_book:
+			},
+		};
+		const planner: UpgradePlanner =
+		{
+			item: 'upgrade-planner',
+			version: 0,
+			settings:
+			{
+				mappers: [
 					{
-						item: 'blueprint-book',
-						version: 0,
-						icons: [
-							{
-								index: 1,
-								signal:
-								{
-									type: 'virtual',
-									name: 'signal-blue',
-								},
-							},
-						],
-						blueprints: [
-							{
-								index: 100,
-								blueprint:
-								{
-									item: 'blueprint',
-									version: 0,
-									icons: [
-										{
-											index: 1,
-											signal:
-											{
-												type: 'virtual',
-												name: 'signal-blue',
-											},
-										},
-										{
-											index: 2,
-											signal:
-											{
-												type: 'virtual',
-												name: 'signal-green',
-											},
-										},
-									],
-								},
-							},
-						],
+						from,
+						index: 100,
+						to,
 					},
-				},
+				],
+			},
+		};
+		const rules = rulesFromUpgradePlanner(planner);
+
+		expect(
+			{
+				candidates: analyzeUpgradeRules(input, rules),
+				result: applyUpgradeRules(input, rules),
+				rules,
+			},
+		).toStrictEqual(
+			{
+				candidates: [
+					{
+						from,
+						preserveQuality,
+						to,
+						count: 1,
+					},
+				],
+				result: expected,
+				rules: [
+					{
+						from,
+						preserveQuality,
+						to,
+					},
+				],
 			},
 		);
 	});
@@ -845,6 +964,67 @@ describe('upgrade planner transforms', () =>
 					},
 				},
 				blankRules: builtInUpgradeRules('upgrade'),
+			},
+		);
+	});
+
+	test('preserves source quality comparators when parsing upgrade planners', () =>
+	{
+		const planner: BlueprintString =
+		{
+			upgrade_planner:
+			{
+				item: 'upgrade-planner',
+				version: 0,
+				settings:
+				{
+					mappers: [
+						{
+							index: 1,
+							from:
+							{
+								type: 'entity',
+								name: 'transport-belt',
+								quality: 'rare',
+								comparator: '>',
+							},
+							to:
+							{
+								type: 'entity',
+								name: 'fast-transport-belt',
+							},
+						},
+					],
+				},
+			},
+		};
+		const parsed = parseUpgradePlanner(serializeBlueprint(planner));
+
+		expect(
+			{
+				parsed,
+				rules: rulesFromUpgradePlanner(parsed),
+			},
+		).toStrictEqual(
+			{
+				parsed: planner.upgrade_planner,
+				rules: [
+					{
+						from:
+						{
+							type: 'entity',
+							name: 'transport-belt',
+							quality: 'rare',
+							comparator: '>',
+						},
+						preserveQuality: false,
+						to:
+						{
+							type: 'entity',
+							name: 'fast-transport-belt',
+						},
+					},
+				],
 			},
 		);
 	});

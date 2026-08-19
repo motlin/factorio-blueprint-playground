@@ -22,6 +22,7 @@ export type SignalType =
 	| 'space-location';
 
 export type Quality = 'normal' | 'uncommon' | 'rare' | 'epic' | 'legendary' | undefined;
+export type QualityComparator = '=' | '!=' | '<' | '<=' | '>' | '>=' | '≠' | '≤' | '≥';
 
 export interface SignalID
 {
@@ -30,6 +31,11 @@ export interface SignalID
 	// Omitted when the game exports a signal it no longer recognizes.
 	name?: string;
 	quality?: Quality;
+}
+
+export interface UpgradeSourceSignal extends SignalID
+{
+	comparator?: QualityComparator;
 }
 
 export interface Icon
@@ -302,19 +308,25 @@ export interface Tile
 export interface Parameter
 {
 	type: 'id' | 'number';
-	name: string;
+	name?: string;
 	id?: string;
 	number?: string;
 	variable?: string;
 	formula?: string;
 	dependent?: boolean;
 	'not-parametrised'?: boolean;
+	parameter?: boolean;
 	'quality-condition'?:
 	{
 		quality: Quality;
-		comparator: string;
+		comparator: QualityComparator;
 	};
 	'ingredient-of'?: string;
+	'product-of'?: string;
+	'item-ingredient-of'?: string;
+	'fluid-ingredient-of'?: string;
+	'item-product-of'?: string;
+	'fluid-product-of'?: string;
 }
 
 // Common fields across all blueprint types
@@ -335,14 +347,17 @@ export interface Blueprint extends CommonFields
 	tiles?: Tile[];
 	schedules?: Schedule[];
 	parameters?: Parameter[];
-	// Factorio 2.0 circuit and copper wires: [entity, connector, entity, connector]
-	wires?: [number, number, number, number][];
-	snap_to_grid?:
+	'snap-to-grid'?:
 	{
 		x: number;
 		y: number;
 	};
-	absolute_snapping?: boolean;
+	'absolute-snapping'?: boolean;
+	'position-relative-to-grid'?:
+	{
+		x: number;
+		y: number;
+	};
 }
 
 interface DeconstructionSettings
@@ -367,7 +382,7 @@ export interface DeconstructionPlanner extends CommonFields
 
 export interface UpgradeMapping
 {
-	from?: SignalID;
+	from?: UpgradeSourceSignal;
 	to?: SignalID;
 	index: number;
 }
