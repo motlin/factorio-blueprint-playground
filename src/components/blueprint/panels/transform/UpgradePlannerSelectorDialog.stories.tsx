@@ -1,5 +1,5 @@
 import type {Meta, StoryObj} from '@storybook/react-vite';
-import {expect, fn, within} from 'storybook/test';
+import {expect, fn, userEvent, within} from 'storybook/test';
 
 import type {BlueprintString, UpgradePlanner} from '../../../../parsing/types';
 import {transformStoryParameters} from './transformStoryParameters';
@@ -144,6 +144,15 @@ export const ApplyPlanner: Story =
 				},
 			),
 		).toBeVisible();
+		// The view mode persists across stories; pin it before asserting.
+		await userEvent.click(
+			page.getByRole(
+				'button',
+				{
+					name: 'List view',
+				},
+			),
+		);
 		await expect(
 			page.getByRole(
 				'button',
