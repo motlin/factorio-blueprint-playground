@@ -100,6 +100,24 @@ export function BlueprintPlayground() {
 		}
 	}, [selectedPath, pasted, isSuccess, existingBlueprintId, savedSelection]);
 
+	const isBook = rootBlueprint?.blueprint_book != null;
+	const transformPanel = (
+		<TransformPanel
+			key={selectedPath ?? ''}
+			blueprint={selectedBlueprint}
+			blueprintEditorSourceMode={
+				editorCommitMatchesSource
+					? BlueprintEditorSourceMode.ExistingRecord
+					: BlueprintEditorSourceMode.CapturedDraft
+			}
+			onBlueprintCommit={(committedRoot) => {
+				setEditorCommitState({committedRoot, sourceInput: pasted});
+			}}
+			rootBlueprint={rootBlueprint}
+			selectedPath={selectedPath}
+		/>
+	);
+
 	return (
 		<div className="container">
 			<h1>Factorio Blueprint Playground</h1>
@@ -119,37 +137,44 @@ export function BlueprintPlayground() {
 				)}
 			>
 				<div className="panels2">
-					{/* Left side */}
-					<div>
-						<ExportActions blueprint={rootBlueprint} path={undefined} title="Root Blueprint" />
+					{/* The Root/Selected split and the tree only say something when there is a
+						book to navigate. A lone blueprint is its own selection, so a second
+						column would leave one tree row beside a tall Basic Information panel. */}
+					{isBook ? (
+						<>
+							{/* Left side */}
+							<div>
+								<ExportActions blueprint={rootBlueprint} path={undefined} title="Root Blueprint" />
 
-						<BlueprintTree
-							rootBlueprint={rootBlueprint}
-							onSelect={onSelect}
-							selectedPath={selectedPath ?? ''}
-						/>
-					</div>
+								<BlueprintTree
+									rootBlueprint={rootBlueprint}
+									onSelect={onSelect}
+									selectedPath={selectedPath ?? ''}
+								/>
+							</div>
 
-					{/* Right side */}
-					<div>
-						<ExportActions blueprint={selectedBlueprint} path={selectedPath} title="Selected Blueprint" />
-						<TransformPanel
-							key={selectedPath ?? ''}
-							blueprint={selectedBlueprint}
-							blueprintEditorSourceMode={
-								editorCommitMatchesSource
-									? BlueprintEditorSourceMode.ExistingRecord
-									: BlueprintEditorSourceMode.CapturedDraft
-							}
-							onBlueprintCommit={(committedRoot) => {
-								setEditorCommitState({committedRoot, sourceInput: pasted});
-							}}
-							rootBlueprint={rootBlueprint}
-							selectedPath={selectedPath}
-						/>
-						<BasicInfoPanel blueprint={selectedBlueprint} />
-						<BlueprintInfoPanels blueprint={selectedBlueprint} />
-					</div>
+							{/* Right side */}
+							<div>
+								<ExportActions
+									blueprint={selectedBlueprint}
+									path={selectedPath}
+									title="Selected Blueprint"
+								/>
+								{transformPanel}
+								<BasicInfoPanel blueprint={selectedBlueprint} />
+							</div>
+						</>
+					) : (
+						<div>
+							<ExportActions blueprint={selectedBlueprint} path={selectedPath} title="Blueprint" />
+							{transformPanel}
+							<BasicInfoPanel blueprint={selectedBlueprint} />
+						</div>
+					)}
+				</div>
+
+				<div className="panel-columns">
+					<BlueprintInfoPanels blueprint={selectedBlueprint} />
 				</div>
 
 				<ParametersPanel blueprintString={selectedBlueprint} />

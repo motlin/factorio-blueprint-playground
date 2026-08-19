@@ -10,6 +10,7 @@ export enum FactorioButtonKind {
 
 export enum FactorioFrameDepth {
 	Shallow = 'shallow',
+	Inside = 'inside',
 	Deep = 'deep',
 }
 
