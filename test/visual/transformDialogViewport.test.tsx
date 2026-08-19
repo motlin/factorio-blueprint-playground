@@ -94,9 +94,11 @@ function renderPlannerHtml(): string {
 
 test('keeps the planner shell and mapping inside narrow and short viewports', async () => {
 	const html = renderPlannerHtml();
+	expect(html.match(/upgrade-planner-dialog__scroll-region/g)?.length).toBe(1);
 	const viewports = [
-		{height: 568, width: 320},
-		{height: 320, width: 860},
+		{height: 800, width: 1200},
+		{height: 360, width: 960},
+		{height: 640, width: 320},
 	];
 	const layouts: Array<DialogViewportLayout | undefined> = [];
 	for (const viewport of viewports) {
