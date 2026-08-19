@@ -6,7 +6,7 @@
 	"scripts": {
 		"preinstall": "npx only-allow pnpm",
 		"dev": "vp dev",
-		"dev:pages": "wrangler pages dev --proxy=5173 --port=8788",
+		"dev:pages": "wrangler pages dev --proxy=5713 --port=8788",
 		"dev:functions": "wrangler pages dev . --port=8788",
 		"preview": "wrangler pages dev dist --port 5174",
 		"generate:routes": "tsr generate",

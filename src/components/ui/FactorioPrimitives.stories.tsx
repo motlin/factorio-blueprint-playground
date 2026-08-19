@@ -444,8 +444,8 @@ export const DialogChrome: Story = {
 			backgroundColor: 'rgb(48, 48, 48)',
 			closeHeight: '24px',
 			closeWidth: '24px',
-			titleMinHeight: '46px',
-			titlePadding: '10px 12px 12px',
+			titleMinHeight: '32px',
+			titlePadding: '4px 8px',
 		});
 		closeButton.focus();
 		await expect(closeButton).toHaveFocus();
