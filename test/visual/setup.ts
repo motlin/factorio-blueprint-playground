@@ -162,7 +162,10 @@ export interface DialogViewportLayout {
 	footerActionsShareUniformHeight: boolean;
 	footerVisible: boolean;
 	headerVisible: boolean;
+	mapperFitsHorizontally: boolean;
 	mapperOwnsHorizontalScrolling: boolean;
+	mappingHeadingsAlignToColumns: boolean;
+	mappingReflowsBelowSourceWidth: boolean;
 	mappingSourceWidthHonored: boolean;
 	panelInsetsPreserved: boolean;
 	primaryActionVisible: boolean;
@@ -373,6 +376,9 @@ export async function inspectDialogViewport(
 			);
 			const title = dialog.querySelector<HTMLElement>(':scope > .upgrade-planner-dialog__title-bar h3');
 			const mapping = dialog.querySelector<HTMLElement>('.upgrade-mapping-grid__slots');
+			const headings = [...dialog.querySelectorAll<HTMLElement>('.upgrade-mapping-grid__headings > div')].filter(
+				(heading) => heading.getBoundingClientRect().width > 0,
+			);
 			const mapperScroll = dialog.querySelector<HTMLElement>('.upgrade-planner-dialog__scroll-region');
 			const editor = dialog.querySelector<HTMLElement>('.upgrade-planner-dialog__editor-shell');
 			const application = dialog.querySelector<HTMLElement>('.upgrade-planner-dialog__application');
@@ -419,6 +425,11 @@ export async function inspectDialogViewport(
 			);
 			const mapperScrollStyle = getComputedStyle(mapperScroll);
 			const mappingBounds = mapping.getBoundingClientRect();
+			const pairBounds = [...mapping.children].map((pair) => pair.getBoundingClientRect());
+			const firstRowPairs =
+				pairBounds.length === 0
+					? []
+					: pairBounds.filter((bounds) => Math.round(bounds.top) === Math.round(pairBounds[0].top));
 			const editorBounds = editor.getBoundingClientRect();
 			const applicationBounds = application.getBoundingClientRect();
 			const replacementsBounds = replacements.getBoundingClientRect();
@@ -447,9 +458,18 @@ export async function inspectDialogViewport(
 				footerActionsShareUniformHeight: footerActionHeights.size === 1 && footerActionsUnwrapped,
 				footerVisible: footerBounds.bottom <= window.innerHeight,
 				headerVisible: headerBounds.top >= 0,
+				mapperFitsHorizontally: mapperScroll.scrollWidth <= mapperScroll.clientWidth,
 				mapperOwnsHorizontalScrolling:
 					mapperScrollStyle.overflowX === 'auto' && mapperScroll.scrollWidth >= mapperScroll.clientWidth,
-				mappingSourceWidthHonored: Math.abs(mappingBounds.width - 400) < 1,
+				mappingHeadingsAlignToColumns:
+					headings.length === firstRowPairs.length &&
+					headings.every(
+						(heading, index) =>
+							Math.abs(heading.getBoundingClientRect().left - firstRowPairs[index].left) < 1,
+					),
+				mappingReflowsBelowSourceWidth:
+					mapperScroll.clientWidth >= 400 ? firstRowPairs.length === 4 : firstRowPairs.length === 2,
+				mappingSourceWidthHonored: mapperScroll.clientWidth < 400 || Math.abs(mappingBounds.width - 400) < 1,
 				panelInsetsPreserved:
 					Math.abs(applicationBounds.left - editorBounds.left - 4) < 1 &&
 					Math.abs(editorBounds.left - replacementsBounds.left) < 1,
@@ -543,6 +563,401 @@ export async function inspectDiscardConfirmationViewport(
 					confirmationBounds.left >= 0 &&
 					confirmationBounds.right <= window.innerWidth &&
 					confirmationBounds.bottom <= window.innerHeight,
+			};
+		});
+	} finally {
+		await Promise.all([viewportPage.close(), fs.rm(htmlPath, {force: true})]);
+	}
+}
+
+export interface PixelSnappingLayout {
+	backdropChildSnapped: boolean;
+	containerSnapped: boolean;
+	frameSnapped: boolean;
+	layoutWidthIsOdd: boolean;
+	librarySnapped: boolean;
+	topBarInnerSnapped: boolean;
+}
+
+export async function inspectPixelSnapping(
+	testName: string,
+	html: string,
+	viewport: {height: number; width: number},
+): Promise<PixelSnappingLayout | undefined> {
+	if (skipBrowserTests || browser === null) {
+		return undefined;
+	}
+
+	const viewportPage = await browser.newPage({viewport});
+	const htmlPath = await renderToHtmlFile(
+		html,
+		`${testName}-${viewport.width.toString()}x${viewport.height.toString()}`,
+	);
+	try {
+		await viewportPage.goto(`file://${htmlPath}`);
+		await viewportPage.waitForSelector('.container');
+
+		return await viewportPage.evaluate(() => {
+			const select = (selector: string): HTMLElement => {
+				const element = document.querySelector<HTMLElement>(selector);
+				if (element === null) {
+					throw new Error(`Expected ${selector} in the pixel snapping fixture.`);
+				}
+				return element;
+			};
+			const onWholePixels = (element: HTMLElement): boolean => {
+				const bounds = element.getBoundingClientRect();
+				return Number.isInteger(bounds.left) && Number.isInteger(bounds.right);
+			};
+
+			return {
+				backdropChildSnapped: onWholePixels(select('.factorio-dialog')),
+				containerSnapped: onWholePixels(select('.container')),
+				frameSnapped: onWholePixels(select('.factorio-frame')),
+				layoutWidthIsOdd: document.body.clientWidth % 2 === 1,
+				librarySnapped: onWholePixels(select('.blueprint-library')),
+				topBarInnerSnapped: onWholePixels(select('.top-bar-inner')),
+			};
+		});
+	} finally {
+		await Promise.all([viewportPage.close(), fs.rm(htmlPath, {force: true})]);
+	}
+}
+
+export interface FrameEdge {
+	borderImageSource: string;
+	borderStyle: string;
+	borderWidth: string;
+	boxShadow: string;
+}
+
+export interface FrameEdgeSurvey {
+	deepInsetDark: FrameEdge;
+	deepInsetLight: FrameEdge;
+	deepScrollFrame: FrameEdge;
+	shallowDialog: FrameEdge;
+	shallowPanel: FrameEdge;
+}
+
+export async function inspectFrameEdges(testName: string, html: string): Promise<FrameEdgeSurvey | undefined> {
+	if (skipBrowserTests || browser === null) {
+		return undefined;
+	}
+
+	const viewportPage = await browser.newPage({viewport: {height: 900, width: 1280}});
+	const htmlPath = await renderToHtmlFile(html, testName);
+	try {
+		await viewportPage.goto(`file://${htmlPath}`);
+		await viewportPage.waitForSelector('[data-frame-sample]');
+
+		return await viewportPage.evaluate(() => {
+			const edgeOf = (sample: string): FrameEdge => {
+				const element = document.querySelector<HTMLElement>(`[data-frame-sample="${sample}"]`);
+				if (element === null) {
+					throw new Error(`Expected the ${sample} frame sample.`);
+				}
+				const style = getComputedStyle(element);
+				return {
+					borderImageSource: style.borderImageSource,
+					borderStyle: style.borderTopStyle,
+					borderWidth: style.borderTopWidth,
+					boxShadow: style.boxShadow,
+				};
+			};
+
+			return {
+				deepInsetDark: edgeOf('deep-inset-dark'),
+				deepInsetLight: edgeOf('deep-inset-light'),
+				deepScrollFrame: edgeOf('deep-scroll-frame'),
+				shallowDialog: edgeOf('shallow-dialog'),
+				shallowPanel: edgeOf('shallow-panel'),
+			};
+		});
+	} finally {
+		await Promise.all([viewportPage.close(), fs.rm(htmlPath, {force: true})]);
+	}
+}
+
+export interface DialogChildInset {
+	left: number;
+	right: number;
+	sample: string;
+}
+
+export async function inspectDialogChildInsets(
+	testName: string,
+	html: string,
+): Promise<DialogChildInset[] | undefined> {
+	if (skipBrowserTests || browser === null) {
+		return undefined;
+	}
+
+	const viewportPage = await browser.newPage({viewport: {height: 900, width: 1280}});
+	const htmlPath = await renderToHtmlFile(html, testName);
+	try {
+		await viewportPage.goto(`file://${htmlPath}`);
+		await viewportPage.waitForSelector('[data-dialog-sample]');
+
+		return await viewportPage.evaluate(() => {
+			const dialogs = [...document.querySelectorAll<HTMLElement>('[data-dialog-sample]')];
+			if (dialogs.length === 0) {
+				throw new Error('Expected at least one dialog sample.');
+			}
+			return dialogs.flatMap((dialog) => {
+				const sample = dialog.dataset['dialogSample'];
+				if (sample === undefined) {
+					throw new Error('Expected every dialog sample to be named.');
+				}
+				const bounds = dialog.getBoundingClientRect();
+				return [...dialog.children].map((child, index) => {
+					const childBounds = child.getBoundingClientRect();
+					return {
+						left: Math.round(childBounds.left - bounds.left),
+						right: Math.round(bounds.right - childBounds.right),
+						sample: `${sample}[${index.toString()}]`,
+					};
+				});
+			});
+		});
+	} finally {
+		await Promise.all([viewportPage.close(), fs.rm(htmlPath, {force: true})]);
+	}
+}
+
+export interface DialogFrameEdge {
+	bottomInner: string;
+	bottomOuter: string;
+	leftInner: string;
+	leftOuter: string;
+	rightInner: string;
+	rightOuter: string;
+	sample: string;
+	topInner: string;
+	topOuter: string;
+}
+
+function hexAt(image: PNG, x: number, y: number): string {
+	const offset = (image.width * y + x) * 4;
+	const channel = (index: number): string => image.data[offset + index].toString(16).padStart(2, '0');
+	return `#${channel(0)}${channel(1)}${channel(2)}`;
+}
+
+/**
+ * Screenshots each dialog sample on its own and reads the two outermost pixels of
+ * every edge, so a child painted flush against the frame shows up as its own
+ * background colour where the frame's bevel belongs.
+ */
+export async function inspectDialogFrameEdges(testName: string, html: string): Promise<DialogFrameEdge[] | undefined> {
+	if (skipBrowserTests || browser === null) {
+		return undefined;
+	}
+
+	const viewportPage = await browser.newPage({viewport: {height: 900, width: 1280}});
+	const htmlPath = await renderToHtmlFile(html, testName);
+	try {
+		await viewportPage.goto(`file://${htmlPath}`);
+		await viewportPage.waitForSelector('[data-dialog-sample]');
+
+		const dialogs = viewportPage.locator('[data-dialog-sample]');
+		const count = await dialogs.count();
+		if (count === 0) {
+			throw new Error('Expected at least one dialog sample.');
+		}
+
+		const edges: DialogFrameEdge[] = [];
+		for (let index = 0; index < count; index++) {
+			await viewportPage.evaluate((visible) => {
+				for (const [position, dialog] of [
+					...document.querySelectorAll<HTMLElement>('[data-dialog-sample]'),
+				].entries()) {
+					const backdrop = dialog.parentElement;
+					if (backdrop === null) {
+						throw new Error('Expected every dialog sample to sit in a backdrop.');
+					}
+					// The samples are stacked fixed-position backdrops, so hide the rest
+					// to keep a neighbour from covering the dialog being photographed.
+					backdrop.style.display = position === visible ? '' : 'none';
+					if (position !== visible) {
+						continue;
+					}
+					// Centring an odd-height dialog in an even-height backdrop lands its
+					// top and bottom edges on `x.5`, which blends the bevel across two
+					// device pixels and hides what is actually painted there. Top-align
+					// the sample and round its height so every edge reads as one solid row.
+					backdrop.style.alignContent = 'start';
+					dialog.style.height = `${Math.ceil(dialog.getBoundingClientRect().height).toString()}px`;
+				}
+			}, index);
+
+			const dialog = dialogs.nth(index);
+			const sample = await dialog.getAttribute('data-dialog-sample');
+			if (sample === null) {
+				throw new Error('Expected every dialog sample to be named.');
+			}
+			const image = PNG.sync.read(await dialog.screenshot());
+			const centerX = Math.floor(image.width / 2);
+			const centerY = Math.floor(image.height / 2);
+			edges.push({
+				bottomInner: hexAt(image, centerX, image.height - 2),
+				bottomOuter: hexAt(image, centerX, image.height - 1),
+				leftInner: hexAt(image, 1, centerY),
+				leftOuter: hexAt(image, 0, centerY),
+				rightInner: hexAt(image, image.width - 2, centerY),
+				rightOuter: hexAt(image, image.width - 1, centerY),
+				sample,
+				topInner: hexAt(image, centerX, 1),
+				topOuter: hexAt(image, centerX, 0),
+			});
+		}
+		return edges;
+	} finally {
+		await Promise.all([viewportPage.close(), fs.rm(htmlPath, {force: true})]);
+	}
+}
+
+export interface NestedFrameBevel {
+	bevel: string;
+	sample: string;
+}
+
+/**
+ * Surveys the frames that sit directly inside another frame. The game never
+ * stacks two raised frame faces: a frame nested in a dialog is an inside frame,
+ * carved into the dialog rather than raised above it, so a nested frame that
+ * repeats the raised bevel reads as a doubled border 8px in from the dialog edge.
+ */
+export async function inspectNestedFrameBevels(
+	testName: string,
+	html: string,
+): Promise<NestedFrameBevel[] | undefined> {
+	if (skipBrowserTests || browser === null) {
+		return undefined;
+	}
+
+	const viewportPage = await browser.newPage({viewport: {height: 900, width: 1280}});
+	const htmlPath = await renderToHtmlFile(html, testName);
+	try {
+		await viewportPage.goto(`file://${htmlPath}`);
+		await viewportPage.waitForSelector('[data-dialog-sample]');
+
+		return await viewportPage.evaluate(() => {
+			const dialogs = [...document.querySelectorAll<HTMLElement>('[data-dialog-sample]')];
+			if (dialogs.length === 0) {
+				throw new Error('Expected at least one dialog sample.');
+			}
+			return dialogs.flatMap((dialog) => {
+				const sample = dialog.dataset['dialogSample'];
+				if (sample === undefined) {
+					throw new Error('Expected every dialog sample to be named.');
+				}
+				return [...dialog.children].flatMap((child, index) =>
+					child.classList.contains('factorio-frame')
+						? [
+								{
+									bevel: getComputedStyle(child).boxShadow,
+									sample: `${sample}[${index.toString()}]`,
+								},
+							]
+						: [],
+				);
+			});
+		});
+	} finally {
+		await Promise.all([viewportPage.close(), fs.rm(htmlPath, {force: true})]);
+	}
+}
+
+export interface PlaygroundColumnLayout {
+	collapsedLabelsStayNarrow: boolean;
+	columnsEndTogether: boolean;
+	contentsPanelsLeaveTheColumns: boolean;
+	contentsPanelsMatchColumnWidth: boolean;
+	contentsPanelsShareTheirTop: boolean;
+	contentsPanelsUseBothColumns: boolean;
+	selectedColumnEndsAtBasicInformation: boolean;
+}
+
+export async function inspectPlaygroundColumns(
+	testName: string,
+	html: string,
+	viewport: {height: number; width: number},
+): Promise<PlaygroundColumnLayout | undefined> {
+	if (skipBrowserTests || browser === null) {
+		return undefined;
+	}
+
+	const viewportPage = await browser.newPage({viewport});
+	const htmlPath = await renderToHtmlFile(
+		html,
+		`${testName}-${viewport.width.toString()}x${viewport.height.toString()}`,
+	);
+	try {
+		await viewportPage.goto(`file://${htmlPath}`);
+		await viewportPage.waitForSelector('.panels2');
+
+		return await viewportPage.evaluate(() => {
+			// A column that runs out early leaves a strip of bare page background
+			// beside the taller one. Books balance to a few dozen pixels, so the
+			// allowance only has to be loose enough to absorb one short panel.
+			const emptyStripAllowance = 150;
+			const columnGap = 14;
+			// The vendored sheet splits every definition-list hole 50/50, which reads
+			// fine in a 577px column but strands a short label in a 582px cell once a
+			// column goes full width.
+			const widestLabelShare = 0.3;
+
+			const columns = [...document.querySelectorAll<HTMLElement>('.panels2 > div')];
+			const contents = document.querySelector<HTMLElement>('.panel-columns');
+			if (columns.length === 0 || columns.length > 2 || contents === null) {
+				throw new Error('Expected one or two blueprint columns and a blueprint contents section.');
+			}
+
+			const headings = (root: ParentNode): string[] =>
+				[...root.querySelectorAll<HTMLElement>('h2')].map((heading) => heading.textContent);
+			const columnHeadings = columns.flatMap((column) => headings(column));
+			const selectedHeadings = headings(columns[columns.length - 1]);
+			const contentsBounds = contents.getBoundingClientRect();
+			const contentsPanels = [...contents.children].map((panel) => panel.getBoundingClientRect());
+			const midpoint = contentsBounds.left + contentsBounds.width / 2;
+			const trackWidth = (contentsBounds.width - columnGap) / 2;
+			// The transform toolbelt is fixed to the viewport bottom, so it sits in
+			// the column's markup without occupying any of its height.
+			const columnBottoms = columns.map((column) => {
+				const flowed = [...column.children].filter((panel) => getComputedStyle(panel).position !== 'fixed');
+				return flowed.length === 0
+					? column.getBoundingClientRect().top
+					: Math.max(...flowed.map((panel) => panel.getBoundingClientRect().bottom));
+			});
+
+			// Vacuously true for a book, which keeps both columns at half width.
+			const collapsedLabels = [...document.querySelectorAll<HTMLElement>('.panels2 > div:only-child dt')];
+
+			return {
+				collapsedLabelsStayNarrow: collapsedLabels.every((label) => {
+					const list = label.closest('dl');
+					return (
+						list === null ||
+						label.getBoundingClientRect().width <= list.getBoundingClientRect().width * widestLabelShare
+					);
+				}),
+				columnsEndTogether: Math.max(...columnBottoms) - Math.min(...columnBottoms) <= emptyStripAllowance,
+				contentsPanelsLeaveTheColumns: !columnHeadings.some(
+					(heading) => heading === 'Entities' || heading === 'Mod Detection',
+				),
+				contentsPanelsMatchColumnWidth: contentsPanels.every(
+					(panel) => Math.abs(panel.width - trackWidth) <= 1,
+				),
+				contentsPanelsShareTheirTop: [
+					contentsPanels.filter((panel) => panel.left < midpoint),
+					contentsPanels.filter((panel) => panel.left >= midpoint),
+				].every(
+					(track) =>
+						track.length > 0 &&
+						Math.abs(Math.min(...track.map((panel) => panel.top)) - contentsBounds.top) <= 1,
+				),
+				contentsPanelsUseBothColumns: contentsPanels.some((panel) => panel.left >= midpoint),
+				selectedColumnEndsAtBasicInformation:
+					selectedHeadings[selectedHeadings.length - 1] === 'Basic Information',
 			};
 		});
 	} finally {

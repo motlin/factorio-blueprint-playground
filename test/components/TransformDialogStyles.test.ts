@@ -5,6 +5,8 @@ import {resolve} from 'node:path';
 
 import {expect, test} from 'vite-plus/test';
 
+import gameUiSpec from '../../src/generated/game-ui-spec.json';
+
 const stylesheet = readFileSync(resolve('src/styles/main.css'), 'utf8');
 
 function ruleFor(selector: string): string {
@@ -17,11 +19,11 @@ function ruleFor(selector: string): string {
 }
 
 function propertyFor(selector: string, property: string): string {
-	const match = ruleFor(selector).match(new RegExp(`\\n\\t${property}: ([^;]+);`));
+	const match = ruleFor(selector).match(new RegExp(`\\n\\t${property}:\\s+([^;]+);`));
 	if (match === null) {
 		throw new Error(`Missing ${property} property for CSS selector: ${selector}`);
 	}
-	return match[1];
+	return match[1].replaceAll(/\s+/gu, ' ');
 }
 
 test('keeps the signal picker wide enough to cover the Blueprint Editor shell', () => {
@@ -122,4 +124,47 @@ test('keeps the snap-to-grid checkmark inside its checkbox', () => {
 		transform: 'rotate(45deg)',
 		width: '6px',
 	});
+});
+
+test('paints disallowed signal picker slots with the resting red_slot_button graphical set', () => {
+	const disallowedSelector = ".transform-picker__option[aria-disabled='true']";
+	const removedSelector = '.blueprint-components__slot--removed .blueprint-components__slot-button';
+
+	expect({
+		disallowedBackground: propertyFor(disallowedSelector, 'background'),
+		disallowedBoxShadow: propertyFor(disallowedSelector, 'box-shadow'),
+		removedBackground: propertyFor(removedSelector, 'background'),
+		removedBoxShadow: propertyFor(removedSelector, 'box-shadow'),
+	}).toStrictEqual({
+		disallowedBackground: '#733636',
+		disallowedBoxShadow: 'inset 1px 1px 0 #a85858, inset -2px -2px 0 #321616',
+		removedBackground: '#733636',
+		removedBoxShadow: 'inset 1px 1px 0 #a85858, inset -2px -2px 0 #321616',
+	});
+});
+
+test('keeps hovered and pressed disallowed signal picker slots red instead of flipping them to the orange slot', () => {
+	const hoveredSelector =
+		".transform-picker__option[aria-disabled='true']:hover,\n.transform-picker__option[aria-disabled='true'][data-visual-state='hover']";
+	const activeSelector = ".transform-picker__option[aria-disabled='true']:active";
+
+	expect({
+		activeBackground: propertyFor(activeSelector, 'background'),
+		hoveredBackground: propertyFor(hoveredSelector, 'background'),
+	}).toStrictEqual({
+		activeBackground: '#7e2b2b',
+		hoveredBackground: '#a84c4c',
+	});
+});
+
+test('reflows the mapper table at exactly the source-derived four-pair width', () => {
+	const sourceTableWidth =
+		gameUiSpec.styles.mappingPairWidth * gameUiSpec.upgradePlanner.mappingsPerRow +
+		gameUiSpec.styles.mappingTableHorizontalSpacing.reduce((total, spacing) => total + spacing, 0);
+
+	expect(stylesheet).toContain(`@container upgrade-mapping (width < ${sourceTableWidth.toString()}px) {`);
+	expect(propertyFor('.upgrade-mapping-grid', 'container')).toBe('upgrade-mapping / inline-size');
+	expect(propertyFor('.upgrade-mapping-grid', 'max-width')).toBe(
+		'calc(var(--upgrade-mapping-table-width) * var(--factorio-ui-density))',
+	);
 });
