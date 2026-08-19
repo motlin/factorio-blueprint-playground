@@ -6,6 +6,14 @@ const sourceSchema = z.object({
 	blob: objectIdSchema,
 });
 
+const priorArtSchema = z.object({
+	repository: z.literal('teoxoy/factorio-blueprint-editor'),
+	commit: objectIdSchema,
+	license: z.literal('MIT'),
+	copyright: z.literal('Copyright (c) 2020 Tanasoaia Teodor Andrei'),
+	sources: z.array(sourceSchema).min(1),
+});
+
 const gameUiSourceLockSchema = z.object({
 	schemaVersion: z.literal(1),
 	repository: z.literal('wube/Factorio'),
@@ -13,6 +21,7 @@ const gameUiSourceLockSchema = z.object({
 	tag: z.literal('2.1.12'),
 	commit: objectIdSchema,
 	sources: z.array(sourceSchema).min(1),
+	priorArt: priorArtSchema,
 });
 
 const qualitySchema = z.object({
@@ -30,6 +39,12 @@ const signalCategorySchema = z.object({
 	label: z.string().min(1),
 	order: z.string().min(1),
 	icon: z.string().min(1),
+	subgroups: z.array(
+		z.object({
+			name: z.string().min(1),
+			order: z.string().min(1),
+		}),
+	),
 });
 
 const upgradeMemberSchema = z.object({
@@ -46,6 +61,7 @@ const gameUiSpecSchema = z.object({
 		commit: objectIdSchema,
 		locale: z.literal('en'),
 		sources: z.array(sourceSchema).min(1),
+		priorArt: priorArtSchema,
 	}),
 	qualities: z.array(qualitySchema).min(1),
 	qualityComparators: z.array(z.string().min(1)).min(1),
@@ -55,6 +71,7 @@ const gameUiSpecSchema = z.object({
 	signals: z.object({
 		typeOrder: z.array(z.string().min(1)).min(1),
 		categories: z.array(signalCategorySchema).min(1),
+		subgroupStartsNewRow: z.literal(true),
 	}),
 	upgrades: z.object({
 		groups: z.array(
