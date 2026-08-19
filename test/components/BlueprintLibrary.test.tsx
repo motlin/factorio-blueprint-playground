@@ -80,6 +80,84 @@ function StatefulLibrary({initialLocation}: {initialLocation: BlueprintLibraryLo
 
 describe('BlueprintLibrary', () =>
 {
+	test('maps website shelves onto Factorio tabs with source-style selection and roving focus', () =>
+	{
+		render(
+			<StatefulLibrary
+				initialLocation={
+				{
+					shelf: 'library',
+				}}
+			/>,
+		);
+
+		const libraryWindow = screen.getByRole(
+			'region',
+			{
+				name: 'Blueprint Library',
+			},
+		);
+		const title = within(libraryWindow).getByRole(
+			'heading',
+			{
+				level: 1,
+				name: 'Blueprint Library',
+			},
+		);
+		const titleBar = title.parentElement;
+		const deepFrame = libraryWindow.querySelector<HTMLElement>('.blueprint-library__inside');
+		const shelfTabs = within(libraryWindow).getAllByRole('tab');
+
+		expect(
+			{
+				deepFrameClass: deepFrame?.className,
+				deepFrameStyle: deepFrame?.dataset.factorioStyle,
+				libraryWindowClass: libraryWindow.className,
+				libraryWindowStyle: libraryWindow.dataset.factorioStyle,
+				shelfTabList: shelfTabs.map((tab) => (
+				{
+					factorioStyle: tab.dataset.factorioStyle,
+					label: tab.textContent,
+					selected: tab.getAttribute('aria-selected'),
+					sourceShelf: tab.dataset.sourceShelf,
+					tabIndex: tab.tabIndex,
+					websiteShelf: tab.dataset.websiteShelf,
+				})),
+				titleBarClass: titleBar?.className,
+				titleBarStyle: titleBar?.dataset.factorioStyle,
+				titleGraphicCount: titleBar?.querySelectorAll('svg').length,
+			},
+		).toStrictEqual(
+			{
+				deepFrameClass: 'factorio-frame factorio-frame--deep blueprint-library__inside',
+				deepFrameStyle: 'inside_deep_frame',
+				libraryWindowClass: 'factorio-frame factorio-frame--shallow blueprint-library',
+				libraryWindowStyle: 'inset_frame_container_frame',
+				shelfTabList: [
+					{
+						factorioStyle: 'tab',
+						label: 'My blueprints',
+						selected: 'true',
+						sourceShelf: 'private-shelf',
+						tabIndex: 0,
+						websiteShelf: 'Library',
+					},
+					{
+						factorioStyle: 'tab',
+						label: 'Import history',
+						selected: 'false',
+						sourceShelf: 'website-only',
+						tabIndex: -1,
+						websiteShelf: 'History',
+					},
+				],
+				titleBarClass: 'factorio-title-bar blueprint-library__title-bar',
+				titleBarStyle: 'frame_header_flow',
+				titleGraphicCount: 0,
+			},
+		);
+	});
+
 	test('navigates nested books and restores focus when returning to a parent', async () =>
 	{
 		const user = userEvent.setup();
@@ -100,27 +178,44 @@ describe('BlueprintLibrary', () =>
 				},
 			),
 		);
+		const pathButtons = within(
+			screen.getByRole(
+				'navigation',
+				{
+					name: 'Current book',
+				},
+			),
+		).getAllByRole('button');
 		expect(
-			within(
-				screen.getByRole(
-					'navigation',
-					{
-						name: 'Current book',
-					},
-				),
-			).getAllByRole('button'),
+			pathButtons.map((button) => (
+			{
+				current: button.getAttribute('aria-current'),
+				factorioStyle: button.dataset.factorioStyle,
+				label: button.getAttribute('aria-label'),
+				pressed: button.getAttribute('aria-pressed'),
+			})),
 		).toStrictEqual([
-			expect.objectContaining(
-				{
-					textContent: 'Library',
-				},
-			),
-			expect.objectContaining(
-				{
-					textContent: 'Alice rail book',
-				},
-			),
+			{
+				current: null,
+				factorioStyle: 'mini_button_aligned_to_text_vertically',
+				label: 'Go to book: My blueprints',
+				pressed: 'false',
+			},
+			{
+				current: 'location',
+				factorioStyle: 'mini_button_aligned_to_text_vertically_when_centered',
+				label: 'Current book: Alice rail book',
+				pressed: 'true',
+			},
 		]);
+		pathButtons[0].focus();
+		fireEvent.keyDown(
+			pathButtons[0],
+			{
+				key: 'ArrowDown',
+			},
+		);
+		expect(document.activeElement).toBe(pathButtons[1]);
 
 		await user.click(
 			screen.getByRole(
@@ -158,7 +253,7 @@ describe('BlueprintLibrary', () =>
 			screen.getByRole(
 				'button',
 				{
-					name: 'Alice rail book',
+					name: 'Go to book: Alice rail book',
 				},
 			),
 		);
@@ -206,7 +301,7 @@ describe('BlueprintLibrary', () =>
 		const libraryTab = screen.getByRole(
 			'tab',
 			{
-				name: 'Library',
+				name: 'My blueprints',
 			},
 		);
 		libraryTab.focus();
@@ -228,8 +323,8 @@ describe('BlueprintLibrary', () =>
 			},
 		).toStrictEqual(
 			{
-				activeShelf: 'History',
-				focusedControl: 'History',
+				activeShelf: 'Import history',
+				focusedControl: 'Import history',
 			},
 		);
 
@@ -247,6 +342,35 @@ describe('BlueprintLibrary', () =>
 				},
 			).textContent,
 		).toBe('Alice rail book');
+
+		fireEvent.keyDown(
+			document.activeElement as HTMLElement,
+			{
+				key: 'End',
+			},
+		);
+		expect(document.activeElement).toBe(
+			screen.getByRole(
+				'tab',
+				{
+					name: 'Import history',
+				},
+			),
+		);
+		fireEvent.keyDown(
+			document.activeElement as HTMLElement,
+			{
+				key: 'Home',
+			},
+		);
+		expect(document.activeElement).toBe(
+			screen.getByRole(
+				'tab',
+				{
+					name: 'My blueprints',
+				},
+			),
+		);
 
 		const nestedBook = screen.getByRole(
 			'button',
@@ -312,8 +436,33 @@ describe('BlueprintLibrary', () =>
 				onLocationChange={() => undefined}
 			/>,
 		);
-		expect(screen.getByRole('status').textContent).toBe(
-			'Your library is empty.Saved blueprints and planners will appear here.',
+		const emptyState = screen.getByRole('status');
+		expect(
+			{
+				emptySlotCount: emptyState.querySelectorAll('.blueprint-library__empty-slot').length,
+				factorioSource: emptyState.dataset.factorioSource,
+				heading: screen.getByRole(
+					'heading',
+					{
+						name: 'My blueprints',
+					},
+				).textContent,
+				itemCount: screen.getByText('0 items').textContent,
+				message: emptyState.textContent,
+				recordsSurfaceClass: emptyState.parentElement?.className,
+				websiteExtension: emptyState.querySelector<HTMLElement>('.blueprint-library__empty-copy')?.dataset
+					.websiteExtension,
+			},
+		).toStrictEqual(
+			{
+				emptySlotCount: 10,
+				factorioSource: 'BlueprintShelfWidget::updateRecords',
+				heading: 'My blueprints',
+				itemCount: '0 items',
+				message: 'No blueprints saved yetSaved blueprints and planners will appear in these slots.',
+				recordsSurfaceClass: 'blueprint-library__records-surface',
+				websiteExtension: 'empty-shelf-help',
+			},
 		);
 
 		function StaleLibrary()
@@ -334,22 +483,65 @@ describe('BlueprintLibrary', () =>
 			);
 		}
 		rerender(<StaleLibrary />);
+		const staleState = screen.getByRole('status');
 		expect(document.body.textContent).not.toContain('missing-database-id');
+		expect(
+			{
+				factorioSource: staleState.dataset.factorioSource,
+				heading: screen.getByRole(
+					'heading',
+					{
+						name: 'My blueprints',
+					},
+				).textContent,
+				itemCount: screen.getByText('2 items').textContent,
+				message: staleState.textContent,
+				websiteExtension: staleState.dataset.websiteExtension,
+			},
+		).toStrictEqual(
+			{
+				factorioSource: 'BlueprintLibraryGui::updateOpenedBlueprintBook',
+				heading: 'My blueprints',
+				itemCount: '2 items',
+				message:
+					'This blueprint book is no longer available.It may have been moved or deleted in another tab. Your saved shelf is still available.Show My blueprints',
+				websiteExtension: 'stale-book-recovery',
+			},
+		);
 		await user.click(
 			screen.getByRole(
 				'button',
 				{
-					name: 'Return to Library',
+					name: 'Show My blueprints',
 				},
 			),
 		);
 		expect(
-			screen.getByRole(
-				'heading',
-				{
-					name: 'Library shelf',
-				},
-			).textContent,
-		).toBe('Library shelf');
+			{
+				heading: screen.getByRole(
+					'heading',
+					{
+						name: 'My blueprints',
+					},
+				).textContent,
+				records: within(
+					screen.getByRole(
+						'region',
+						{
+							name: 'Blueprint records',
+						},
+					),
+				)
+					.getAllByRole('button')
+					.map((button) => button.getAttribute('aria-label')),
+				staleState: screen.queryByRole('status'),
+			},
+		).toStrictEqual(
+			{
+				heading: 'My blueprints',
+				records: ['Open book Alice rail book', 'Main bus upgrades'],
+				staleState: null,
+			},
+		);
 	});
 });
