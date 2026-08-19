@@ -328,6 +328,7 @@ export function UpgradePlannerSelectorDialog({
 				<FactorioFrame
 					className="upgrade-planner-selector__inside-frame"
 					data-factorio-style="inside_shallow_frame"
+					depth={FactorioFrameDepth.Inside}
 				>
 					<div className="upgrade-planner-selector__subheader" data-factorio-style="subheader_frame">
 						<p id={instructionsId} className="upgrade-planner-selector__hint">

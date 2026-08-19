@@ -258,25 +258,65 @@ body {
 
 .factorio-frame {
 	/* Adapted from Teoxoy's MIT-licensed Panel and DrawRectangle two-pixel raised face. */
+	--factorio-frame-bevel:
+		inset 1px 1px 0 #696969, inset 2px 2px 0 #636363, inset -1px -1px 0 #1d1d1d, inset -2px -2px 0 #232323;
+
 	box-sizing: border-box;
-	border: 0;
 	background: var(--factorio-ui-dialog-face);
-	box-shadow:
-		inset 1px 1px 0 #696969,
-		inset 2px 2px 0 #636363,
-		inset -1px -1px 0 #1d1d1d,
-		inset -2px -2px 0 #232323;
 }
 
 .factorio-frame--shallow {
 	background: var(--factorio-ui-dialog-face);
 }
 
+/* The game nests inside_shallow_frame -- and the entity_frame built on it --
+   inside a dialog frame, and those inside frames are carved into the dialog
+   rather than raised above it. Repeating the raised face on them stacked a
+   second bevel 8px inside the dialog's own, which reads as a doubled border, so
+   an inside frame inverts the raised bevel and keeps the dialog face. */
+.factorio-frame--inside {
+	--factorio-frame-bevel:
+		inset 1px 1px 0 #1d1d1d, inset 2px 2px 0 #232323, inset -1px -1px 0 #696969, inset -2px -2px 0 #636363;
+
+	background: var(--factorio-ui-dialog-face);
+}
+
 .factorio-frame--deep {
+	--factorio-frame-bevel: inset 0 2px 4px #111, inset 0 -1px 1px #686868;
+
 	background: var(--factorio-ui-dark);
-	box-shadow:
-		inset 0 2px 4px #111,
-		inset 0 -1px 1px #686868;
+}
+
+/* The vendored sheet gives .panel, .panel-inset, and .panel-inset-lighter a flat
+   4px border image plus its own drop shadow, and it does so at two-class
+   specificity (.panel:not(.p0) and friends). Page panels carry those classes on
+   the same element as .factorio-frame, so the single-class rules above lose and
+   panels end up with a flat edge while dialogs get the bevel. Restating the
+   frame edge here at matching specificity leaves one border system per element. */
+.factorio-frame.factorio-frame {
+	position: relative;
+	border: 0;
+	border-image: none;
+	box-shadow: var(--factorio-frame-bevel);
+}
+
+/* An inset shadow paints beneath the element's own children, so a child laid out
+   flush against the frame edge with an opaque background covers the bevel. That
+   is why dialogs whose header, body, and footer span the frame rendered flat
+   while dialogs with inset children kept their raised edge. Repeating the bevel
+   on an overlay, anchored by the `position: relative` above, paints it after the
+   children, on all four edges, whatever the children do. .factorio-scroll-frame
+   is excluded because it scrolls its own content and would carry an absolutely
+   positioned overlay along with it. */
+.factorio-frame.factorio-frame:not(.factorio-scroll-frame)::after {
+	position: absolute;
+	/* Above the frame's structural layers -- sticky footers sit at 2 -- and below
+	   the search fields and dependency lists that deliberately overhang the edge. */
+	z-index: 3;
+	inset: 0;
+	box-shadow: var(--factorio-frame-bevel);
+	content: '';
+	pointer-events: none;
 }
 
 /* frame: padding 4/8/8/8 with frame_header_flow bottom gap 4; the header
@@ -3208,6 +3248,7 @@ body {
 	--blueprint-settings-source-width: 432px;
 	--blueprint-settings-frame-space: 8px;
 	--transform-content-space: 10px;
+	--transform-dialog-inset: calc(8px * var(--factorio-ui-density));
 	--transform-edge-space: 12px;
 	--transform-frame-gap: 3px;
 	--transform-viewport-gutter: 24px;
@@ -3240,7 +3281,7 @@ body {
 	max-height: calc(100vh - var(--transform-viewport-gutter) - var(--transform-viewport-gutter));
 	max-height: calc(100dvh - var(--transform-viewport-gutter) - var(--transform-viewport-gutter));
 	flex-direction: column;
-	padding: var(--transform-edge-space);
+	padding: var(--transform-edge-space) var(--transform-dialog-inset);
 	overflow: hidden;
 	color: #f1efed;
 }
@@ -3288,7 +3329,7 @@ body {
 		.blueprint-parameterization
 	)
 	> .transform-dialog__header {
-	margin: calc(-1 * var(--transform-edge-space)) calc(-1 * var(--transform-edge-space)) 10px;
+	margin: calc(-1 * var(--transform-edge-space)) calc(-1 * var(--transform-dialog-inset)) 10px;
 }
 
 .transform-dialog__header h3 {
@@ -3317,6 +3358,8 @@ body {
 	min-width: 0;
 	min-height: 0;
 	flex: 1 1 auto;
+	/* Drop the vendored .panel-hole 4px side margin so the shell owns the inset. */
+	margin-inline: 0;
 	overflow: auto;
 }
 
@@ -3419,7 +3462,7 @@ body {
 	min-height: 0;
 	flex: 1 1 auto;
 	flex-direction: column;
-	margin: 0 calc(8px * var(--factorio-ui-density)) calc(8px * var(--factorio-ui-density));
+	margin: 0 var(--transform-dialog-inset) var(--transform-dialog-inset);
 	overflow: hidden;
 }
 
@@ -3662,8 +3705,10 @@ body {
 }
 
 .upgrade-mapping-grid {
+	container: upgrade-mapping / inline-size;
 	min-width: 0;
-	width: calc(var(--upgrade-mapping-table-width) * var(--factorio-ui-density));
+	width: 100%;
+	max-width: calc(var(--upgrade-mapping-table-width) * var(--factorio-ui-density));
 	margin: 0;
 	padding: 0;
 	overflow: visible;
@@ -4002,7 +4047,7 @@ body {
 	min-height: 0;
 	flex: 1 1 auto;
 	flex-direction: column;
-	margin: var(--transform-frame-gap);
+	margin: var(--transform-frame-gap) var(--transform-dialog-inset);
 	padding: 0;
 	overflow: hidden;
 }
@@ -4143,12 +4188,31 @@ body {
 }
 
 /* SelectListGui::updateDisabledStateOfSlot swaps disallowed options to
-   red_slot_button; they stay clickable and report why selection failed. */
+   red_slot_button; they stay clickable and report why selection failed. The
+   resting fill matches the removed-component slot and sits near slot_button's
+   own luminance so the icon on top stays readable. */
 .transform-picker__option[aria-disabled='true'] {
-	background: #a03c3c;
+	background: #733636;
 	box-shadow:
-		inset 1px 1px 0 #cf7d7d,
-		inset -2px -2px 0 #571d1d;
+		inset 1px 1px 0 #a85858,
+		inset -2px -2px 0 #321616;
+}
+
+/* red_slot_button keeps its own hovered and clicked sets, so pointing at a
+   disallowed option must not flash it back to the orange slot_button. */
+.transform-picker__option[aria-disabled='true']:hover,
+.transform-picker__option[aria-disabled='true'][data-visual-state='hover'] {
+	background: #a84c4c;
+	box-shadow:
+		inset 1px 1px 0 #e78383,
+		inset -2px -2px 0 #512020;
+}
+
+.transform-picker__option[aria-disabled='true']:active {
+	background: #7e2b2b;
+	box-shadow:
+		inset 2px 2px 0 #3b1515,
+		inset -1px -1px 0 #bf6464;
 }
 
 .transform-picker__option [data-testid='quality'] {
@@ -4918,7 +4982,7 @@ body {
 	min-width: 0;
 	flex-direction: column;
 	gap: calc(6px * var(--factorio-ui-density));
-	margin: 0 calc(8px * var(--factorio-ui-density));
+	margin: 0 var(--transform-dialog-inset);
 	padding: calc(10px * var(--factorio-ui-density));
 	background: #3e3d3e;
 }
@@ -5271,7 +5335,7 @@ body {
 	min-height: 0;
 	flex: 1 1 auto;
 	flex-direction: column;
-	margin: 0 calc(8px * var(--factorio-ui-density));
+	margin: 0 var(--transform-dialog-inset);
 	overflow: hidden;
 	background: #383738;
 	box-shadow:
@@ -5982,6 +6046,41 @@ body {
 	}
 }
 
+/*
+ * `mappersTable` is four 80px From/To pairs plus the 27/26/27 spacings, so the
+ * source layout needs 400px. Narrower than that the table halves to two pairs
+ * per row instead of parking whole columns behind a horizontal scrollbar, and
+ * the heading row drops the two headings that no longer label a column.
+ */
+@container upgrade-mapping (width < 400px) {
+	.upgrade-mapping-grid__table {
+		min-width: 0;
+		width: max-content;
+	}
+
+	.upgrade-mapping-grid__headings,
+	.upgrade-mapping-grid__slots {
+		grid-template-columns:
+			calc(var(--upgrade-mapping-pair-width) * var(--factorio-ui-density))
+			calc(var(--upgrade-mapping-first-spacing) * var(--factorio-ui-density))
+			calc(var(--upgrade-mapping-pair-width) * var(--factorio-ui-density));
+	}
+
+	.upgrade-mapping-grid__headings > :nth-child(2n + 1),
+	.upgrade-mapping-grid__slots > :nth-child(2n + 1) {
+		grid-column: 1;
+	}
+
+	.upgrade-mapping-grid__headings > :nth-child(2n),
+	.upgrade-mapping-grid__slots > :nth-child(2n) {
+		grid-column: 3;
+	}
+
+	.upgrade-mapping-grid__headings > :nth-child(n + 3) {
+		display: none;
+	}
+}
+
 @media (max-width: 480px) {
 	.upgrade-mapping-grid {
 		padding: 8px;
@@ -6011,5 +6110,100 @@ body {
 @media (max-height: 640px) {
 	.transform-dialog-backdrop {
 		--transform-viewport-gutter: 8px;
+	}
+}
+
+/*
+ * Whole-pixel centring.
+ *
+ * The page shell is a fixed-width box centred with auto margins. A classic page
+ * scrollbar leaves an odd number of layout pixels around it, so the auto margins
+ * resolve to `x.5` and every 1px bevel in the subtree straddles two device
+ * pixels, rendering soft at 1x DPI. Rounding the leading margin down to a whole
+ * pixel keeps the whole subtree on integer coordinates.
+ */
+.container,
+.top-bar-inner {
+	margin-right: auto;
+	margin-left: max(0px, round(down, (100% - 1200px) / 2, 1px));
+}
+
+.blueprint-library {
+	margin-right: auto;
+	margin-left: max(0px, round(down, (100% - 900px) / 2, 1px));
+}
+
+/*
+ * Dialog backdrops centre their child over the viewport with grid placement,
+ * which lands on `x.5` for the same reason. Trimming the odd pixel off the
+ * trailing padding leaves the grid an even track to centre within, without
+ * shrinking the backdrop's own box away from the viewport edge.
+ */
+.factorio-dialog-backdrop {
+	padding-right: calc(24px + 100% - round(down, 100%, 2px));
+}
+
+.transform-dialog-backdrop {
+	padding-right: calc(var(--transform-viewport-gutter) + 100% - round(down, 100%, 2px));
+}
+
+/*
+ * The Blueprint Tree column runs out of panels long before the selected
+ * blueprint column does, so the contents panels used to trail down a page-wide
+ * strip of empty background. They sit below both columns instead, flowing into
+ * the same two half-width tracks the columns above use so the browser balances
+ * their heights.
+ */
+.panel-columns {
+	columns: 2;
+	column-gap: 14px;
+	margin-top: 12px;
+}
+
+.panel-columns > * {
+	break-inside: avoid;
+}
+
+/*
+ * A panel's own top margin survives at the top of the first track but gets
+ * truncated at a column break, which would leave the second track's first panel
+ * riding 12px higher. The section carries that margin instead so both tracks
+ * start on the same line. The vendored sheet sets panel margins at two-class
+ * specificity (.panel:not(.p0)), so the class repeats here to win it back.
+ */
+.panel-columns > .panel.panel {
+	margin-top: 0;
+}
+
+/*
+ * A blueprint with no book collapses the two-column split to a single column,
+ * which the vendored sheet would still hold at half width and leave a bare
+ * strip of page background beside.
+ */
+.panels2 > div:only-child {
+	width: 100%;
+}
+
+/* Spacing the three export buttons across the full width strands them at the
+ * panel's edges, so they stay packed the way they do on a narrow viewport. */
+.panels2 > div:only-child .blueprint-export-actions {
+	justify-content: flex-start;
+	gap: 8px;
+}
+
+/* The vendored sheet splits every definition-list hole 50/50, which suits a
+ * 577px column but leaves a short label like "Type:" adrift in a 582px cell at
+ * full width. A quarter share keeps the label cell the size it was. */
+.panels2 > div:only-child dl.panel-hole > dt {
+	width: 25%;
+}
+
+.panels2 > div:only-child dl.panel-hole > dd {
+	width: 75%;
+}
+
+@media (max-width: 900px) {
+	.panel-columns {
+		columns: 1;
 	}
 }
