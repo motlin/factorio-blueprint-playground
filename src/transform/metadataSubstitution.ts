@@ -10,7 +10,6 @@ import type {
 export interface MetadataSubstitution {
 	find: string;
 	replace: string;
-	matchCase: boolean;
 }
 
 export interface IconReplacement {
@@ -52,8 +51,8 @@ function substituteString(value: string, substitution: MetadataSubstitution): Su
 		throw new Error('Metadata substitution text cannot be empty.');
 	}
 
-	const source = substitution.matchCase ? value : value.toLowerCase();
-	const search = substitution.matchCase ? substitution.find : substitution.find.toLowerCase();
+	const source = value.toLowerCase();
+	const search = substitution.find.toLowerCase();
 	let cursor = 0;
 	let count = 0;
 	let result = '';
@@ -63,9 +62,7 @@ function substituteString(value: string, substitution: MetadataSubstitution): Su
 			return {count, value: result + value.slice(cursor)};
 		}
 		const matched = value.slice(matchIndex, matchIndex + substitution.find.length);
-		const replacement = substitution.matchCase
-			? substitution.replace
-			: replacementWithMatchedCase(matched, substitution.replace);
+		const replacement = replacementWithMatchedCase(matched, substitution.replace);
 		result += value.slice(cursor, matchIndex) + replacement;
 		cursor = matchIndex + substitution.find.length;
 		count += 1;
