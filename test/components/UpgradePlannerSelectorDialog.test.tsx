@@ -8,7 +8,7 @@ import {
 } from '../../src/components/blueprint/panels/transform/UpgradePlannerSelectorDialog';
 import {BLUEPRINT_RECORD_VIEW_STORAGE_KEY} from '../../src/components/library/blueprintRecordModel';
 import {serializeBlueprint} from '../../src/parsing/blueprintParser';
-import type {BlueprintString, UpgradePlanner} from '../../src/parsing/types';
+import type {BlueprintString, SignalID, UpgradePlanner} from '../../src/parsing/types';
 import {LIBRARY_ROOT_ID, type LibraryRecord} from '../../src/storage/db';
 import {parseUpgradePlanner, type UpgradeDirection} from '../../src/transform/upgradePlanner';
 import upgradePlannerFixture from '../fixtures/blueprints/json/upgrade.json';
@@ -32,9 +32,17 @@ const localStorage = {
 	},
 };
 
+const parsedFixturePlanner = parseUpgradePlanner(JSON.stringify(upgradePlannerFixture));
 const fixturePlanner: UpgradePlanner = {
-	...parseUpgradePlanner(JSON.stringify(upgradePlannerFixture)),
+	...parsedFixturePlanner,
 	label: "Alice's fixture belt upgrades",
+	settings: {
+		...parsedFixturePlanner.settings,
+		icons: [
+			{index: 100, signal: {type: 'entity', name: 'transport-belt', quality: 'rare'}},
+			{index: 200, signal: {type: 'item', name: 'speed-module-3', quality: 'legendary'}},
+		],
+	},
 };
 const zeroMatchPlanner: UpgradePlanner = {
 	item: 'upgrade-planner',
@@ -58,12 +66,116 @@ const rootBlueprint: BlueprintString = {
 	},
 };
 
+const expectedEditorTilePresentation = [
+	{
+		choiceKind: 'default',
+		factorioSource: 'BlueprintsList::addItem',
+		icon: {
+			factorioSource: 'PreviewIcons::drawWithItemIcon',
+			factorioStyle: 'blueprint_record_selection_button',
+			images: [{src: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp', title: null}],
+			previewIconCount: '0',
+			websiteAction: null,
+			websiteLabel: null,
+		},
+		label: 'Default Upgrade',
+		pressed: 'true',
+		websiteExtension: null,
+	},
+	{
+		choiceKind: 'saved',
+		factorioSource: 'BlueprintsList::addItem',
+		icon: {
+			factorioSource: 'PreviewIcons::drawWithItemIcon',
+			factorioStyle: 'blueprint_record_selection_button',
+			images: [
+				{src: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp', title: null},
+				{src: 'https://factorio-icon-cdn.pages.dev/entity/transport-belt.webp', title: null},
+				{src: 'https://factorio-icon-cdn.pages.dev/quality/rare.webp', title: 'Rare quality'},
+				{src: 'https://factorio-icon-cdn.pages.dev/item/speed-module-3.webp', title: null},
+				{src: 'https://factorio-icon-cdn.pages.dev/quality/legendary.webp', title: 'Legendary quality'},
+			],
+			previewIconCount: '2',
+			websiteAction: null,
+			websiteLabel: null,
+		},
+		label: "Alice's fixture belt upgrades",
+		pressed: 'false',
+		websiteExtension: null,
+	},
+	{
+		choiceKind: 'saved',
+		factorioSource: 'BlueprintsList::addItem',
+		icon: {
+			factorioSource: 'PreviewIcons::drawWithItemIcon',
+			factorioStyle: 'blueprint_record_selection_button',
+			images: [
+				{src: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp', title: null},
+				{src: 'https://factorio-icon-cdn.pages.dev/item/fast-transport-belt.webp', title: null},
+				{src: 'https://factorio-icon-cdn.pages.dev/quality/uncommon.webp', title: 'Uncommon quality'},
+			],
+			previewIconCount: '1',
+			websiteAction: null,
+			websiteLabel: null,
+		},
+		label: 'Nested belt planner',
+		pressed: 'false',
+		websiteExtension: null,
+	},
+	{
+		choiceKind: 'saved',
+		factorioSource: 'BlueprintsList::addItem',
+		icon: {
+			factorioSource: 'PreviewIcons::drawWithItemIcon',
+			factorioStyle: 'blueprint_record_selection_button',
+			images: [{src: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp', title: null}],
+			previewIconCount: '0',
+			websiteAction: null,
+			websiteLabel: null,
+		},
+		label: 'Zero-match library planner',
+		pressed: 'false',
+		websiteExtension: null,
+	},
+	{
+		choiceKind: 'empty',
+		factorioSource: null,
+		icon: {
+			factorioSource: null,
+			factorioStyle: 'blueprint_record_selection_button',
+			images: [],
+			previewIconCount: null,
+			websiteAction: 'empty',
+			websiteLabel: 'Website extension',
+		},
+		label: 'Empty Planner',
+		pressed: 'false',
+		websiteExtension: 'empty-upgrade-planner',
+	},
+	{
+		choiceKind: 'paste',
+		factorioSource: null,
+		icon: {
+			factorioSource: null,
+			factorioStyle: 'blueprint_record_selection_button',
+			images: [],
+			previewIconCount: null,
+			websiteAction: 'paste',
+			websiteLabel: 'Website extension',
+		},
+		label: 'Paste upgrade planner…',
+		pressed: 'false',
+		websiteExtension: 'paste-upgrade-planner',
+	},
+];
+
 function storedPlanner(
 	id: string,
 	planner: UpgradePlanner,
 	label: string,
 	description: string,
 	position: number,
+	icons: SignalID[] = [],
 	parentId = LIBRARY_ROOT_ID,
 ): LibraryRecord {
 	return {
@@ -71,7 +183,7 @@ function storedPlanner(
 		createdOn: 0,
 		updatedOn: 0,
 		data: serializeBlueprint({upgrade_planner: planner}),
-		gameData: {type: 'upgrade_planner', label, description, icons: []},
+		gameData: {type: 'upgrade_planner', label, description, icons},
 		parentId,
 		position,
 	};
@@ -99,6 +211,28 @@ function visiblePlannerNames(): Array<string | null> {
 		.map((button) => button.getAttribute('aria-label'));
 }
 
+function editorTilePresentation(tile: HTMLButtonElement) {
+	const icon = tile.querySelector('.upgrade-planner-selector__record-icon');
+	return {
+		choiceKind: tile.getAttribute('data-choice-kind'),
+		factorioSource: tile.getAttribute('data-factorio-source'),
+		icon: {
+			factorioSource: icon?.getAttribute('data-factorio-source') ?? null,
+			factorioStyle: icon?.getAttribute('data-factorio-style') ?? null,
+			images: Array.from(icon?.querySelectorAll('img') ?? []).map((image) => ({
+				src: image.getAttribute('src'),
+				title: image.getAttribute('title'),
+			})),
+			previewIconCount: icon?.getAttribute('data-preview-icon-count') ?? null,
+			websiteAction: icon?.querySelector('svg')?.getAttribute('data-website-action') ?? null,
+			websiteLabel: icon?.querySelector('.upgrade-planner-selector__website-label')?.textContent ?? null,
+		},
+		label: tile.querySelector('strong')?.textContent,
+		pressed: tile.getAttribute('aria-pressed'),
+		websiteExtension: tile.getAttribute('data-website-extension'),
+	};
+}
+
 describe('UpgradePlannerSelectorDialog golden apply-only source contracts', () => {
 	beforeEach(() => {
 		Object.defineProperty(window, 'localStorage', {configurable: true, value: localStorage});
@@ -110,6 +244,7 @@ describe('UpgradePlannerSelectorDialog golden apply-only source contracts', () =
 				'Nested belt planner',
 				'Upgrades every transport belt in the factory.',
 				0,
+				[{type: 'item', name: 'fast-transport-belt', quality: 'uncommon'}],
 				'nested-book',
 			),
 			storedPlanner(
@@ -125,9 +260,14 @@ describe('UpgradePlannerSelectorDialog golden apply-only source contracts', () =
 	test('searches saved planner labels and descriptions while hiding Default Upgrade', async () => {
 		const user = userEvent.setup();
 		renderApplySelector();
+		await user.click(screen.getByRole('button', {name: 'Search upgrade planners'}));
 		const search = screen.getByRole('searchbox', {name: 'Search upgrade planners'});
 		const dialog = screen.getByRole('dialog', {name: 'Select the upgrade planner to apply'});
 		const instructions = document.getElementById(dialog.getAttribute('aria-describedby') ?? '');
+		const titleBar = dialog.querySelector('.upgrade-planner-selector__header');
+		const subheader = dialog.querySelector('.upgrade-planner-selector__subheader');
+		const searchButton = screen.getByRole('button', {name: 'Search upgrade planners'});
+		const viewControls = screen.getByRole('group', {name: 'Record view'});
 
 		expect({
 			editingChoices: {
@@ -136,11 +276,38 @@ describe('UpgradePlannerSelectorDialog golden apply-only source contracts', () =
 			},
 			initial: visiblePlannerNames(),
 			instructions: instructions?.textContent,
+			shell: {
+				dialogChildren: Array.from(dialog.children).map((child) => child.className),
+				headerButtons:
+					titleBar === null
+						? []
+						: within(titleBar as HTMLElement)
+								.getAllByRole('button')
+								.map((button) => button.getAttribute('aria-label')),
+				searchControlParent: searchButton.closest('.upgrade-planner-selector__header-actions')?.className,
+				source: dialog.getAttribute('data-factorio-source'),
+				subheaderStyle: subheader?.getAttribute('data-factorio-style'),
+				viewControlLabels: within(viewControls)
+					.getAllByRole('button')
+					.map((button) => button.getAttribute('aria-label')),
+				viewControlsParent: viewControls.parentElement?.className,
+			},
 		}).toStrictEqual({
 			editingChoices: {empty: null, paste: null},
 			initial: ['Default Upgrade', 'Nested belt planner', 'Zero-match library planner'],
-			instructions:
-				'Left-click to apply as upgrade. Right-click to apply as downgrade. Enter applies as upgrade; Shift+Enter applies as downgrade.',
+			instructions: 'Left-click to apply as upgrade, Right-click to apply as downgrade.',
+			shell: {
+				dialogChildren: [
+					'factorio-title-bar transform-dialog__header upgrade-planner-selector__header',
+					'factorio-frame factorio-frame--shallow upgrade-planner-selector__inside-frame',
+				],
+				headerButtons: ['Search upgrade planners', 'Close upgrade planner selector'],
+				searchControlParent: 'upgrade-planner-selector__header-actions',
+				source: 'SelectUpgradePlannerGui::SelectUpgradePlannerGui',
+				subheaderStyle: 'subheader_frame',
+				viewControlLabels: ['List view', 'Grid view', 'Slots view'],
+				viewControlsParent: 'upgrade-planner-selector__view-controls-target',
+			},
 		});
 
 		await user.type(search, 'transport belt');
@@ -157,7 +324,7 @@ describe('UpgradePlannerSelectorDialog golden apply-only source contracts', () =
 			status: screen.getByRole('status').textContent,
 		}).toStrictEqual({
 			defaultPlanner: null,
-			status: 'No upgrade planners match “Default Upgrade”.',
+			status: 'No matching upgrade planners.',
 		});
 	});
 
@@ -183,6 +350,55 @@ describe('UpgradePlannerSelectorDialog golden apply-only source contracts', () =
 		});
 	});
 
+	test('inserts one Default Upgrade first with the source planner icon and empty description', () => {
+		renderApplySelector();
+
+		const records = screen.getByRole('list');
+		const recordButtons = within(records).getAllByRole('button');
+		const defaultUpgrade = screen.getByRole('button', {name: 'Default Upgrade'});
+		const icon = defaultUpgrade.querySelector('.blueprint-record-item__icons');
+		const tooltipId = defaultUpgrade.getAttribute('aria-describedby')?.split(' ')[0] ?? '';
+		const tooltip = document.getElementById(tooltipId);
+
+		expect({
+			defaultChoices: recordButtons
+				.map((button) => button.getAttribute('aria-label'))
+				.filter((label) => label?.includes('Default Upgrade') === true),
+			firstRecord: recordButtons[0]?.getAttribute('aria-label'),
+			identity: defaultUpgrade.getAttribute('data-blueprint-record-id'),
+			icon: {
+				factorioSource: icon?.getAttribute('data-factorio-source'),
+				factorioStyle: icon?.getAttribute('data-factorio-style'),
+				images: Array.from(icon?.querySelectorAll('img') ?? []).map((image) => image.getAttribute('src')),
+				previewIconCount: icon?.getAttribute('data-preview-icon-count'),
+				recordType: icon?.getAttribute('data-record-type'),
+			},
+			label: defaultUpgrade.querySelector('.blueprint-record-item__text strong')?.textContent,
+			recordSource: defaultUpgrade.getAttribute('data-factorio-source'),
+			tooltip: {
+				description: tooltip?.querySelector('.blueprint-record-item__tooltip-description')?.textContent,
+				type: tooltip?.querySelector('.blueprint-record-item__tooltip-type')?.textContent,
+			},
+		}).toStrictEqual({
+			defaultChoices: ['Default Upgrade'],
+			firstRecord: 'Default Upgrade',
+			identity: 'suggested',
+			icon: {
+				factorioSource: 'PreviewIcons::drawWithItemIcon',
+				factorioStyle: 'blueprint_record_selection_button',
+				images: ['https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp'],
+				previewIconCount: '0',
+				recordType: 'upgrade_planner',
+			},
+			label: 'Default Upgrade',
+			recordSource: 'BlueprintsList::addItem',
+			tooltip: {
+				description: 'No description.',
+				type: 'Upgrade planner',
+			},
+		});
+	});
+
 	test('reuses the persistent library list, grid, and slot presentations', async () => {
 		const user = userEvent.setup();
 		const {unmount} = renderApplySelector();
@@ -205,7 +421,7 @@ describe('UpgradePlannerSelectorDialog golden apply-only source contracts', () =
 		expect(screen.getByRole('list').className).toBe(
 			'blueprint-record-views__items blueprint-record-views__items--grid',
 		);
-		await user.click(screen.getByRole('button', {name: 'Slot view'}));
+		await user.click(screen.getByRole('button', {name: 'Slots view'}));
 		expect({
 			persisted: window.localStorage.getItem(BLUEPRINT_RECORD_VIEW_STORAGE_KEY),
 			slotListClass: screen.getByRole('list').className,
@@ -319,7 +535,7 @@ describe('UpgradePlannerSelectorDialog golden apply-only source contracts', () =
 		}).toStrictEqual({closes: [[]], selections: []});
 	});
 
-	test('preserves the editor Load selector choices and non-directional tiles', () => {
+	test('presents editor Load choices as six-column planner records and explicit website extensions', () => {
 		render(
 			<UpgradePlannerSelectorDialog
 				dialogId="upgrade-planner-selector"
@@ -331,19 +547,110 @@ describe('UpgradePlannerSelectorDialog golden apply-only source contracts', () =
 			/>,
 		);
 
-		const tiles = within(screen.getByRole('grid', {name: 'Upgrade planners'})).getAllByRole('button');
-		expect(
-			tiles.map((tile) => ({
-				keyboardAlternative: tile.getAttribute('aria-keyshortcuts'),
+		const dialog = screen.getByRole('dialog', {name: 'Load an upgrade planner'});
+		const instructions = document.getElementById(dialog.getAttribute('aria-describedby') ?? '');
+		const grid = screen.getByRole('grid', {name: 'Upgrade planners'});
+		const tiles = within(grid).getAllByRole<HTMLButtonElement>('button');
+		expect({
+			applicationControls: {
+				search: screen.queryByRole('button', {name: 'Search upgrade planners'}),
+				views: screen.queryByRole('group', {name: 'Record view'}),
+			},
+			geometry: {
+				columns: grid.getAttribute('data-factorio-columns'),
+				factorioSource: grid.getAttribute('data-factorio-source'),
+				style: {
+					columns: grid.style.getPropertyValue('--blueprint-record-grid-columns'),
+					horizontalSpacing: grid.style.getPropertyValue('--blueprint-record-grid-horizontal-spacing'),
+					labelBottomMargin: grid.style.getPropertyValue('--blueprint-record-label-bottom-margin'),
+					labelHeight: grid.style.getPropertyValue('--blueprint-record-label-height'),
+					labelTopMargin: grid.style.getPropertyValue('--blueprint-record-label-top-margin'),
+					tileSize: grid.style.getPropertyValue('--blueprint-record-slot-size'),
+					verticalSpacing: grid.style.getPropertyValue('--blueprint-record-grid-vertical-spacing'),
+				},
+			},
+			instructions: instructions?.textContent,
+			shell: {
+				dialogChildren: Array.from(dialog.children).map((child) => child.className),
+				source: dialog.getAttribute('data-factorio-source'),
+				subheaderStyle: dialog
+					.querySelector('.upgrade-planner-selector__subheader')
+					?.getAttribute('data-factorio-style'),
+				websiteExtension: dialog.getAttribute('data-website-extension'),
+			},
+			tiles: tiles.map(editorTilePresentation),
+		}).toStrictEqual({
+			applicationControls: {search: null, views: null},
+			geometry: {
+				columns: '6',
+				factorioSource: 'BlueprintsList::addItem',
+				style: {
+					columns: '6',
+					horizontalSpacing: '4px',
+					labelBottomMargin: '4px',
+					labelHeight: '40px',
+					labelTopMargin: '-4px',
+					tileSize: '80px',
+					verticalSpacing: '4px',
+				},
+			},
+			instructions: 'Choose a planner to copy all of its mappings into the editable draft.',
+			shell: {
+				dialogChildren: [
+					'factorio-title-bar transform-dialog__header upgrade-planner-selector__header',
+					'factorio-frame factorio-frame--shallow upgrade-planner-selector__inside-frame',
+				],
+				source: null,
+				subheaderStyle: 'subheader_frame',
+				websiteExtension: 'upgrade-planner-draft-loader',
+			},
+			tiles: expectedEditorTilePresentation,
+		});
+	});
+
+	test('keeps selection separate from roving focus and activates editor choices non-directionally', async () => {
+		const user = userEvent.setup();
+		const onChoose = vi.fn<(choice: UpgradePlannerChoice, direction: UpgradeDirection) => void>();
+		render(
+			<UpgradePlannerSelectorDialog
+				dialogId="upgrade-planner-selector"
+				includeEditingChoices
+				rootBlueprint={rootBlueprint}
+				selectedSource="pasted"
+				onChoose={onChoose}
+				onClose={vi.fn<() => void>()}
+			/>,
+		);
+
+		const grid = screen.getByRole('grid', {name: 'Upgrade planners'});
+		const tiles = within(grid).getAllByRole<HTMLButtonElement>('button');
+		expect({
+			activeElement: document.activeElement?.getAttribute('aria-label'),
+			tiles: tiles.map((tile) => ({
 				label: tile.getAttribute('aria-label'),
+				pressed: tile.getAttribute('aria-pressed'),
+				tabIndex: tile.getAttribute('tabindex'),
 			})),
-		).toStrictEqual([
-			{keyboardAlternative: null, label: 'Default Upgrade'},
-			{keyboardAlternative: null, label: "Alice's fixture belt upgrades"},
-			{keyboardAlternative: null, label: 'Nested belt planner'},
-			{keyboardAlternative: null, label: 'Zero-match library planner'},
-			{keyboardAlternative: null, label: 'Empty Planner'},
-			{keyboardAlternative: null, label: 'Paste upgrade planner…'},
-		]);
+		}).toStrictEqual({
+			activeElement: 'Paste upgrade planner…',
+			tiles: [
+				{label: 'Default Upgrade', pressed: 'false', tabIndex: '-1'},
+				{label: "Alice's fixture belt upgrades", pressed: 'false', tabIndex: '-1'},
+				{label: 'Nested belt planner', pressed: 'false', tabIndex: '-1'},
+				{label: 'Zero-match library planner', pressed: 'false', tabIndex: '-1'},
+				{label: 'Empty Planner', pressed: 'false', tabIndex: '-1'},
+				{label: 'Paste upgrade planner…', pressed: 'true', tabIndex: '0'},
+			],
+		});
+
+		await user.keyboard('{Home}{ArrowRight}{End}{Enter}');
+
+		expect({
+			activeElement: document.activeElement?.getAttribute('aria-label'),
+			selections: onChoose.mock.calls,
+		}).toStrictEqual({
+			activeElement: 'Paste upgrade planner…',
+			selections: [[{label: 'Paste upgrade planner…', source: 'pasted'}, 'upgrade']],
+		});
 	});
 });

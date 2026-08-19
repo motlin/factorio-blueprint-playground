@@ -662,7 +662,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		});
 	});
 
-	test('opens the upgrade planner selector from the editor toolbar and keeps the draft open', async () => {
+	test('applies a planner directly from the editor selector while preserving the draft', async () => {
 		const user = userEvent.setup();
 		render(<TransformPanel blueprint={blueprint} />);
 
@@ -728,38 +728,31 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		}).toStrictEqual({description: 'Draft description', disabled: false, expanded: 'true', selector: 'true'});
 
 		await user.click(screen.getByRole('button', {name: /Default Upgrade/}));
-		const placedUpgradeButton = screen.getByRole('button', {name: 'Apply Default Upgrade as upgrade'});
 		expect({
-			description: screen.getByRole<HTMLTextAreaElement>('textbox', {name: 'Blueprint description'}).value,
 			navigation: navigate.mock.calls,
-			placedPlanner: screen
-				.getByRole('button', {name: 'Change placed upgrade planner, currently Default Upgrade'})
-				.querySelector('img')
-				?.getAttribute('src'),
-			removePlanner: screen.getByRole('button', {name: 'Remove Default Upgrade from toolbar slot'}).textContent,
+			blueprintEditor: screen.queryByRole('dialog', {name: 'Blueprint Editor'}),
 			selector: screen.queryByRole('dialog', {name: 'Select the upgrade planner to apply'}),
 		}).toStrictEqual({
-			description: 'Draft description',
-			navigation: [],
-			placedPlanner: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
-			removePlanner: '',
-			selector: null,
-		});
-
-		await user.click(placedUpgradeButton);
-		expect(navigate).toHaveBeenCalledExactlyOnceWith({
-			to: '/',
-			search: {
-				pasted: serializeBlueprint({
-					blueprint: {
-						item: 'blueprint',
-						version: 0,
-						entities: [{entity_number: 1, name: 'fast-transport-belt', position: {x: 0, y: 0}}],
-						description: 'Draft description',
+			blueprintEditor: null,
+			navigation: [
+				[
+					{
+						to: '/',
+						search: {
+							pasted: serializeBlueprint({
+								blueprint: {
+									item: 'blueprint',
+									version: 0,
+									entities: [{entity_number: 1, name: 'fast-transport-belt', position: {x: 0, y: 0}}],
+									description: 'Draft description',
+								},
+							}),
+							selection: '',
+						},
 					},
-				}),
-				selection: '',
-			},
+				],
+			],
+			selector: null,
 		});
 	});
 
@@ -890,12 +883,6 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 				planner.focus();
 				await user.keyboard('{Shift>}{Enter}{/Shift}');
 			}
-			await user.click(
-				screen.getByRole('button', {
-					name: `Apply Default Upgrade as ${direction}`,
-				}),
-			);
-
 			expect({
 				blueprintEditor: screen.queryByRole('dialog', {name: 'Blueprint Editor'}),
 				navigation: navigate.mock.calls,
@@ -1047,7 +1034,6 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		openBlueprintEditor();
 		await user.click(screen.getByRole('button', {name: 'Upgrade items and entities in the blueprint'}));
 		await user.click(screen.getByRole('button', {name: 'Rare belt upgrades'}));
-		await user.click(screen.getByRole('button', {name: 'Apply Rare belt upgrades as upgrade'}));
 
 		expect(navigate).toHaveBeenCalledExactlyOnceWith({
 			to: '/',
