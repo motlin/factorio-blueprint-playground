@@ -15,7 +15,11 @@ import {BlueprintParameterizationDialog} from './BlueprintParameterizationDialog
 import {BlueprintSnapGridEditor} from './BlueprintSnapGridEditor';
 import {BlueprintTitleEditor} from './BlueprintTitleEditor';
 import {UpgradePlannerSelectorDialog, type UpgradePlannerChoice} from './UpgradePlannerSelectorDialog';
-import type {BlueprintEditorCommitAction} from './useBlueprintEditorDraft';
+import type {
+	BlueprintEditorCommitAction,
+	BlueprintEditorCommitState,
+	BlueprintEditorContext,
+} from './useBlueprintEditorDraft';
 import {useDialogFocus} from './useDialogFocus';
 
 /**
@@ -52,7 +56,8 @@ interface BlueprintEditorDialogProps {
 	breadcrumb: string;
 	closeConfirmationOpen: boolean;
 	commitAction: BlueprintEditorCommitAction;
-	commitDisabled: boolean;
+	commitState: BlueprintEditorCommitState;
+	context: BlueprintEditorContext;
 	description: string;
 	filterAnalysis: BlueprintFilterAnalysis;
 	flattenBookSelected: boolean;
@@ -105,7 +110,8 @@ export function BlueprintEditorDialog({
 	breadcrumb,
 	closeConfirmationOpen,
 	commitAction,
-	commitDisabled,
+	commitState,
+	context,
 	description,
 	filterAnalysis,
 	flattenBookSelected,
@@ -154,6 +160,13 @@ export function BlueprintEditorDialog({
 	const [parameterizationOpen, setParameterizationOpen] = useState(false);
 	const upgradePlannerSelectorId = useId();
 	const parameterizationDialogId = useId();
+	const contextId = useId();
+	const closeDescriptionId = useId();
+	const bookOperationsHeadingId = useId();
+	const bookOperationsDescriptionId = useId();
+	const flattenBookDescriptionId = useId();
+	const sortBookDescriptionId = useId();
+	const enabledBookOperationCount = Number(flattenBookSelected) + Number(sortBookSelected);
 	const dialogReference = useDialogFocus<HTMLElement>({
 		initialFocusSelector: '.blueprint-editor__settings button',
 		onClose,
@@ -164,32 +177,55 @@ export function BlueprintEditorDialog({
 			<section
 				ref={dialogReference}
 				className="factorio-frame factorio-frame--shallow transform-dialog transform-workbench transform-workbench--blueprint"
+				data-factorio-source="BlueprintSetupGui::BlueprintSetupGui"
 				role="dialog"
 				aria-modal="true"
 				aria-label="Blueprint Editor"
+				aria-describedby={contextId}
 			>
 				<header className="factorio-title-bar transform-dialog__header transform-workbench__header">
 					<div className="transform-workbench__title">
 						<div>
-							<h3>
-								{book
-									? 'Blueprint book in the blueprint library'
-									: 'Blueprint in the blueprint library'}
-							</h3>
-							<span>{breadcrumb}</span>
+							<h3 data-factorio-source="BlueprintSetupGui::getTitle">{context.caption}</h3>
+							<nav
+								id={contextId}
+								className="blueprint-editor__context"
+								aria-label="Blueprint context"
+								data-website-extension="record-context"
+							>
+								<span className="blueprint-editor__context-label">{context.contextLabel}</span>
+								<span aria-hidden="true">›</span>
+								<span className="blueprint-editor__breadcrumb" aria-current="page">
+									{breadcrumb}
+								</span>
+							</nav>
 						</div>
 					</div>
 					<FactorioButton
 						kind={FactorioButtonKind.Close}
 						className="transform-dialog__close"
 						aria-label="Close Blueprint Editor"
-						title="Close Blueprint Editor"
+						aria-describedby={closeDescriptionId}
+						data-factorio-source="BlueprintSetupGui::confirmClose"
+						data-factorio-close-action="request-close"
+						title="Close Blueprint Editor (asks before discarding changes)"
 						onClick={onClose}
 					/>
+					<span id={closeDescriptionId} className="transform-visually-hidden">
+						Uncommitted changes require confirmation before they are discarded.
+					</span>
 				</header>
 
-				<div className="transform-workbench__body blueprint-editor__layout">
-					<div className="panel-hole transform-workflow blueprint-editor__settings">
+				<div
+					className="transform-workbench__body blueprint-editor__layout"
+					data-factorio-source="BlueprintSetupGui::insetFrameContainerHorizontalFlow"
+				>
+					<div
+						className="panel-hole transform-workflow blueprint-editor__settings"
+						data-factorio-source="BlueprintSettingsGui::BlueprintSettingsGui"
+						role="region"
+						aria-label="Blueprint settings"
+					>
 						<div className="panel-hole-inner blueprint-editor__title-row">
 							<BlueprintTitleEditor label={label} onLabelChange={onLabelChange} />
 							<BlueprintEditorToolbar
@@ -212,88 +248,139 @@ export function BlueprintEditorDialog({
 							/>
 						</div>
 
-						<section
-							className="transform-workflow__section blueprint-editor__icons"
-							aria-labelledby="blueprint-editor-icons-heading"
+						<div
+							className="blueprint-editor__settings-scroll"
+							data-factorio-style="scroll_pane_under_subheader"
 						>
-							<h4 id="blueprint-editor-icons-heading">Icon</h4>
-							<div>{icons}</div>
-							<small>Left-click or press Enter to edit. Right-click or press Delete to remove.</small>
-						</section>
-
-						<BlueprintDescriptionEditor
-							description={description}
-							onDescriptionChange={onDescriptionChange}
-						/>
-
-						{snapGrid === undefined ? null : (
-							<BlueprintSnapGridEditor settings={snapGrid} onChange={onSnapGridChange} />
-						)}
-
-						<BlueprintComponentsGrid
-							blueprint={blueprint}
-							onComponentRemovedChange={onComponentRemovedChange}
-							removedComponents={removedComponents}
-						/>
-
-						<BlueprintContentFilters
-							analysis={filterAnalysis}
-							entitiesIncluded={!stripEntitiesSelected}
-							fuelIncluded={!stripFuelSelected}
-							modulesIncluded={!stripModulesSelected}
-							onEntitiesIncludedChange={onEntitiesIncludedChange}
-							onFuelIncludedChange={onFuelIncludedChange}
-							onModulesIncludedChange={onModulesIncludedChange}
-							onStationNamesIncludedChange={onStationNamesIncludedChange}
-							onTilesIncludedChange={onTilesIncludedChange}
-							onTrainsIncludedChange={onTrainsIncludedChange}
-							onVehiclesIncludedChange={onVehiclesIncludedChange}
-							stationNamesIncluded={!stripStationNamesSelected}
-							tilesIncluded={!stripTilesSelected}
-							trainsIncluded={!stripTrainsSelected}
-							vehiclesIncluded={!stripVehiclesSelected}
-						/>
-
-						{book ? (
 							<section
-								className="transform-workflow__section"
-								aria-labelledby="transform-book-operations-heading"
+								className="transform-workflow__section blueprint-editor__icons"
+								aria-labelledby="blueprint-editor-icons-heading"
 							>
-								<h4 id="transform-book-operations-heading">
-									Book operations{bookOperationSelected ? ' · selected' : ''}
-								</h4>
-								<div className="transform-workflow__checks">
-									<label>
-										<input
-											type="checkbox"
-											checked={flattenBookSelected}
-											onChange={(event) => {
-												onFlattenBookSelectedChange(event.currentTarget.checked);
-											}}
-										/>{' '}
-										Flatten nested books
-									</label>
-									<label>
-										<input
-											type="checkbox"
-											checked={sortBookSelected}
-											onChange={(event) => {
-												onSortBookSelectedChange(event.currentTarget.checked);
-											}}
-										/>{' '}
-										Sort entries by label
-									</label>
-								</div>
+								<h4 id="blueprint-editor-icons-heading">Icon</h4>
+								<div>{icons}</div>
+								<small>Left-click or press Enter to edit. Right-click or press Delete to remove.</small>
 							</section>
-						) : null}
+
+							<BlueprintDescriptionEditor
+								description={description}
+								onDescriptionChange={onDescriptionChange}
+							/>
+
+							{snapGrid === undefined ? null : (
+								<BlueprintSnapGridEditor settings={snapGrid} onChange={onSnapGridChange} />
+							)}
+
+							<BlueprintComponentsGrid
+								blueprint={blueprint}
+								onComponentRemovedChange={onComponentRemovedChange}
+								removedComponents={removedComponents}
+							/>
+
+							<BlueprintContentFilters
+								analysis={filterAnalysis}
+								entitiesIncluded={!stripEntitiesSelected}
+								fuelIncluded={!stripFuelSelected}
+								modulesIncluded={!stripModulesSelected}
+								onEntitiesIncludedChange={onEntitiesIncludedChange}
+								onFuelIncludedChange={onFuelIncludedChange}
+								onModulesIncludedChange={onModulesIncludedChange}
+								onStationNamesIncludedChange={onStationNamesIncludedChange}
+								onTilesIncludedChange={onTilesIncludedChange}
+								onTrainsIncludedChange={onTrainsIncludedChange}
+								onVehiclesIncludedChange={onVehiclesIncludedChange}
+								stationNamesIncluded={!stripStationNamesSelected}
+								tilesIncluded={!stripTilesSelected}
+								trainsIncluded={!stripTrainsSelected}
+								vehiclesIncluded={!stripVehiclesSelected}
+							/>
+
+							{book ? (
+								<section
+									className="blueprint-editor-book-operations"
+									aria-labelledby={bookOperationsHeadingId}
+									aria-describedby={bookOperationsDescriptionId}
+									data-operation-state={bookOperationSelected ? 'enabled' : 'available'}
+									data-website-extension="book-operations"
+								>
+									<header className="blueprint-editor-book-operations__header">
+										<div>
+											<span className="blueprint-editor-book-operations__eyebrow">
+												Website extension
+											</span>
+											<h4 id={bookOperationsHeadingId}>Book operations</h4>
+										</div>
+										<span className="blueprint-editor-book-operations__status">
+											{enabledBookOperationCount} of 2 enabled
+										</span>
+									</header>
+									<p
+										id={bookOperationsDescriptionId}
+										className="blueprint-editor-book-operations__description"
+									>
+										Optional whole-book tools. Changes apply when you save this blueprint book.
+									</p>
+									<div className="blueprint-editor-book-operations__options">
+										<label
+											className="checkbox-label blueprint-editor-book-operations__option"
+											data-enabled={flattenBookSelected ? 'true' : 'false'}
+										>
+											<input
+												type="checkbox"
+												aria-label="Flatten nested books"
+												aria-describedby={flattenBookDescriptionId}
+												checked={flattenBookSelected}
+												data-website-control="flatten-book"
+												onChange={(event) => {
+													onFlattenBookSelectedChange(event.currentTarget.checked);
+												}}
+											/>
+											<span
+												className="checkbox blueprint-editor-book-operations__checkbox"
+												aria-hidden="true"
+											/>
+											<span className="blueprint-editor-book-operations__option-copy">
+												<strong>Flatten nested books</strong>
+												<small id={flattenBookDescriptionId}>
+													Move nested blueprints into this book as one flat list.
+												</small>
+											</span>
+										</label>
+										<label
+											className="checkbox-label blueprint-editor-book-operations__option"
+											data-enabled={sortBookSelected ? 'true' : 'false'}
+										>
+											<input
+												type="checkbox"
+												aria-label="Sort entries by label"
+												aria-describedby={sortBookDescriptionId}
+												checked={sortBookSelected}
+												data-website-control="sort-book"
+												onChange={(event) => {
+													onSortBookSelectedChange(event.currentTarget.checked);
+												}}
+											/>
+											<span
+												className="checkbox blueprint-editor-book-operations__checkbox"
+												aria-hidden="true"
+											/>
+											<span className="blueprint-editor-book-operations__option-copy">
+												<strong>Sort entries by label</strong>
+												<small id={sortBookDescriptionId}>
+													Order this book's entries by label.
+												</small>
+											</span>
+										</label>
+									</div>
+								</section>
+							) : null}
+						</div>
 					</div>
 				</div>
 
 				<BlueprintEditorActions
 					closeConfirmationOpen={closeConfirmationOpen}
 					commitAction={commitAction}
-					commitDisabled={commitDisabled}
-					onClose={onClose}
+					commitState={commitState}
 					onCommit={onCommit}
 					onDiscard={onDiscard}
 					onKeepEditing={onKeepEditing}

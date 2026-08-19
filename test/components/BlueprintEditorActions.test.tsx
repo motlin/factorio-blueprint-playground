@@ -3,34 +3,39 @@ import userEvent from '@testing-library/user-event';
 import {expect, test, vi} from 'vite-plus/test';
 
 import {BlueprintEditorActions} from '../../src/components/blueprint/panels/transform/BlueprintEditorActions';
-import type {BlueprintEditorCommitAction} from '../../src/components/blueprint/panels/transform/useBlueprintEditorDraft';
+import {
+	type BlueprintEditorCommitAction,
+	BlueprintEditorCommitActionKind,
+	BlueprintEditorCommitState,
+} from '../../src/components/blueprint/panels/transform/useBlueprintEditorDraft';
 
 const createAction: BlueprintEditorCommitAction = {
-	caption: 'Create Blueprint',
-	scopeDescription: 'Creates this newly captured draft as the committed root blueprint.',
+	caption: 'Create blueprint',
+	kind: BlueprintEditorCommitActionKind.Create,
+	scopeDescription: 'Creates this captured draft as the loaded root blueprint.',
 };
-const saveAction: BlueprintEditorCommitAction = {
-	caption: 'Save Blueprint',
-	scopeDescription: 'Commits changes to the existing blueprint record.',
+const saveRootAction: BlueprintEditorCommitAction = {
+	caption: 'Save blueprint',
+	kind: BlueprintEditorCommitActionKind.SaveRoot,
+	scopeDescription: 'Saves changes to this loaded root blueprint.',
 };
-const saveToBookAction: BlueprintEditorCommitAction = {
-	caption: 'Save to Book',
-	scopeDescription: 'Commits this selection into its containing root book.',
+const saveChildAction: BlueprintEditorCommitAction = {
+	caption: 'Save blueprint',
+	kind: BlueprintEditorCommitActionKind.SaveChild,
+	scopeDescription: 'Saves this child in its containing book. The whole book remains the loaded result.',
 };
 
 function renderActions({
 	closeConfirmationOpen = false,
-	commitAction = saveAction,
-	commitDisabled = false,
-	onClose = vi.fn<() => void>(),
+	commitAction = saveRootAction,
+	commitState = BlueprintEditorCommitState.Ready,
 	onCommit = vi.fn<() => void>(),
 	onDiscard = vi.fn<() => void>(),
 	onKeepEditing = vi.fn<() => void>(),
 }: {
 	closeConfirmationOpen?: boolean;
 	commitAction?: BlueprintEditorCommitAction;
-	commitDisabled?: boolean;
-	onClose?: () => void;
+	commitState?: BlueprintEditorCommitState;
 	onCommit?: () => void;
 	onDiscard?: () => void;
 	onKeepEditing?: () => void;
@@ -39,8 +44,7 @@ function renderActions({
 		<BlueprintEditorActions
 			closeConfirmationOpen={closeConfirmationOpen}
 			commitAction={commitAction}
-			commitDisabled={commitDisabled}
-			onClose={onClose}
+			commitState={commitState}
 			onCommit={onCommit}
 			onDiscard={onDiscard}
 			onKeepEditing={onKeepEditing}
@@ -48,76 +52,134 @@ function renderActions({
 	);
 }
 
-test('uses the existing-record caption and does not expose export or navigation as save actions', async () => {
+test.each([
+	{
+		action: createAction,
+		busy: 'false',
+		disabled: false,
+		name: 'new captured root',
+		state: BlueprintEditorCommitState.Ready,
+		status: 'Blueprint is ready to create.',
+	},
+	{
+		action: saveRootAction,
+		busy: 'false',
+		disabled: true,
+		name: 'clean existing root',
+		state: BlueprintEditorCommitState.Clean,
+		status: 'No changes to save.',
+	},
+	{
+		action: saveRootAction,
+		busy: 'false',
+		disabled: false,
+		name: 'dirty existing root',
+		state: BlueprintEditorCommitState.Ready,
+		status: 'Changes are ready to save.',
+	},
+	{
+		action: saveChildAction,
+		busy: 'false',
+		disabled: false,
+		name: 'dirty child in book',
+		state: BlueprintEditorCommitState.Ready,
+		status: 'Changes are ready to save.',
+	},
+	{
+		action: saveChildAction,
+		busy: 'true',
+		disabled: true,
+		name: 'pending child commit',
+		state: BlueprintEditorCommitState.Pending,
+		status: 'Saving changes…',
+	},
+	{
+		action: saveRootAction,
+		busy: 'false',
+		disabled: true,
+		name: 'invalid existing root',
+		state: BlueprintEditorCommitState.Invalid,
+		status: 'This draft cannot be saved.',
+	},
+])('renders the $name transaction state without a competing footer close action', async (fixture) => {
 	const user = userEvent.setup();
-	const onClose = vi.fn<() => void>();
 	const onCommit = vi.fn<() => void>();
-	renderActions({commitAction: saveAction, onClose, onCommit});
+	renderActions({
+		commitAction: fixture.action,
+		commitState: fixture.state,
+		onCommit,
+	});
+	const footer = screen.getByRole('contentinfo');
+	const commit = screen.getByRole<HTMLButtonElement>('button', {name: fixture.action.caption});
+	const descriptionIds = commit.getAttribute('aria-describedby')?.split(' ') ?? [];
 
 	expect({
-		actions: screen.getAllByRole('button').map((button) => button.textContent),
-		scope: screen.getByText(saveAction.scopeDescription).textContent,
+		actionBusy: commit.getAttribute('aria-busy'),
+		actionDisabled: commit.disabled,
+		actionStyle: commit.dataset.factorioStyle,
+		description: document.getElementById(descriptionIds[0] ?? '')?.textContent,
+		footerSource: footer.dataset.factorioSource,
+		footerKind: footer.dataset.commitKind,
+		footerState: footer.dataset.commitState,
+		footerStyle: footer.dataset.factorioStyle,
+		status: screen.getByRole('status').textContent,
+		visibleButtons: screen.getAllByRole('button').map((button) => button.textContent),
 	}).toStrictEqual({
-		actions: ['Close', 'Save Blueprint'],
-		scope: saveAction.scopeDescription,
+		actionBusy: fixture.busy,
+		actionDisabled: fixture.disabled,
+		actionStyle: 'green_button',
+		description: fixture.action.scopeDescription,
+		footerSource: 'BlueprintSetupGui::getConfirmCaption',
+		footerKind: fixture.action.kind,
+		footerState: fixture.state,
+		footerStyle: 'dialog_buttons_horizontal_flow',
+		status: fixture.status,
+		visibleButtons: [fixture.action.caption],
 	});
 
-	await user.click(screen.getByRole('button', {name: 'Save Blueprint'}));
-	await user.click(screen.getByRole('button', {name: 'Close'}));
-
-	expect({onClose: onClose.mock.calls, onCommit: onCommit.mock.calls}).toStrictEqual({
-		onClose: [[]],
-		onCommit: [[]],
-	});
-	expect(['Export', 'Open in Playground'].map((name) => screen.queryByRole('button', {name}))).toStrictEqual([
-		null,
-		null,
-	]);
+	await user.click(commit);
+	expect(onCommit.mock.calls).toStrictEqual(fixture.disabled ? [] : [[]]);
 });
 
-test('enables Create Blueprint for a first captured draft without inspecting its label', async () => {
-	const user = userEvent.setup();
-	const onCommit = vi.fn<() => void>();
-	renderActions({commitAction: createAction, onCommit});
-	const createButton = screen.getByRole<HTMLButtonElement>('button', {name: 'Create Blueprint'});
-
-	expect({
-		disabled: createButton.disabled,
-		scope: screen.getByText(createAction.scopeDescription).textContent,
-	}).toStrictEqual({disabled: false, scope: createAction.scopeDescription});
-
-	await user.click(createButton);
-	expect(onCommit).toHaveBeenCalledExactlyOnceWith();
-});
-
-test('uses Save to Book for a child commit whose root scope needs clarification', async () => {
-	const user = userEvent.setup();
-	const onCommit = vi.fn<() => void>();
-	renderActions({commitAction: saveToBookAction, onCommit});
-
-	expect(screen.getByText(saveToBookAction.scopeDescription).textContent).toBe(
-		'Commits this selection into its containing root book.',
-	);
-	await user.click(screen.getByRole('button', {name: 'Save to Book'}));
-	expect(onCommit).toHaveBeenCalledExactlyOnceWith();
-});
-
-test('offers Commit, Discard, and Keep Editing and routes Escape back to the same draft', async () => {
+test('matches ConfirmationBox and routes cancel or Escape back to the same draft', async () => {
 	const user = userEvent.setup();
 	const onCommit = vi.fn<() => void>();
 	const onDiscard = vi.fn<() => void>();
 	const onKeepEditing = vi.fn<() => void>();
-	renderActions({closeConfirmationOpen: true, onCommit, onDiscard, onKeepEditing});
-	const confirmation = screen.getByRole('alertdialog', {name: 'There are uncommitted changes'});
+	renderActions({
+		closeConfirmationOpen: true,
+		onCommit,
+		onDiscard,
+		onKeepEditing,
+	});
+	const confirmation = screen.getByRole('alertdialog', {name: 'Confirmation'});
+	const message = within(confirmation).getByText('There are unconfirmed changes.');
+	const cancel = within(confirmation).getByRole('button', {name: 'Cancel'});
+	const discard = within(confirmation).getByRole('button', {name: 'Discard changes'});
 
-	expect(
-		within(confirmation)
+	expect({
+		activeElement: document.activeElement,
+		actions: within(confirmation)
 			.getAllByRole('button')
 			.map((button) => button.textContent),
-	).toStrictEqual(['Keep Editing', 'Discard', 'Commit']);
+		describedBy: confirmation.getAttribute('aria-describedby'),
+		dialogSource: confirmation.dataset.factorioSource,
+		discardStyle: discard.dataset.factorioSourceStyle,
+		footerStyle: discard.parentElement?.dataset.factorioStyle,
+		message: message.textContent,
+		messageStyle: message.parentElement?.dataset.factorioStyle,
+	}).toStrictEqual({
+		activeElement: cancel,
+		actions: ['Cancel', 'Discard changes'],
+		describedBy: message.id,
+		dialogSource: 'ConfirmationBox',
+		discardStyle: 'red_confirm_button',
+		footerStyle: 'dialog_buttons_horizontal_flow',
+		message: 'There are unconfirmed changes.',
+		messageStyle: 'notice_scroll_pane',
+	});
 
-	await user.click(within(confirmation).getByRole('button', {name: 'Commit'}));
-	await user.click(within(confirmation).getByRole('button', {name: 'Discard'}));
+	await user.click(discard);
 	fireEvent.keyDown(window, {key: 'Escape'});
 
 	expect({
@@ -125,7 +187,7 @@ test('offers Commit, Discard, and Keep Editing and routes Escape back to the sam
 		onDiscard: onDiscard.mock.calls,
 		onKeepEditing: onKeepEditing.mock.calls,
 	}).toStrictEqual({
-		onCommit: [[]],
+		onCommit: [],
 		onDiscard: [[]],
 		onKeepEditing: [[]],
 	});
