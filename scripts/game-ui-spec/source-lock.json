@@ -54,6 +54,10 @@
 			"blob": "6264e4d1cf9598dbf1b641c6246261ff8c088abd"
 		},
 		{
+			"path": "data/core/prototypes/fonts.lua",
+			"blob": "98a24e6e754df95cdd8637e083414fb39099e9e3"
+		},
+		{
 			"path": "data/core/prototypes/style.lua",
 			"blob": "39ffe2a319963ddf0b192086fb1f90500a42c18e"
 		},
