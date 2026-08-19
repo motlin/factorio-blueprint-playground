@@ -541,11 +541,11 @@ export const BlueprintEditor: Story =
 			canvas.getByRole(
 				'button',
 				{
-					name: 'Save Blueprint',
+					name: 'Save blueprint',
 				},
 			),
 		).toBeDisabled();
-		await expect(canvas.getByText('Commits changes to the existing blueprint record.')).toBeVisible();
+		await expect(canvas.getByText('Saves changes to this loaded root blueprint.')).toBeVisible();
 		await expect(
 			canvas.queryByRole(
 				'heading',

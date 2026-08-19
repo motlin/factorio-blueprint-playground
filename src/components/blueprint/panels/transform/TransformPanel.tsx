@@ -3,7 +3,7 @@ import {useId, useMemo, useState} from 'react';
 
 import {BlueprintWrapper} from '../../../../parsing/BlueprintWrapper';
 import {serializeBlueprint} from '../../../../parsing/blueprintParser';
-import type {BlueprintString} from '../../../../parsing/types';
+import type {BlueprintString, SignalID} from '../../../../parsing/types';
 import {db, LIBRARY_ROOT_ID} from '../../../../storage/db';
 import {updateNestedBlueprint} from '../../../../transform/applyAtPath';
 import {blueprintComponentRemovalKey, type BlueprintComponentIdentity} from '../../../../transform/componentRemoval';
@@ -112,7 +112,8 @@ export function TransformPanel({
 		commitBlueprintEditorDraft,
 		discardBlueprintEditorDraft,
 		editorCommitAction,
-		editorCommitDisabled,
+		editorCommitState,
+		editorContext,
 		editorDescription,
 		editorDirty,
 		editorDraft,
@@ -167,7 +168,11 @@ export function TransformPanel({
 
 	const type = blueprint === undefined ? undefined : new BlueprintWrapper(blueprint).getType();
 	const editorIconOptions = useMemo(
-		() => chatIconPickerOptions([...upgradeDraft.sourceOptions, ...editorIcons]),
+		() =>
+			chatIconPickerOptions([
+				...upgradeDraft.sourceOptions,
+				...editorIcons.filter((icon): icon is SignalID => icon !== undefined),
+			]),
 		[editorIcons, upgradeDraft.sourceOptions],
 	);
 	const editorDraftBlueprint = editorDraft.rootBlueprint;
@@ -321,7 +326,6 @@ export function TransformPanel({
 						planner,
 						source: 'dropped',
 					},
-					direction: 'upgrade',
 				},
 			);
 			setEditorPlannerDropError(undefined);
@@ -418,7 +422,8 @@ export function TransformPanel({
 					bookOperationSelected={hasSelectedBookOperation}
 					breadcrumb={editorBreadcrumb}
 					commitAction={editorCommitAction}
-					commitDisabled={editorCommitDisabled}
+					commitState={editorCommitState}
+					context={editorContext}
 					description={editorDescription}
 					closeConfirmationOpen={blueprintCloseConfirmationOpen}
 					filterAnalysis={editorFilterAnalysis}
@@ -426,6 +431,7 @@ export function TransformPanel({
 					icons={
 						<BlueprintLabelIcons
 							icons={editorIcons}
+							itemName={type === 'blueprint-book' ? 'blueprint-book' : 'blueprint'}
 							onChange={setEditorIcons}
 							onChoose={setEditorIconPickerIndex}
 							signalTitle={signalTitle}
@@ -541,7 +547,7 @@ export function TransformPanel({
 						setEditorIcons((current) =>
 						{
 							const next = [...current];
-							next[Math.min(editorIconPickerIndex, current.length)] = signal;
+							next[editorIconPickerIndex] = signal;
 							return next;
 						});
 						setEditorIconPickerIndex(undefined);

@@ -316,6 +316,15 @@ test('uses one accessible name for quality icons while keeping overlay images de
 				}}
 				size="large"
 			/>
+			<FactorioIcon
+				id="utility-icon"
+				icon={
+				{
+					type: 'utility',
+					name: 'parametrise',
+				}}
+				size="small"
+			/>
 			<FactorioQualityBadge quality="rare" />
 			<FactorioQualityBadge quality="epic" aria-hidden="true" />
 		</>,
@@ -336,6 +345,13 @@ test('uses one accessible name for quality icons while keeping overlay images de
 	const legendaryArtwork = legendaryIcon.querySelector<HTMLImageElement>('[data-testid="icon"]');
 	const legendaryQuality = legendaryIcon.querySelector<HTMLImageElement>('[data-testid="quality"]');
 	const decorativeIcon = container.querySelector<HTMLElement>('#decorative-item');
+	const utilityIcon = screen.getByRole(
+		'img',
+		{
+			name: 'utility: parametrise',
+		},
+	);
+	const utilityArtwork = utilityIcon.querySelector<HTMLImageElement>('[data-testid="icon"]');
 	const standaloneQuality = screen.getByRole(
 		'img',
 		{
@@ -371,6 +387,12 @@ test('uses one accessible name for quality icons while keeping overlay images de
 				src: standaloneQuality.getAttribute('src'),
 				title: standaloneQuality.getAttribute('title'),
 			},
+			utility:
+			{
+				size: utilityIcon.dataset.factorioIconSize,
+				src: utilityArtwork?.getAttribute('src'),
+				title: utilityArtwork?.getAttribute('title'),
+			},
 		},
 	).toStrictEqual(
 		{
@@ -400,6 +422,12 @@ test('uses one accessible name for quality icons while keeping overlay images de
 				alt: 'Rare quality',
 				src: 'https://factorio-icon-cdn.pages.dev/quality/rare.webp',
 				title: 'Rare quality',
+			},
+			utility:
+			{
+				size: 'small',
+				src: '/assets/factorio/parametrise.png',
+				title: 'utility: parametrise',
 			},
 		},
 	);

@@ -163,10 +163,9 @@ function plannerFromMappings(
 	}
 	if (metadata.icons.length > 0)
 	{
-		planner.settings.icons = metadata.icons.map((icon, index) => (
+		planner.settings.icons = metadata.icons.map((icon) => (
 		{
 			...structuredClone(icon),
-			index: index + 1,
 			signal:
 			{
 				...icon.signal,
@@ -187,33 +186,39 @@ function recordMetadata(planner: UpgradePlanner | undefined, fallbackLabel: stri
 	};
 }
 
-function reconcilePreviewIcons(current: readonly Icon[], signals: readonly SignalID[]): Icon[]
+function previewIconSlots(icons: readonly Icon[]): Array<SignalID | undefined>
 {
-	if (signals.length === current.length)
+	const slots = Array<SignalID | undefined>(4).fill(undefined);
+	for (const icon of icons)
 	{
-		return signals.map((signal, index) => (
+		if (icon.index >= 1 && icon.index <= slots.length)
 		{
-			...structuredClone(current[index]),
-			index: index + 1,
-			signal:
-			{
-				...signal,
-			},
-		}));
+			slots[icon.index - 1] = icon.signal;
+		}
 	}
-	const available = [...current];
-	return signals.map((signal, index) =>
+	return slots;
+}
+
+function reconcilePreviewIcons(current: readonly Icon[], signals: readonly (SignalID | undefined)[]): Icon[]
+{
+	const currentByIndex = new Map(current.map((icon) => [icon.index, icon]));
+	return signals.flatMap((signal, index) =>
 	{
-		const matchingIndex = available.findIndex((icon) => JSON.stringify(icon.signal) === JSON.stringify(signal));
-		const template = matchingIndex < 0 ? undefined : available.splice(matchingIndex, 1)[0];
-		return {
-			...structuredClone(template),
-			index: index + 1,
-			signal:
+		if (signal === undefined)
+		{
+			return [];
+		}
+		const iconIndex = index + 1;
+		return [
 			{
-				...signal,
+				...structuredClone(currentByIndex.get(iconIndex)),
+				index: iconIndex,
+				signal:
+				{
+					...signal,
+				},
 			},
-		};
+		];
 	});
 }
 
@@ -810,7 +815,7 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 		recordMetadata:
 		{
 			description: recordMetadataDraft.description,
-			icons: recordMetadataDraft.icons.map(({signal}) => signal),
+			icons: previewIconSlots(recordMetadataDraft.icons),
 			label: recordMetadataDraft.label,
 			onDescriptionChange: (description: string) =>
 			{
@@ -821,7 +826,7 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 					description,
 				}));
 			},
-			onIconsChange: (icons: SignalID[]) =>
+			onIconsChange: (icons: Array<SignalID | undefined>) =>
 			{
 				setPlannerDraftChanged(true);
 				setRecordMetadataDraft((current) => (

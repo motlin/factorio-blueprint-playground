@@ -42,7 +42,62 @@ export {BlueprintEditorSourceMode} from '../../../../transform/blueprintEditor';
 export interface BlueprintEditorCommitAction
 {
 	caption: string;
+	kind: BlueprintEditorCommitActionKind;
 	scopeDescription: string;
+}
+
+export enum BlueprintEditorCommitActionKind
+{
+	Create = 'create',
+	SaveChild = 'save-child',
+	SaveRoot = 'save-root',
+}
+
+export enum BlueprintEditorCommitState
+{
+	Clean = 'clean',
+	Invalid = 'invalid',
+	Pending = 'pending',
+	Ready = 'ready',
+}
+
+export interface BlueprintEditorContext
+{
+	caption: string;
+	contextLabel: string;
+}
+
+function blueprintEditorContext(
+	blueprint: BlueprintString | undefined,
+	selectedPath: string,
+	sourceMode: BlueprintEditorSourceMode,
+): BlueprintEditorContext
+{
+	if (selectedPath !== '')
+	{
+		return {
+			caption: 'Blueprint in the blueprint library',
+			contextLabel: 'Child blueprint record',
+		};
+	}
+	if (sourceMode === BlueprintEditorSourceMode.CapturedDraft)
+	{
+		return {
+			caption: 'Set up new blueprint',
+			contextLabel: 'New blueprint',
+		};
+	}
+	if (blueprint?.blueprint_book !== undefined)
+	{
+		return {
+			caption: 'Blueprint book in the blueprint library',
+			contextLabel: 'Blueprint library record',
+		};
+	}
+	return {
+		caption: 'Blueprint item',
+		contextLabel: 'Existing blueprint',
+	};
 }
 
 function blueprintEditorCommitAction(
@@ -53,20 +108,23 @@ function blueprintEditorCommitAction(
 	if (selectedPath !== '')
 	{
 		return {
-			caption: 'Save to Book',
-			scopeDescription: 'Commits this selection into its containing root book.',
+			caption: 'Save blueprint',
+			kind: BlueprintEditorCommitActionKind.SaveChild,
+			scopeDescription: 'Saves this child in its containing book. The whole book remains the loaded result.',
 		};
 	}
 	if (sourceMode === BlueprintEditorSourceMode.CapturedDraft)
 	{
 		return {
-			caption: 'Create Blueprint',
-			scopeDescription: 'Creates this newly captured draft as the committed root blueprint.',
+			caption: 'Create blueprint',
+			kind: BlueprintEditorCommitActionKind.Create,
+			scopeDescription: 'Creates this captured draft as the loaded root blueprint.',
 		};
 	}
 	return {
-		caption: 'Save Blueprint',
-		scopeDescription: 'Commits changes to the existing blueprint record.',
+		caption: 'Save blueprint',
+		kind: BlueprintEditorCommitActionKind.SaveRoot,
+		scopeDescription: 'Saves changes to this loaded root blueprint.',
 	};
 }
 
@@ -114,10 +172,18 @@ export function useBlueprintEditorDraft({
 		[blueprint, capturedOnSpacePlatform, sourceMode],
 	);
 	const metadata = useMemo(() => sourceMetadata(blueprint), [blueprint]);
-	const sourceIcons = useMemo(
-		() => [...metadata.icons].sort((left, right) => left.index - right.index).map((icon) => icon.signal),
-		[metadata.icons],
-	);
+	const sourceIcons = useMemo(() =>
+	{
+		const slots = Array<SignalID | undefined>(4).fill(undefined);
+		for (const icon of metadata.icons)
+		{
+			if (icon.index >= 1 && icon.index <= slots.length)
+			{
+				slots[icon.index - 1] = icon.signal;
+			}
+		}
+		return slots;
+	}, [metadata.icons]);
 	const sourceSnapGrid = useMemo(
 		() => (blueprint?.blueprint === undefined ? undefined : blueprintSnapGrid(blueprint)),
 		[blueprint],
@@ -130,7 +196,7 @@ export function useBlueprintEditorDraft({
 	const [closeConfirmationOpen, setCloseConfirmationOpen] = useState(false);
 	const [editorLabel, setEditorLabel] = useState(metadata.label);
 	const [editorDescription, setEditorDescription] = useState(metadata.description);
-	const [editorIcons, setEditorIcons] = useState<SignalID[]>(sourceIcons);
+	const [editorIcons, setEditorIcons] = useState<Array<SignalID | undefined>>(sourceIcons);
 	const [editorSnapGrid, setEditorSnapGrid] = useState<BlueprintSnapGrid | undefined>(sourceSnapGrid);
 	const [editorParameters, setEditorParameters] = useState<Parameter[]>(sourceParameters);
 	const [editorIconPickerIndex, setEditorIconPickerIndex] = useState<number>();
@@ -216,7 +282,10 @@ export function useBlueprintEditorDraft({
 		() => blueprintEditorCommitAction(selectedPath, sourceMode),
 		[selectedPath, sourceMode],
 	);
-
+	const editorContext = useMemo(
+		() => blueprintEditorContext(blueprint, selectedPath, sourceMode),
+		[blueprint, selectedPath, sourceMode],
+	);
 	const editorDraft = useMemo(() =>
 	{
 		if (blueprint === undefined || rootBlueprint === undefined)
@@ -240,11 +309,16 @@ export function useBlueprintEditorDraft({
 				selectedBlueprint,
 				{
 					description: editorDescription,
-					icons: editorIcons.map((signal, index) => (
-					{
-						index: index + 1,
-						signal,
-					})),
+					icons: editorIcons.flatMap((signal, index) =>
+						signal === undefined
+							? []
+							: [
+									{
+										index: index + 1,
+										signal,
+									},
+								],
+					),
 					label: editorLabel,
 				},
 			);
@@ -292,6 +366,12 @@ export function useBlueprintEditorDraft({
 		stripTrainsSelected,
 		stripVehiclesSelected,
 	]);
+	const editorCommitState =
+		editorDraft.rootBlueprint === undefined
+			? BlueprintEditorCommitState.Invalid
+			: sourceMode === BlueprintEditorSourceMode.ExistingRecord && !editorDirty
+				? BlueprintEditorCommitState.Clean
+				: BlueprintEditorCommitState.Ready;
 
 	const openBlueprintEditor = useCallback(() =>
 	{
@@ -343,9 +423,8 @@ export function useBlueprintEditorDraft({
 		commitBlueprintEditorDraft,
 		discardBlueprintEditorDraft,
 		editorCommitAction,
-		editorCommitDisabled:
-			editorDraft.rootBlueprint === undefined ||
-			(sourceMode === BlueprintEditorSourceMode.ExistingRecord && !editorDirty),
+		editorCommitState,
+		editorContext,
 		editorDescription,
 		editorDirty,
 		editorDraft,

@@ -1327,6 +1327,13 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 				name: 'Blueprint Editor',
 			},
 		);
+		const settings = screen.getByRole(
+			'region',
+			{
+				name: 'Blueprint settings',
+			},
+		);
+		const settingsScroll = settings.querySelector('.blueprint-editor__settings-scroll');
 		expect(
 			{
 				bookWideReplacements: screen.queryByRole(
@@ -1336,6 +1343,7 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 					},
 				),
 				bodyClass: dialog.querySelector('.transform-workbench__body')?.className,
+				bodySource: dialog.querySelector('.transform-workbench__body')?.getAttribute('data-factorio-source'),
 				cleanup: screen.queryByRole(
 					'heading',
 					{
@@ -1355,6 +1363,7 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 					},
 				).textContent,
 				dialog: dialog.getAttribute('aria-modal'),
+				dialogSource: dialog.getAttribute('data-factorio-source'),
 				footerElement: dialog.lastElementChild?.tagName,
 				filters: ['Modules', 'Entities', 'Trains', 'Tiles'].map(
 					(name) =>
@@ -1395,7 +1404,13 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 						name: 'Preview',
 					},
 				),
+				previewRegion: dialog.querySelector('[data-blueprint-preview]'),
 				saveDestination: screen.queryByLabelText('Save destination'),
+				settingsHeadings: [...(settingsScroll?.querySelectorAll('h4') ?? [])].map((heading) =>
+					heading.textContent.trim(),
+				),
+				settingsScrollStyle: settingsScroll?.getAttribute('data-factorio-style'),
+				settingsSource: settings.getAttribute('data-factorio-source'),
 				textReplacement: screen.queryByRole(
 					'checkbox',
 					{
@@ -1407,19 +1422,25 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 			{
 				bookWideReplacements: null,
 				bodyClass: 'transform-workbench__body blueprint-editor__layout',
+				bodySource: 'BlueprintSetupGui::insetFrameContainerHorizontalFlow',
 				cleanup: null,
 				components: 'Components',
 				description: '',
 				dialog: 'true',
+				dialogSource: 'BlueprintSetupGui::BlueprintSetupGui',
 				footerElement: 'FOOTER',
 				filters: [true, true, true, true],
 				headerElement: 'HEADER',
 				iconReplacements: null,
 				iconSlots: ['Choose icon 1', 'Choose icon 2', 'Choose icon 3', 'Choose icon 4'],
-				title: 'Untitled blueprint',
+				title: '<Unnamed blueprint>',
 				plannerMappings: null,
 				preview: null,
+				previewRegion: null,
 				saveDestination: null,
+				settingsHeadings: ['Icon', 'Description', 'Snap to grid', 'Components', 'Filters'],
+				settingsScrollStyle: 'scroll_pane_under_subheader',
+				settingsSource: 'BlueprintSettingsGui::BlueprintSettingsGui',
 				textReplacement: null,
 			},
 		);
@@ -1449,7 +1470,11 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 				disabled: upgradeButton.disabled,
 				expanded: upgradeButton.getAttribute('aria-expanded'),
 				icon: upgradeButton.querySelector('img')?.getAttribute('src'),
+				iconSize: upgradeButton
+					.querySelector('[data-factorio-icon-size]')
+					?.getAttribute('data-factorio-icon-size'),
 				inTitleRow: upgradeButton.closest('.blueprint-editor__title-row') !== null,
+				title: upgradeButton.title,
 				toolbarActions: [
 					...screen
 						.getByRole(
@@ -1467,16 +1492,18 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 				disabled: false,
 				expanded: 'false',
 				icon: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
+				iconSize: 'small',
 				inTitleRow: true,
+				title: 'Upgrade items and entities in the blueprint.',
 				toolbarActions: [
 					'Upgrade items and entities in the blueprint',
-					'Choose upgrade planner for toolbar slot',
 					'Parametrise or reconfigure the blueprint',
+					'Choose or drop an upgrade planner to hold',
 				],
 			},
 		);
 
-		await user.click(upgradeButton);
+		expect(fireEvent.contextMenu(upgradeButton)).toBe(false);
 		const selector = screen.getByRole(
 			'dialog',
 			{
@@ -1653,7 +1680,7 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 		const emptySlot = screen.getByRole(
 			'button',
 			{
-				name: 'Choose upgrade planner for toolbar slot',
+				name: 'Choose or drop an upgrade planner to hold',
 			},
 		);
 		emptySlot.focus();
@@ -1692,7 +1719,7 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 				slot: screen.getByRole(
 					'button',
 					{
-						name: 'Choose upgrade planner for toolbar slot',
+						name: 'Choose or drop an upgrade planner to hold',
 					},
 				).textContent,
 			},
@@ -1715,7 +1742,7 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 		const placedSlot = screen.getByRole(
 			'button',
 			{
-				name: "Change placed upgrade planner, currently Alice's dropped planner",
+				name: "Held upgrade planner Alice's dropped planner; click to replace",
 			},
 		);
 		expect(
@@ -1724,7 +1751,7 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 					.getByRole(
 						'button',
 						{
-							name: "Apply Alice's dropped planner as upgrade",
+							name: 'Upgrade items and entities in the blueprint',
 						},
 					)
 					.getAttribute('aria-controls'),
@@ -1741,14 +1768,8 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 			},
 		);
 
-		const removeButton = screen.getByRole(
-			'button',
-			{
-				name: "Remove Alice's dropped planner from toolbar slot",
-			},
-		);
-		removeButton.focus();
-		await user.keyboard('{Enter}');
+		placedSlot.focus();
+		await user.keyboard('{Delete}');
 		expect(
 			{
 				apply: screen
@@ -1759,23 +1780,23 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 						},
 					)
 					.getAttribute('aria-expanded'),
-				remove: screen.queryByRole(
+				heldPlanner: screen.queryByRole(
 					'button',
 					{
-						name: "Remove Alice's dropped planner from toolbar slot",
+						name: "Held upgrade planner Alice's dropped planner; click to replace",
 					},
 				),
 				slot: screen.getByRole(
 					'button',
 					{
-						name: 'Choose upgrade planner for toolbar slot',
+						name: 'Choose or drop an upgrade planner to hold',
 					},
 				).textContent,
 			},
 		).toStrictEqual(
 			{
 				apply: 'false',
-				remove: null,
+				heldPlanner: null,
 				slot: '+',
 			},
 		);
@@ -2870,7 +2891,7 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 			screen.getByRole<HTMLButtonElement>(
 				'button',
 				{
-					name: 'Save Blueprint',
+					name: 'Save blueprint',
 				},
 			).disabled,
 		).toBe(true);
@@ -2878,7 +2899,7 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 			screen.getByRole(
 				'button',
 				{
-					name: 'Close',
+					name: 'Close Blueprint Editor',
 				},
 			),
 		);
@@ -2932,7 +2953,7 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 		const createButton = screen.getByRole<HTMLButtonElement>(
 			'button',
 			{
-				name: 'Create Blueprint',
+				name: 'Create blueprint',
 			},
 		);
 		expect(
@@ -3100,7 +3121,7 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 			screen.getByRole(
 				'button',
 				{
-					name: 'Create Blueprint',
+					name: 'Create blueprint',
 				},
 			),
 		);
@@ -3163,7 +3184,7 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 				confirmation: screen.queryByRole(
 					'alertdialog',
 					{
-						name: 'There are uncommitted changes',
+						name: 'Confirmation',
 					},
 				),
 				dialog: screen.queryByRole(
@@ -3182,6 +3203,208 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 			},
 		);
 	});
+
+	test.each([
+		{
+			blueprint:
+			{
+				blueprint:
+				{
+					item: 'blueprint',
+					label: "Alice's new blueprint",
+					version: 0,
+				},
+			} satisfies BlueprintString,
+			expected:
+			{
+				breadcrumb: "Alice's new blueprint",
+				caption: 'Set up new blueprint',
+				contextLabel: 'New blueprint',
+			},
+			name: 'new root blueprint',
+			rootBlueprint: undefined,
+			selectedPath: '',
+			sourceMode: BlueprintEditorSourceMode.CapturedDraft,
+		},
+		{
+			blueprint:
+			{
+				blueprint:
+				{
+					item: 'blueprint',
+					label: "Alice's existing blueprint",
+					version: 0,
+				},
+			} satisfies BlueprintString,
+			expected:
+			{
+				breadcrumb: "Alice's existing blueprint",
+				caption: 'Blueprint item',
+				contextLabel: 'Existing blueprint',
+			},
+			name: 'existing blueprint item',
+			rootBlueprint: undefined,
+			selectedPath: '',
+			sourceMode: BlueprintEditorSourceMode.ExistingRecord,
+		},
+		{
+			blueprint:
+			{
+				blueprint_book:
+				{
+					item: 'blueprint-book',
+					label: "Alice's library book",
+					version: 0,
+					blueprints: [],
+				},
+			} satisfies BlueprintString,
+			expected:
+			{
+				breadcrumb: "Alice's library book",
+				caption: 'Blueprint book in the blueprint library',
+				contextLabel: 'Blueprint library record',
+			},
+			name: 'blueprint library book',
+			rootBlueprint: undefined,
+			selectedPath: '',
+			sourceMode: BlueprintEditorSourceMode.ExistingRecord,
+		},
+		{
+			blueprint:
+			{
+				blueprint:
+				{
+					item: 'blueprint',
+					label: "Bob's child blueprint",
+					version: 0,
+				},
+			} satisfies BlueprintString,
+			expected:
+			{
+				breadcrumb: "Alice's library book › Bob's child blueprint",
+				caption: 'Blueprint in the blueprint library',
+				contextLabel: 'Child blueprint record',
+			},
+			name: 'child blueprint record',
+			rootBlueprint:
+			{
+				blueprint_book:
+				{
+					item: 'blueprint-book',
+					label: "Alice's library book",
+					version: 0,
+					blueprints: [
+						{
+							index: 100,
+							blueprint:
+							{
+								item: 'blueprint',
+								label: "Bob's child blueprint",
+								version: 0,
+							},
+						},
+					],
+				},
+			} satisfies BlueprintString,
+			selectedPath: '1',
+			sourceMode: BlueprintEditorSourceMode.ExistingRecord,
+		},
+	])(
+		'labels the $name context and routes X through confirmClose',
+		({blueprint: contextBlueprint, expected, rootBlueprint, selectedPath, sourceMode}) =>
+		{
+			render(
+				<TransformPanel
+					blueprint={contextBlueprint}
+					blueprintEditorSourceMode={sourceMode}
+					rootBlueprint={rootBlueprint}
+					selectedPath={selectedPath}
+				/>,
+			);
+
+			openBlueprintEditor();
+			const dialog = screen.getByRole(
+				'dialog',
+				{
+					name: 'Blueprint Editor',
+				},
+			);
+			const context = within(dialog).getByRole(
+				'navigation',
+				{
+					name: 'Blueprint context',
+				},
+			);
+			const close = within(dialog).getByRole(
+				'button',
+				{
+					name: 'Close Blueprint Editor',
+				},
+			);
+			const closeDescription = document.getElementById(close.getAttribute('aria-describedby') ?? '');
+			const caption = within(dialog).getByRole(
+				'heading',
+				{
+					name: expected.caption,
+				},
+			);
+
+			expect(
+				{
+					caption:
+					{
+						source: caption.dataset.factorioSource,
+						text: caption.textContent,
+					},
+					close:
+					{
+						action: close.dataset.factorioCloseAction,
+						description: closeDescription?.textContent.trim(),
+						source: close.dataset.factorioSource,
+						title: close.title,
+					},
+					context: [...context.children].map((part) => (
+					{
+						current: part.getAttribute('aria-current'),
+						text: part.textContent,
+					})),
+					contextExtension: context.dataset.websiteExtension,
+					dialogDescription: dialog.getAttribute('aria-describedby'),
+				},
+			).toStrictEqual(
+				{
+					caption:
+					{
+						source: 'BlueprintSetupGui::getTitle',
+						text: expected.caption,
+					},
+					close:
+					{
+						action: 'request-close',
+						description: 'Uncommitted changes require confirmation before they are discarded.',
+						source: 'BlueprintSetupGui::confirmClose',
+						title: 'Close Blueprint Editor (asks before discarding changes)',
+					},
+					context: [
+						{
+							current: null,
+							text: expected.contextLabel,
+						},
+						{
+							current: null,
+							text: '›',
+						},
+						{
+							current: 'page',
+							text: expected.breadcrumb,
+						},
+					],
+					contextExtension: 'record-context',
+					dialogDescription: context.id,
+				},
+			);
+		},
+	);
 
 	test('keeps or discards dirty title, icon, description, and filter drafts on every close path', async () =>
 	{
@@ -3346,7 +3569,7 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 		const firstConfirmation = screen.getByRole(
 			'alertdialog',
 			{
-				name: 'There are uncommitted changes',
+				name: 'Confirmation',
 			},
 		);
 		await waitFor(() =>
@@ -3361,12 +3584,12 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 				},
 			).toStrictEqual(
 				{
-					buttons: ['Keep Editing', 'Discard', 'Commit'],
+					buttons: ['Cancel', 'Discard changes'],
 					dialogState:
 					{
 						activeElement:
 						{
-							name: 'Keep Editing',
+							name: 'Cancel',
 							tagName: 'BUTTON',
 						},
 						dialogStack: [
@@ -3381,7 +3604,7 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 								ariaHidden: null,
 								inert: false,
 								modal: 'true',
-								name: 'There are uncommitted changes',
+								name: 'Confirmation',
 								role: 'alertdialog',
 							},
 						],
@@ -3395,7 +3618,7 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 			within(firstConfirmation).getByRole(
 				'button',
 				{
-					name: 'Keep Editing',
+					name: 'Cancel',
 				},
 			),
 		);
@@ -3470,14 +3693,14 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 		const secondConfirmation = screen.getByRole(
 			'alertdialog',
 			{
-				name: 'There are uncommitted changes',
+				name: 'Confirmation',
 			},
 		);
 		await user.click(
 			within(secondConfirmation).getByRole(
 				'button',
 				{
-					name: 'Discard',
+					name: 'Discard changes',
 				},
 			),
 		);
@@ -3531,7 +3754,7 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 				saveDisabled: screen.getByRole<HTMLButtonElement>(
 					'button',
 					{
-						name: 'Save Blueprint',
+						name: 'Save blueprint',
 					},
 				).disabled,
 				title: screen.getByText(
@@ -3586,31 +3809,50 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 		render(<TransformPanel blueprint={parameterizedBlueprint} />);
 
 		openBlueprintEditor();
-		await user.click(
-			screen.getByRole(
-				'button',
-				{
-					name: 'Parametrise or reconfigure the blueprint',
-				},
-			),
+		const editor = screen.getByRole(
+			'dialog',
+			{
+				name: 'Blueprint Editor',
+			},
 		);
-		await user.clear(
-			screen.getByRole(
-				'textbox',
-				{
-					name: 'Parameter 1 name',
-				},
-			),
+		const parameterButton = screen.getByRole(
+			'button',
+			{
+				name: 'Parametrise or reconfigure the blueprint',
+			},
 		);
-		await user.type(
-			screen.getByRole(
-				'textbox',
-				{
-					name: 'Parameter 1 name',
-				},
-			),
-			'Any plate',
+		await user.click(parameterButton);
+		const parameterDialog = screen.getByRole(
+			'dialog',
+			{
+				name: 'Blueprint parametrisation',
+			},
 		);
+		const parameterName = screen.getByRole(
+			'textbox',
+			{
+				name: 'Parameter 1 name',
+			},
+		);
+		expect(
+			{
+				activeElement: document.activeElement,
+				editorAriaHidden: editor.getAttribute('aria-hidden'),
+				editorInert: editor.inert,
+				expanded: parameterButton.getAttribute('aria-expanded'),
+				parameterDialogId: parameterDialog.id,
+			},
+		).toStrictEqual(
+			{
+				activeElement: parameterName,
+				editorAriaHidden: 'true',
+				editorInert: true,
+				expanded: 'true',
+				parameterDialogId: parameterButton.getAttribute('aria-controls'),
+			},
+		);
+		await user.clear(parameterName);
+		await user.type(parameterName, 'Any plate');
 		await user.click(
 			screen.getByRole(
 				'button',
@@ -3619,11 +3861,28 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 				},
 			),
 		);
+		await waitFor(() =>
+		{
+			expect(document.activeElement).toBe(parameterButton);
+		});
+		expect(
+			{
+				editorAriaHidden: editor.getAttribute('aria-hidden'),
+				editorInert: editor.inert,
+				expanded: parameterButton.getAttribute('aria-expanded'),
+			},
+		).toStrictEqual(
+			{
+				editorAriaHidden: null,
+				editorInert: false,
+				expanded: 'false',
+			},
+		);
 		await user.click(
 			screen.getByRole(
 				'button',
 				{
-					name: 'Save Blueprint',
+					name: 'Save blueprint',
 				},
 			),
 		);
@@ -3695,7 +3954,7 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 				saveDisabled: screen.getByRole<HTMLButtonElement>(
 					'button',
 					{
-						name: 'Save Blueprint',
+						name: 'Save blueprint',
 					},
 				).disabled,
 			},
@@ -3721,7 +3980,7 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 				saveDisabled: screen.getByRole<HTMLButtonElement>(
 					'button',
 					{
-						name: 'Save Blueprint',
+						name: 'Save blueprint',
 					},
 				).disabled,
 			},
@@ -3742,7 +4001,7 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 			screen.getByRole(
 				'button',
 				{
-					name: 'Save Blueprint',
+					name: 'Save blueprint',
 				},
 			),
 		);
@@ -3929,7 +4188,7 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 			screen.getByRole(
 				'button',
 				{
-					name: 'Save Blueprint',
+					name: 'Save blueprint',
 				},
 			),
 		);
@@ -5436,7 +5695,7 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 			screen.getByRole(
 				'button',
 				{
-					name: 'Choose icon 3',
+					name: 'Edit icon 3',
 				},
 			),
 		);
@@ -5446,7 +5705,7 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 			screen.getByRole(
 				'button',
 				{
-					name: 'Save Blueprint',
+					name: 'Save blueprint',
 				},
 			),
 		);
@@ -5488,14 +5747,6 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 													{
 														type: 'virtual',
 														name: 'signal-yellow',
-													},
-												},
-												{
-													index: 2,
-													signal:
-													{
-														type: 'virtual',
-														name: 'signal-blue',
 													},
 												},
 												{
@@ -5582,7 +5833,7 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 			screen.getByRole(
 				'button',
 				{
-					name: 'Save Blueprint',
+					name: 'Save blueprint',
 				},
 			),
 		);
@@ -5784,7 +6035,7 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 					{
 						activeElement:
 						{
-							name: 'Keep Editing',
+							name: 'Cancel',
 							tagName: 'BUTTON',
 						},
 						dialogStack: [
@@ -5799,7 +6050,7 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 								ariaHidden: null,
 								inert: false,
 								modal: 'true',
-								name: 'There are uncommitted changes',
+								name: 'Confirmation',
 								role: 'alertdialog',
 							},
 						],
@@ -5813,7 +6064,15 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 			screen.getByRole(
 				'button',
 				{
-					name: 'Commit',
+					name: 'Cancel',
+				},
+			),
+		);
+		await user.click(
+			screen.getByRole(
+				'button',
+				{
+					name: 'Save blueprint',
 				},
 			),
 		);
@@ -5866,7 +6125,7 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 				saveDisabled: screen.getByRole<HTMLButtonElement>(
 					'button',
 					{
-						name: 'Save to Book',
+						name: 'Save blueprint',
 					},
 				).disabled,
 				title: screen.getByText(
@@ -5896,6 +6155,31 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 			{
 				name: 'Blueprint Editor',
 			},
+		);
+		await user.click(
+			screen.getByRole(
+				'button',
+				{
+					name: 'Edit blueprint title',
+				},
+			),
+		);
+		await user.clear(
+			screen.getByRole(
+				'textbox',
+				{
+					name: 'Blueprint title',
+				},
+			),
+		);
+		await user.type(
+			screen.getByRole(
+				'textbox',
+				{
+					name: 'Blueprint title',
+				},
+			),
+			'Dirty picker priority{Enter}',
 		);
 		await user.click(
 			screen.getByRole(
@@ -6002,6 +6286,39 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 			{
 				blueprintEditor: 'true',
 				picker: null,
+			},
+		);
+
+		fireEvent.keyDown(
+			window,
+			{
+				key: 'Escape',
+				code: 'Escape',
+			},
+		);
+		expect(
+			{
+				confirmation: screen
+					.getByRole(
+						'alertdialog',
+						{
+							name: 'Confirmation',
+						},
+					)
+					.getAttribute('aria-modal'),
+				editorHidden: blueprintEditor.getAttribute('aria-hidden'),
+				title: screen.getByText(
+					'Dirty picker priority',
+					{
+						selector: '.blueprint-editor__title',
+					},
+				).textContent,
+			},
+		).toStrictEqual(
+			{
+				confirmation: 'true',
+				editorHidden: 'true',
+				title: 'Dirty picker priority',
 			},
 		);
 	});
@@ -7167,7 +7484,7 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 			screen.getByRole(
 				'button',
 				{
-					name: 'Save Blueprint',
+					name: 'Save blueprint',
 				},
 			),
 		);
@@ -7230,7 +7547,7 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 			screen.getByRole(
 				'button',
 				{
-					name: 'Save Blueprint',
+					name: 'Save blueprint',
 				},
 			),
 		);

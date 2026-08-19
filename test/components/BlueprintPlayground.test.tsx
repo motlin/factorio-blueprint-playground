@@ -220,7 +220,7 @@ describe('BlueprintPlayground', () =>
 			screen.getByRole(
 				'button',
 				{
-					name: 'Save to Book',
+					name: 'Save blueprint',
 				},
 			),
 		);
