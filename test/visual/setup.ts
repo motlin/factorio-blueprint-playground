@@ -13,10 +13,6 @@ const skipBrowserTests = process.env.CI === 'true' || process.env.SKIP_BROWSER_T
 const tempDir = path.join(__dirname, 'temp');
 const snapshotDir = path.join(__dirname, '__snapshots__');
 
-// Test files share tempDir but run in parallel workers, so each module only
-// cleans up the files it created.
-const ownedTempFiles = new Set<string>();
-
 beforeAll(async () => {
 	await fs.mkdir(tempDir, {recursive: true});
 	await fs.mkdir(snapshotDir, {recursive: true});
@@ -40,11 +36,6 @@ afterAll(async () => {
 	if (browser) {
 		await browser.close();
 	}
-
-	for (const file of ownedTempFiles) {
-		await fs.rm(file, {force: true});
-	}
-	ownedTempFiles.clear();
 }, 30_000);
 
 async function renderToHtmlFile(html: string, testName: string): Promise<string> {
@@ -71,7 +62,7 @@ async function renderToHtmlFile(html: string, testName: string): Promise<string>
         </style>
         <style>
             /* Transform CSS module classes to match runtime behavior */
-            ${factorioIconCss.replace(/\.[a-zA-Z0-9_]+/g, (match) => {
+            ${factorioIconCss.replace(/\.[a-zA-Z_][a-zA-Z0-9_-]*/g, (match) => {
 				// Keep the CSS selectors but use data-attribute selectors to match the HTML
 				return `[class*="${match.slice(1)}"]`;
 			})}
@@ -85,7 +76,6 @@ async function renderToHtmlFile(html: string, testName: string): Promise<string>
 
 	const filePath = path.join(tempDir, `${testName}-temp.html`);
 	await fs.writeFile(filePath, htmlContent);
-	ownedTempFiles.add(filePath);
 	return filePath;
 }
 
@@ -105,19 +95,28 @@ export async function compareScreenshots(testName: string, html: string, selecto
 	const snapshotPath = path.join(snapshotDir, `${testName}.png`);
 	const tempPath = path.join(tempDir, `${testName}-temp.png`);
 
-	await page.goto(fileUrl);
-	await page.waitForSelector(selector);
-
-	const element = await page.$(selector);
-	if (!element) {
-		throw new Error(`Element ${selector} not found`);
-	}
-
-	await element.screenshot({path: tempPath});
-	ownedTempFiles.add(tempPath);
-
 	try {
-		const baselineBuffer = await fs.readFile(snapshotPath);
+		await page.goto(fileUrl);
+		await page.waitForSelector(selector);
+
+		const element = await page.$(selector);
+		if (!element) {
+			throw new Error(`Element ${selector} not found`);
+		}
+
+		await element.screenshot({path: tempPath});
+
+		let baselineBuffer: Buffer;
+		try {
+			baselineBuffer = await fs.readFile(snapshotPath);
+		} catch (error: unknown) {
+			if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+				await fs.rename(tempPath, snapshotPath);
+				console.warn(`Created new baseline for ${testName}`);
+				return;
+			}
+			throw error;
+		}
 		const currentBuffer = await fs.readFile(tempPath);
 
 		const baseline = PNG.sync.read(baselineBuffer);
@@ -147,16 +146,8 @@ export async function compareScreenshots(testName: string, html: string, selecto
 					`Diff saved to ${diffPath}`,
 			);
 		}
-
-		await fs.unlink(tempPath);
-	} catch (error: unknown) {
-		if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
-			// No baseline exists, create it
-			await fs.rename(tempPath, snapshotPath);
-			console.warn(`Created new baseline for ${testName}`);
-		} else {
-			throw error;
-		}
+	} finally {
+		await Promise.all([fs.rm(htmlPath, {force: true}), fs.rm(tempPath, {force: true})]);
 	}
 }
 
@@ -184,11 +175,11 @@ export async function inspectDialogViewport(
 	}
 
 	const viewportPage = await browser.newPage({viewport});
+	const htmlPath = await renderToHtmlFile(
+		html,
+		`${testName}-${viewport.width.toString()}x${viewport.height.toString()}`,
+	);
 	try {
-		const htmlPath = await renderToHtmlFile(
-			html,
-			`${testName}-${viewport.width.toString()}x${viewport.height.toString()}`,
-		);
 		await viewportPage.goto(`file://${htmlPath}`);
 		await viewportPage.waitForSelector('.upgrade-planner-dialog');
 
@@ -257,6 +248,6 @@ export async function inspectDialogViewport(
 			};
 		});
 	} finally {
-		await viewportPage.close();
+		await Promise.all([viewportPage.close(), fs.rm(htmlPath, {force: true})]);
 	}
 }

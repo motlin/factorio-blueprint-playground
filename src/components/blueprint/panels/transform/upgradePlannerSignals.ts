@@ -103,7 +103,7 @@ function pickerSignalLayout(signal: SignalID) {
 	);
 }
 
-export function comparePickerSignalOrder(left: SignalID, right: SignalID): number {
+function comparePickerSignalOrder(left: SignalID, right: SignalID): number {
 	const leftLayout = pickerSignalLayout(left);
 	const rightLayout = pickerSignalLayout(right);
 	if (leftLayout === undefined && rightLayout === undefined) {
@@ -167,6 +167,23 @@ function chatIconTypePriority(signal: SignalID): number {
 }
 
 /**
+ * ChatIconIDIterator visits prototype streams in a fixed type order. A caller
+ * can still contribute the same visible prototype more than once (most commonly
+ * as both an item and its placed entity), so retain the earliest canonical
+ * signal type before applying the generated subgroup and prototype order.
+ */
+export function canonicalPickerOptions(options: readonly SignalID[]): SignalID[] {
+	const canonicalSignals = new Map<string, SignalID>();
+	for (const candidate of options) {
+		const existing = canonicalSignals.get(candidate.name);
+		if (existing === undefined || chatIconTypePriority(candidate) < chatIconTypePriority(existing)) {
+			canonicalSignals.set(candidate.name, candidate);
+		}
+	}
+	return [...canonicalSignals.values()].sort(comparePickerSignalOrder);
+}
+
+/**
  * Factorio's ChatIconIDIterator visits prototype types in source order and
  * retains the first signal for each icon sprite. The static web catalog can
  * prove the common inherited-icon case by prototype name: items own their
@@ -179,14 +196,7 @@ export function chatIconPickerOptions(additionalSignals: readonly SignalID[] = [
 		...gameUiSpec.qualities.map(({name}): SignalID => ({type: 'quality', name})),
 		...additionalSignals,
 	].filter((signal) => chatIconTypeOrder.has(chatIconType(signal)));
-	const canonicalSignals = new Map<string, SignalID>();
-	for (const candidate of candidates) {
-		const existing = canonicalSignals.get(candidate.name);
-		if (existing === undefined || chatIconTypePriority(candidate) < chatIconTypePriority(existing)) {
-			canonicalSignals.set(candidate.name, candidate);
-		}
-	}
-	return [...canonicalSignals.values()].sort(comparePickerSignalOrder);
+	return canonicalPickerOptions(candidates);
 }
 
 export function signalPickerGroup(signal: SignalID): string | undefined {

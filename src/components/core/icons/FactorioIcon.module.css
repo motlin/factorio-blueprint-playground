@@ -1,33 +1,38 @@
 .iconParent {
 	position: relative;
-	display: inline-block;
+	display: inline-grid;
+	min-width: 0;
+	flex: 0 0 auto;
+	place-items: center;
 	vertical-align: middle;
 }
 
-.iconParent + .iconParent {
-	margin-left: 2px;
+.artwork {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+	pointer-events: none;
+	user-select: none;
 }
 
-.icon {
-	position: relative;
-	top: 0;
-	left: 0;
-}
-
-.iconQuality {
+.iconParent > .iconQuality {
 	position: absolute;
+	z-index: 1;
+	bottom: 0;
 	left: 0;
-	top: 43.75%;
-	width: 50%;
-	height: 50%;
+	width: 42.5%;
+	height: 42.5%;
+	object-fit: contain;
+	pointer-events: none;
 }
 
 .largeSquare {
-	width: 32px;
-	height: 32px;
+	width: calc(32px * var(--factorio-ui-density, 1));
+	height: calc(32px * var(--factorio-ui-density, 1));
 }
 
 .smallSquare {
-	width: 24px;
-	height: 24px;
+	width: calc(24px * var(--factorio-ui-density, 1));
+	height: calc(24px * var(--factorio-ui-density, 1));
 }
