@@ -259,7 +259,7 @@ function interactionState() {
 async function applyPlanner(user: ReturnType<typeof userEvent.setup>, direction: 'upgrade' | 'downgrade' = 'upgrade') {
 	await user.click(
 		screen.getByRole('button', {
-			name: new RegExp(`^Apply ${direction === 'upgrade' ? 'Upgrade' : 'Downgrade'} to `),
+			name: direction === 'upgrade' ? 'Apply Upgrade' : 'Apply Downgrade',
 		}),
 	);
 }
@@ -461,11 +461,9 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			mappingSlots: editor.querySelectorAll('[data-upgrade-mapping-slot]').length,
 			modeButtons: ['Upgrade', 'Downgrade', 'Strip quality'].map((name) => screen.queryByRole('button', {name})),
 			nativeScopeSelect: within(dialog).queryByRole('combobox', {name: 'Apply to'}),
-			operationButtons: [
-				'Save to Library',
-				'Apply Upgrade to Current Blueprint',
-				'Apply Downgrade to Current Blueprint',
-			].map((name) => screen.queryByRole('button', {name})?.textContent ?? null),
+			operationButtons: ['Save to Library', 'Apply Upgrade', 'Apply Downgrade'].map(
+				(name) => screen.queryByRole('button', {name})?.textContent ?? null,
+			),
 			preserveCapitalization: screen.queryByRole('checkbox', {name: 'Preserve capitalization'}),
 			scopeExtension: plannerScope.dataset.websiteExtension,
 			scopeOptions: within(plannerScope)
@@ -533,11 +531,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			mappingSlots: 20,
 			modeButtons: [null, null, null],
 			nativeScopeSelect: null,
-			operationButtons: [
-				'Save to Library',
-				'Apply Upgrade to Current Blueprint',
-				'Apply Downgrade to Current Blueprint',
-			],
+			operationButtons: ['Save to Library', 'Apply Upgrade', 'Apply Downgrade'],
 			preserveCapitalization: null,
 			scopeExtension: 'planner-application-scope',
 			scopeOptions: [
@@ -1726,6 +1720,33 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		}).toStrictEqual({confirmation: null, dialog: null, navigation: []});
 	});
 
+	test('cancels an inline title edit before Escape closes the editor', async () => {
+		const user = userEvent.setup();
+		const titledBlueprint: BlueprintString = {
+			blueprint: {
+				item: 'blueprint',
+				label: 'Alice reactor',
+				version: 0,
+			},
+		};
+		render(<TransformPanel blueprint={titledBlueprint} />);
+
+		openBlueprintEditor();
+		await user.click(screen.getByRole('button', {name: 'Edit blueprint title'}));
+		await user.clear(screen.getByRole('textbox', {name: 'Blueprint title'}));
+		await user.type(screen.getByRole('textbox', {name: 'Blueprint title'}), 'Cancelled reactor');
+		await user.keyboard('{Escape}');
+
+		expect({
+			dialog: screen.getByRole('dialog', {name: 'Blueprint Editor'}).getAttribute('aria-modal'),
+			input: screen.queryByRole('textbox', {name: 'Blueprint title'}),
+			title: screen.getByText('Alice reactor', {selector: '.blueprint-editor__title'}).textContent,
+		}).toStrictEqual({dialog: 'true', input: null, title: 'Alice reactor'});
+
+		await user.keyboard('{Escape}');
+		expect(screen.queryByRole('dialog', {name: 'Blueprint Editor'})).toBeNull();
+	});
+
 	test.each([
 		{
 			blueprint: {
@@ -2026,6 +2047,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		const parameterButton = screen.getByRole('button', {name: 'Parametrise or reconfigure the blueprint'});
 		await user.click(parameterButton);
 		const parameterDialog = screen.getByRole('dialog', {name: 'Blueprint parametrisation'});
+		const addParameter = screen.getByRole('button', {name: 'Add parameter'});
 		const parameterName = screen.getByRole('textbox', {name: 'Parameter 1 name'});
 		expect({
 			activeElement: document.activeElement,
@@ -2034,7 +2056,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			expanded: parameterButton.getAttribute('aria-expanded'),
 			parameterDialogId: parameterDialog.id,
 		}).toStrictEqual({
-			activeElement: parameterName,
+			activeElement: addParameter,
 			editorAriaHidden: 'true',
 			editorInert: true,
 			expanded: 'true',
@@ -2223,11 +2245,9 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 
 		expect({
 			dialogState: interactionState(),
-			plannerActions: [
-				'Save to Library',
-				'Apply Upgrade to Current Blueprint',
-				'Apply Downgrade to Current Blueprint',
-			].map((name) => screen.queryByRole('button', {name})?.textContent ?? null),
+			plannerActions: ['Save to Library', 'Apply Upgrade', 'Apply Downgrade'].map(
+				(name) => screen.queryByRole('button', {name})?.textContent ?? null,
+			),
 			exportActions: ['Copy String', 'Copy JSON', 'Download String'].map((name) =>
 				screen.queryByRole('button', {name}),
 			),
@@ -2244,11 +2264,7 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 					},
 				],
 			},
-			plannerActions: [
-				'Save to Library',
-				'Apply Upgrade to Current Blueprint',
-				'Apply Downgrade to Current Blueprint',
-			],
+			plannerActions: ['Save to Library', 'Apply Upgrade', 'Apply Downgrade'],
 			exportActions: [null, null, null],
 		});
 
@@ -3181,6 +3197,21 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		});
 	});
 
+	test('commits a label icon on the click itself, with no Confirm button to reach for', async () => {
+		const user = userEvent.setup();
+		render(<TransformPanel blueprint={blueprint} rootBlueprint={blueprint} selectedPath="" />);
+
+		await user.click(screen.getByRole('button', {name: 'Open Blueprint Editor'}));
+		await user.click(screen.getByRole('button', {name: 'Choose icon 1'}));
+		await user.click(screen.getByRole('tab', {name: 'Signals'}));
+		await user.click(screen.getByRole('button', {name: 'Choose Signal red'}));
+
+		expect({
+			confirm: screen.queryByRole('button', {name: 'Confirm'}),
+			picker: screen.queryByRole('dialog', {name: 'Choose label icon 1'}),
+		}).toStrictEqual({confirm: null, picker: null});
+	});
+
 	test('commits a nested-book child through the dirty-close confirmation', async () => {
 		const user = userEvent.setup();
 		const rootBlueprint: BlueprintString = {
@@ -3309,6 +3340,30 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			saveDisabled: true,
 			title: 'New label',
 		});
+	});
+
+	test('numbers label-icon picker titles by slot position', async () => {
+		const user = userEvent.setup();
+		const iconBlueprint: BlueprintString = {
+			blueprint: {
+				item: 'blueprint',
+				version: 0,
+				icons: [{index: 1, signal: {type: 'virtual', name: 'signal-red'}}],
+			},
+		};
+		render(<TransformPanel blueprint={iconBlueprint} />);
+
+		openBlueprintEditor();
+		await user.click(screen.getByRole('button', {name: 'Choose icon 2'}));
+		expect(screen.getByRole('dialog').getAttribute('aria-labelledby')).toBe(
+			screen.getByRole('heading', {name: 'Choose label icon 2'}).id,
+		);
+
+		fireEvent.keyDown(window, {code: 'Escape', key: 'Escape'});
+		await user.click(screen.getByRole('button', {name: 'Choose icon 3'}));
+		expect(screen.getByRole('dialog').getAttribute('aria-labelledby')).toBe(
+			screen.getByRole('heading', {name: 'Choose label icon 3'}).id,
+		);
 	});
 
 	test('dismisses icon pickers with Escape or Q without stealing Q from search', async () => {

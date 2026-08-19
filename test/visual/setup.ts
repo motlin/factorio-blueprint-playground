@@ -155,16 +155,20 @@ export interface DialogViewportLayout {
 	backdropCoversViewport: boolean;
 	bodyFitsHorizontally: boolean;
 	bodyOwnsScrolling: boolean;
+	compactFooterUsesAtMostTwoRows: boolean;
 	closeControlMatchesPriorArt: boolean;
 	dialogFaceMatchesPriorArt: boolean;
 	dialogFitsViewport: boolean;
+	footerActionsShareUniformHeight: boolean;
 	footerVisible: boolean;
 	headerVisible: boolean;
 	mapperOwnsHorizontalScrolling: boolean;
 	mappingSourceWidthHonored: boolean;
 	panelInsetsPreserved: boolean;
+	primaryActionVisible: boolean;
 	singleMapperScrollRegion: boolean;
 	titleColorMatchesPriorArt: boolean;
+	titleStripeSpansToCloseControl: boolean;
 }
 
 export interface BlueprintEditorViewportLayout {
@@ -174,10 +178,61 @@ export interface BlueprintEditorViewportLayout {
 	footerVisible: boolean;
 	headerVisible: boolean;
 	noPreviewRegion: boolean;
+	recordHeaderClearsScrolledIconRow: boolean;
 	settingsFitsHorizontally: boolean;
 	settingsOwnsScrolling: boolean;
 	settingsSourceWidthHonored: boolean;
 	titleRowStaysOutsideScrollPane: boolean;
+}
+
+export interface PageViewportLayout {
+	documentFitsHorizontally: boolean;
+	exportButtonsFitHorizontally: boolean;
+	navigationFitsHorizontally: boolean;
+	treeLabelsFitHorizontally: boolean;
+}
+
+export async function inspectPageViewport(
+	testName: string,
+	html: string,
+	viewport: {height: number; width: number},
+): Promise<PageViewportLayout | undefined> {
+	if (skipBrowserTests || browser === null) {
+		return undefined;
+	}
+
+	const viewportPage = await browser.newPage({viewport});
+	const htmlPath = await renderToHtmlFile(
+		html,
+		`${testName}-${viewport.width.toString()}x${viewport.height.toString()}`,
+	);
+	try {
+		await viewportPage.goto(`file://${htmlPath}`);
+		await viewportPage.waitForSelector('.blueprint-export-actions');
+
+		return await viewportPage.evaluate(() => {
+			const navigation = document.querySelector<HTMLElement>('.site-navigation');
+			const exportButtons = [...document.querySelectorAll<HTMLElement>('.blueprint-export-actions button')];
+			const treeLabels = [...document.querySelectorAll<HTMLElement>('.blueprint-tree .label')];
+			if (navigation === null || exportButtons.length !== 3 || treeLabels.length === 0) {
+				throw new Error('Expected the page navigation, three export buttons, and blueprint tree labels.');
+			}
+
+			const fitsViewport = (element: HTMLElement): boolean => {
+				const bounds = element.getBoundingClientRect();
+				return bounds.left >= 0 && bounds.right <= document.documentElement.clientWidth;
+			};
+
+			return {
+				documentFitsHorizontally: document.documentElement.scrollWidth === document.documentElement.clientWidth,
+				exportButtonsFitHorizontally: exportButtons.every(fitsViewport),
+				navigationFitsHorizontally: fitsViewport(navigation),
+				treeLabelsFitHorizontally: treeLabels.every(fitsViewport),
+			};
+		});
+	} finally {
+		await Promise.all([viewportPage.close(), fs.rm(htmlPath, {force: true})]);
+	}
 }
 
 export async function inspectBlueprintEditorViewport(
@@ -210,22 +265,29 @@ export async function inspectBlueprintEditorViewport(
 			const settings = dialog.querySelector<HTMLElement>('.blueprint-editor__settings');
 			const settingsScroll = dialog.querySelector<HTMLElement>('.blueprint-editor__settings-scroll');
 			const titleRow = dialog.querySelector<HTMLElement>('.blueprint-editor__title-row');
+			const iconRow = dialog.querySelector<HTMLElement>('.blueprint-label-icons__slots');
 			if (
 				body === null ||
 				footer === null ||
 				header === null ||
 				settings === null ||
 				settingsScroll === null ||
-				titleRow === null
+				titleRow === null ||
+				iconRow === null
 			) {
 				throw new Error('Expected the complete Blueprint Editor settings layout.');
 			}
+
+			settingsScroll.scrollTop = iconRow.offsetTop + iconRow.offsetHeight / 2;
 
 			const backdropBounds = backdrop.getBoundingClientRect();
 			const dialogBounds = dialog.getBoundingClientRect();
 			const footerBounds = footer.getBoundingClientRect();
 			const headerBounds = header.getBoundingClientRect();
+			const iconRowBounds = iconRow.getBoundingClientRect();
 			const settingsBounds = settings.getBoundingClientRect();
+			const settingsScrollBounds = settingsScroll.getBoundingClientRect();
+			const titleRowBounds = titleRow.getBoundingClientRect();
 			const bodyStyle = getComputedStyle(body);
 			const dialogStyle = getComputedStyle(dialog);
 			const settingsStyle = getComputedStyle(settings);
@@ -256,6 +318,13 @@ export async function inspectBlueprintEditorViewport(
 					![...dialog.querySelectorAll('h1, h2, h3, h4, h5, h6')].some(
 						(heading) => heading.textContent.trim() === 'Preview',
 					),
+				recordHeaderClearsScrolledIconRow:
+					settingsScroll.scrollTop > 0 &&
+					iconRowBounds.top < settingsScrollBounds.top &&
+					titleRowBounds.bottom <= settingsScrollBounds.top &&
+					!document
+						.elementsFromPoint(iconRowBounds.left + 1, titleRowBounds.bottom - 1)
+						.some((element) => element.closest('.blueprint-label-icons__slots') !== null),
 				settingsFitsHorizontally: settings.scrollWidth <= settings.clientWidth,
 				settingsOwnsScrolling:
 					settingsScrollStyle.overflowY === 'auto' &&
@@ -297,6 +366,8 @@ export async function inspectDialogViewport(
 			}
 			const header = dialog.querySelector<HTMLElement>(':scope > .upgrade-planner-dialog__title-bar');
 			const footer = dialog.querySelector<HTMLElement>(':scope > .transform-workbench__footer');
+			const footerActions = [...(footer?.querySelectorAll<HTMLButtonElement>('button') ?? [])];
+			const primaryAction = footerActions.find((button) => button.textContent.includes('Apply Upgrade'));
 			const closeControl = dialog.querySelector<HTMLElement>(
 				':scope > .upgrade-planner-dialog__title-bar .transform-dialog__close',
 			);
@@ -317,7 +388,8 @@ export async function inspectDialogViewport(
 				editor === null ||
 				application === null ||
 				replacements === null ||
-				backdrop === null
+				backdrop === null ||
+				primaryAction === undefined
 			) {
 				throw new Error('Expected the complete upgrade planner layout.');
 			}
@@ -326,7 +398,25 @@ export async function inspectDialogViewport(
 			const closeBounds = closeControl.getBoundingClientRect();
 			const dialogBounds = dialog.getBoundingClientRect();
 			const headerBounds = header.getBoundingClientRect();
+			const titleBounds = title.getBoundingClientRect();
 			const footerBounds = footer.getBoundingClientRect();
+			const footerActionRows = new Set(
+				footerActions.map((button) => Math.round(button.getBoundingClientRect().top)),
+			).size;
+			const primaryActionBounds = primaryAction.getBoundingClientRect();
+			/*
+			 * A label long enough to wrap grows its button past the shared
+			 * min-height, so equal heights and unwrapped labels are the same
+			 * check read two ways.
+			 */
+			const footerActionHeights = new Set(
+				footerActions.map((button) => Math.round(button.getBoundingClientRect().height)),
+			);
+			const footerActionsUnwrapped = footerActions.every(
+				(button) =>
+					Math.round(button.getBoundingClientRect().height) ===
+					Math.round(Number.parseFloat(getComputedStyle(button).minHeight)),
+			);
 			const mapperScrollStyle = getComputedStyle(mapperScroll);
 			const mappingBounds = mapping.getBoundingClientRect();
 			const editorBounds = editor.getBoundingClientRect();
@@ -343,6 +433,7 @@ export async function inspectDialogViewport(
 					backdropBounds.left === 0,
 				bodyFitsHorizontally: body.scrollWidth <= body.clientWidth,
 				bodyOwnsScrolling: bodyStyle.overflowY === 'auto' && dialogStyle.overflow === 'hidden',
+				compactFooterUsesAtMostTwoRows: window.innerWidth > 620 || footerActionRows <= 2,
 				closeControlMatchesPriorArt:
 					closeBounds.width === 24 &&
 					closeBounds.height === 24 &&
@@ -353,6 +444,7 @@ export async function inspectDialogViewport(
 					dialogBounds.right <= window.innerWidth &&
 					dialogBounds.bottom <= window.innerHeight &&
 					dialogBounds.left >= 0,
+				footerActionsShareUniformHeight: footerActionHeights.size === 1 && footerActionsUnwrapped,
 				footerVisible: footerBounds.bottom <= window.innerHeight,
 				headerVisible: headerBounds.top >= 0,
 				mapperOwnsHorizontalScrolling:
@@ -361,9 +453,16 @@ export async function inspectDialogViewport(
 				panelInsetsPreserved:
 					Math.abs(applicationBounds.left - editorBounds.left - 4) < 1 &&
 					Math.abs(editorBounds.left - replacementsBounds.left) < 1,
+				primaryActionVisible:
+					primaryActionBounds.top >= footerBounds.top &&
+					primaryActionBounds.bottom <= footerBounds.bottom &&
+					primaryActionBounds.bottom <= window.innerHeight,
 				singleMapperScrollRegion:
 					dialog.querySelectorAll('[data-factorio-style="mappers_scroll_pane"]').length === 1,
 				titleColorMatchesPriorArt: getComputedStyle(title).color === 'rgb(255, 230, 192)',
+				titleStripeSpansToCloseControl:
+					getComputedStyle(title, '::after').content !== 'none' &&
+					Math.abs(closeBounds.left - titleBounds.right) <= 1,
 			};
 		});
 	} finally {

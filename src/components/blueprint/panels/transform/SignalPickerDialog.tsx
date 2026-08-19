@@ -70,8 +70,12 @@ import {useDialogFocus} from './useDialogFocus';
  *
  * Transaction and focus
  *
- * - Clicking a slot stages signal and quality together. Double-clicking that
- *   slot, the green check, or Enter confirms only a valid staged value; closing,
+ * - The game commits on the click itself; it has no double-click gesture. A
+ *   picker whose value is a single signal therefore chooses immediately, taking
+ *   whatever quality the footer selector currently holds, and closes. Only a
+ *   picker assembling a compound value the click cannot express on its own --
+ *   a From filter's comparator and threshold -- stages first, and there the
+ *   green Confirm button or Enter commits a valid staged value. Closing,
  *   Escape, or unmodified Q cancels without invoking `onChoose`. Q remains text
  *   input while search has focus.
  * - Closing either way returns focus to the slot or button that opened the
@@ -511,10 +515,6 @@ export function SignalPickerDialog({
 		activateCategory(availableCategories[nextIndex], nextIndex);
 	};
 
-	if (confirmationMode === 'immediate' && qualityMode !== undefined) {
-		throw new Error('Immediate signal selection cannot include staged quality controls.');
-	}
-
 	return createPortal(
 		<FactorioDialogBackdrop nested className="transform-dialog-backdrop transform-picker__backdrop">
 			<section
@@ -703,11 +703,6 @@ export function SignalPickerDialog({
 													setSelectedSignal(signal);
 												}
 											}}
-											onDoubleClick={() => {
-												if (confirmationMode === 'required') {
-													chooseSignal(signal);
-												}
-											}}
 											onFocus={() => {
 												inspectedSignalsReference.current.focused = signal;
 												updateInspectedSignal();
@@ -760,7 +755,7 @@ export function SignalPickerDialog({
 						{pickerExtras}
 					</div>
 				)}
-				{confirmationMode === 'required' ? (
+				{qualityMode === undefined && confirmationMode === 'immediate' ? null : (
 					<footer className="transform-picker__footer" data-factorio-style="subfooter_frame">
 						{qualityMode === undefined ? null : (
 							<UpgradeQualityControls
@@ -771,22 +766,21 @@ export function SignalPickerDialog({
 								onQualityChange={setQualitySelection}
 							/>
 						)}
-						<FactorioButton
-							kind={FactorioButtonKind.Confirm}
-							className="transform-picker__confirm"
-							data-factorio-control-style="item_and_count_select_confirm"
-							disabled={!selectionAllowed}
-							title="Confirm"
-							onClick={(event) => {
-								event.preventDefault();
-								confirmSelection();
-							}}
-						>
-							<span aria-hidden="true">✓</span>
-							<span className="transform-picker__confirm-label">Confirm</span>
-						</FactorioButton>
+						{confirmationMode === 'required' ? (
+							<FactorioButton
+								kind={FactorioButtonKind.Confirm}
+								disabled={!selectionAllowed}
+								title="Confirm"
+								onClick={(event) => {
+									event.preventDefault();
+									confirmSelection();
+								}}
+							>
+								Confirm
+							</FactorioButton>
+						) : null}
 					</footer>
-				) : null}
+				)}
 			</section>
 		</FactorioDialogBackdrop>,
 		document.body,

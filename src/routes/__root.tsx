@@ -76,7 +76,7 @@ const DynamicNavigation = () => {
 		<div>
 			<div className="top-bar">
 				<div className="top-bar-inner">
-					<nav>
+					<nav className="site-navigation">
 						<Link
 							to="/"
 							search={{
