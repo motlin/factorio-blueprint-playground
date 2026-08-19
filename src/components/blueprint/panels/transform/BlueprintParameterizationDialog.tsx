@@ -4,6 +4,7 @@ import {createPortal} from 'react-dom';
 import type {Parameter, SignalID} from '../../../../parsing/types';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
 import {ButtonGreen} from '../../../ui/ButtonGreen';
+import {FactorioButton, FactorioButtonKind, FactorioInventorySlot} from '../../../ui/FactorioUi';
 import {SignalPickerDialog} from './SignalPickerDialog';
 import {useDialogFocus} from './useDialogFocus';
 
@@ -146,22 +147,20 @@ export function BlueprintParameterizationDialog({
 			<section
 				ref={dialogReference}
 				id={dialogId}
-				className="transform-dialog blueprint-parameterization"
+				className="factorio-frame factorio-frame--shallow transform-dialog blueprint-parameterization"
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby={dialogTitleId}
 			>
-				<header className="transform-dialog__header blueprint-parameterization__header">
+				<header className="factorio-title-bar transform-dialog__header blueprint-parameterization__header">
 					<h3 id={dialogTitleId}>Blueprint parametrisation</h3>
-					<button
-						type="button"
+					<FactorioButton
+						kind={FactorioButtonKind.Close}
 						className="transform-dialog__close"
 						aria-label="Close Blueprint parametrisation"
 						title="Close Blueprint parametrisation"
 						onClick={onClose}
-					>
-						×
-					</button>
+					/>
 				</header>
 
 				<div className="panel-hole blueprint-parameterization__body">
@@ -219,8 +218,7 @@ export function BlueprintParameterizationDialog({
 									</label>
 									<label>
 										<span>Value signal</span>
-										<button
-											type="button"
+										<FactorioInventorySlot
 											className={`transform-signal-slot${signal === undefined ? ' transform-signal-slot--empty' : ''}`}
 											aria-label={`Choose value for parameter ${parameterNumber.toString()}${parameter.name === undefined ? '' : ` ${parameter.name}`}`}
 											title={`Choose value for parameter ${parameterNumber.toString()}${parameter.name === undefined ? '' : ` ${parameter.name}`}`}
@@ -233,7 +231,7 @@ export function BlueprintParameterizationDialog({
 											) : (
 												<FactorioIcon icon={signal} size="large" />
 											)}
-										</button>
+										</FactorioInventorySlot>
 									</label>
 									<button
 										type="button"

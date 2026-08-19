@@ -1,5 +1,6 @@
 import type {SignalID} from '../../../../parsing/types';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
+import {FactorioInventorySlot} from '../../../ui/FactorioUi';
 
 interface BlueprintLabelIconsProps {
 	icons: readonly SignalID[];
@@ -10,13 +11,17 @@ interface BlueprintLabelIconsProps {
 
 const labelIconIndexes = [0, 1, 2, 3] as const;
 
+/**
+ * Local blueprint icon slots are invokers of the canonical
+ * `SignalPickerDialog`. They retain no independent quality-control state; the
+ * confirmed SignalID, including its quality badge, replaces one local slot.
+ */
 export function BlueprintLabelIcons({icons, onChange, onChoose, signalTitle}: BlueprintLabelIconsProps) {
 	return labelIconIndexes.map((index) => {
 		const icon = icons.at(index);
 		const label = `${icon === undefined ? 'Choose' : 'Edit'} icon ${(index + 1).toString()}`;
 		return (
-			<button
-				type="button"
+			<FactorioInventorySlot
 				key={index}
 				className={`transform-signal-slot${icon === undefined ? ' transform-signal-slot--empty' : ''}`}
 				aria-label={label}
@@ -41,7 +46,7 @@ export function BlueprintLabelIcons({icons, onChange, onChoose, signalTitle}: Bl
 				}}
 			>
 				{icon === undefined ? <span aria-hidden="true">+</span> : <FactorioIcon icon={icon} size="large" />}
-			</button>
+			</FactorioInventorySlot>
 		);
 	});
 }

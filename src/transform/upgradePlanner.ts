@@ -1,8 +1,8 @@
 import JSON5 from 'json5';
 import {z} from 'zod';
 
+import gameUiSpec from '../generated/game-ui-spec.json';
 import {deserializeBlueprint} from '../parsing/blueprintParser';
-import gameData from '../generated/game-data.json';
 import type {
 	Blueprint,
 	BlueprintString,
@@ -65,7 +65,7 @@ const upgradePlannerSchema = z.object({
 });
 const upgradePlannerStringSchema = z.object({upgrade_planner: upgradePlannerSchema});
 
-const NEXT_UPGRADE_RULES: readonly UpgradeRule[] = gameData.nextUpgrades.map(({from, to}) => ({
+const NEXT_UPGRADE_RULES: readonly UpgradeRule[] = gameUiSpec.upgrades.next.map(({from, to}) => ({
 	from: {type: 'entity', name: from},
 	preserveQuality: true,
 	to: {type: 'entity', name: to},

@@ -1,8 +1,8 @@
 /// <reference types="vite-plus/client" />
 import type {Preview} from '@storybook/react-vite';
 
-import '../src/styles/main.css';
 import '../src/styles/factorio-a76ef767.css';
+import '../src/styles/main.css';
 
 const preview: Preview = {
 	parameters: {

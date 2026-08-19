@@ -1,5 +1,7 @@
 import type React from 'react';
 
+import {FactorioButton, FactorioButtonKind} from './FactorioUi';
+
 export const ButtonGreen = ({
 	onClick,
 	children,
@@ -9,13 +11,7 @@ export const ButtonGreen = ({
 	children: React.ReactNode;
 	disabled?: boolean;
 }) => (
-	<button
-		type="button"
-		onClick={onClick}
-		disabled={disabled}
-		className={`button-green-right ${disabled ? 'disabled' : ''}`}
-		style={{display: 'inline-flex', alignItems: 'center'}}
-	>
+	<FactorioButton onClick={onClick} disabled={disabled} kind={FactorioButtonKind.Confirm}>
 		{children}
-	</button>
+	</FactorioButton>
 );
