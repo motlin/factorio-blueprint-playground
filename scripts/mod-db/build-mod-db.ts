@@ -2,12 +2,16 @@ import {gzipSync} from 'node:zlib';
 import {mkdir, readFile, writeFile} from 'node:fs/promises';
 import {z} from 'zod';
 
+import gameUiSpecJson from '../../src/generated/game-ui-spec.json';
+import {parseGameUiSpec} from '../game-ui-spec/schema';
 import {FACTORIOLAB_DATASETS, parseSourceLock} from './sources';
 import {
 	extractHiddenPlaceResults,
 	extractPickerSignals,
 	extractPrototypeNames,
 	extractPrototypeUpgrades,
+	extractUpgradeModuleItems,
+	extractVisiblePlaceResults,
 	parseBaseSupplement,
 	parseFactorioLabDataset,
 	parsePrefixes,
@@ -82,6 +86,7 @@ async function readJson(url: URL): Promise<unknown> {
 }
 
 const sourceLock = parseSourceLock(await readJson(SOURCE_LOCK_URL));
+const gameUiSpec = parseGameUiSpec(gameUiSpecJson);
 const [datasetEntries, factorioDataSources] = await Promise.all([
 	Promise.all(
 		FACTORIOLAB_DATASETS.map(async ({id}) => [id, await fetchDataset(id, sourceLock.factorioLab.commit)] as const),
@@ -141,12 +146,18 @@ const database = transformDatasets({
 const output = `${JSON.stringify(database, undefined, '\t')}\n`;
 const nextUpgrades = extractPrototypeUpgrades([...factorioDataSources.values()]);
 const virtualSignals = extractPrototypeNames([...factorioDataSources.values()], 'virtual-signal');
-const pickerSignals = extractPickerSignals([...factorioDataSources.values()]);
+const pickerSignals = extractPickerSignals([...factorioDataSources.values()], gameUiSpec.signals.typeOrder);
+const upgradeEntityItems = [
+	...new Set([...extractVisiblePlaceResults(baseItemSource), ...extractVisiblePlaceResults(spaceAgeItemSource)]),
+].sort();
+const upgradeModuleItems = extractUpgradeModuleItems([...factorioDataSources.values()]);
 const gameDataOutput = `${JSON.stringify(
 	{
 		factorioDataVersion: sourceLock.factorioData.version,
 		nextUpgrades,
 		pickerSignals,
+		upgradeEntityItems,
+		upgradeModuleItems,
 		virtualSignals,
 	},
 	undefined,
@@ -166,4 +177,6 @@ console.log(
 	`Generated ${nextUpgrades.length.toString()} native next-upgrade mappings from Factorio ${sourceLock.factorioData.version}.`,
 );
 console.log(`Generated ${pickerSignals.length.toString()} categorized signals for the signal picker.`);
+console.log(`Generated ${upgradeEntityItems.length.toString()} placeable Upgrade Planner entities.`);
+console.log(`Generated ${upgradeModuleItems.length.toString()} Upgrade Planner module items.`);
 console.log(`Generated ${virtualSignals.length.toString()} virtual signals for the replacement picker.`);

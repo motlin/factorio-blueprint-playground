@@ -79,8 +79,12 @@ interface LuaUpgradeFrame {
 }
 
 interface LuaPrototypeFrame {
+	group: string | undefined;
+	hidden: boolean | undefined;
+	itemPrototype: boolean;
 	name: string | undefined;
 	order: string | undefined;
+	subgroup: string | undefined;
 	type: string | undefined;
 }
 
@@ -90,7 +94,11 @@ export interface PrototypeUpgrade {
 }
 
 export interface PickerSignalPrototype {
+	group: string;
+	hidden: boolean;
 	name: string;
+	order: string;
+	subgroup: string;
 	type:
 		| 'achievement'
 		| 'fluid'
@@ -104,14 +112,13 @@ export interface PickerSignalPrototype {
 		| 'virtual';
 }
 
-const pickerPrototypeTypes: readonly {
+const nonItemPickerPrototypeTypes: readonly {
 	prototypeType: string;
 	signalType: PickerSignalPrototype['type'];
 }[] = [
-	{prototypeType: 'item', signalType: 'item'},
-	{prototypeType: 'recipe', signalType: 'recipe'},
 	{prototypeType: 'fluid', signalType: 'fluid'},
 	{prototypeType: 'virtual-signal', signalType: 'virtual'},
+	{prototypeType: 'recipe', signalType: 'recipe'},
 	{prototypeType: 'planet', signalType: 'planet'},
 	{prototypeType: 'space-location', signalType: 'space-location'},
 	{prototypeType: 'tile', signalType: 'tile'},
@@ -120,15 +127,71 @@ const pickerPrototypeTypes: readonly {
 	{prototypeType: 'achievement', signalType: 'achievement'},
 ];
 
-export function extractPrototypeNames(sources: readonly string[], prototypeType: string): string[] {
-	const prototypes = new Map<string, string>();
+function extractMatchingPrototypeNames(
+	sources: readonly string[],
+	matches: (prototype: LuaPrototypeFrame) => boolean,
+): string[] {
+	const prototypes = extractLiteralPrototypeFrames(sources);
+	const matchingPrototypes = new Map<string, LuaPrototypeFrame>();
+	for (const prototype of prototypes) {
+		if (!matches(prototype) || prototype.name === undefined) {
+			continue;
+		}
+		const existing = matchingPrototypes.get(prototype.name);
+		if (existing === undefined || prototypeMetadataScore(prototype) > prototypeMetadataScore(existing)) {
+			matchingPrototypes.set(prototype.name, prototype);
+		}
+	}
+	return [...matchingPrototypes.values()]
+		.sort((left, right) => {
+			const leftOrder = left.order ?? left.name ?? '';
+			const rightOrder = right.order ?? right.name ?? '';
+			return leftOrder === rightOrder
+				? (left.name ?? '').localeCompare(right.name ?? '')
+				: leftOrder.localeCompare(rightOrder);
+		})
+		.map(({name}) => {
+			if (name === undefined) {
+				throw new Error('Matched prototype has no name.');
+			}
+			return name;
+		});
+}
+
+function prototypeMetadataScore(prototype: LuaPrototypeFrame): number {
+	return (
+		[prototype.group, prototype.hidden, prototype.order, prototype.subgroup].filter((value) => value !== undefined)
+			.length + Number(prototype.itemPrototype)
+	);
+}
+
+function hasPrototypeName(prototype: LuaPrototypeFrame): prototype is LuaPrototypeFrame & {name: string} {
+	return prototype.name !== undefined;
+}
+
+function hasPrototypeGroup(
+	prototype: LuaPrototypeFrame & {name: string},
+): prototype is LuaPrototypeFrame & {group: string; name: string} {
+	return prototype.group !== undefined;
+}
+
+function extractLiteralPrototypeFrames(sources: readonly string[]): LuaPrototypeFrame[] {
+	const prototypes: LuaPrototypeFrame[] = [];
 	for (const source of sources) {
 		const frames: LuaPrototypeFrame[] = [];
 		const tokens = tokenizeLua(source);
 		for (let index = 0; index < tokens.length; index += 1) {
 			const token = tokens[index];
 			if (token.kind === LuaTokenKind.OpeningBrace) {
-				frames.push({name: undefined, order: undefined, type: undefined});
+				frames.push({
+					group: undefined,
+					hidden: undefined,
+					itemPrototype: false,
+					name: undefined,
+					order: undefined,
+					subgroup: undefined,
+					type: undefined,
+				});
 				continue;
 			}
 			if (token.kind === LuaTokenKind.ClosingBrace) {
@@ -136,8 +199,8 @@ export function extractPrototypeNames(sources: readonly string[], prototypeType:
 				if (frame === undefined) {
 					throw new Error('Unexpected closing brace in Lua source.');
 				}
-				if (frame.type === prototypeType && frame.name !== undefined) {
-					prototypes.set(frame.name, frame.order ?? frame.name);
+				if (frame.name !== undefined && frame.type !== undefined) {
+					prototypes.push(frame);
 				}
 				continue;
 			}
@@ -146,32 +209,131 @@ export function extractPrototypeNames(sources: readonly string[], prototypeType:
 			}
 			const frame = frames.at(-1);
 			const value = tokens.at(index + 2);
-			if (frame === undefined || value?.kind !== LuaTokenKind.String) {
+			if (frame === undefined || value === undefined) {
+				continue;
+			}
+			if (token.value === 'stack_size') {
+				frame.itemPrototype = true;
+				continue;
+			}
+			if (
+				token.value === 'hidden' &&
+				value.kind === LuaTokenKind.Identifier &&
+				(value.value === 'true' || value.value === 'false')
+			) {
+				frame.hidden = value.value === 'true';
+				continue;
+			}
+			if (value.kind !== LuaTokenKind.String) {
 				continue;
 			}
 			if (token.value === 'type') {
 				frame.type = value.value;
+			} else if (token.value === 'group') {
+				frame.group = value.value;
 			} else if (token.value === 'name') {
 				frame.name = value.value;
 			} else if (token.value === 'order') {
 				frame.order = value.value;
+			} else if (token.value === 'subgroup') {
+				frame.subgroup = value.value;
 			}
 		}
 		if (frames.length > 0) {
 			throw new Error('Unclosed table in Lua source.');
 		}
 	}
-	return [...prototypes]
-		.sort(([leftName, leftOrder], [rightName, rightOrder]) =>
-			leftOrder === rightOrder ? leftName.localeCompare(rightName) : leftOrder.localeCompare(rightOrder),
-		)
-		.map(([name]) => name);
+	return prototypes;
 }
 
-export function extractPickerSignals(sources: readonly string[]): PickerSignalPrototype[] {
-	return pickerPrototypeTypes.flatMap(({prototypeType, signalType}) =>
-		extractPrototypeNames(sources, prototypeType).map((name) => ({type: signalType, name})),
+export function extractPrototypeNames(sources: readonly string[], prototypeType: string): string[] {
+	return extractMatchingPrototypeNames(sources, ({type}) => type === prototypeType);
+}
+
+export function extractUpgradeModuleItems(sources: readonly string[]): string[] {
+	return extractMatchingPrototypeNames(
+		sources,
+		({name, subgroup, type}) =>
+			type === 'module' || (type === 'item' && subgroup === 'module' && name === 'empty-module-slot'),
 	);
+}
+
+export function extractPickerSignals(
+	sources: readonly string[],
+	sourceTypeOrder: readonly string[],
+): PickerSignalPrototype[] {
+	const prototypes = extractLiteralPrototypeFrames(sources);
+	const bestPrototypes = new Map<string, LuaPrototypeFrame>();
+	for (const prototype of prototypes) {
+		if (prototype.name === undefined || prototype.type === undefined) {
+			continue;
+		}
+		const key = `${prototype.type}:${prototype.name}`;
+		const existing = bestPrototypes.get(key);
+		if (existing === undefined || prototypeMetadataScore(prototype) > prototypeMetadataScore(existing)) {
+			bestPrototypes.set(key, prototype);
+		}
+	}
+	const groups = new Map(
+		[...bestPrototypes.values()]
+			.filter((prototype) => prototype.type === 'item-group')
+			.filter(hasPrototypeName)
+			.map((prototype) => [prototype.name, {order: prototype.order ?? prototype.name}]),
+	);
+	const subgroups = new Map(
+		[...bestPrototypes.values()]
+			.filter((prototype) => prototype.type === 'item-subgroup')
+			.filter(hasPrototypeName)
+			.filter(hasPrototypeGroup)
+			.map((prototype) => [prototype.name, {group: prototype.group, order: prototype.order ?? prototype.name}]),
+	);
+	const nonItemTypes = new Map(
+		nonItemPickerPrototypeTypes.map(({prototypeType, signalType}) => [prototypeType, signalType]),
+	);
+	const typeOrder = new Map(sourceTypeOrder.map((type, index) => [type, index]));
+	const pickerSignals = new Map<
+		string,
+		PickerSignalPrototype & {
+			metadataScore: number;
+		}
+	>();
+	for (const prototype of [...bestPrototypes.values()].filter(hasPrototypeName)) {
+		const type = prototype.itemPrototype ? 'item' : nonItemTypes.get(prototype.type ?? '');
+		if (type === undefined) {
+			continue;
+		}
+		const subgroup = prototype.subgroup ?? 'other';
+		const candidate = {
+			type,
+			name: prototype.name,
+			group: subgroups.get(subgroup)?.group ?? 'other',
+			hidden: prototype.hidden ?? false,
+			subgroup,
+			order: prototype.order ?? prototype.name,
+			metadataScore: prototypeMetadataScore(prototype),
+		};
+		const key = `${type}:${prototype.name}`;
+		const existing = pickerSignals.get(key);
+		if (existing === undefined || candidate.metadataScore > existing.metadataScore) {
+			pickerSignals.set(key, candidate);
+		}
+	}
+	return [...pickerSignals.values()]
+		.sort((left, right) => {
+			const leftGroupOrder = groups.get(left.group)?.order ?? left.group;
+			const rightGroupOrder = groups.get(right.group)?.order ?? right.group;
+			const leftSubgroupOrder = subgroups.get(left.subgroup)?.order ?? left.subgroup;
+			const rightSubgroupOrder = subgroups.get(right.subgroup)?.order ?? right.subgroup;
+			return (
+				leftGroupOrder.localeCompare(rightGroupOrder) ||
+				leftSubgroupOrder.localeCompare(rightSubgroupOrder) ||
+				(typeOrder.get(left.type) ?? Number.MAX_SAFE_INTEGER) -
+					(typeOrder.get(right.type) ?? Number.MAX_SAFE_INTEGER) ||
+				left.order.localeCompare(right.order) ||
+				left.name.localeCompare(right.name)
+			);
+		})
+		.map(({group, hidden, name, order, subgroup, type}) => ({group, hidden, name, order, subgroup, type}));
 }
 
 function longBracketClosing(source: string, start: number): {closing: string; contentStart: number} | undefined {
@@ -264,7 +426,7 @@ function tokenizeLua(source: string): LuaToken[] {
 	return tokens;
 }
 
-export function extractHiddenPlaceResults(source: string): string[] {
+function extractPlaceResults(source: string, hidden: boolean): string[] {
 	const frames: LuaTableFrame[] = [];
 	const placeResults = new Set<string>();
 	const tokens = tokenizeLua(source);
@@ -280,7 +442,7 @@ export function extractHiddenPlaceResults(source: string): string[] {
 			if (frame === undefined) {
 				throw new Error('Unexpected closing brace in Lua source.');
 			}
-			if (frame.hidden && frame.prototypeType !== undefined) {
+			if (frame.hidden === hidden && frame.prototypeType !== undefined) {
 				for (const placeResult of frame.placeResults) {
 					placeResults.add(placeResult);
 				}
@@ -308,6 +470,14 @@ export function extractHiddenPlaceResults(source: string): string[] {
 		throw new Error('Unclosed table in Lua source.');
 	}
 	return [...placeResults].sort();
+}
+
+export function extractHiddenPlaceResults(source: string): string[] {
+	return extractPlaceResults(source, true);
+}
+
+export function extractVisiblePlaceResults(source: string): string[] {
+	return extractPlaceResults(source, false);
 }
 
 export function extractPrototypeUpgrades(sources: readonly string[]): PrototypeUpgrade[] {

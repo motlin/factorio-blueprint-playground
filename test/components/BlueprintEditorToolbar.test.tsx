@@ -119,7 +119,7 @@ test('opens Blueprint parametrisation only when the current format supports it',
 		controls: 'blueprint-parameterization',
 		expanded: 'false',
 		hasPopup: 'dialog',
-		icon: 'https://factorio-icon-cdn.pages.dev/item/parameter-.webp',
+		icon: 'https://factorio-icon-cdn.pages.dev/virtual-signal/signal-item-parameter.webp',
 		onOpenParameterizationCalls: [[]],
 		tooltip: 'Parametrise/reconfigure the blueprint.',
 	});

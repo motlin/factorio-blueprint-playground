@@ -1,90 +1,47 @@
-import {fireEvent, render, screen} from '@testing-library/react';
+import {render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {describe, expect, test, vi} from 'vite-plus/test';
 
 import {AddUpgradeMappingRow} from '../../src/components/blueprint/panels/transform/AddUpgradeMappingRow';
 
 describe('AddUpgradeMappingRow', () => {
-	test('starts empty and exposes the source-only lifecycle from the keyboard', async () => {
+	test('offers independent empty source and target slots without guessing either endpoint', async () => {
 		const user = userEvent.setup();
-		const onRemove = vi.fn<() => void>();
 		const onSourceChoose = vi.fn<() => void>();
 		const onTargetChoose = vi.fn<() => void>();
-		const {rerender} = render(
-			<AddUpgradeMappingRow
-				onRemove={onRemove}
-				onSourceChoose={onSourceChoose}
-				onTargetChoose={onTargetChoose}
-			/>,
-		);
+		render(<AddUpgradeMappingRow slotIndex={4} onSourceChoose={onSourceChoose} onTargetChoose={onTargetChoose} />);
 
-		const emptyRow = screen.getByRole('group', {name: 'Add mapping'});
-		const emptySource = screen.getByRole('button', {name: 'Choose source for new mapping'});
-		const emptyTarget = screen.getByRole('button', {
-			name: 'Choose a source before choosing a target',
-		});
-		await user.click(emptySource);
-		await user.click(emptyTarget);
-
-		expect({
-			emptyRowText: emptyRow.textContent,
-			remove: screen.queryByRole('button', {name: /Remove incomplete mapping/}),
-			source: onSourceChoose.mock.calls,
-			target: {
-				disabled: emptyTarget.getAttribute('aria-disabled'),
-				operations: onTargetChoose.mock.calls,
-			},
-		}).toStrictEqual({
-			emptyRowText: '',
-			remove: null,
-			source: [[]],
-			target: {
-				disabled: 'true',
-				operations: [],
-			},
-		});
-
-		rerender(
-			<AddUpgradeMappingRow
-				source={{type: 'entity', name: 'transport-belt'}}
-				onRemove={onRemove}
-				onSourceChoose={onSourceChoose}
-				onTargetChoose={onTargetChoose}
-			/>,
-		);
-
-		const sourceOnlyRow = screen.getByRole('group', {name: 'Incomplete mapping from Transport belt'});
-		const source = screen.getByRole('button', {name: 'Choose source, currently Transport belt'});
-		const target = screen.getByRole('button', {name: 'Choose target for Transport belt'});
+		const row = screen.getByRole('group', {name: 'Empty mapping slot 5'});
+		const source = screen.getByRole('button', {name: 'Choose source for new mapping'});
+		const target = screen.getByRole('button', {name: 'Choose target for new mapping'});
 		await user.click(source);
-		fireEvent.contextMenu(source);
-		target.focus();
-		await user.keyboard('{Enter}{Delete}');
-		fireEvent.contextMenu(target);
+		await user.click(target);
 
 		expect({
 			operations: {
-				remove: onRemove.mock.calls,
 				source: onSourceChoose.mock.calls,
 				target: onTargetChoose.mock.calls,
 			},
 			row: {
-				label: sourceOnlyRow.getAttribute('aria-label'),
-				className: sourceOnlyRow.className,
-				sourceTitle: source.title,
-				targetTitle: target.title,
+				className: row.className,
+				text: row.textContent,
+			},
+			slots: {
+				sourceDisabled: source.getAttribute('aria-disabled'),
+				targetDisabled: target.getAttribute('aria-disabled'),
 			},
 		}).toStrictEqual({
 			operations: {
-				remove: [[], [], []],
-				source: [[], []],
+				source: [[]],
 				target: [[]],
 			},
 			row: {
-				label: 'Incomplete mapping from Transport belt',
 				className: 'upgrade-mapping-grid__pair upgrade-mapping-grid__pair--empty',
-				sourceTitle: 'Transport belt\nentity:transport-belt',
-				targetTitle: 'Choose target for Transport belt',
+				text: '',
+			},
+			slots: {
+				sourceDisabled: 'false',
+				targetDisabled: 'false',
 			},
 		});
 	});

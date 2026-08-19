@@ -93,13 +93,23 @@ const DynamicNavigation = () => {
 						</Link>
 						<span className="separator">|</span>
 						<Link
+							to="/library"
+							className="blue nowrap"
+							activeProps={{
+								className: 'yellow bold',
+							}}
+						>
+							Blueprint Library
+						</Link>
+						<span className="separator">|</span>
+						<Link
 							to="/history"
 							className="blue nowrap"
 							activeProps={{
 								className: 'yellow bold',
 							}}
 						>
-							History
+							Import History
 						</Link>
 					</nav>
 				</div>

@@ -1,6 +1,6 @@
 import {getRouteApi, useNavigate} from '@tanstack/react-router';
 import {useLiveQuery} from 'dexie-react-hooks';
-import React, {useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import {ErrorBoundary} from 'react-error-boundary';
 
 import type {BlueprintFetchResult} from '../fetching/blueprintFetcher';
@@ -9,7 +9,7 @@ import {extractBlueprint} from '../parsing/blueprintParser';
 import type {BlueprintString} from '../parsing/types';
 import type {RootSearch} from '../routes';
 import {updateBlueprintMetadata} from '../state/blueprintLocalStorage';
-import {db, generateSha} from '../storage/db';
+import {db} from '../storage/db';
 
 import DisqusComments from './blueprint/disqus/DisqusComments';
 import {BlueprintErrorFallback} from './blueprint/error/BlueprintErrorFallback';
@@ -19,11 +19,17 @@ import {BlueprintInfoPanels} from './blueprint/panels/BlueprintInfoPanels';
 import {BasicInfoPanel} from './blueprint/panels/info/BasicInfoPanel';
 import {ParametersPanel} from './blueprint/panels/parameters/ParametersPanel';
 import {TransformPanel} from './blueprint/panels/transform/TransformPanel';
+import {BlueprintEditorSourceMode} from './blueprint/panels/transform/useBlueprintEditorDraft';
 import {BlueprintTree} from './blueprint/tree/BlueprintTree';
 import {ErrorAlert} from './ui/ErrorAlert';
 import {Panel} from './ui/Panel';
 
 const routeApi = getRouteApi('/');
+
+interface BlueprintEditorCommitState {
+	committedRoot: BlueprintString;
+	sourceInput: string | undefined;
+}
 
 function getFactorioprintsUrl(id?: string): string | undefined {
 	if (id == null || id === '') {
@@ -38,7 +44,10 @@ export function BlueprintPlayground() {
 
 	const navigate = useNavigate({from: routeApi.id});
 	const isSuccess = loaderData?.success === true;
-	const rootBlueprint: BlueprintString | undefined = isSuccess ? loaderData.blueprintString : undefined;
+	const loadedRootBlueprint: BlueprintString | undefined = isSuccess ? loaderData.blueprintString : undefined;
+	const [editorCommitState, setEditorCommitState] = useState<BlueprintEditorCommitState>();
+	const editorCommitMatchesSource = editorCommitState !== undefined && editorCommitState.sourceInput === pasted;
+	const rootBlueprint = editorCommitMatchesSource ? editorCommitState.committedRoot : loadedRootBlueprint;
 	const error: Error | undefined = loaderData != null && !loaderData.success ? loaderData.error : undefined;
 	const disqusId: string | undefined = isSuccess ? loaderData.id : undefined;
 
@@ -54,8 +63,7 @@ export function BlueprintPlayground() {
 		if (pasted == null || pasted === '') return null;
 
 		try {
-			const sha = await generateSha(pasted);
-			return await db.blueprints.get(sha);
+			return await db.findHistoryByData(pasted);
 		} catch (dbError) {
 			logger.error('Error finding blueprint in database', dbError, {
 				context: 'BlueprintPlayground.useLiveQuery',
@@ -73,7 +81,7 @@ export function BlueprintPlayground() {
 			}),
 		});
 	};
-	const existingBlueprintSha = existingBlueprint?.metadata.sha;
+	const existingBlueprintId = existingBlueprint?.id;
 	const savedSelection = existingBlueprint?.metadata.selection;
 
 	useEffect(() => {
@@ -83,14 +91,14 @@ export function BlueprintPlayground() {
 			pasted != null &&
 			pasted !== '' &&
 			isSuccess &&
-			existingBlueprintSha !== undefined &&
+			existingBlueprintId !== undefined &&
 			savedSelection !== selectedPath
 		) {
-			void updateBlueprintMetadata(existingBlueprintSha, {
+			void updateBlueprintMetadata(existingBlueprintId, {
 				selection: selectedPath,
 			});
 		}
-	}, [selectedPath, pasted, isSuccess, existingBlueprintSha, savedSelection]);
+	}, [selectedPath, pasted, isSuccess, existingBlueprintId, savedSelection]);
 
 	return (
 		<div className="container">
@@ -128,6 +136,14 @@ export function BlueprintPlayground() {
 						<TransformPanel
 							key={selectedPath ?? ''}
 							blueprint={selectedBlueprint}
+							blueprintEditorSourceMode={
+								editorCommitMatchesSource
+									? BlueprintEditorSourceMode.ExistingRecord
+									: BlueprintEditorSourceMode.CapturedDraft
+							}
+							onBlueprintCommit={(committedRoot) => {
+								setEditorCommitState({committedRoot, sourceInput: pasted});
+							}}
 							rootBlueprint={rootBlueprint}
 							selectedPath={selectedPath}
 						/>
