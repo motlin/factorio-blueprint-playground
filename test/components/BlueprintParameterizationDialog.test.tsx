@@ -183,6 +183,9 @@ test('shows editable ID rows and confirms unsupported number parameters unchange
 				)
 				.getAttribute('aria-invalid'),
 			description: dialog.getAttribute('aria-describedby'),
+			footerActions: within(within(dialog).getByRole('contentinfo'))
+				.getAllByRole('button')
+				.map((button) => button.textContent),
 			info: within(dialog).getByRole(
 				'button',
 				{
@@ -218,6 +221,9 @@ test('shows editable ID rows and confirms unsupported number parameters unchange
 					title: button.title,
 				})),
 			rows: dialog.querySelectorAll('.blueprint-parameterization__row').length,
+			titleBarActions: within(dialog.querySelector<HTMLElement>('.blueprint-parameterization__header')!)
+				.getAllByRole('button')
+				.map((button) => button.getAttribute('aria-label')),
 		},
 	).toStrictEqual(
 		{
@@ -241,6 +247,7 @@ test('shows editable ID rows and confirms unsupported number parameters unchange
 			},
 			dependencySource: null,
 			description: orderDescription.id,
+			footerActions: ['✓Confirm'],
 			info: 'Dependencies can only target parameters above them.',
 			names: ['Plate', 'Gear'],
 			orderDescription: orderDescription.id,
@@ -261,6 +268,7 @@ test('shows editable ID rows and confirms unsupported number parameters unchange
 				},
 			],
 			rows: 2,
+			titleBarActions: ['Close Blueprint parametrisation'],
 		},
 	);
 
@@ -274,6 +282,90 @@ test('shows editable ID rows and confirms unsupported number parameters unchange
 	);
 
 	expect(onConfirm.mock.calls).toStrictEqual([[parameters]]);
+});
+
+test('presents the empty state as placeholder copy outside the editable parameter scroll frame', () =>
+{
+	render(
+		<BlueprintParameterizationDialog
+			dialogId="blueprint-parameterization"
+			onClose={vi.fn<() => void>()}
+			onConfirm={vi.fn<(nextParameters: Parameter[]) => void>()}
+			parameters={[]}
+			signalOptions={[]}
+		/>,
+	);
+
+	const dialog = screen.getByRole(
+		'dialog',
+		{
+			name: 'Blueprint parametrisation',
+		},
+	);
+	const emptyState = within(dialog).getByText('No editable signal parameters.');
+	expect(
+		{
+			emptyState:
+			{
+				className: emptyState.className,
+				parentClassName: emptyState.parentElement?.className,
+				text: emptyState.textContent,
+			},
+			parameterRegion: within(dialog).queryByRole(
+				'region',
+				{
+					name: 'Blueprint parameters',
+				},
+			),
+		},
+	).toStrictEqual(
+		{
+			emptyState:
+			{
+				className: 'blueprint-parameterization__empty',
+				parentClassName: 'blueprint-parameterization__empty-state',
+				text: 'No editable signal parameters.',
+			},
+			parameterRegion: null,
+		},
+	);
+});
+
+test('opens the empty dialog with the add action focused instead of the close button', () =>
+{
+	render(
+		<BlueprintParameterizationDialog
+			dialogId="blueprint-parameterization"
+			onClose={vi.fn<() => void>()}
+			onConfirm={vi.fn<(nextParameters: Parameter[]) => void>()}
+			parameters={[]}
+			signalOptions={[]}
+		/>,
+	);
+
+	const dialog = screen.getByRole(
+		'dialog',
+		{
+			name: 'Blueprint parametrisation',
+		},
+	);
+	const add = within(dialog).getByRole(
+		'button',
+		{
+			name: 'Add parameter',
+		},
+	);
+	expect(
+		{
+			activeElement: document.activeElement,
+			activeLabel: document.activeElement?.getAttribute('aria-label'),
+		},
+	).toStrictEqual(
+		{
+			activeElement: add,
+			activeLabel: 'Add parameter',
+		},
+	);
 });
 
 test('reorders complete parameter rows by drag handle or keyboard in evaluation order', async () =>
@@ -867,10 +959,10 @@ test('keeps nested picker focus in the top layer and returns it through the dial
 			name: 'Blueprint parametrisation',
 		},
 	);
-	const firstName = within(parameterDialog).getByRole(
-		'textbox',
+	const add = within(parameterDialog).getByRole(
+		'button',
 		{
-			name: 'Parameter 1 name',
+			name: 'Add parameter',
 		},
 	);
 	const valueInvoker = within(parameterDialog).getByRole(
@@ -894,7 +986,7 @@ test('keeps nested picker focus in the top layer and returns it through the dial
 		},
 	).toStrictEqual(
 		{
-			activeElement: firstName,
+			activeElement: add,
 			anchorPlacement: 'anchored',
 			anchoredPosition:
 			{

@@ -409,7 +409,21 @@ export const RequiredConfirmationFooter: Story =
 			},
 		);
 		await expect(footer).toHaveAttribute('data-factorio-style', 'subfooter_frame');
-		await expect(confirm).toHaveAttribute('data-factorio-control-style', 'item_and_count_select_confirm');
+		await expect(
+			{
+				className: confirm.className,
+				controlStyle: confirm.getAttribute('data-factorio-control-style'),
+				factorioStyle: confirm.getAttribute('data-factorio-style'),
+				text: confirm.textContent,
+			},
+		).toStrictEqual(
+			{
+				className: 'factorio-button factorio-button--confirm',
+				controlStyle: null,
+				factorioStyle: 'green_button',
+				text: 'Confirm',
+			},
+		);
 		await expect(confirm).toBeDisabled();
 		await userEvent.click(
 			screen.getByRole(

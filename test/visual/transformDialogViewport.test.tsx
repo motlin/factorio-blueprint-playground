@@ -294,6 +294,10 @@ test('keeps the planner shell and mapping inside narrow and short viewports', as
 			width: 960,
 		},
 		{
+			height: 844,
+			width: 391,
+		},
+		{
 			height: 640,
 			width: 320,
 		},
@@ -309,16 +313,20 @@ test('keeps the planner shell and mapping inside narrow and short viewports', as
 		backdropCoversViewport: true,
 		bodyFitsHorizontally: true,
 		bodyOwnsScrolling: true,
+		compactFooterUsesAtMostTwoRows: true,
 		closeControlMatchesPriorArt: true,
 		dialogFaceMatchesPriorArt: true,
 		dialogFitsViewport: true,
+		footerActionsShareUniformHeight: true,
 		footerVisible: true,
 		headerVisible: true,
 		mapperOwnsHorizontalScrolling: true,
 		mappingSourceWidthHonored: true,
 		panelInsetsPreserved: true,
+		primaryActionVisible: true,
 		singleMapperScrollRegion: true,
 		titleColorMatchesPriorArt: true,
+		titleStripeSpansToCloseControl: true,
 	};
 
 	expect(availableLayouts).toStrictEqual(availableLayouts.map(() => expectedLayout));
@@ -357,6 +365,7 @@ test('keeps the source-sized Blueprint Editor settings pane inside narrow and sh
 		footerVisible: true,
 		headerVisible: true,
 		noPreviewRegion: true,
+		recordHeaderClearsScrolledIconRow: true,
 		settingsFitsHorizontally: true,
 		settingsOwnsScrolling: true,
 		settingsSourceWidthHonored: true,

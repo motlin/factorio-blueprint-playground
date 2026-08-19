@@ -412,7 +412,14 @@ export const MetadataEditor: Story =
 				name: 'Edit upgrade planner',
 			},
 		);
+		const heading = within(editor).getByRole(
+			'heading',
+			{
+				name: 'Edit upgrade planner',
+			},
+		);
 		await expect(planner).toHaveAttribute('inert');
+		await expect(Math.round(heading.getBoundingClientRect().left - editor.getBoundingClientRect().left)).toBe(8);
 		await expect(
 			within(editor).getByRole(
 				'textbox',

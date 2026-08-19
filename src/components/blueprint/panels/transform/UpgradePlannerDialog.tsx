@@ -1152,9 +1152,10 @@ export function UpgradePlannerDialog({
 								onApply('downgrade');
 							}}
 						>
-							Apply Downgrade to {scope === 'root' ? 'Entire Root Book' : 'Current Blueprint'}
+							Apply Downgrade
 						</FactorioButton>
 						<FactorioButton
+							className="transform-button"
 							kind={FactorioButtonKind.Confirm}
 							disabled={saveDisabled}
 							onClick={() =>
@@ -1162,7 +1163,7 @@ export function UpgradePlannerDialog({
 								onApply('upgrade');
 							}}
 						>
-							Apply Upgrade to {scope === 'root' ? 'Entire Root Book' : 'Current Blueprint'}
+							Apply Upgrade
 						</FactorioButton>
 					</div>
 				</footer>

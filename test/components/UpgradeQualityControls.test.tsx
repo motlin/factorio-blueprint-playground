@@ -560,26 +560,30 @@ describe('UpgradeQualityControls', () =>
 			/>,
 		);
 
-		const anyQuality = screen.getByRole(
+		const comparisonControl = screen.getByRole(
 			'button',
 			{
-				name: 'Any quality',
+				name: 'Quality comparison: any',
 			},
 		);
 		expect(
 			{
-				condition: anyQuality.getAttribute('data-quality-condition'),
-				controlStyle: anyQuality.getAttribute('data-factorio-control-style'),
-				pressed: anyQuality.getAttribute('aria-pressed'),
+				condition: comparisonControl.getAttribute('data-quality-condition'),
+				controlStyle: comparisonControl.getAttribute('data-factorio-control-style'),
+				label: comparisonControl.getAttribute('aria-label'),
+				pressed: comparisonControl.getAttribute('aria-pressed'),
+				text: comparisonControl.textContent,
 			},
 		).toStrictEqual(
 			{
 				condition: 'any',
 				controlStyle: 'train_schedule_circuit_condition_comparator_dropdown',
+				label: 'Quality comparison: any',
 				pressed: null,
+				text: 'Any▾',
 			},
 		);
-		await user.click(anyQuality);
+		await user.click(comparisonControl);
 		await user.click(
 			screen.getByRole(
 				'menuitemradio',
