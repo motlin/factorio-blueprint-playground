@@ -14,6 +14,7 @@ import {
 	FactorioButtonKind,
 	FactorioDialogBackdrop,
 	FactorioFrame,
+	FactorioFrameDepth,
 	FactorioTitleBar,
 } from '../../../ui/FactorioUi';
 import {useDialogFocus} from './useDialogFocus';
@@ -53,6 +54,7 @@ const DEFAULT_UPGRADE_RECORD: UpgradePlannerSelectorRecord = {
 	},
 };
 const DEFAULT_UPGRADE_RECORDS = [DEFAULT_UPGRADE_RECORD];
+const DRAFT_UPGRADE_PLANNER_COLUMNS = 5;
 
 interface UpgradePlannerTileGridStyle extends CSSProperties {
 	'--blueprint-record-grid-columns': number;
@@ -65,8 +67,8 @@ interface UpgradePlannerTileGridStyle extends CSSProperties {
 	'--blueprint-record-slot-size': string;
 }
 
-const upgradePlannerTileGridStyle: UpgradePlannerTileGridStyle = {
-	'--blueprint-record-grid-columns': gameUiSpec.utilityConstants.blueprintBigSlotsPerRow,
+const draftUpgradePlannerTileGridStyle: UpgradePlannerTileGridStyle = {
+	'--blueprint-record-grid-columns': DRAFT_UPGRADE_PLANNER_COLUMNS,
 	'--blueprint-record-grid-horizontal-spacing': `${gameUiSpec.styles.defaultTableHorizontalSpacing.toString()}px`,
 	'--blueprint-record-grid-vertical-spacing': `${gameUiSpec.styles.defaultTableVerticalSpacing.toString()}px`,
 	'--blueprint-record-label-bottom-margin': `${gameUiSpec.styles.labelUnderWidgetBottomMargin.toString()}px`,
@@ -285,7 +287,7 @@ export function UpgradePlannerSelectorDialog({
 			<section
 				ref={dialogReference}
 				id={dialogId}
-				className="factorio-frame factorio-frame--shallow transform-dialog upgrade-planner-selector"
+				className={`factorio-frame factorio-frame--shallow transform-dialog upgrade-planner-selector${includeEditingChoices ? ' upgrade-planner-selector--draft' : ''}`}
 				data-factorio-source={
 					includeEditingChoices ? undefined : 'SelectUpgradePlannerGui::SelectUpgradePlannerGui'
 				}
@@ -349,13 +351,14 @@ export function UpgradePlannerSelectorDialog({
 						)}
 					</div>
 					{includeEditingChoices ? (
-						<div
+						<FactorioFrame
 							className="upgrade-planner-selector__grid"
+							depth={FactorioFrameDepth.Deep}
 							role="grid"
 							aria-label="Upgrade planners"
-							data-factorio-columns={gameUiSpec.utilityConstants.blueprintBigSlotsPerRow}
+							data-factorio-columns={DRAFT_UPGRADE_PLANNER_COLUMNS}
 							data-factorio-source="BlueprintsList::addItem"
-							style={upgradePlannerTileGridStyle}
+							style={draftUpgradePlannerTileGridStyle}
 						>
 							{choices.map((choice, index) => (
 								<UpgradePlannerSelectorItem
@@ -379,7 +382,7 @@ export function UpgradePlannerSelectorDialog({
 									selected={choice.source === selectedSource}
 								/>
 							))}
-						</div>
+						</FactorioFrame>
 					) : (
 						<div className="upgrade-planner-selector__records">
 							<BlueprintRecordViews

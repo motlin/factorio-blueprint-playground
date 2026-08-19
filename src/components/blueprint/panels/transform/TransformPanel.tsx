@@ -480,7 +480,7 @@ export function TransformPanel({
 			) : null}
 			{editorIconPickerIndex === undefined ? null : (
 				<SignalPickerDialog
-					confirmationMode="required"
+					confirmationMode="immediate"
 					initialQuality={editorIcons[editorIconPickerIndex]?.quality ?? 'normal'}
 					initialSignal={editorIcons[editorIconPickerIndex]}
 					qualityMode="target"

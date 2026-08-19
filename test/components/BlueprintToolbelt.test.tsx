@@ -4,7 +4,7 @@ import {describe, expect, test, vi} from 'vite-plus/test';
 
 import {BlueprintToolbelt} from '../../src/components/blueprint/panels/transform/BlueprintToolbelt';
 
-function renderToolbelt() {
+function renderToolbelt({upgradePlannerOpen = false}: {upgradePlannerOpen?: boolean} = {}) {
 	const onOpenBlueprintEditor = vi.fn<() => void>();
 	const onOpenUpgradePlanner = vi.fn<() => void>();
 	render(
@@ -14,7 +14,7 @@ function renderToolbelt() {
 				blueprintEditorOpen={false}
 				onOpenBlueprintEditor={onOpenBlueprintEditor}
 				onOpenUpgradePlanner={onOpenUpgradePlanner}
-				upgradePlannerOpen={true}
+				upgradePlannerOpen={upgradePlannerOpen}
 			/>
 			<input aria-label="Input" />
 			<textarea aria-label="Textarea" />
@@ -29,7 +29,7 @@ function renderToolbelt() {
 
 describe('BlueprintToolbelt', () => {
 	test('renders the game tools in Factorio order without nested icon names or titles', () => {
-		renderToolbelt();
+		renderToolbelt({upgradePlannerOpen: true});
 		const toolbar = screen.getByRole('toolbar', {name: 'Blueprint tools'});
 		const slots = toolbar.firstElementChild;
 		if (!(slots instanceof HTMLElement)) {
@@ -187,6 +187,47 @@ describe('BlueprintToolbelt', () => {
 			focused: button,
 			open: 'true',
 			tooltip: tooltip.id,
+		});
+	});
+
+	test('dismisses tooltips and makes their triggers inert while a modal is open', async () => {
+		const user = userEvent.setup();
+		const onOpenBlueprintEditor = vi.fn<() => void>();
+		const onOpenUpgradePlanner = vi.fn<() => void>();
+		const {rerender} = render(
+			<BlueprintToolbelt
+				blueprintEditorAvailable={true}
+				blueprintEditorOpen={false}
+				onOpenBlueprintEditor={onOpenBlueprintEditor}
+				onOpenUpgradePlanner={onOpenUpgradePlanner}
+				upgradePlannerOpen={false}
+			/>,
+		);
+		const toolbar = screen.getByRole('toolbar', {name: 'Blueprint tools'});
+		const button = screen.getByRole('button', {name: 'Open Upgrade Planner'});
+		const tooltip = document.getElementById(button.getAttribute('aria-describedby') ?? '');
+		if (tooltip === null) {
+			throw new Error('Expected the Upgrade Planner button to reference its tooltip.');
+		}
+
+		await user.hover(button);
+		rerender(
+			<BlueprintToolbelt
+				blueprintEditorAvailable={true}
+				blueprintEditorOpen={false}
+				onOpenBlueprintEditor={onOpenBlueprintEditor}
+				onOpenUpgradePlanner={onOpenUpgradePlanner}
+				upgradePlannerOpen={true}
+			/>,
+		);
+		fireEvent.pointerEnter(button);
+
+		expect({
+			toolbarInert: toolbar.getAttribute('inert'),
+			tooltipOpen: tooltip.dataset.factorioTooltipOpen,
+		}).toStrictEqual({
+			toolbarInert: '',
+			tooltipOpen: 'false',
 		});
 	});
 

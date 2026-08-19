@@ -214,7 +214,8 @@ function QualityComparatorControl({
 		width: 44,
 	});
 	const toggleReference = useRef<HTMLButtonElement>(null);
-	const comparisonLabel = qualitySelection === 'any' ? anyQualityLabel : `Quality comparison: ${qualityComparator}`;
+	const comparisonLabel =
+		qualitySelection === 'any' ? 'Quality comparison: any' : `Quality comparison: ${qualityComparator}`;
 	const qualityCondition = qualitySelection === 'any' ? 'any' : `${qualityComparator} ${qualitySelection}`;
 
 	return (
@@ -252,7 +253,7 @@ function QualityComparatorControl({
 				}}
 			>
 				<span className="upgrade-quality-controls__comparator-value" aria-hidden="true">
-					{qualitySelection === 'any' ? <AnyQualityIcon /> : qualityComparator}
+					{qualitySelection === 'any' ? 'Any' : qualityComparator}
 				</span>
 				<span className="upgrade-quality-controls__dropdown-arrow" aria-hidden="true">
 					▾
