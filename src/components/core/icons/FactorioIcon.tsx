@@ -18,6 +18,7 @@ function getUrlType(type: SignalType)
 
 interface FactorioIconProps
 {
+	decorative?: boolean;
 	id?: string;
 	icon?: SignalID;
 	size: 'small' | 'large';
@@ -45,7 +46,7 @@ function getQualityNode(icon: SignalID)
 	);
 }
 
-export const FactorioIcon = ({id, icon, size}: FactorioIconProps) =>
+export const FactorioIcon = ({decorative = false, id, icon, size}: FactorioIconProps) =>
 {
 	if (icon?.name === undefined)
 	{
@@ -61,14 +62,19 @@ export const FactorioIcon = ({id, icon, size}: FactorioIconProps) =>
 	const qualityNode = getQualityNode(icon);
 
 	return (
-		<div data-testid="iconParent" className={`${styles.iconParent} ${sizeClass}`} id={id}>
+		<div
+			data-testid="iconParent"
+			className={`${styles.iconParent} ${sizeClass}`}
+			id={id}
+			aria-hidden={decorative || undefined}
+		>
 			<img
 				data-testid="icon"
 				loading="lazy"
 				className={styles.icon}
 				src={`https://factorio-icon-cdn.pages.dev/${urlType}/${icon.name}.webp`}
-				alt={icon.name}
-				title={`${type}: ${icon.name}`}
+				alt={decorative ? '' : icon.name}
+				title={decorative ? undefined : `${type}: ${icon.name}`}
 			/>
 			{qualityNode}
 		</div>

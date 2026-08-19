@@ -208,8 +208,8 @@ export function BlueprintEditorToolbar({
 						<FactorioIcon
 							icon={
 							{
-								type: 'item',
-								name: 'parameter-',
+								type: 'virtual-signal',
+								name: 'signal-item-parameter',
 							}}
 							size="large"
 						/>

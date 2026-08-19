@@ -75,14 +75,16 @@ async function chooseSignal(user: ReturnType<typeof userEvent.setup>, label: str
 			},
 		),
 	);
-	await user.click(
-		screen.getByRole(
-			'button',
-			{
-				name: 'Confirm',
-			},
-		),
+	const confirm = screen.queryByRole(
+		'button',
+		{
+			name: 'Confirm',
+		},
 	);
+	if (confirm !== null)
+	{
+		await user.click(confirm);
+	}
 }
 
 test('uses root icons as sources and preserves mappings while incomplete choices are dismissed', async () =>

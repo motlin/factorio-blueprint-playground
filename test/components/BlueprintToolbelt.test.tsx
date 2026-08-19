@@ -1,4 +1,5 @@
-import {fireEvent, render, screen} from '@testing-library/react';
+import {fireEvent, render, screen, within} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import {describe, expect, test, vi} from 'vite-plus/test';
 
 import {BlueprintToolbelt} from '../../src/components/blueprint/panels/transform/BlueprintToolbelt';
@@ -19,7 +20,9 @@ function renderToolbelt()
 			<input aria-label="Input" />
 			<textarea aria-label="Textarea" />
 			<select aria-label="Select" />
-			<div aria-label="Editable" contentEditable="true" />
+			<div contentEditable="true">
+				<span aria-label="Editable">Editable</span>
+			</div>
 		</>,
 	);
 	return {
@@ -30,7 +33,7 @@ function renderToolbelt()
 
 describe('BlueprintToolbelt', () =>
 {
-	test('renders the game tools in Factorio order with accessible shortcut tooltips', () =>
+	test('renders the game tools in Factorio order without nested icon names or titles', () =>
 	{
 		renderToolbelt();
 
@@ -48,29 +51,75 @@ describe('BlueprintToolbelt', () =>
 			{
 				expanded: button.getAttribute('aria-expanded'),
 				icon: button.querySelector('img')?.getAttribute('src'),
+				iconAlt: button.querySelector('img')?.getAttribute('alt'),
+				iconTitle: button.querySelector('img')?.getAttribute('title'),
 				label: button.getAttribute('aria-label'),
 				shortcut: button.getAttribute('aria-keyshortcuts'),
-				tooltip: button.getAttribute('title'),
+				tooltip: document.getElementById(button.getAttribute('aria-describedby') ?? '')?.textContent.trim(),
 			})),
 		).toStrictEqual([
 			{
 				expanded: 'false',
 				icon: 'https://factorio-icon-cdn.pages.dev/item/blueprint.webp',
+				iconAlt: '',
+				iconTitle: null,
 				label: 'Open Blueprint Editor',
 				shortcut: 'B',
-				tooltip: 'Blueprint Editor (B)',
+				tooltip: 'Open the Blueprint Editor. (B)',
 			},
 			{
 				expanded: 'true',
 				icon: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
+				iconAlt: '',
+				iconTitle: null,
 				label: 'Open Upgrade Planner',
 				shortcut: 'U',
-				tooltip: 'Upgrade Planner (U)',
+				tooltip: 'Upgrade items and entities in the blueprint. (U)',
 			},
 		]);
 	});
 
-	test('opens tools on click or an unmodified shortcut', () =>
+	test('exposes the Upgrade Planner action tooltip on hover and keyboard focus', async () =>
+	{
+		const user = userEvent.setup();
+		renderToolbelt();
+		const button = screen.getByRole(
+			'button',
+			{
+				name: 'Open Upgrade Planner',
+			},
+		);
+		const control = button.closest('.factorio-toolbar-control');
+		if (!(control instanceof HTMLElement))
+		{
+			throw new Error('Expected the Upgrade Planner control to wrap its Factorio tooltip.');
+		}
+
+		await user.hover(button);
+		expect(within(control).getByRole('tooltip').textContent).toBe(
+			'Upgrade items and entities in the blueprint. (U)',
+		);
+
+		await user.unhover(button);
+		await user.tab();
+		await user.tab();
+		const tooltip = within(control).getByRole('tooltip');
+		expect(
+			{
+				description: button.getAttribute('aria-describedby'),
+				focused: document.activeElement,
+				tooltip: tooltip.id,
+			},
+		).toStrictEqual(
+			{
+				description: tooltip.id,
+				focused: button,
+				tooltip: tooltip.id,
+			},
+		);
+	});
+
+	test('opens tools on click or an unmodified shortcut and focuses shortcut invokers', () =>
 	{
 		const {onOpenBlueprintEditor, onOpenUpgradePlanner} = renderToolbelt();
 
@@ -96,6 +145,14 @@ describe('BlueprintToolbelt', () =>
 				code: 'KeyB',
 			},
 		);
+		expect(document.activeElement).toBe(
+			screen.getByRole(
+				'button',
+				{
+					name: 'Open Blueprint Editor',
+				},
+			),
+		);
 		fireEvent.keyDown(
 			window,
 			{
@@ -105,11 +162,18 @@ describe('BlueprintToolbelt', () =>
 
 		expect(
 			{
+				focused: document.activeElement,
 				blueprintEditorCalls: onOpenBlueprintEditor.mock.calls,
 				upgradePlannerCalls: onOpenUpgradePlanner.mock.calls,
 			},
 		).toStrictEqual(
 			{
+				focused: screen.getByRole(
+					'button',
+					{
+						name: 'Open Upgrade Planner',
+					},
+				),
 				blueprintEditorCalls: [[], []],
 				upgradePlannerCalls: [[], []],
 			},
@@ -177,13 +241,13 @@ describe('BlueprintToolbelt', () =>
 		);
 	});
 
-	test('ignores shortcuts while a nested picker is open', () =>
+	test('ignores shortcuts while a nested dialog or alert dialog owns the keyboard', () =>
 	{
 		const {onOpenBlueprintEditor, onOpenUpgradePlanner} = renderToolbelt();
 		render(
 			<>
-				<section role="dialog" aria-label="Blueprint Editor" />
-				<section role="dialog" aria-label="Choose label icon" />
+				<section role="dialog" aria-modal="true" aria-label="Blueprint Editor" />
+				<section role="alertdialog" aria-modal="true" aria-label="Discard changes" />
 			</>,
 		);
 

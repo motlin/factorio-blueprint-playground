@@ -230,7 +230,7 @@ test('edits signal, quality, dependencies, and row membership before confirming'
 		),
 	);
 	await user.click(
-		within(picker).getByRole(
+		screen.getByRole(
 			'menuitemradio',
 			{
 				name: '≥',

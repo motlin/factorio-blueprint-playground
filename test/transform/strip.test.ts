@@ -6,10 +6,13 @@ import
 {
 	blueprintFilterCategories,
 	stripEntities,
+	stripFuel,
 	stripModules,
 	stripQuality,
+	stripStationNames,
 	stripTiles,
 	stripTrains,
+	stripVehicles,
 } from '../../src/transform/strip';
 import {removeEntities} from '../../src/transform/visit';
 import {readFixtureFile} from '../fixtures/utils';
@@ -166,18 +169,24 @@ describe('strip transforms', () =>
 		expect(
 			{
 				entities: stripEntities(empty),
+				fuel: stripFuel(empty),
 				modules: stripModules(planner),
 				quality: stripQuality(empty),
+				stationNames: stripStationNames(planner),
 				trains: stripTrains(planner),
 				tiles: stripTiles(planner),
+				vehicles: stripVehicles(empty),
 			},
 		).toStrictEqual(
 			{
 				entities: empty,
+				fuel: empty,
 				modules: planner,
 				quality: empty,
+				stationNames: planner,
 				trains: planner,
 				tiles: planner,
+				vehicles: empty,
 			},
 		);
 	});
@@ -258,6 +267,200 @@ describe('strip transforms', () =>
 							},
 						],
 						wires: [[10, 1, 10, 2]],
+					},
+				},
+			},
+		);
+	});
+
+	test('preserves unrelated serialized fields while filtering modules, fuel, station names, and vehicles', () =>
+	{
+		const input: BlueprintString =
+		{
+			blueprint:
+			{
+				item: 'blueprint',
+				version: 0,
+				entities: [
+					{
+						entity_number: 10,
+						name: 'train-stop',
+						position:
+						{
+							x: 0,
+							y: 0,
+						},
+						station: 'Alice',
+					},
+					{
+						entity_number: 20,
+						name: 'assembling-machine-3',
+						position:
+						{
+							x: 1,
+							y: 0,
+						},
+						recipe: 'electronic-circuit',
+						items: [
+							{
+								id:
+								{
+									name: 'speed-module-3',
+									quality: 'legendary',
+								},
+								items:
+								{
+									in_inventory: [
+										{
+											inventory: 4,
+											stack: 0,
+											count: 2,
+										},
+									],
+								},
+							},
+							{
+								id:
+								{
+									name: 'coal',
+								},
+								items:
+								{
+									in_inventory: [
+										{
+											inventory: 1,
+											stack: 0,
+											count: 10,
+										},
+									],
+								},
+							},
+							{
+								id:
+								{
+									name: 'piercing-rounds-magazine',
+								},
+								items:
+								{
+									in_inventory: [
+										{
+											inventory: 1,
+											stack: 1,
+											count: 5,
+										},
+									],
+								},
+							},
+						],
+					},
+					{
+						entity_number: 30,
+						name: 'car',
+						position:
+						{
+							x: 2,
+							y: 0,
+						},
+						color:
+						{
+							r: 1,
+							g: 0,
+							b: 0,
+							a: 1,
+						},
+					},
+				],
+				wires: [
+					[10, 1, 20, 1],
+					[20, 1, 30, 1],
+				],
+			},
+		};
+		deepFreeze(input);
+
+		expect(
+			{
+				categories: blueprintFilterCategories(input),
+				withoutFuel: stripFuel(input),
+				withoutModules: stripModules(input),
+				withoutStationNames: stripStationNames(input),
+				withoutVehicles: stripVehicles(input),
+			},
+		).toStrictEqual(
+			{
+				categories:
+				{
+					entities: true,
+					fuel: true,
+					modules: true,
+					stationNames: true,
+					tiles: false,
+					trains: false,
+					vehicles: true,
+				},
+				withoutFuel:
+				{
+					blueprint:
+					{
+						...input.blueprint,
+						entities: [
+							input.blueprint?.entities?.[0],
+							{
+								...input.blueprint?.entities?.[1],
+								items: [
+									input.blueprint?.entities?.[1]?.items?.[0],
+									input.blueprint?.entities?.[1]?.items?.[2],
+								],
+							},
+							input.blueprint?.entities?.[2],
+						],
+					},
+				},
+				withoutModules:
+				{
+					blueprint:
+					{
+						...input.blueprint,
+						entities: [
+							input.blueprint?.entities?.[0],
+							{
+								...input.blueprint?.entities?.[1],
+								items: [
+									input.blueprint?.entities?.[1]?.items?.[1],
+									input.blueprint?.entities?.[1]?.items?.[2],
+								],
+							},
+							input.blueprint?.entities?.[2],
+						],
+					},
+				},
+				withoutStationNames:
+				{
+					blueprint:
+					{
+						...input.blueprint,
+						entities: [
+							{
+								entity_number: 10,
+								name: 'train-stop',
+								position:
+								{
+									x: 0,
+									y: 0,
+								},
+							},
+							input.blueprint?.entities?.[1],
+							input.blueprint?.entities?.[2],
+						],
+					},
+				},
+				withoutVehicles:
+				{
+					blueprint:
+					{
+						...input.blueprint,
+						entities: [input.blueprint?.entities?.[0], input.blueprint?.entities?.[1]],
+						wires: [[10, 1, 20, 1]],
 					},
 				},
 			},
@@ -352,9 +555,12 @@ describe('strip transforms', () =>
 				categories:
 				{
 					entities: true,
+					fuel: false,
 					modules: false,
+					stationNames: false,
 					tiles: true,
 					trains: true,
+					vehicles: false,
 				},
 				withoutEntities:
 				{
@@ -464,9 +670,12 @@ describe('strip transforms', () =>
 				categories:
 				{
 					entities: true,
+					fuel: false,
 					modules: false,
+					stationNames: false,
 					tiles: true,
 					trains: true,
+					vehicles: false,
 				},
 				withoutTrains:
 				{

@@ -1,10 +1,12 @@
-import {render, screen} from '@testing-library/react';
+import {fireEvent, render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {describe, expect, test, vi} from 'vite-plus/test';
 
 import {UpgradeQualityControls} from '../../src/components/blueprint/panels/transform/UpgradeQualityControls';
 import
 {
+	initialUpgradeQualitySelection,
+	qualitySelectorUsesDropdown,
 	signalWithUpgradeQuality,
 	type UpgradeQualitySelection,
 } from '../../src/components/blueprint/panels/transform/upgradeQuality';
@@ -64,11 +66,50 @@ describe('signalWithUpgradeQuality', () =>
 			'Target quality selection must be explicit.',
 		);
 	});
+
+	test('defaults From to Any quality and To to exact normal quality', () =>
+	{
+		expect(
+			{
+				existingSource: initialUpgradeQualitySelection(
+					{
+						...signal,
+						quality: 'rare',
+					},
+					'source',
+				),
+				newSource: initialUpgradeQualitySelection(undefined, 'source'),
+				newTarget: initialUpgradeQualitySelection(undefined, 'target'),
+			},
+		).toStrictEqual(
+			{
+				existingSource: 'rare',
+				newSource: 'any',
+				newTarget: 'normal',
+			},
+		);
+	});
+
+	test('switches to the dropdown at the generated visible-quality threshold', () =>
+	{
+		expect(
+			{
+				atThreshold: qualitySelectorUsesDropdown(6),
+				belowThreshold: qualitySelectorUsesDropdown(5),
+			},
+		).toStrictEqual(
+			{
+				atThreshold: true,
+				belowThreshold: false,
+			},
+		);
+		expect(() => qualitySelectorUsesDropdown(1.5)).toThrow('Visible quality count must be a nonnegative integer.');
+	});
 });
 
 describe('UpgradeQualityControls', () =>
 {
-	test('offers the Factorio source quality condition and comparator menu', async () =>
+	test('offers the strict Factorio comparator order and confirms a staged condition', async () =>
 	{
 		const user = userEvent.setup();
 		const onComparatorChange = vi.fn<(comparator: QualityComparator) => void>();
@@ -99,6 +140,21 @@ describe('UpgradeQualityControls', () =>
 				},
 			),
 		);
+		expect(
+			screen
+				.getByRole(
+					'dialog',
+					{
+						name: 'Quality comparison',
+					},
+				)
+				.getAttribute('aria-modal'),
+		).toBe('true');
+		expect(
+			screen
+				.getAllByRole('menuitemradio')
+				.map((button) => button.getAttribute('aria-label') ?? button.textContent),
+		).toStrictEqual(['Any quality', '>', '<', '=', '≥', '≤', '≠']);
 		await user.click(
 			screen.getByRole(
 				'menuitemradio',
@@ -130,15 +186,9 @@ describe('UpgradeQualityControls', () =>
 			{
 				buttons: [
 					{
-						expanded: null,
-						label: 'Any quality',
-						pressed: 'false',
-						title: 'Any quality',
-					},
-					{
 						expanded: 'false',
 						label: 'Quality comparison: >',
-						pressed: null,
+						pressed: 'false',
 						title: 'Quality comparison: >',
 					},
 					{
@@ -175,6 +225,113 @@ describe('UpgradeQualityControls', () =>
 				comparatorChanges: [['≤']],
 				menu: null,
 				qualityChanges: [['epic']],
+			},
+		);
+	});
+
+	test('cancels the foreground comparator menu without changing the parent picker', async () =>
+	{
+		const user = userEvent.setup();
+		const onComparatorChange = vi.fn<(comparator: QualityComparator) => void>();
+		const onQualityChange = vi.fn<(selection: UpgradeQualitySelection) => void>();
+		render(
+			<div role="dialog" aria-modal="true" aria-label="Signal picker">
+				<UpgradeQualityControls
+					mode="source"
+					onComparatorChange={onComparatorChange}
+					onQualityChange={onQualityChange}
+					qualityComparator="="
+					qualitySelection="rare"
+				/>
+			</div>,
+		);
+
+		const parentPicker = screen.getByRole(
+			'dialog',
+			{
+				name: 'Signal picker',
+			},
+		);
+		await user.click(
+			screen.getByRole(
+				'button',
+				{
+					name: 'Quality comparison: =',
+				},
+			),
+		);
+		expect(parentPicker.inert).toBe(true);
+		fireEvent.keyDown(
+			window,
+			{
+				key: 'Escape',
+			},
+		);
+		await Promise.resolve();
+
+		expect(
+			{
+				comparatorChanges: onComparatorChange.mock.calls,
+				menu: screen.queryByRole(
+					'dialog',
+					{
+						name: 'Quality comparison',
+					},
+				),
+				parentInert: parentPicker.inert,
+				qualityChanges: onQualityChange.mock.calls,
+			},
+		).toStrictEqual(
+			{
+				comparatorChanges: [],
+				menu: null,
+				parentInert: false,
+				qualityChanges: [],
+			},
+		);
+	});
+
+	test('uses the Any sentinel first and restores normal when a comparator is chosen from Any', async () =>
+	{
+		const user = userEvent.setup();
+		const onComparatorChange = vi.fn<(comparator: QualityComparator) => void>();
+		const onQualityChange = vi.fn<(selection: UpgradeQualitySelection) => void>();
+		render(
+			<UpgradeQualityControls
+				mode="source"
+				onComparatorChange={onComparatorChange}
+				onQualityChange={onQualityChange}
+				qualityComparator="="
+				qualitySelection="any"
+			/>,
+		);
+
+		await user.click(
+			screen.getByRole(
+				'button',
+				{
+					name: 'Any quality',
+				},
+			),
+		);
+		await user.click(
+			screen.getByRole(
+				'menuitemradio',
+				{
+					name: '>',
+				},
+			),
+		);
+
+		expect(
+			{
+				comparatorChanges: onComparatorChange.mock.calls,
+				qualityChanges: onQualityChange.mock.calls,
+			},
+		).toStrictEqual(
+			{
+				comparatorChanges: [['>']],
+				qualityChanges: [['normal']],
 			},
 		);
 	});

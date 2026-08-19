@@ -690,6 +690,43 @@ describe('upgrade planner transforms', () =>
 		);
 	});
 
+	test('parses and reserializes unsupported planner metadata without stripping it', () =>
+	{
+		const planner = parseUpgradePlanner(`{
+			upgrade_planner: {
+				item: 'upgrade-planner',
+				label: 'Opaque planner',
+				version: 0,
+				planner_extension: {owner: 'Alice'},
+				settings: {
+					description: 'Description',
+					settings_extension: 42,
+					icons: [{
+						index: 1,
+						signal: {type: 'virtual', name: 'signal-blue', signal_extension: true},
+						icon_extension: 'kept',
+					}],
+					mappers: [{
+						index: 100,
+						from: {type: 'entity', name: 'transport-belt', source_extension: 'kept'},
+						to: {type: 'entity', name: 'fast-transport-belt', target_extension: 'kept'},
+						mapper_extension: ['kept'],
+					}],
+				},
+			},
+		}`);
+
+		expect(
+			parseUpgradePlanner(
+				serializeBlueprint(
+					{
+						upgrade_planner: planner,
+					},
+				),
+			),
+		).toStrictEqual(planner);
+	});
+
 	test.each([
 		{
 			comparator: '=',
@@ -1025,6 +1062,61 @@ describe('upgrade planner transforms', () =>
 						},
 					},
 				],
+			},
+		);
+	});
+
+	test('passes unsupported module settings through the parsed endpoint boundary losslessly', () =>
+	{
+		const parsed = parseUpgradePlanner(`{
+			upgrade_planner: {
+				item: 'upgrade-planner',
+				version: 0,
+				settings: {
+					mappers: [{
+						index: 1,
+						from: {type: 'item', name: 'speed-module', module_limit: 2},
+						to: {
+							type: 'entity',
+							name: 'assembling-machine-3',
+							module_slots: [{name: 'productivity-module'}, {}, {}, {}],
+						},
+					}],
+				},
+			},
+		}`);
+
+		expect(parsed).toStrictEqual(
+			{
+				item: 'upgrade-planner',
+				version: 0,
+				settings:
+				{
+					mappers: [
+						{
+							index: 1,
+							from:
+							{
+								type: 'item',
+								name: 'speed-module',
+								module_limit: 2,
+							},
+							to:
+							{
+								type: 'entity',
+								name: 'assembling-machine-3',
+								module_slots: [
+									{
+										name: 'productivity-module',
+									},
+									{},
+									{},
+									{},
+								],
+							},
+						},
+					],
+				},
 			},
 		);
 	});

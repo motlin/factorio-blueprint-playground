@@ -1,12 +1,12 @@
 import {useNavigate} from '@tanstack/react-router';
-import {useId, useMemo} from 'react';
+import {useMemo, useState} from 'react';
 
 import {BlueprintWrapper} from '../../../../parsing/BlueprintWrapper';
 import {serializeBlueprint} from '../../../../parsing/blueprintParser';
-import type {BlueprintString, SignalID} from '../../../../parsing/types';
+import type {BlueprintString} from '../../../../parsing/types';
+import {db, LIBRARY_ROOT_ID} from '../../../../storage/db';
 import {updateNestedBlueprint} from '../../../../transform/applyAtPath';
 import {blueprintComponentRemovalKey, type BlueprintComponentIdentity} from '../../../../transform/componentRemoval';
-import {blueprintFilterCategories} from '../../../../transform/strip';
 import
 {
 	applyUpgradeRules,
@@ -22,22 +22,31 @@ import {BlueprintToolbelt} from './BlueprintToolbelt';
 import {IconReplacementDialog} from './IconReplacementDialog';
 import {SignalPickerDialog} from './SignalPickerDialog';
 import {UpgradePlannerDialog} from './UpgradePlannerDialog';
-import {pickerSignals, signalIdentity, signalTitle} from './upgradePlannerSignals';
-import {useBlueprintEditorDraft} from './useBlueprintEditorDraft';
-import {UpgradePlannerSelectorDialog, type UpgradePlannerChoice} from './UpgradePlannerSelectorDialog';
+import {chatIconPickerOptions, signalTitle} from './upgradePlannerSignals';
+import {BlueprintEditorSourceMode, useBlueprintEditorDraft} from './useBlueprintEditorDraft';
+import type {UpgradePlannerChoice} from './UpgradePlannerSelectorDialog';
 import {useUpgradePlannerDraft} from './useUpgradePlannerDraft';
 
 interface TransformPanelProps
 {
 	blueprint?: BlueprintString;
+	blueprintEditorSourceMode?: BlueprintEditorSourceMode;
+	capturedOnSpacePlatform?: boolean;
+	onBlueprintCommit?: (committedRoot: BlueprintString) => void;
 	rootBlueprint?: BlueprintString;
 	selectedPath?: string;
 }
 
-export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPath = ''}: TransformPanelProps)
+export function TransformPanel({
+	blueprint,
+	blueprintEditorSourceMode = BlueprintEditorSourceMode.ExistingRecord,
+	capturedOnSpacePlatform = false,
+	onBlueprintCommit,
+	rootBlueprint = blueprint,
+	selectedPath = '',
+}: TransformPanelProps)
 {
 	const navigate = useNavigate();
-	const applicationSelectorId = useId();
 	const upgradeDraft = useUpgradePlannerDraft(
 		{
 			blueprint,
@@ -45,15 +54,22 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 			selectedPath,
 		},
 	);
+	const [plannerSavePromptOpen, setPlannerSavePromptOpen] = useState(false);
+	const [plannerSavePending, setPlannerSavePending] = useState(false);
+	const [plannerSaveMode, setPlannerSaveMode] = useState<'new' | 'updated'>();
 	const
 	{
 		blueprintEditorOpen,
 		closeConfirmationOpen: blueprintCloseConfirmationOpen,
 		closeBlueprintEditor,
+		commitBlueprintEditorDraft,
 		discardBlueprintEditorDraft,
+		editorCommitAction,
+		editorCommitDisabled,
 		editorDescription,
 		editorDirty,
 		editorDraft,
+		editorFilterAnalysis,
 		editorIconPickerIndex,
 		editorIcons,
 		editorLabel,
@@ -78,33 +94,35 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 		setRemovedEditorComponents,
 		setSortBookSelected,
 		setStripEntitiesSelected,
+		setStripFuelSelected,
 		setStripModulesSelected,
+		setStripStationNamesSelected,
 		setStripTilesSelected,
 		setStripTrainsSelected,
+		setStripVehiclesSelected,
 		sortBookSelected,
 		stripEntitiesSelected,
+		stripFuelSelected,
 		stripModulesSelected,
+		stripStationNamesSelected,
 		stripTilesSelected,
 		stripTrainsSelected,
+		stripVehiclesSelected,
 	} = useBlueprintEditorDraft(
 		{
 			blueprint,
 			rootBlueprint,
 			selectedPath,
+			capturedOnSpacePlatform,
+			sourceMode: blueprintEditorSourceMode,
 		},
 	);
 
 	const type = blueprint === undefined ? undefined : new BlueprintWrapper(blueprint).getType();
-	const editorIconOptions = useMemo(() =>
-	{
-		const options = new Map<string, SignalID>();
-		for (const signal of [...pickerSignals, ...upgradeDraft.sourceOptions, ...editorIcons])
-		{
-			options.set(signalIdentity(signal), signal);
-		}
-		return [...options.values()];
-	}, [editorIcons, upgradeDraft.sourceOptions]);
-	const editorFilters = useMemo(() => blueprintFilterCategories(blueprint ?? {}), [blueprint]);
+	const editorIconOptions = useMemo(
+		() => chatIconPickerOptions([...upgradeDraft.sourceOptions, ...editorIcons]),
+		[editorIcons, upgradeDraft.sourceOptions],
+	);
 	const editorDraftBlueprint = editorDraft.rootBlueprint;
 	if (blueprint === undefined || type === 'deconstruction-planner')
 	{
@@ -136,7 +154,6 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 	const commitBlueprint = (committedBlueprint: BlueprintString) =>
 	{
 		closeBlueprintEditor();
-		upgradeDraft.closeApplicationSelector();
 		upgradeDraft.closeIconReplacement();
 		upgradeDraft.closePlanner();
 		void navigate(
@@ -150,17 +167,24 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 			},
 		);
 	};
+	const commitBlueprintEditor = () =>
+	{
+		const committedRoot = commitBlueprintEditorDraft();
+		upgradeDraft.closeIconReplacement();
+		upgradeDraft.closePlanner();
+		if (onBlueprintCommit === undefined)
+		{
+			commitBlueprint(committedRoot);
+			return;
+		}
+		onBlueprintCommit(committedRoot);
+	};
 	const applyPlannerChoice = (
 		choice: UpgradePlannerChoice,
 		direction: UpgradeDirection,
 		targetRoot: BlueprintString,
 	) =>
 	{
-		if (choice.source === upgradeDraft.savedPlannerChoice?.source)
-		{
-			commitBlueprint(upgradeDraft.applySavedPlanner(targetRoot, direction));
-			return;
-		}
 		const rules =
 			choice.source === 'suggested'
 				? builtInUpgradeRules(direction)
@@ -179,6 +203,55 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 			throw new Error('The selected blueprint no longer exists in the root book.');
 		}
 		commitBlueprint(transformedRoot);
+	};
+	const savePlannerAsNewLibraryRecord = async () =>
+	{
+		setPlannerSavePending(true);
+		try
+		{
+			const siblings = await db.listLibraryChildren(LIBRARY_ROOT_ID);
+			const record = await db.saveLibraryCopy(
+				{
+					...upgradeDraft.libraryRecordContent(),
+					destination:
+					{
+						parentId: LIBRARY_ROOT_ID,
+						position: siblings.reduce((next, record) => Math.max(next, record.position + 1), 0),
+					},
+				},
+			);
+			upgradeDraft.onLibraryRecordSaved(record);
+			setPlannerSaveMode('new');
+			setPlannerSavePromptOpen(false);
+		}
+		finally
+		{
+			setPlannerSavePending(false);
+		}
+	};
+	const updateExistingPlannerLibraryRecord = async () =>
+	{
+		if (upgradeDraft.libraryRecordId === undefined)
+		{
+			throw new Error('No existing Blueprint Library planner is loaded.');
+		}
+		setPlannerSavePending(true);
+		try
+		{
+			const record = await db.updateLibraryRecord(
+				{
+					id: upgradeDraft.libraryRecordId,
+					content: upgradeDraft.libraryRecordContent(),
+				},
+			);
+			upgradeDraft.onLibraryRecordSaved(record);
+			setPlannerSaveMode('updated');
+			setPlannerSavePromptOpen(false);
+		}
+		finally
+		{
+			setPlannerSavePending(false);
+		}
 	};
 	const applyPlannerFromBlueprintEditor = (choice: UpgradePlannerChoice, direction: UpgradeDirection) =>
 	{
@@ -232,28 +305,63 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 						rootBlueprint: rootBlueprint ?? blueprint,
 					}}
 					matchCount={upgradeDraft.matchCount}
+					onApply={(direction) =>
+					{
+						commitBlueprint(upgradeDraft.applyDraftPlanner(rootBlueprint ?? blueprint, direction));
+					}}
 					onClose={upgradeDraft.requestClosePlanner}
-					onSave={upgradeDraft.savePlanner}
 					onScopeChange={upgradeDraft.onScopeChange}
 					replacements={upgradeDraft.replacements}
+					recordMetadata={upgradeDraft.recordMetadata}
 					saveDisabled={upgradeDraft.saveDisabled}
+					savePrompt={
+					{
+						existingRecordName:
+							upgradeDraft.savedLibraryRecord === undefined
+								? undefined
+								: (upgradeDraft.savedLibraryRecord.gameData.label ?? upgradeDraft.mappings.sourceLabel),
+						label: upgradeDraft.recordMetadata.label.trim(),
+						onCancel: () =>
+						{
+							setPlannerSavePromptOpen(false);
+						},
+						onOpen: () =>
+						{
+							setPlannerSavePromptOpen(true);
+						},
+						onSaveAsNew: () =>
+						{
+							void savePlannerAsNewLibraryRecord();
+						},
+						onUpdateExisting:
+							upgradeDraft.libraryRecordId === undefined
+								? undefined
+								: () =>
+									{
+										void updateExistingPlannerLibraryRecord();
+									},
+						open: plannerSavePromptOpen,
+						pending: plannerSavePending,
+					}}
+					savedRecordName={
+						upgradeDraft.savedLibraryRecord === undefined
+							? undefined
+							: (upgradeDraft.savedLibraryRecord.gameData.label ?? upgradeDraft.mappings.sourceLabel)
+					}
+					savedLibraryMessage={
+						upgradeDraft.savedLibraryRecord === undefined || plannerSaveMode === undefined
+							? undefined
+							: `${plannerSaveMode === 'new' ? 'Saved' : 'Updated'} “${
+									upgradeDraft.savedLibraryRecord.gameData.label ?? 'Untitled upgrade planner'
+								}” ${
+									plannerSaveMode === 'new'
+										? 'in Blueprint Library › Root shelf.'
+										: 'in its Blueprint Library destination.'
+								}`
+					}
 					scope={upgradeDraft.scope}
 					selectionScopeDisabled={type === 'upgrade-planner'}
 					selectionScopeLabel={canChooseRootScope ? 'This selection' : 'This blueprint or book'}
-				/>
-			) : null}
-			{upgradeDraft.applicationSelectorOpen && upgradeDraft.savedPlannerChoice !== undefined ? (
-				<UpgradePlannerSelectorDialog
-					dialogId={applicationSelectorId}
-					includeEditingChoices={false}
-					onChoose={(choice, direction) =>
-					{
-						applyPlannerChoice(choice, direction, rootBlueprint ?? blueprint);
-					}}
-					onClose={upgradeDraft.closeApplicationSelector}
-					rootBlueprint={rootBlueprint ?? blueprint}
-					selectedSource={upgradeDraft.savedPlannerChoice.source}
-					sessionChoice={upgradeDraft.savedPlannerChoice}
 				/>
 			) : null}
 			{blueprintEditorOpen ? (
@@ -262,11 +370,11 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 					book={type === 'blueprint-book'}
 					bookOperationSelected={hasSelectedBookOperation}
 					breadcrumb={editorBreadcrumb}
+					commitAction={editorCommitAction}
+					commitDisabled={editorCommitDisabled}
 					description={editorDescription}
-					dirty={editorDirty}
-					draftBlueprint={editorDraft.selectedBlueprint}
 					closeConfirmationOpen={blueprintCloseConfirmationOpen}
-					filters={editorFilters}
+					filterAnalysis={editorFilterAnalysis}
 					flattenBookSelected={flattenBookSelected}
 					icons={
 						<BlueprintLabelIcons
@@ -291,6 +399,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 						setEditorPlacedPlanner(undefined);
 						setEditorPlannerDropError(undefined);
 					}}
+					onCommit={commitBlueprintEditor}
 					onComponentRemovedChange={(component: BlueprintComponentIdentity, removed) =>
 					{
 						setRemovedEditorComponents((current) =>
@@ -315,12 +424,20 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 					{
 						setStripEntitiesSelected(!included);
 					}}
+					onFuelIncludedChange={(included) =>
+					{
+						setStripFuelSelected(!included);
+					}}
 					onFlattenBookSelectedChange={setFlattenBookSelected}
 					onLabelChange={setEditorLabel}
 					onKeepEditing={keepEditingBlueprint}
 					onModulesIncludedChange={(included) =>
 					{
 						setStripModulesSelected(!included);
+					}}
+					onStationNamesIncludedChange={(included) =>
+					{
+						setStripStationNamesSelected(!included);
 					}}
 					onParametersChange={setEditorParameters}
 					onPlannerPlace={(choice, direction) =>
@@ -333,12 +450,6 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 						);
 						setEditorPlannerDropError(undefined);
 					}}
-					onSaved={() =>
-					{
-						closeBlueprintEditor();
-						upgradeDraft.closeIconReplacement();
-						upgradeDraft.closePlanner();
-					}}
 					onSnapGridChange={setEditorSnapGrid}
 					onSortBookSelectedChange={setSortBookSelected}
 					onTilesIncludedChange={(included) =>
@@ -349,20 +460,26 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 					{
 						setStripTrainsSelected(!included);
 					}}
+					onVehiclesIncludedChange={(included) =>
+					{
+						setStripVehiclesSelected(!included);
+					}}
 					parameters={editorParameters}
 					plannerDropError={editorPlannerDropError}
 					placedPlanner={editorPlacedPlanner}
 					rootBlueprint={rootBlueprint ?? blueprint}
 					removedComponents={removedEditorComponents}
-					selectedPath={selectedPath}
 					sessionPlanner={upgradeDraft.savedPlannerChoice}
 					signalOptions={editorIconOptions}
 					snapGrid={editorSnapGrid}
 					sortBookSelected={sortBookSelected}
 					stripEntitiesSelected={stripEntitiesSelected}
+					stripFuelSelected={stripFuelSelected}
 					stripModulesSelected={stripModulesSelected}
+					stripStationNamesSelected={stripStationNamesSelected}
 					stripTilesSelected={stripTilesSelected}
 					stripTrainsSelected={stripTrainsSelected}
+					stripVehiclesSelected={stripVehiclesSelected}
 				/>
 			) : null}
 			{upgradeDraft.discardConfirmationOpen ? (
@@ -394,6 +511,7 @@ export function TransformPanel({blueprint, rootBlueprint = blueprint, selectedPa
 			) : null}
 			{editorIconPickerIndex === undefined ? null : (
 				<SignalPickerDialog
+					confirmationMode="required"
 					initialSignal={editorIcons[editorIconPickerIndex]}
 					title={`Choose label icon ${(editorIconPickerIndex + 1).toString()}`}
 					options={editorIconOptions}
