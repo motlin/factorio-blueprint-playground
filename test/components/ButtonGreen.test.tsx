@@ -16,12 +16,16 @@ describe('ButtonGreen Component', () => {
 
 		const button = container.firstChild as HTMLButtonElement;
 		expect({
+			alignItems: button.style.alignItems,
 			className: button.className,
+			display: button.style.display,
 			tagName: button.tagName,
 			textContent: button.textContent,
 			type: button.type,
 		}).toStrictEqual({
-			className: 'factorio-button factorio-button--confirm',
+			alignItems: 'center',
+			className: 'button-green-right ',
+			display: 'inline-flex',
 			tagName: 'BUTTON',
 			textContent: 'Test Button',
 			type: 'button',

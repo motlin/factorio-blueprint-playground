@@ -2,6 +2,8 @@ import type {Meta, StoryObj} from '@storybook/react-vite';
 import {fn} from 'storybook/test';
 
 import type {BlueprintString} from '../../../../parsing/types';
+import {BlueprintEditorSourceMode} from '../../../../transform/blueprintEditor';
+import {blueprintFilterAnalysis} from '../../../../transform/strip';
 import {BlueprintEditorDialog} from './BlueprintEditorDialog';
 import {BlueprintLabelIcons} from './BlueprintLabelIcons';
 import {transformStoryParameters} from './transformStoryParameters';
@@ -30,10 +32,13 @@ const meta = {
 		bookOperationSelected: false,
 		breadcrumb: 'Root blueprint',
 		closeConfirmationOpen: false,
+		commitAction: {
+			caption: 'Save Blueprint',
+			scopeDescription: 'Commits changes to the existing blueprint record.',
+		},
+		commitDisabled: true,
 		description: blueprint.blueprint?.description ?? '',
-		dirty: false,
-		draftBlueprint: blueprint,
-		filters: {entities: true, modules: false, tiles: true, trains: false},
+		filterAnalysis: blueprintFilterAnalysis(blueprint, BlueprintEditorSourceMode.ExistingRecord),
 		flattenBookSelected: false,
 		icons: (
 			<BlueprintLabelIcons
@@ -48,34 +53,39 @@ const meta = {
 		onClearPlacedPlanner: fn(),
 		onClose: fn(),
 		onComponentRemovedChange: fn(),
+		onCommit: fn(),
 		onDescriptionChange: fn(),
 		onDiscard: fn(),
 		onDropPlanner: fn(),
 		onEntitiesIncludedChange: fn(),
+		onFuelIncludedChange: fn(),
 		onFlattenBookSelectedChange: fn(),
 		onKeepEditing: fn(),
 		onLabelChange: fn(),
 		onModulesIncludedChange: fn(),
+		onStationNamesIncludedChange: fn(),
 		onParametersChange: fn(),
 		onPlannerPlace: fn(),
-		onSaved: fn(),
 		onSnapGridChange: fn(),
 		onSortBookSelectedChange: fn(),
 		onTilesIncludedChange: fn(),
 		onTrainsIncludedChange: fn(),
+		onVehiclesIncludedChange: fn(),
 		parameters: [],
 		plannerDropError: undefined,
 		placedPlanner: undefined,
 		removedComponents: new Set(),
 		rootBlueprint: blueprint,
-		selectedPath: '',
 		signalOptions: [{type: 'item', name: 'iron-plate'}],
 		snapGrid: undefined,
 		sortBookSelected: false,
 		stripEntitiesSelected: false,
+		stripFuelSelected: false,
 		stripModulesSelected: false,
+		stripStationNamesSelected: false,
 		stripTilesSelected: false,
 		stripTrainsSelected: false,
+		stripVehiclesSelected: false,
 	},
 	parameters: transformStoryParameters,
 	tags: ['autodocs'],

@@ -53,6 +53,7 @@ export const Route = createFileRoute('/')({
 					icons: (info.icons ?? []).map((icon) => ({
 						type: icon.signal.type,
 						name: icon.signal.name,
+						...(icon.signal.quality === undefined ? {} : {quality: icon.signal.quality}),
 					})),
 				};
 

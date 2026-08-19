@@ -176,7 +176,7 @@ export function BlueprintEditorToolbar({
 							onOpenParameterization();
 						}}
 					>
-						<FactorioIcon icon={{type: 'item', name: 'parameter-'}} size="large" />
+						<FactorioIcon icon={{type: 'virtual-signal', name: 'signal-item-parameter'}} size="large" />
 					</FactorioButton>
 					<FactorioTooltip id={parameterizationTooltipId} className="factorio-toolbar-tooltip">
 						Parametrise/reconfigure the blueprint.

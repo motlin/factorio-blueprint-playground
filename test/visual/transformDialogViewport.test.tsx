@@ -22,23 +22,20 @@ function renderPlannerHtml(): string {
 			breadcrumb="Root blueprint"
 			canChooseRootScope={false}
 			mappings={{
-				candidates: [
+				mappings: [
 					{
 						count: 1,
 						from: {type: 'entity', name: 'transport-belt'},
-						preserveQuality: true,
+						mappingId: 'mapping-belt',
 						slotIndex: 0,
 						to: {type: 'entity', name: 'fast-transport-belt'},
 					},
 				],
 				error: undefined,
-				excludedSources: new Set(),
-				manualRules: [],
-				onAddManualRule: noop,
-				onChangeManualRule: noop,
+				onClearEndpoint: noop,
 				onPlannerLoad: noop,
 				onPlannerInputChange: noop,
-				onRemoveRule: noop,
+				onSourceChange: noop,
 				onTargetChange: noop,
 				plannerInput: '',
 				rootBlueprint,
@@ -50,8 +47,8 @@ function renderPlannerHtml(): string {
 				],
 			}}
 			matchCount={1}
+			onApply={noop}
 			onClose={noop}
-			onSave={noop}
 			onScopeChange={noop}
 			replacements={{
 				iconMappingCount: 0,
@@ -65,7 +62,23 @@ function renderPlannerHtml(): string {
 				onTextReplacementEnabledChange: noop,
 				textReplacementEnabled: false,
 			}}
+			recordMetadata={{
+				description: '',
+				icons: [],
+				label: 'Default Upgrade',
+				onDescriptionChange: noop,
+				onIconsChange: noop,
+				onLabelChange: noop,
+			}}
 			saveDisabled={false}
+			savePrompt={{
+				label: 'Default Upgrade',
+				onCancel: noop,
+				onOpen: noop,
+				onSaveAsNew: noop,
+				open: false,
+				pending: false,
+			}}
 			scope="selection"
 			selectionScopeDisabled={false}
 			selectionScopeLabel="Selected blueprint"

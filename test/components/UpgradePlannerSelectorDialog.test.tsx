@@ -1,4 +1,4 @@
-import {fireEvent, render, screen, within} from '@testing-library/react';
+import {act, fireEvent, render, screen, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {beforeEach, describe, expect, test, vi} from 'vite-plus/test';
 
@@ -6,30 +6,31 @@ import {
 	UpgradePlannerSelectorDialog,
 	type UpgradePlannerChoice,
 } from '../../src/components/blueprint/panels/transform/UpgradePlannerSelectorDialog';
+import {BLUEPRINT_RECORD_VIEW_STORAGE_KEY} from '../../src/components/library/blueprintRecordModel';
 import {serializeBlueprint} from '../../src/parsing/blueprintParser';
 import type {BlueprintString, UpgradePlanner} from '../../src/parsing/types';
-import type {DatabaseBlueprint} from '../../src/storage/db';
+import {LIBRARY_ROOT_ID, type LibraryRecord} from '../../src/storage/db';
 import {parseUpgradePlanner, type UpgradeDirection} from '../../src/transform/upgradePlanner';
 import upgradePlannerFixture from '../fixtures/blueprints/json/upgrade.json';
 
 const mocks = vi.hoisted(() => ({
-	historyBlueprints: [] as DatabaseBlueprint[],
-	serializationCount: 0,
+	libraryRecords: [] as LibraryRecord[],
 }));
 
 vi.mock('dexie-react-hooks', () => ({
-	useLiveQuery: () => mocks.historyBlueprints,
+	useLiveQuery: () => mocks.libraryRecords,
 }));
-vi.mock('../../src/parsing/blueprintParser', async (importOriginal) => {
-	const original = await importOriginal<typeof import('../../src/parsing/blueprintParser')>();
-	return {
-		...original,
-		serializeBlueprint: (...parameters: Parameters<typeof original.serializeBlueprint>) => {
-			mocks.serializationCount += 1;
-			return original.serializeBlueprint(...parameters);
-		},
-	};
-});
+
+const storedPreferences = new Map<string, string>();
+const localStorage = {
+	clear: () => {
+		storedPreferences.clear();
+	},
+	getItem: (key: string) => storedPreferences.get(key) ?? null,
+	setItem: (key: string, value: string) => {
+		storedPreferences.set(key, value);
+	},
+};
 
 const fixturePlanner: UpgradePlanner = {
 	...parseUpgradePlanner(JSON.stringify(upgradePlannerFixture)),
@@ -57,69 +58,268 @@ const rootBlueprint: BlueprintString = {
 	},
 };
 
-function storedPlanner(sha: string, planner: UpgradePlanner, label: string, lastUpdatedOn: number): DatabaseBlueprint {
+function storedPlanner(
+	id: string,
+	planner: UpgradePlanner,
+	label: string,
+	description: string,
+	position: number,
+	parentId = LIBRARY_ROOT_ID,
+): LibraryRecord {
 	return {
-		metadata: {
-			sha,
-			createdOn: 0,
-			lastUpdatedOn,
-			data: serializeBlueprint({upgrade_planner: planner}),
-			fetchMethod: 'data',
-		},
-		gameData: {type: 'upgrade_planner', label, icons: []},
+		id,
+		createdOn: 0,
+		updatedOn: 0,
+		data: serializeBlueprint({upgrade_planner: planner}),
+		gameData: {type: 'upgrade_planner', label, description, icons: []},
+		parentId,
+		position,
 	};
 }
 
-describe('UpgradePlannerSelectorDialog', () => {
+function renderApplySelector(selectedSource = 'suggested') {
+	const onChoose = vi.fn<(choice: UpgradePlannerChoice, direction: UpgradeDirection) => void>();
+	const onClose = vi.fn<() => void>();
+	const rendered = render(
+		<UpgradePlannerSelectorDialog
+			dialogId="upgrade-planner-selector"
+			includeEditingChoices={false}
+			rootBlueprint={rootBlueprint}
+			selectedSource={selectedSource}
+			onChoose={onChoose}
+			onClose={onClose}
+		/>,
+	);
+	return {onChoose, onClose, ...rendered};
+}
+
+function visiblePlannerNames(): Array<string | null> {
+	return within(screen.getByRole('region', {name: 'Upgrade planners'}))
+		.queryAllByRole('button')
+		.map((button) => button.getAttribute('aria-label'));
+}
+
+describe('UpgradePlannerSelectorDialog golden apply-only source contracts', () => {
 	beforeEach(() => {
-		mocks.historyBlueprints = [
-			storedPlanner('sha-100', fixturePlanner, 'Duplicate fixture planner', 1000),
-			storedPlanner('sha-200', zeroMatchPlanner, 'Zero-match history planner', 0),
+		Object.defineProperty(window, 'localStorage', {configurable: true, value: localStorage});
+		window.localStorage.clear();
+		mocks.libraryRecords = [
+			storedPlanner(
+				'planner-alice',
+				fixturePlanner,
+				'Nested belt planner',
+				'Upgrades every transport belt in the factory.',
+				0,
+				'nested-book',
+			),
+			storedPlanner(
+				'planner-bob',
+				zeroMatchPlanner,
+				'Zero-match library planner',
+				'Module rules with no matches in the open blueprint.',
+				1,
+			),
 		];
-		mocks.serializationCount = 0;
 	});
 
-	test('reuses serialized planners while focus and session choices change', async () => {
+	test('searches saved planner labels and descriptions while hiding Default Upgrade', async () => {
 		const user = userEvent.setup();
-		const properties = {
-			dialogId: 'upgrade-planner-selector',
-			includeEditingChoices: false,
-			onChoose: vi.fn<(choice: UpgradePlannerChoice, direction: UpgradeDirection) => void>(),
-			onClose: vi.fn<() => void>(),
-			rootBlueprint,
-			selectedSource: 'suggested',
-		};
-		const {rerender} = render(<UpgradePlannerSelectorDialog {...properties} />);
-		const serializationsAfterRender = mocks.serializationCount;
-
-		await user.keyboard('{ArrowRight}{ArrowRight}{ArrowLeft}');
-		rerender(
-			<UpgradePlannerSelectorDialog
-				{...properties}
-				sessionChoice={{
-					label: 'Saved Upgrade Planner',
-					planner: zeroMatchPlanner,
-					source: 'session:saved-upgrade-planner',
-				}}
-			/>,
-		);
+		renderApplySelector();
+		const search = screen.getByRole('searchbox', {name: 'Search upgrade planners'});
+		const dialog = screen.getByRole('dialog', {name: 'Select the upgrade planner to apply'});
+		const instructions = document.getElementById(dialog.getAttribute('aria-describedby') ?? '');
 
 		expect({
-			activeElement: document.activeElement?.getAttribute('aria-label'),
-			serializations: {
-				afterFocusAndSessionChanges: mocks.serializationCount,
-				afterRender: serializationsAfterRender,
+			editingChoices: {
+				empty: screen.queryByRole('button', {name: 'Empty Planner'}),
+				paste: screen.queryByRole('button', {name: 'Paste upgrade planner…'}),
 			},
+			initial: visiblePlannerNames(),
+			instructions: instructions?.textContent,
 		}).toStrictEqual({
-			activeElement: 'Default Upgrade',
-			serializations: {
-				afterFocusAndSessionChanges: 3,
-				afterRender: 3,
-			},
+			editingChoices: {empty: null, paste: null},
+			initial: ['Default Upgrade', 'Nested belt planner', 'Zero-match library planner'],
+			instructions:
+				'Left-click to apply as upgrade. Right-click to apply as downgrade. Enter applies as upgrade; Shift+Enter applies as downgrade.',
+		});
+
+		await user.type(search, 'transport belt');
+		expect(visiblePlannerNames()).toStrictEqual(['Nested belt planner']);
+
+		await user.clear(search);
+		await user.type(search, 'ZERO-MATCH');
+		expect(visiblePlannerNames()).toStrictEqual(['Zero-match library planner']);
+
+		await user.clear(search);
+		await user.type(search, 'Default Upgrade');
+		expect({
+			defaultPlanner: screen.queryByRole('button', {name: 'Default Upgrade'}),
+			status: screen.getByRole('status').textContent,
+		}).toStrictEqual({
+			defaultPlanner: null,
+			status: 'No upgrade planners match “Default Upgrade”.',
 		});
 	});
 
-	test('shows every load source once in an inventory grid', () => {
+	test('discovers nested saved records and retains planners with no applicable mappings', () => {
+		renderApplySelector('library:planner-bob');
+
+		const buttons = within(screen.getByRole('region', {name: 'Upgrade planners'})).getAllByRole('button');
+		expect({
+			activeElement: document.activeElement?.getAttribute('aria-label'),
+			buttons: buttons.map((button) => ({
+				keyboardAlternative: button.getAttribute('aria-keyshortcuts'),
+				label: button.getAttribute('aria-label'),
+			})),
+			unsavedBookPlanner: screen.queryByRole('button', {name: "Alice's fixture belt upgrades"}),
+		}).toStrictEqual({
+			activeElement: 'Zero-match library planner',
+			buttons: [
+				{keyboardAlternative: 'Shift+Enter', label: 'Default Upgrade'},
+				{keyboardAlternative: 'Shift+Enter', label: 'Nested belt planner'},
+				{keyboardAlternative: 'Shift+Enter', label: 'Zero-match library planner'},
+			],
+			unsavedBookPlanner: null,
+		});
+	});
+
+	test('reuses the persistent library list, grid, and slot presentations', async () => {
+		const user = userEvent.setup();
+		const {unmount} = renderApplySelector();
+		const initialDialog = screen.getByRole('dialog', {name: 'Select the upgrade planner to apply'});
+
+		expect({
+			activeElement: document.activeElement?.getAttribute('aria-label'),
+			dialog: {
+				ariaHidden: initialDialog.getAttribute('aria-hidden'),
+				inert: initialDialog.inert,
+				modal: initialDialog.getAttribute('aria-modal'),
+			},
+			listClass: screen.getByRole('list').className,
+		}).toStrictEqual({
+			activeElement: 'Default Upgrade',
+			dialog: {ariaHidden: null, inert: false, modal: 'true'},
+			listClass: 'blueprint-record-views__items blueprint-record-views__items--list',
+		});
+		await user.click(screen.getByRole('button', {name: 'Grid view'}));
+		expect(screen.getByRole('list').className).toBe(
+			'blueprint-record-views__items blueprint-record-views__items--grid',
+		);
+		await user.click(screen.getByRole('button', {name: 'Slot view'}));
+		expect({
+			persisted: window.localStorage.getItem(BLUEPRINT_RECORD_VIEW_STORAGE_KEY),
+			slotListClass: screen.getByRole('list').className,
+			slotText: screen
+				.getByRole('button', {name: 'Nested belt planner'})
+				.querySelector('.blueprint-record-item__text'),
+		}).toStrictEqual({
+			persisted: 'slots',
+			slotListClass: 'blueprint-record-views__items blueprint-record-views__items--slots',
+			slotText: null,
+		});
+
+		unmount();
+		renderApplySelector();
+		const restoredDialog = screen.getByRole('dialog', {name: 'Select the upgrade planner to apply'});
+		expect({
+			activeElement: document.activeElement?.getAttribute('aria-label'),
+			dialog: {
+				ariaHidden: restoredDialog.getAttribute('aria-hidden'),
+				inert: restoredDialog.inert,
+				modal: restoredDialog.getAttribute('aria-modal'),
+			},
+			listClass: screen.getByRole('list').className,
+		}).toStrictEqual({
+			activeElement: 'Default Upgrade',
+			dialog: {ariaHidden: null, inert: false, modal: 'true'},
+			listClass: 'blueprint-record-views__items blueprint-record-views__items--slots',
+		});
+	});
+
+	test('applies upgrade on left click and downgrade on right click in the apply-only selector', async () => {
+		const user = userEvent.setup();
+		const {onChoose, onClose} = renderApplySelector();
+		const defaultPlanner = screen.getByRole('button', {name: 'Default Upgrade'});
+		const nestedPlanner = screen.getByRole('button', {name: 'Nested belt planner'});
+		const zeroMatchPlannerButton = screen.getByRole('button', {name: 'Zero-match library planner'});
+		const dialog = screen.getByRole('dialog', {name: 'Select the upgrade planner to apply'});
+
+		expect({
+			activeElement: document.activeElement?.getAttribute('aria-label'),
+			dialog: {
+				ariaHidden: dialog.getAttribute('aria-hidden'),
+				inert: dialog.inert,
+				modal: dialog.getAttribute('aria-modal'),
+			},
+		}).toStrictEqual({
+			activeElement: 'Default Upgrade',
+			dialog: {ariaHidden: null, inert: false, modal: 'true'},
+		});
+
+		await user.click(defaultPlanner);
+		const contextMenuAllowed = fireEvent.contextMenu(nestedPlanner);
+		act(() => {
+			zeroMatchPlannerButton.focus();
+		});
+		await user.keyboard('{Enter}');
+		await user.keyboard('{Shift>}{Enter}{/Shift}');
+
+		expect({
+			closes: onClose.mock.calls,
+			contextMenuAllowed,
+			selections: onChoose.mock.calls,
+		}).toStrictEqual({
+			closes: [[], [], [], []],
+			contextMenuAllowed: false,
+			selections: [
+				[{label: 'Default Upgrade', source: 'suggested'}, 'upgrade'],
+				[
+					{
+						label: 'Nested belt planner',
+						planner: fixturePlanner,
+						source: 'library:planner-alice',
+					},
+					'downgrade',
+				],
+				[
+					{
+						label: 'Zero-match library planner',
+						planner: zeroMatchPlanner,
+						source: 'library:planner-bob',
+					},
+					'upgrade',
+				],
+				[
+					{
+						label: 'Zero-match library planner',
+						planner: zeroMatchPlanner,
+						source: 'library:planner-bob',
+					},
+					'downgrade',
+				],
+			],
+		});
+	});
+
+	test('dismisses without applying from Escape and the close button', async () => {
+		const user = userEvent.setup();
+		const firstRender = renderApplySelector();
+		await user.keyboard('{Escape}');
+		expect({
+			closes: firstRender.onClose.mock.calls,
+			selections: firstRender.onChoose.mock.calls,
+		}).toStrictEqual({closes: [[]], selections: []});
+
+		firstRender.unmount();
+		const secondRender = renderApplySelector();
+		await user.click(screen.getByRole('button', {name: 'Close upgrade planner selector'}));
+		expect({
+			closes: secondRender.onClose.mock.calls,
+			selections: secondRender.onChoose.mock.calls,
+		}).toStrictEqual({closes: [[]], selections: []});
+	});
+
+	test('preserves the editor Load selector choices and non-directional tiles', () => {
 		render(
 			<UpgradePlannerSelectorDialog
 				dialogId="upgrade-planner-selector"
@@ -132,126 +332,18 @@ describe('UpgradePlannerSelectorDialog', () => {
 		);
 
 		const tiles = within(screen.getByRole('grid', {name: 'Upgrade planners'})).getAllByRole('button');
-		const instructions = document.getElementById(tiles[0].getAttribute('aria-describedby') ?? '');
-		if (instructions === null) {
-			throw new Error('Expected selector instructions.');
-		}
-		expect({
-			activeElement: document.activeElement?.getAttribute('aria-label'),
-			heading: screen.getByRole('heading', {name: 'Load an upgrade planner'}).textContent,
-			instructions: instructions.textContent,
-			tiles: tiles.map((tile) => ({
-				describedBy: tile.getAttribute('aria-describedby'),
-				icon: tile.querySelector('img')?.getAttribute('src'),
+		expect(
+			tiles.map((tile) => ({
+				keyboardAlternative: tile.getAttribute('aria-keyshortcuts'),
 				label: tile.getAttribute('aria-label'),
-				pressed: tile.getAttribute('aria-pressed'),
-				tabIndex: tile.tabIndex,
-				title: tile.title,
 			})),
-		}).toStrictEqual({
-			activeElement: 'Default Upgrade',
-			heading: 'Load an upgrade planner',
-			instructions: 'Choose a planner to copy all of its mappings into the editable draft.',
-			tiles: [
-				{
-					describedBy: instructions.id,
-					icon: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
-					label: 'Default Upgrade',
-					pressed: 'true',
-					tabIndex: 0,
-					title: 'Default Upgrade',
-				},
-				{
-					describedBy: instructions.id,
-					icon: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
-					label: "Alice's fixture belt upgrades",
-					pressed: 'false',
-					tabIndex: -1,
-					title: "Alice's fixture belt upgrades",
-				},
-				{
-					describedBy: instructions.id,
-					icon: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
-					label: 'Zero-match module planner',
-					pressed: 'false',
-					tabIndex: -1,
-					title: 'Zero-match module planner',
-				},
-				{
-					describedBy: instructions.id,
-					icon: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
-					label: 'Empty planner',
-					pressed: 'false',
-					tabIndex: -1,
-					title: 'Empty planner',
-				},
-				{
-					describedBy: instructions.id,
-					icon: 'https://factorio-icon-cdn.pages.dev/item/upgrade-planner.webp',
-					label: 'Paste upgrade planner…',
-					pressed: 'false',
-					tabIndex: -1,
-					title: 'Paste upgrade planner…',
-				},
-			],
-		});
-	});
-
-	test('applies pointer and keyboard gestures in their exact directions', async () => {
-		const user = userEvent.setup();
-		const onChoose = vi.fn<(choice: UpgradePlannerChoice, direction: UpgradeDirection) => void>();
-		render(
-			<UpgradePlannerSelectorDialog
-				dialogId="upgrade-planner-selector"
-				includeEditingChoices={false}
-				rootBlueprint={rootBlueprint}
-				selectedSource="suggested"
-				onChoose={onChoose}
-				onClose={vi.fn<() => void>()}
-			/>,
-		);
-
-		const defaultPlanner = screen.getByRole('button', {name: /Default Upgrade/});
-		const fixturePlannerButton = screen.getByRole('button', {name: /Alice's fixture belt upgrades/});
-		const zeroMatchPlannerButton = screen.getByRole('button', {name: /Zero-match module planner/});
-		await user.click(defaultPlanner);
-		const contextMenuAllowed = fireEvent.contextMenu(fixturePlannerButton);
-		zeroMatchPlannerButton.focus();
-		await user.keyboard('{Enter}');
-		await user.keyboard('{Shift>}{Enter}{/Shift}');
-
-		expect({
-			contextMenuAllowed,
-			selections: onChoose.mock.calls,
-		}).toStrictEqual({
-			contextMenuAllowed: false,
-			selections: [
-				[{label: 'Default Upgrade', source: 'suggested'}, 'upgrade'],
-				[
-					{
-						label: "Alice's fixture belt upgrades",
-						planner: fixturePlanner,
-						source: 'book:1',
-					},
-					'downgrade',
-				],
-				[
-					{
-						label: 'Zero-match module planner',
-						planner: zeroMatchPlanner,
-						source: 'history:sha-200',
-					},
-					'upgrade',
-				],
-				[
-					{
-						label: 'Zero-match module planner',
-						planner: zeroMatchPlanner,
-						source: 'history:sha-200',
-					},
-					'downgrade',
-				],
-			],
-		});
+		).toStrictEqual([
+			{keyboardAlternative: null, label: 'Default Upgrade'},
+			{keyboardAlternative: null, label: "Alice's fixture belt upgrades"},
+			{keyboardAlternative: null, label: 'Nested belt planner'},
+			{keyboardAlternative: null, label: 'Zero-match library planner'},
+			{keyboardAlternative: null, label: 'Empty Planner'},
+			{keyboardAlternative: null, label: 'Paste upgrade planner…'},
+		]);
 	});
 });

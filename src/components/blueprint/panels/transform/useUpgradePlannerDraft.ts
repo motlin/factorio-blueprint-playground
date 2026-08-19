@@ -1,8 +1,15 @@
-import {useMemo, useState} from 'react';
+import {useMemo, useRef, useState} from 'react';
 
-import gameData from '../../../../generated/game-data.json';
-import {extractNames} from '../../../../parsing/modDetection/nameExtractor';
-import type {BlueprintString, SignalID, UpgradePlanner, UpgradeSourceSignal} from '../../../../parsing/types';
+import {serializeBlueprint} from '../../../../parsing/blueprintParser';
+import type {
+	BlueprintString,
+	Icon,
+	SignalID,
+	UpgradeMapping,
+	UpgradePlanner,
+	UpgradeSourceSignal,
+} from '../../../../parsing/types';
+import type {LibraryRecord, LibraryRecordContent} from '../../../../storage/db';
 import {updateNestedBlueprint} from '../../../../transform/applyAtPath';
 import {
 	analyzeIconReplacements,
@@ -17,13 +24,17 @@ import {
 	applyUpgradeRules,
 	builtInUpgradeRules,
 	parseUpgradePlanner,
-	rulesFromUpgradePlanner,
 	type UpgradeDirection,
 	type UpgradeRule,
 } from '../../../../transform/upgradePlanner';
 import type {UpgradePlannerChoice} from './UpgradePlannerSelectorDialog';
-import type {PositionedUpgradeCandidate} from './UpgradeMappingGrid';
-import {normalizedSignalType, signalIdentity} from './upgradePlannerSignals';
+import type {PositionedUpgradeMapping} from './UpgradeMappingGrid';
+import {
+	isUpgradeTargetSelectionAllowed,
+	replaceUpgradeTarget,
+	signalIdentity,
+	upgradeSourceOptions,
+} from './upgradePlannerSignals';
 
 type UpgradePlannerScope = 'selection' | 'root';
 
@@ -33,19 +44,22 @@ interface UseUpgradePlannerDraftOptions {
 	selectedPath: string;
 }
 
-interface ResolvedRules {
-	error: string | undefined;
-	rules: UpgradeRule[];
-	slotIndexes: ReadonlyMap<string, number>;
-}
-
-interface UpgradeTargetOverride {
+interface UpgradeMappingDraft {
+	from?: UpgradeSourceSignal;
+	mappingId: string;
 	preserveQuality: boolean;
-	to: SignalID;
+	serializedMapping?: UpgradeMapping;
+	slotIndex: number;
+	to?: SignalID;
 }
 
-interface SavedUpgradePlannerSession {
-	choice: UpgradePlannerChoice;
+interface UpgradePlannerRecordMetadata {
+	description: string;
+	icons: Icon[];
+	label: string;
+}
+
+interface UpgradePlannerDraftApplication {
 	iconReplacements: IconReplacement[];
 	metadataSubstitution: MetadataSubstitution;
 	rules: UpgradeRule[];
@@ -53,83 +67,11 @@ interface SavedUpgradePlannerSession {
 	textReplacementEnabled: boolean;
 }
 
-const savedPlannerSource = 'session:saved-upgrade-planner';
-
-function resolveRules(
-	source: string,
-	plannerInput: string,
-	selectedPlanner: UpgradePlanner | undefined,
-): ResolvedRules {
-	try {
-		if (source === 'custom') {
-			return {error: undefined, rules: [], slotIndexes: new Map()};
-		}
-		if (source === 'suggested') {
-			const rules = builtInUpgradeRules('upgrade');
-			return {
-				error: undefined,
-				rules,
-				slotIndexes: new Map(rules.map((rule, index) => [signalIdentity(rule.from), index])),
-			};
-		}
-		if (source === 'pasted') {
-			return resolvePlannerRules(parseUpgradePlanner(plannerInput));
-		}
-		if (source.startsWith('book:') || source.startsWith('history:')) {
-			if (selectedPlanner === undefined) {
-				throw new Error('The loaded upgrade planner is unavailable.');
-			}
-			return resolvePlannerRules(selectedPlanner);
-		}
-		throw new Error(`Unsupported upgrade planner source: ${source}`);
-	} catch (error) {
-		return {
-			error: error instanceof Error ? error.message : String(error),
-			rules: [],
-			slotIndexes: new Map(),
-		};
-	}
-}
-
-function resolvePlannerRules(planner: UpgradePlanner): ResolvedRules {
-	const rules = rulesFromUpgradePlanner(planner, 'upgrade');
-	const completeMappings = [...planner.settings.mappers]
-		.filter((mapping) => mapping.from !== undefined && mapping.to !== undefined)
-		.sort((left, right) => left.index - right.index);
-	return {
-		error: undefined,
-		rules,
-		slotIndexes: new Map(
-			rules.map((rule, index) => [
-				signalIdentity(rule.from),
-				Math.max(0, (completeMappings[index]?.index ?? index + 1) - 1),
-			]),
-		),
-	};
-}
-
-function upgradeSourceOptions(target: BlueprintString | undefined): SignalID[] {
-	const options = new Map<string, SignalID>();
-	if (target === undefined) {
-		for (const {from, to} of gameData.nextUpgrades) {
-			options.set(`entity:${from}`, {type: 'entity', name: from});
-			options.set(`entity:${to}`, {type: 'entity', name: to});
-		}
-	} else {
-		for (const [name, details] of extractNames(target).names) {
-			if (details.kinds.has('entity')) {
-				options.set(`entity:${name}`, {type: 'entity', name});
-			}
-			if (details.kinds.has('item')) {
-				options.set(`item:${name}`, {type: 'item', name});
-			}
-		}
-	}
-	return [...options.values()].sort(
-		(left, right) =>
-			normalizedSignalType(left).localeCompare(normalizedSignalType(right)) ||
-			left.name.localeCompare(right.name),
+function completeRules(mappings: readonly UpgradeMappingDraft[], source: string): UpgradeRule[] {
+	const explicitRules = mappings.flatMap(({from, preserveQuality, to}) =>
+		from === undefined || to === undefined ? [] : [{from: {...from}, preserveQuality, to: {...to}}],
 	);
+	return source === 'suggested' && mappings.length === 0 ? builtInUpgradeRules('upgrade') : explicitRules;
 }
 
 function reverseUpgradeRule(rule: UpgradeRule): UpgradeRule {
@@ -141,31 +83,87 @@ function reverseUpgradeRule(rule: UpgradeRule): UpgradeRule {
 	};
 }
 
-function plannerTarget(rule: UpgradeRule): SignalID {
-	if (!rule.preserveQuality) {
-		return {...rule.to, quality: rule.to.quality ?? 'normal'};
+function plannerFromMappings(
+	mappings: readonly UpgradeMappingDraft[],
+	metadata: UpgradePlannerRecordMetadata,
+	template: UpgradePlanner | undefined,
+): UpgradePlanner {
+	const planner: UpgradePlanner = {
+		...structuredClone(template),
+		item: 'upgrade-planner',
+		version: template?.version ?? 0,
+		settings: {
+			...structuredClone(template?.settings),
+			mappers: [...mappings]
+				.sort((left, right) => left.slotIndex - right.slotIndex)
+				.map(({from, serializedMapping, slotIndex, to}): UpgradeMapping => {
+					const mapping: UpgradeMapping = {
+						...structuredClone(serializedMapping),
+						index: slotIndex + 1,
+					};
+					delete mapping.from;
+					delete mapping.to;
+					if (from !== undefined) {
+						mapping.from = {...from};
+					}
+					if (to !== undefined) {
+						mapping.to = {...to};
+					}
+					return mapping;
+				}),
+		},
+	};
+	delete planner.label;
+	delete planner.settings.description;
+	delete planner.settings.icons;
+	if (metadata.label !== '') {
+		planner.label = metadata.label;
 	}
-	const {quality: _quality, ...target} = rule.to;
-	return target;
+	if (metadata.description !== '') {
+		planner.settings.description = metadata.description;
+	}
+	if (metadata.icons.length > 0) {
+		planner.settings.icons = metadata.icons.map((icon, index) => ({
+			...structuredClone(icon),
+			index: index + 1,
+			signal: {...icon.signal},
+		}));
+	}
+	return planner;
 }
 
-function plannerFromRules(rules: readonly {rule: UpgradeRule; slotIndex: number}[]): UpgradePlanner {
+function recordMetadata(planner: UpgradePlanner | undefined, fallbackLabel: string): UpgradePlannerRecordMetadata {
 	return {
-		item: 'upgrade-planner',
-		label: 'Saved Upgrade Planner',
-		version: 0,
-		settings: {
-			mappers: rules.map(({rule, slotIndex}) => ({
-				from: {...rule.from},
-				index: slotIndex + 1,
-				to: plannerTarget(rule),
-			})),
-		},
+		description: planner?.settings.description ?? '',
+		icons: [...(planner?.settings.icons ?? [])]
+			.sort((left, right) => left.index - right.index)
+			.map((icon) => structuredClone(icon)),
+		label: planner?.label ?? fallbackLabel,
 	};
 }
 
+function reconcilePreviewIcons(current: readonly Icon[], signals: readonly SignalID[]): Icon[] {
+	if (signals.length === current.length) {
+		return signals.map((signal, index) => ({
+			...structuredClone(current[index]),
+			index: index + 1,
+			signal: {...signal},
+		}));
+	}
+	const available = [...current];
+	return signals.map((signal, index) => {
+		const matchingIndex = available.findIndex((icon) => JSON.stringify(icon.signal) === JSON.stringify(signal));
+		const template = matchingIndex < 0 ? undefined : available.splice(matchingIndex, 1)[0];
+		return {
+			...structuredClone(template),
+			index: index + 1,
+			signal: {...signal},
+		};
+	});
+}
+
 function applySession(
-	session: SavedUpgradePlannerSession,
+	session: UpgradePlannerDraftApplication,
 	rootBlueprint: BlueprintString,
 	selectedPath: string,
 	direction: UpgradeDirection,
@@ -206,21 +204,50 @@ function applySession(
  *   options may survive; an incompatible To must be cleared before the updated
  *   record becomes authoritative. The same rule applies to imported or restored
  *   state that bypasses a picker.
- * - Saving while editing an upgrade-planner entry commits the planner record at
- *   its root-book path. Applying is a later, explicit operation against a
+ * - Saving creates or updates an explicit Blueprint Library record supplied by
+ *   the parent. Applying is an independent operation against the current
  *   blueprint scope: upgrade interprets From to To and downgrade reverses the
- *   same saved records. Save must not imply apply, and zero application matches
- *   must not delete records.
- *
- * The current layered rule/exclusion/override session is transitional. It should
- * converge on the direct record draft above before mapper widgets rely on it.
+ *   displayed draft. Website-only book-wide replacements remain application
+ *   state and are never serialized into the Factorio planner record. Zero
+ *   application matches must not delete records.
  */
 export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}: UseUpgradePlannerDraftOptions) {
+	const nextMappingIdentity = useRef(0);
+	const mappingsFromPlanner = (
+		planner: UpgradePlanner | undefined,
+		includeDefaultMappings = false,
+	): UpgradeMappingDraft[] => {
+		const serializedMappings =
+			planner === undefined && includeDefaultMappings
+				? builtInUpgradeRules('upgrade').map(
+						({from, to}, index): UpgradeMapping => ({from, index: index + 1, to}),
+					)
+				: (planner?.settings.mappers ?? []);
+		return [...serializedMappings]
+			.sort((left, right) => left.index - right.index)
+			.map((serializedMapping) => {
+				const {from, index, to} = serializedMapping;
+				nextMappingIdentity.current += 1;
+				const mapping: UpgradeMappingDraft = {
+					mappingId: `upgrade-mapping-${nextMappingIdentity.current.toString()}`,
+					preserveQuality: includeDefaultMappings,
+					serializedMapping: structuredClone(serializedMapping),
+					slotIndex: Math.max(0, index - 1),
+				};
+				if (from !== undefined) {
+					mapping.from = {...from};
+				}
+				if (to !== undefined && (from === undefined || isUpgradeTargetSelectionAllowed(from, to))) {
+					mapping.to = {...to};
+				}
+				return mapping;
+			});
+	};
 	const [plannerOpen, setPlannerOpen] = useState(false);
-	const [draftChanged, setDraftChanged] = useState(false);
+	const [plannerDraftChanged, setPlannerDraftChanged] = useState(false);
+	const [applicationDraftChanged, setApplicationDraftChanged] = useState(false);
 	const [iconReplacementOpen, setIconReplacementOpen] = useState(false);
 	const [discardConfirmationOpen, setDiscardConfirmationOpen] = useState(false);
-	const [applicationSelectorOpen, setApplicationSelectorOpen] = useState(false);
 	const [source, setSource] = useState(() =>
 		blueprint?.upgrade_planner === undefined ? 'suggested' : `book:${selectedPath}`,
 	);
@@ -230,64 +257,50 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 			: (blueprint.upgrade_planner.label ?? 'Current upgrade planner'),
 	);
 	const [selectedPlanner, setSelectedPlanner] = useState<UpgradePlanner | undefined>(blueprint?.upgrade_planner);
+	const [recordMetadataDraft, setRecordMetadataDraft] = useState(() =>
+		recordMetadata(
+			blueprint?.upgrade_planner,
+			blueprint?.upgrade_planner === undefined ? 'Default Upgrade' : 'Current upgrade planner',
+		),
+	);
 	const [plannerInput, setPlannerInput] = useState('');
+	const [plannerError, setPlannerError] = useState<string>();
+	const [mappingDrafts, setMappingDrafts] = useState<UpgradeMappingDraft[]>(() =>
+		mappingsFromPlanner(blueprint?.upgrade_planner, blueprint?.upgrade_planner === undefined),
+	);
 	const [scope, setScope] = useState<UpgradePlannerScope>(() =>
 		blueprint?.upgrade_planner === undefined ? 'selection' : 'root',
 	);
-	const [excludedSources, setExcludedSources] = useState<Set<string>>(() => new Set());
-	const [targetOverrides, setTargetOverrides] = useState<Map<string, UpgradeTargetOverride>>(() => new Map());
-	const [manualRules, setManualRules] = useState<UpgradeRule[]>([]);
-	const [manualRulePositions, setManualRulePositions] = useState<Map<string, number>>(() => new Map());
 	const [iconReplacements, setIconReplacements] = useState<IconReplacement[]>([]);
 	const [textReplacementEnabled, setTextReplacementEnabled] = useState(true);
 	const [metadataFind, setMetadataFind] = useState('');
 	const [metadataReplace, setMetadataReplace] = useState('');
-	const [savedSession, setSavedSession] = useState<SavedUpgradePlannerSession>();
+	const [savedLibraryRecord, setSavedLibraryRecord] = useState<LibraryRecord>();
 
 	const transformTarget = scope === 'root' ? rootBlueprint : blueprint;
-	const resolvedRules = useMemo(
-		() => resolveRules(source, plannerInput, selectedPlanner),
-		[source, plannerInput, selectedPlanner],
+	const mappingRuleError = useMemo(() => {
+		const sources = new Set<string>();
+		for (const mapping of mappingDrafts) {
+			if (mapping.from === undefined || mapping.to === undefined) {
+				continue;
+			}
+			const sourceKey = signalIdentity(mapping.from);
+			if (sources.has(sourceKey)) {
+				return `Upgrade planner defines more than one target for ${mapping.from.name}.`;
+			}
+			sources.add(sourceKey);
+		}
+		return undefined;
+	}, [mappingDrafts]);
+	const error = plannerError ?? mappingRuleError;
+	const effectiveRules = useMemo(
+		() => (error === undefined ? completeRules(mappingDrafts, source) : []),
+		[error, mappingDrafts, source],
 	);
-	const manualSourceKeys = useMemo(
-		() => new Set(manualRules.map((rule) => signalIdentity(rule.from))),
-		[manualRules],
-	);
-	const effectiveRules = useMemo(() => {
-		const positionedManualRules = manualRules
-			.map((rule) => ({position: manualRulePositions.get(signalIdentity(rule.from)), rule}))
-			.filter((entry): entry is {position: number; rule: UpgradeRule} => entry.position !== undefined)
-			.sort((left, right) => left.position - right.position);
-		const replacedPositions = new Set(positionedManualRules.map(({position}) => position));
-		const positionedResolvedRules = resolvedRules.rules
-			.map((rule, index) => ({
-				position: resolvedRules.slotIndexes.get(signalIdentity(rule.from)) ?? index,
-				rule,
-			}))
-			.filter(
-				({position, rule}) =>
-					!replacedPositions.has(position) && !manualSourceKeys.has(signalIdentity(rule.from)),
-			);
-		const combinedRules = [...positionedResolvedRules, ...positionedManualRules]
-			.sort((left, right) => left.position - right.position)
-			.map(({rule}) => rule);
-		combinedRules.push(...manualRules.filter((rule) => !manualRulePositions.has(signalIdentity(rule.from))));
-		return combinedRules.map((rule) => {
-			const override = targetOverrides.get(signalIdentity(rule.from));
-			return override === undefined ? rule : {...rule, ...override};
-		});
-	}, [
-		manualRulePositions,
-		manualRules,
-		manualSourceKeys,
-		resolvedRules.rules,
-		resolvedRules.slotIndexes,
-		targetOverrides,
-	]);
 	const reverseRules = useMemo(() => effectiveRules.map(reverseUpgradeRule), [effectiveRules]);
-	const candidates = useMemo<PositionedUpgradeCandidate[]>(() => {
+	const ruleCounts = useMemo(() => {
 		if (!plannerOpen || transformTarget === undefined || effectiveRules.length === 0) {
-			return [];
+			return new Map<string, number>();
 		}
 		const forwardMatches = analyzeUpgradeRules(transformTarget, effectiveRules);
 		const reverseMatches = analyzeUpgradeRules(transformTarget, reverseRules);
@@ -297,45 +310,20 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 		const reverseCounts = new Map(
 			reverseMatches.map((candidate) => [signalIdentity(candidate.to), candidate.count]),
 		);
-		if (source === 'suggested') {
-			return effectiveRules.flatMap((rule, index) => {
+		return new Map(
+			effectiveRules.map((rule) => {
 				const sourceKey = signalIdentity(rule.from);
-				const count = (forwardCounts.get(sourceKey) ?? 0) + (reverseCounts.get(sourceKey) ?? 0);
-				return count === 0 && !manualSourceKeys.has(sourceKey)
-					? []
-					: [
-							{
-								...rule,
-								count,
-								slotIndex:
-									manualRulePositions.get(sourceKey) ??
-									resolvedRules.slotIndexes.get(sourceKey) ??
-									index,
-							},
-						];
-			});
-		}
-		return effectiveRules.map((rule, index) => {
-			const sourceKey = signalIdentity(rule.from);
-			return {
-				...rule,
-				count: (forwardCounts.get(sourceKey) ?? 0) + (reverseCounts.get(sourceKey) ?? 0),
-				slotIndex: manualRulePositions.get(sourceKey) ?? resolvedRules.slotIndexes.get(sourceKey) ?? index,
-			};
-		});
-	}, [
-		effectiveRules,
-		manualRulePositions,
-		manualSourceKeys,
-		plannerOpen,
-		resolvedRules.slotIndexes,
-		reverseRules,
-		source,
-		transformTarget,
-	]);
-	const selectedCandidates = useMemo(
-		() => candidates.filter((candidate) => !excludedSources.has(signalIdentity(candidate.from))),
-		[candidates, excludedSources],
+				return [sourceKey, (forwardCounts.get(sourceKey) ?? 0) + (reverseCounts.get(sourceKey) ?? 0)];
+			}),
+		);
+	}, [effectiveRules, plannerOpen, reverseRules, transformTarget]);
+	const mappings = useMemo<PositionedUpgradeMapping[]>(
+		() =>
+			mappingDrafts.map((mapping) => ({
+				...mapping,
+				count: mapping.from === undefined ? 0 : (ruleCounts.get(signalIdentity(mapping.from)) ?? 0),
+			})),
+		[mappingDrafts, ruleCounts],
 	);
 	const metadataSubstitution = useMemo(
 		() => ({find: metadataFind, replace: metadataReplace}),
@@ -355,110 +343,76 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 				: analyzeIconReplacements(rootBlueprint, iconReplacements),
 		[iconReplacements, plannerOpen, rootBlueprint],
 	);
-	const sourceOptions = useMemo(() => upgradeSourceOptions(transformTarget), [transformTarget]);
+	const sourceOptions = useMemo(() => upgradeSourceOptions(), []);
 	const matchCount =
-		selectedCandidates.reduce((total, candidate) => total + candidate.count, 0) +
+		[...ruleCounts.values()].reduce((total, count) => total + count, 0) +
 		iconReplacementCount +
 		(textReplacementEnabled ? metadataReplacementCount : 0);
+	const draftChanged = plannerDraftChanged || applicationDraftChanged;
 
 	const resetDraft = () => {
-		setSource(blueprint?.upgrade_planner === undefined ? 'suggested' : `book:${selectedPath}`);
+		const initialPlanner = blueprint?.upgrade_planner;
+		setSource(initialPlanner === undefined ? 'suggested' : `book:${selectedPath}`);
 		setSourceLabel(
-			blueprint?.upgrade_planner === undefined
-				? 'Default Upgrade'
-				: (blueprint.upgrade_planner.label ?? 'Current upgrade planner'),
+			initialPlanner?.label ?? (initialPlanner === undefined ? 'Default Upgrade' : 'Current upgrade planner'),
 		);
-		setSelectedPlanner(blueprint?.upgrade_planner);
+		setSelectedPlanner(initialPlanner);
+		setRecordMetadataDraft(
+			recordMetadata(
+				initialPlanner,
+				initialPlanner === undefined ? 'Default Upgrade' : 'Current upgrade planner',
+			),
+		);
 		setPlannerInput('');
-		setScope(blueprint?.upgrade_planner === undefined ? 'selection' : 'root');
-		setExcludedSources(new Set());
-		setTargetOverrides(new Map());
-		setManualRules([]);
-		setManualRulePositions(new Map());
+		setPlannerError(undefined);
+		setMappingDrafts(mappingsFromPlanner(initialPlanner, initialPlanner === undefined));
+		setScope(initialPlanner === undefined ? 'selection' : 'root');
 		setIconReplacements([]);
 		setTextReplacementEnabled(true);
 		setMetadataFind('');
 		setMetadataReplace('');
-		setDraftChanged(false);
+		setPlannerDraftChanged(false);
+		setApplicationDraftChanged(false);
+		setSavedLibraryRecord(undefined);
 	};
-	const savePlanner = () => {
-		if (rootBlueprint === undefined || resolvedRules.error !== undefined) {
+	const plannerForLibrary = (): UpgradePlanner => {
+		if (rootBlueprint === undefined || error !== undefined) {
 			throw new Error('Cannot save an invalid upgrade planner.');
 		}
-		const positionedRules = selectedCandidates.map(({from, preserveQuality, slotIndex, to}) => ({
-			rule: {
-				from: {...from},
-				preserveQuality,
-				to: {...to},
-			},
-			slotIndex,
-		}));
-		const rules = positionedRules.map(({rule}) => rule);
-		const planner = plannerFromRules(positionedRules);
-		setSavedSession({
-			choice: {label: planner.label ?? 'Saved Upgrade Planner', planner, source: savedPlannerSource},
-			iconReplacements: iconReplacements.map((replacement) => ({
-				from: {...replacement.from},
-				to: {...replacement.to},
-			})),
-			metadataSubstitution: {...metadataSubstitution},
-			rules,
-			scope,
-			textReplacementEnabled,
-		});
-		setDraftChanged(false);
-		setPlannerOpen(false);
-		setApplicationSelectorOpen(true);
-	};
-	const applySavedPlanner = (targetRoot: BlueprintString, direction: UpgradeDirection): BlueprintString => {
-		if (savedSession === undefined) {
-			throw new Error('No saved upgrade planner session is available.');
+		const normalizedLabel = recordMetadataDraft.label.trim();
+		if (normalizedLabel === '') {
+			throw new Error('A library planner name is required.');
 		}
-		return applySession(savedSession, targetRoot, selectedPath, direction);
+		return plannerFromMappings(mappingDrafts, {...recordMetadataDraft, label: normalizedLabel}, selectedPlanner);
 	};
-	const changeManualRule = (previousSource: UpgradeSourceSignal, rule: UpgradeRule) => {
-		setDraftChanged(true);
-		const previousKey = signalIdentity(previousSource);
-		const nextKey = signalIdentity(rule.from);
-		const previousPosition =
-			manualRulePositions.get(previousKey) ??
-			resolvedRules.slotIndexes.get(previousKey) ??
-			effectiveRules.findIndex((candidate) => signalIdentity(candidate.from) === previousKey);
-		setExcludedSources((current) => {
-			const next = new Set(current);
-			next.delete(nextKey);
-			if (previousKey !== nextKey) {
-				next.add(previousKey);
-			}
-			return next;
-		});
-		setTargetOverrides((current) => {
-			const next = new Map(current);
-			next.delete(previousKey);
-			next.delete(nextKey);
-			return next;
-		});
-		setManualRulePositions((current) => {
-			const next = new Map(current);
-			const position = next.get(previousKey) ?? previousPosition;
-			next.delete(previousKey);
-			if (position >= 0) {
-				next.set(nextKey, position);
-			}
-			return next;
-		});
-		setManualRules((current) => [
-			...current.filter((candidate) => signalIdentity(candidate.from) !== previousKey),
-			rule,
-		]);
+	const libraryRecordContent = (): LibraryRecordContent => {
+		const planner = plannerForLibrary();
+		return {
+			data: serializeBlueprint({upgrade_planner: planner}),
+			gameData: {
+				type: 'upgrade_planner',
+				label: planner.label,
+				description: planner.settings.description,
+				gameVersion: planner.version.toString(),
+				icons: (planner.settings.icons ?? []).map(({signal}) => ({...signal})),
+			},
+		};
 	};
+	const draftApplication = (): UpgradePlannerDraftApplication => ({
+		iconReplacements: iconReplacements.map((replacement) => ({
+			from: {...replacement.from},
+			to: {...replacement.to},
+		})),
+		metadataSubstitution: {...metadataSubstitution},
+		rules: effectiveRules,
+		scope,
+		textReplacementEnabled,
+	});
+	const applyDraftPlanner = (targetRoot: BlueprintString, direction: UpgradeDirection): BlueprintString =>
+		applySession(draftApplication(), targetRoot, selectedPath, direction);
 
 	return {
-		applicationSelectorOpen,
-		applySavedPlanner,
-		closeApplicationSelector: () => {
-			setApplicationSelectorOpen(false);
-		},
+		applyDraftPlanner,
 		closeIconReplacement: () => {
 			setIconReplacementOpen(false);
 		},
@@ -478,58 +432,103 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 			setDiscardConfirmationOpen(false);
 		},
 		mappings: {
-			candidates,
-			error: resolvedRules.error,
-			excludedSources,
-			manualRules,
-			onAddManualRule: (rule: UpgradeRule, slotIndex: number) => {
-				setDraftChanged(true);
-				setManualRulePositions((current) => new Map(current).set(signalIdentity(rule.from), slotIndex));
-				setManualRules((current) => [
-					...current.filter((candidate) => signalIdentity(candidate.from) !== signalIdentity(rule.from)),
-					rule,
-				]);
+			error,
+			mappings,
+			onClearEndpoint: (mappingId: string, endpoint: 'from' | 'to') => {
+				setPlannerDraftChanged(true);
+				setMappingDrafts((current) =>
+					current.flatMap((mapping) => {
+						if (mapping.mappingId !== mappingId) {
+							return [mapping];
+						}
+						if (endpoint === 'from') {
+							return mapping.to === undefined ? [] : [{...mapping, from: undefined}];
+						}
+						return mapping.from === undefined ? [] : [{...mapping, to: undefined}];
+					}),
+				);
 			},
-			onChangeManualRule: changeManualRule,
 			onPlannerInputChange: (value: string) => {
-				setDraftChanged(true);
+				setPlannerDraftChanged(true);
 				setPlannerInput(value);
-				setExcludedSources(new Set());
-				setTargetOverrides(new Map());
-				setManualRules([]);
-				setManualRulePositions(new Map());
+				try {
+					const planner = parseUpgradePlanner(value);
+					setSelectedPlanner(planner);
+					setRecordMetadataDraft(recordMetadata(planner, 'Pasted Upgrade Planner'));
+					setMappingDrafts(mappingsFromPlanner(planner));
+					setPlannerError(undefined);
+				} catch (parseError) {
+					setSelectedPlanner(undefined);
+					setMappingDrafts([]);
+					setPlannerError(parseError instanceof Error ? parseError.message : String(parseError));
+				}
 			},
 			onPlannerLoad: (choice: UpgradePlannerChoice) => {
-				setDraftChanged(true);
+				setPlannerDraftChanged(true);
+				setSavedLibraryRecord(choice.libraryRecord);
 				setSource(choice.source);
 				setSourceLabel(choice.label);
 				setSelectedPlanner(choice.planner);
-				setExcludedSources(new Set());
-				setTargetOverrides(new Map());
-				setManualRules([]);
-				setManualRulePositions(new Map());
+				setRecordMetadataDraft(recordMetadata(choice.planner, choice.label));
+				setPlannerInput('');
+				setMappingDrafts(mappingsFromPlanner(choice.planner, choice.source === 'suggested'));
+				setPlannerError(choice.source === 'pasted' ? 'Paste an upgrade planner string or JSON.' : undefined);
 			},
-			onRemoveRule: (mappingSource: UpgradeSourceSignal, manual: boolean) => {
-				setDraftChanged(true);
-				const sourceKey = signalIdentity(mappingSource);
-				if (manual) {
-					setManualRulePositions((current) => {
-						const next = new Map(current);
-						next.delete(sourceKey);
-						return next;
+			onSourceChange: (mappingId: string | undefined, slotIndex: number, nextSource: UpgradeSourceSignal) => {
+				setPlannerDraftChanged(true);
+				setMappingDrafts((current) => {
+					if (mappingId === undefined) {
+						nextMappingIdentity.current += 1;
+						return [
+							...current,
+							{
+								from: {...nextSource},
+								mappingId: `upgrade-mapping-${nextMappingIdentity.current.toString()}`,
+								preserveQuality: false,
+								slotIndex,
+							},
+						];
+					}
+					return current.map((mapping) => {
+						if (mapping.mappingId !== mappingId) {
+							return mapping;
+						}
+						const nextMapping = {...mapping, from: {...nextSource}, preserveQuality: false};
+						if (
+							nextMapping.to !== undefined &&
+							!isUpgradeTargetSelectionAllowed(nextSource, nextMapping.to)
+						) {
+							delete nextMapping.to;
+						}
+						return nextMapping;
 					});
-					setManualRules((current) =>
-						current.filter((candidate) => signalIdentity(candidate.from) !== sourceKey),
-					);
-				} else {
-					setExcludedSources((current) => new Set(current).add(sourceKey));
-				}
+				});
 			},
-			onTargetChange: (mappingSource: SignalID, target: SignalID) => {
-				setDraftChanged(true);
-				setTargetOverrides((current) =>
-					new Map(current).set(signalIdentity(mappingSource), {preserveQuality: false, to: target}),
-				);
+			onTargetChange: (mappingId: string | undefined, slotIndex: number, nextTarget: SignalID) => {
+				setPlannerDraftChanged(true);
+				setMappingDrafts((current) => {
+					if (mappingId === undefined) {
+						nextMappingIdentity.current += 1;
+						return [
+							...current,
+							{
+								mappingId: `upgrade-mapping-${nextMappingIdentity.current.toString()}`,
+								preserveQuality: false,
+								slotIndex,
+								to: {...nextTarget},
+							},
+						];
+					}
+					return current.map((mapping) =>
+						mapping.mappingId === mappingId
+							? {
+									...mapping,
+									preserveQuality: false,
+									to: replaceUpgradeTarget(mapping.to, nextTarget),
+								}
+							: mapping,
+					);
+				});
 			},
 			plannerInput,
 			source,
@@ -538,13 +537,12 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 		},
 		matchCount,
 		onIconReplacementsChange: (replacements: IconReplacement[]) => {
-			setDraftChanged(true);
+			setApplicationDraftChanged(true);
 			setIconReplacements(replacements);
 		},
 		onScopeChange: (nextScope: UpgradePlannerScope) => {
-			setDraftChanged(true);
+			setApplicationDraftChanged(true);
 			setScope(nextScope);
-			setExcludedSources(new Set());
 		},
 		openPlanner: () => {
 			setDiscardConfirmationOpen(false);
@@ -561,15 +559,15 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 				setIconReplacementOpen(true);
 			},
 			onMetadataFindChange: (value: string) => {
-				setDraftChanged(true);
+				setApplicationDraftChanged(true);
 				setMetadataFind(value);
 			},
 			onMetadataReplaceChange: (value: string) => {
-				setDraftChanged(true);
+				setApplicationDraftChanged(true);
 				setMetadataReplace(value);
 			},
 			onTextReplacementEnabledChange: (enabled: boolean) => {
-				setDraftChanged(true);
+				setApplicationDraftChanged(true);
 				setTextReplacementEnabled(enabled);
 			},
 			textReplacementEnabled,
@@ -581,9 +579,53 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 				setPlannerOpen(false);
 			}
 		},
-		savePlanner,
-		saveDisabled: rootBlueprint === undefined || resolvedRules.error !== undefined,
-		savedPlannerChoice: savedSession?.choice,
+		libraryRecordContent,
+		libraryRecordId: source.startsWith('library:') ? source.slice('library:'.length) : undefined,
+		onLibraryRecordSaved: (record: LibraryRecord) => {
+			const planner = parseUpgradePlanner(record.data);
+			setSource(`library:${record.id}`);
+			setSourceLabel(record.gameData.label ?? planner.label ?? 'Saved upgrade planner');
+			setSelectedPlanner(planner);
+			setRecordMetadataDraft(
+				recordMetadata(planner, record.gameData.label ?? planner.label ?? 'Saved upgrade planner'),
+			);
+			setPlannerInput('');
+			setPlannerError(undefined);
+			setMappingDrafts(mappingsFromPlanner(planner));
+			setPlannerDraftChanged(false);
+			setSavedLibraryRecord(record);
+		},
+		recordMetadata: {
+			description: recordMetadataDraft.description,
+			icons: recordMetadataDraft.icons.map(({signal}) => signal),
+			label: recordMetadataDraft.label,
+			onDescriptionChange: (description: string) => {
+				setPlannerDraftChanged(true);
+				setRecordMetadataDraft((current) => ({...current, description}));
+			},
+			onIconsChange: (icons: SignalID[]) => {
+				setPlannerDraftChanged(true);
+				setRecordMetadataDraft((current) => ({
+					...current,
+					icons: reconcilePreviewIcons(current.icons, icons),
+				}));
+			},
+			onLabelChange: (label: string) => {
+				setPlannerDraftChanged(true);
+				setRecordMetadataDraft((current) => ({...current, label}));
+			},
+		},
+		saveDisabled: rootBlueprint === undefined || error !== undefined || recordMetadataDraft.label.trim() === '',
+		savedLibraryRecord,
+		savedPlannerChoice:
+			savedLibraryRecord === undefined
+				? undefined
+				: {
+						label: savedLibraryRecord.gameData.label ?? 'Saved upgrade planner',
+						libraryRecord: savedLibraryRecord,
+						planner: parseUpgradePlanner(savedLibraryRecord.data),
+						source: `library:${savedLibraryRecord.id}`,
+					},
 		scope,
 		sourceOptions,
 	};

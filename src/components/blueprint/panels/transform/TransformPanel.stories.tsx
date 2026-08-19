@@ -104,9 +104,9 @@ export const UpgradePlanner: Story = {
 		).toBeVisible();
 		await expect(canvas.getByRole('group', {name: 'Text replacement'})).toBeVisible();
 		await expect(canvas.getByText('0 affected')).toBeVisible();
-		await expect(canvas.getByRole('button', {name: 'Save planner'})).toBeVisible();
-		await expect(canvas.queryByRole('button', {name: 'Apply upgrades'})).not.toBeInTheDocument();
-		await expect(canvas.queryByRole('button', {name: 'Apply downgrades'})).not.toBeInTheDocument();
+		await expect(canvas.getByRole('button', {name: 'Save Planner'})).toBeVisible();
+		await expect(canvas.getByRole('button', {name: 'Apply Upgrade to Current Blueprint'})).toBeVisible();
+		await expect(canvas.getByRole('button', {name: 'Apply Downgrade to Current Blueprint'})).toBeVisible();
 		await expect(canvas.queryByRole('checkbox', {name: 'Preserve case'})).not.toBeInTheDocument();
 		await expect(canvas.queryByText('Live result')).not.toBeInTheDocument();
 		await expect(canvas.queryByRole('heading', {name: 'Preview'})).not.toBeInTheDocument();
@@ -114,7 +114,7 @@ export const UpgradePlanner: Story = {
 		await userEvent.click(canvas.getByRole('button', {name: /Load planner, currently Default Upgrade/}));
 		await expect(canvas.getByRole('dialog', {name: 'Load an upgrade planner'})).toBeVisible();
 		await expect(canvas.getByRole('button', {name: 'Default Upgrade'})).toBeVisible();
-		await expect(canvas.getByRole('button', {name: 'Empty planner'})).toBeVisible();
+		await expect(canvas.getByRole('button', {name: 'Empty Planner'})).toBeVisible();
 		await expect(canvas.getByRole('button', {name: 'Paste upgrade planner…'})).toBeVisible();
 	},
 };
@@ -192,12 +192,8 @@ export const BlueprintEditor: Story = {
 		await expect(canvas.getByRole('radio', {name: 'Absolute'})).toBeChecked();
 		await expect(canvas.getByRole('heading', {name: 'Components'})).toBeVisible();
 		await expect(canvas.getByRole('button', {name: /Transport belt, 1/})).toBeVisible();
-		await expect(canvas.getByRole('button', {name: 'Save blueprint'})).toBeDisabled();
-		await expect(
-			canvas.getByText(
-				'Saves changes to the loaded blueprint. Export and Open in Playground use the saved blueprint.',
-			),
-		).toBeVisible();
+		await expect(canvas.getByRole('button', {name: 'Save Blueprint'})).toBeDisabled();
+		await expect(canvas.getByText('Commits changes to the existing blueprint record.')).toBeVisible();
 		await expect(canvas.queryByRole('heading', {name: 'Preview'})).not.toBeInTheDocument();
 		await userEvent.click(canvas.getByRole('button', {name: 'Upgrade items and entities in the blueprint'}));
 		await expect(canvas.getByRole('dialog', {name: 'Select the upgrade planner to apply'})).toBeVisible();

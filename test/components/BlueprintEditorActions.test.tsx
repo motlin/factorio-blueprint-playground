@@ -1,229 +1,132 @@
-import {render, screen, within} from '@testing-library/react';
+import {fireEvent, render, screen, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import {beforeEach, expect, test, vi} from 'vite-plus/test';
+import {expect, test, vi} from 'vite-plus/test';
 
 import {BlueprintEditorActions} from '../../src/components/blueprint/panels/transform/BlueprintEditorActions';
-import {serializeBlueprint} from '../../src/parsing/blueprintParser';
-import type {BlueprintString} from '../../src/parsing/types';
+import type {BlueprintEditorCommitAction} from '../../src/components/blueprint/panels/transform/useBlueprintEditorDraft';
 
-const {navigate} = vi.hoisted(() => ({
-	navigate: vi.fn<(options: unknown) => void>(),
-}));
+const createAction: BlueprintEditorCommitAction = {
+	caption: 'Create Blueprint',
+	scopeDescription: 'Creates this newly captured draft as the committed root blueprint.',
+};
+const saveAction: BlueprintEditorCommitAction = {
+	caption: 'Save Blueprint',
+	scopeDescription: 'Commits changes to the existing blueprint record.',
+};
+const saveToBookAction: BlueprintEditorCommitAction = {
+	caption: 'Save to Book',
+	scopeDescription: 'Commits this selection into its containing root book.',
+};
 
-vi.mock('@tanstack/react-router', async (importOriginal) => ({
-	...(await importOriginal()),
-	useNavigate: () => navigate,
-}));
-
-beforeEach(() => {
-	navigate.mockReset();
-});
-
-test('saves an edited root blueprint for export and preserves the root selection', async () => {
-	const user = userEvent.setup();
-	const onClose = vi.fn<() => void>();
-	const onSaved = vi.fn<(savedRoot: BlueprintString) => void>();
-	const rootBlueprint: BlueprintString = {
-		blueprint: {item: 'blueprint', label: 'Alice', version: 0},
-	};
-	const draftBlueprint: BlueprintString = {
-		blueprint: {item: 'blueprint', label: 'Bob', version: 0},
-	};
-	const {rerender} = render(
+function renderActions({
+	closeConfirmationOpen = false,
+	commitAction = saveAction,
+	commitDisabled = false,
+	onClose = vi.fn<() => void>(),
+	onCommit = vi.fn<() => void>(),
+	onDiscard = vi.fn<() => void>(),
+	onKeepEditing = vi.fn<() => void>(),
+}: {
+	closeConfirmationOpen?: boolean;
+	commitAction?: BlueprintEditorCommitAction;
+	commitDisabled?: boolean;
+	onClose?: () => void;
+	onCommit?: () => void;
+	onDiscard?: () => void;
+	onKeepEditing?: () => void;
+} = {}) {
+	return render(
 		<BlueprintEditorActions
-			closeConfirmationOpen={false}
-			dirty={false}
-			draftBlueprint={rootBlueprint}
+			closeConfirmationOpen={closeConfirmationOpen}
+			commitAction={commitAction}
+			commitDisabled={commitDisabled}
 			onClose={onClose}
-			onDiscard={vi.fn<() => void>()}
-			onKeepEditing={vi.fn<() => void>()}
-			onSaved={onSaved}
-			rootBlueprint={rootBlueprint}
-			selectedPath=""
-		/>,
-	);
-
-	const unchangedSave = screen.getByRole<HTMLButtonElement>('button', {name: 'Save blueprint'});
-	expect({
-		disabled: unchangedSave.disabled,
-		navigation: navigate.mock.calls,
-		scope: screen.getByText(
-			'Saves changes to the loaded blueprint. Export and Open in Playground use the saved blueprint.',
-		).textContent,
-	}).toStrictEqual({
-		disabled: true,
-		navigation: [],
-		scope: 'Saves changes to the loaded blueprint. Export and Open in Playground use the saved blueprint.',
-	});
-	rerender(
-		<BlueprintEditorActions
-			closeConfirmationOpen={false}
-			dirty
-			onClose={onClose}
-			onDiscard={vi.fn<() => void>()}
-			onKeepEditing={vi.fn<() => void>()}
-			onSaved={onSaved}
-			rootBlueprint={rootBlueprint}
-			selectedPath=""
-		/>,
-	);
-	expect({
-		disabled: screen.getByRole<HTMLButtonElement>('button', {name: 'Save blueprint'}).disabled,
-		navigation: navigate.mock.calls,
-	}).toStrictEqual({disabled: true, navigation: []});
-
-	rerender(
-		<BlueprintEditorActions
-			closeConfirmationOpen={false}
-			dirty
-			draftBlueprint={draftBlueprint}
-			onClose={onClose}
-			onDiscard={vi.fn<() => void>()}
-			onKeepEditing={vi.fn<() => void>()}
-			onSaved={onSaved}
-			rootBlueprint={rootBlueprint}
-			selectedPath=""
-		/>,
-	);
-	await user.click(screen.getByRole('button', {name: 'Save blueprint'}));
-
-	expect({
-		navigation: navigate.mock.calls,
-		onClose: onClose.mock.calls,
-		onSaved: onSaved.mock.calls,
-	}).toStrictEqual({
-		navigation: [
-			[
-				{
-					to: '/',
-					search: {pasted: serializeBlueprint(draftBlueprint), selection: ''},
-				},
-			],
-		],
-		onClose: [],
-		onSaved: [[draftBlueprint]],
-	});
-});
-
-test('writes an edited child into the entire book and preserves the nested selection', async () => {
-	const user = userEvent.setup();
-	const onSaved = vi.fn<(savedRoot: BlueprintString) => void>();
-	const rootBlueprint: BlueprintString = {
-		blueprint_book: {
-			item: 'blueprint-book',
-			label: "Alice's test book",
-			version: 0,
-			blueprints: [
-				{index: 100, blueprint: {item: 'blueprint', label: 'Bob', version: 0}},
-				{index: 200, blueprint: {item: 'blueprint', label: 'Charlie', version: 0}},
-			],
-		},
-	};
-	const draftBlueprint: BlueprintString = {
-		blueprint: {item: 'blueprint', label: 'Updated Bob', version: 0},
-	};
-	const savedRoot: BlueprintString = {
-		blueprint_book: {
-			item: 'blueprint-book',
-			label: "Alice's test book",
-			version: 0,
-			blueprints: [
-				{blueprint: {item: 'blueprint', label: 'Updated Bob', version: 0}, index: 100},
-				{index: 200, blueprint: {item: 'blueprint', label: 'Charlie', version: 0}},
-			],
-		},
-	};
-	render(
-		<BlueprintEditorActions
-			closeConfirmationOpen={false}
-			dirty
-			draftBlueprint={draftBlueprint}
-			onClose={vi.fn<() => void>()}
-			onDiscard={vi.fn<() => void>()}
-			onKeepEditing={vi.fn<() => void>()}
-			onSaved={onSaved}
-			rootBlueprint={rootBlueprint}
-			selectedPath="1"
-		/>,
-	);
-
-	expect({
-		disabled: screen.getByRole<HTMLButtonElement>('button', {name: 'Save to book'}).disabled,
-		scope: screen.getByText(
-			'Saves this entry into the loaded book. Export and Open in Playground use the entire saved book.',
-		).textContent,
-	}).toStrictEqual({
-		disabled: false,
-		scope: 'Saves this entry into the loaded book. Export and Open in Playground use the entire saved book.',
-	});
-
-	await user.click(screen.getByRole('button', {name: 'Save to book'}));
-
-	expect({navigation: navigate.mock.calls, onSaved: onSaved.mock.calls}).toStrictEqual({
-		navigation: [
-			[
-				{
-					to: '/',
-					search: {pasted: serializeBlueprint(savedRoot), selection: '1'},
-				},
-			],
-		],
-		onSaved: [[savedRoot]],
-	});
-});
-
-test('offers every dirty-close choice and saves the same root draft from the confirmation', async () => {
-	const user = userEvent.setup();
-	const onDiscard = vi.fn<() => void>();
-	const onKeepEditing = vi.fn<() => void>();
-	const onSaved = vi.fn<(savedRoot: BlueprintString) => void>();
-	const rootBlueprint: BlueprintString = {
-		blueprint: {item: 'blueprint', label: 'Alice', version: 0},
-	};
-	const draftBlueprint: BlueprintString = {
-		blueprint: {item: 'blueprint', label: 'Bob', version: 0},
-	};
-	render(
-		<BlueprintEditorActions
-			closeConfirmationOpen
-			dirty
-			draftBlueprint={draftBlueprint}
-			onClose={vi.fn<() => void>()}
+			onCommit={onCommit}
 			onDiscard={onDiscard}
 			onKeepEditing={onKeepEditing}
-			onSaved={onSaved}
-			rootBlueprint={rootBlueprint}
-			selectedPath=""
 		/>,
 	);
+}
 
-	const confirmation = screen.getByRole('alertdialog', {name: 'Discard unsaved changes?'});
+test('uses the existing-record caption and does not expose export or navigation as save actions', async () => {
+	const user = userEvent.setup();
+	const onClose = vi.fn<() => void>();
+	const onCommit = vi.fn<() => void>();
+	renderActions({commitAction: saveAction, onClose, onCommit});
+
+	expect({
+		actions: screen.getAllByRole('button').map((button) => button.textContent),
+		scope: screen.getByText(saveAction.scopeDescription).textContent,
+	}).toStrictEqual({
+		actions: ['Close', 'Save Blueprint'],
+		scope: saveAction.scopeDescription,
+	});
+
+	await user.click(screen.getByRole('button', {name: 'Save Blueprint'}));
+	await user.click(screen.getByRole('button', {name: 'Close'}));
+
+	expect({onClose: onClose.mock.calls, onCommit: onCommit.mock.calls}).toStrictEqual({
+		onClose: [[]],
+		onCommit: [[]],
+	});
+	expect(['Export', 'Open in Playground'].map((name) => screen.queryByRole('button', {name}))).toStrictEqual([
+		null,
+		null,
+	]);
+});
+
+test('enables Create Blueprint for a first captured draft without inspecting its label', async () => {
+	const user = userEvent.setup();
+	const onCommit = vi.fn<() => void>();
+	renderActions({commitAction: createAction, onCommit});
+	const createButton = screen.getByRole<HTMLButtonElement>('button', {name: 'Create Blueprint'});
+
+	expect({
+		disabled: createButton.disabled,
+		scope: screen.getByText(createAction.scopeDescription).textContent,
+	}).toStrictEqual({disabled: false, scope: createAction.scopeDescription});
+
+	await user.click(createButton);
+	expect(onCommit).toHaveBeenCalledExactlyOnceWith();
+});
+
+test('uses Save to Book for a child commit whose root scope needs clarification', async () => {
+	const user = userEvent.setup();
+	const onCommit = vi.fn<() => void>();
+	renderActions({commitAction: saveToBookAction, onCommit});
+
+	expect(screen.getByText(saveToBookAction.scopeDescription).textContent).toBe(
+		'Commits this selection into its containing root book.',
+	);
+	await user.click(screen.getByRole('button', {name: 'Save to Book'}));
+	expect(onCommit).toHaveBeenCalledExactlyOnceWith();
+});
+
+test('offers Commit, Discard, and Keep Editing and routes Escape back to the same draft', async () => {
+	const user = userEvent.setup();
+	const onCommit = vi.fn<() => void>();
+	const onDiscard = vi.fn<() => void>();
+	const onKeepEditing = vi.fn<() => void>();
+	renderActions({closeConfirmationOpen: true, onCommit, onDiscard, onKeepEditing});
+	const confirmation = screen.getByRole('alertdialog', {name: 'There are uncommitted changes'});
+
 	expect(
 		within(confirmation)
 			.getAllByRole('button')
 			.map((button) => button.textContent),
-	).toStrictEqual(['Keep editing', 'Discard changes', 'Save blueprint']);
+	).toStrictEqual(['Keep Editing', 'Discard', 'Commit']);
 
-	await user.click(within(confirmation).getByRole('button', {name: 'Keep editing'}));
-	await user.click(within(confirmation).getByRole('button', {name: 'Discard changes'}));
-	await user.click(within(confirmation).getByRole('button', {name: 'Save blueprint'}));
+	await user.click(within(confirmation).getByRole('button', {name: 'Commit'}));
+	await user.click(within(confirmation).getByRole('button', {name: 'Discard'}));
+	fireEvent.keyDown(window, {key: 'Escape'});
 
 	expect({
-		navigation: navigate.mock.calls,
+		onCommit: onCommit.mock.calls,
 		onDiscard: onDiscard.mock.calls,
 		onKeepEditing: onKeepEditing.mock.calls,
-		onSaved: onSaved.mock.calls,
 	}).toStrictEqual({
-		navigation: [
-			[
-				{
-					to: '/',
-					search: {pasted: serializeBlueprint(draftBlueprint), selection: ''},
-				},
-			],
-		],
+		onCommit: [[]],
 		onDiscard: [[]],
 		onKeepEditing: [[]],
-		onSaved: [[draftBlueprint]],
 	});
 });

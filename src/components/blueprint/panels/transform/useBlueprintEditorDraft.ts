@@ -7,19 +7,60 @@ import {
 	applyBlueprintEditorMetadata,
 	applyBlueprintParameters,
 	applyBlueprintSnapGrid,
+	BlueprintEditorSourceMode,
 	blueprintEditorMetadata,
 	blueprintParameters,
 	blueprintSnapGrid,
 	type BlueprintSnapGrid,
 } from '../../../../transform/blueprintEditor';
 import {type BlueprintComponentRemovalKey, removeBlueprintComponents} from '../../../../transform/componentRemoval';
-import {stripEntities, stripModules, stripTiles, stripTrains} from '../../../../transform/strip';
+import {
+	blueprintFilterAnalysis,
+	stripEntities,
+	stripFuel,
+	stripModules,
+	stripStationNames,
+	stripTiles,
+	stripTrains,
+	stripVehicles,
+} from '../../../../transform/strip';
 import type {PlacedUpgradePlanner} from './BlueprintEditorToolbar';
 
 interface UseBlueprintEditorDraftOptions {
 	blueprint?: BlueprintString;
 	rootBlueprint?: BlueprintString;
 	selectedPath: string;
+	capturedOnSpacePlatform: boolean;
+	sourceMode: BlueprintEditorSourceMode;
+}
+
+export {BlueprintEditorSourceMode} from '../../../../transform/blueprintEditor';
+
+export interface BlueprintEditorCommitAction {
+	caption: string;
+	scopeDescription: string;
+}
+
+function blueprintEditorCommitAction(
+	selectedPath: string,
+	sourceMode: BlueprintEditorSourceMode,
+): BlueprintEditorCommitAction {
+	if (selectedPath !== '') {
+		return {
+			caption: 'Save to Book',
+			scopeDescription: 'Commits this selection into its containing root book.',
+		};
+	}
+	if (sourceMode === BlueprintEditorSourceMode.CapturedDraft) {
+		return {
+			caption: 'Create Blueprint',
+			scopeDescription: 'Creates this newly captured draft as the committed root blueprint.',
+		};
+	}
+	return {
+		caption: 'Save Blueprint',
+		scopeDescription: 'Commits changes to the existing blueprint record.',
+	};
 }
 
 function sourceMetadata(blueprint: BlueprintString | undefined) {
@@ -35,16 +76,29 @@ function sourceMetadata(blueprint: BlueprintString | undefined) {
  * - Opening creates a session-local copy of title, description, icons, snapping,
  *   parameters, components, and conditional filters.
  * - Child confirmations change that copy. They do not mutate the loaded source.
- * - A clean close ends the session. A dirty close enters confirmation; keeping
- *   returns to the same draft, while discarding resets it before closing.
+ * - A clean close ends the session. X and Escape share the same close request; a
+ *   dirty request enters confirmation, keeping returns to the same draft, and
+ *   discarding resets it before closing.
  * - The draft selected entry is reinserted at `selectedPath`, preserving its
- *   containing root book. Only `BlueprintEditorActions` crosses the commit
- *   boundary.
+ *   containing root book. The returned commit function is the only path across
+ *   the editor boundary.
  *
- * This maps the temporary setup parameters and nested library-record identity in
- * BlueprintSetupGui and BlueprintToBeSetup to browser state.
+ * `sourceMode` is explicit session/record identity. A captured draft is not
+ * inferred from its editable label: empty labels are valid on existing records.
+ * This maps BlueprintToBeSetup::isNewBlueprintItem and BlueprintViewMode to
+ * browser state.
  */
-export function useBlueprintEditorDraft({blueprint, rootBlueprint, selectedPath}: UseBlueprintEditorDraftOptions) {
+export function useBlueprintEditorDraft({
+	blueprint,
+	rootBlueprint,
+	selectedPath,
+	capturedOnSpacePlatform,
+	sourceMode,
+}: UseBlueprintEditorDraftOptions) {
+	const filterAnalysis = useMemo(
+		() => blueprintFilterAnalysis(blueprint ?? {}, sourceMode, capturedOnSpacePlatform),
+		[blueprint, capturedOnSpacePlatform, sourceMode],
+	);
 	const metadata = useMemo(() => sourceMetadata(blueprint), [blueprint]);
 	const sourceIcons = useMemo(
 		() => [...metadata.icons].sort((left, right) => left.index - right.index).map((icon) => icon.signal),
@@ -71,10 +125,13 @@ export function useBlueprintEditorDraft({blueprint, rootBlueprint, selectedPath}
 	const [removedEditorComponents, setRemovedEditorComponents] = useState<Set<BlueprintComponentRemovalKey>>(
 		() => new Set(),
 	);
-	const [stripEntitiesSelected, setStripEntitiesSelected] = useState(false);
-	const [stripModulesSelected, setStripModulesSelected] = useState(false);
-	const [stripTrainsSelected, setStripTrainsSelected] = useState(false);
-	const [stripTilesSelected, setStripTilesSelected] = useState(false);
+	const [stripEntitiesSelected, setStripEntitiesSelected] = useState(!filterAnalysis.defaults.entities);
+	const [stripFuelSelected, setStripFuelSelected] = useState(!filterAnalysis.defaults.fuel);
+	const [stripModulesSelected, setStripModulesSelected] = useState(!filterAnalysis.defaults.modules);
+	const [stripStationNamesSelected, setStripStationNamesSelected] = useState(!filterAnalysis.defaults.stationNames);
+	const [stripTrainsSelected, setStripTrainsSelected] = useState(!filterAnalysis.defaults.trains);
+	const [stripTilesSelected, setStripTilesSelected] = useState(!filterAnalysis.defaults.tiles);
+	const [stripVehiclesSelected, setStripVehiclesSelected] = useState(!filterAnalysis.defaults.vehicles);
 	const [flattenBookSelected, setFlattenBookSelected] = useState(false);
 	const [sortBookSelected, setSortBookSelected] = useState(false);
 
@@ -88,13 +145,16 @@ export function useBlueprintEditorDraft({blueprint, rootBlueprint, selectedPath}
 		setEditorPlacedPlanner(undefined);
 		setEditorPlannerDropError(undefined);
 		setRemovedEditorComponents(new Set());
-		setStripEntitiesSelected(false);
-		setStripModulesSelected(false);
-		setStripTrainsSelected(false);
-		setStripTilesSelected(false);
+		setStripEntitiesSelected(!filterAnalysis.defaults.entities);
+		setStripFuelSelected(!filterAnalysis.defaults.fuel);
+		setStripModulesSelected(!filterAnalysis.defaults.modules);
+		setStripStationNamesSelected(!filterAnalysis.defaults.stationNames);
+		setStripTrainsSelected(!filterAnalysis.defaults.trains);
+		setStripTilesSelected(!filterAnalysis.defaults.tiles);
+		setStripVehiclesSelected(!filterAnalysis.defaults.vehicles);
 		setFlattenBookSelected(false);
 		setSortBookSelected(false);
-	}, [metadata.description, metadata.label, sourceIcons, sourceParameters, sourceSnapGrid]);
+	}, [filterAnalysis.defaults, metadata.description, metadata.label, sourceIcons, sourceParameters, sourceSnapGrid]);
 
 	const editorDirty = useMemo(
 		() =>
@@ -104,10 +164,13 @@ export function useBlueprintEditorDraft({blueprint, rootBlueprint, selectedPath}
 			JSON.stringify(editorSnapGrid) !== JSON.stringify(sourceSnapGrid) ||
 			JSON.stringify(editorParameters) !== JSON.stringify(sourceParameters) ||
 			removedEditorComponents.size > 0 ||
-			stripEntitiesSelected ||
-			stripModulesSelected ||
-			stripTrainsSelected ||
-			stripTilesSelected ||
+			stripEntitiesSelected !== !filterAnalysis.defaults.entities ||
+			stripFuelSelected !== !filterAnalysis.defaults.fuel ||
+			stripModulesSelected !== !filterAnalysis.defaults.modules ||
+			stripStationNamesSelected !== !filterAnalysis.defaults.stationNames ||
+			stripTrainsSelected !== !filterAnalysis.defaults.trains ||
+			stripTilesSelected !== !filterAnalysis.defaults.tiles ||
+			stripVehiclesSelected !== !filterAnalysis.defaults.vehicles ||
 			flattenBookSelected ||
 			sortBookSelected,
 		[
@@ -116,6 +179,7 @@ export function useBlueprintEditorDraft({blueprint, rootBlueprint, selectedPath}
 			editorLabel,
 			editorParameters,
 			editorSnapGrid,
+			filterAnalysis.defaults,
 			flattenBookSelected,
 			metadata.description,
 			metadata.label,
@@ -125,10 +189,17 @@ export function useBlueprintEditorDraft({blueprint, rootBlueprint, selectedPath}
 			sourceParameters,
 			sourceSnapGrid,
 			stripEntitiesSelected,
+			stripFuelSelected,
 			stripModulesSelected,
+			stripStationNamesSelected,
 			stripTilesSelected,
 			stripTrainsSelected,
+			stripVehiclesSelected,
 		],
+	);
+	const editorCommitAction = useMemo(
+		() => blueprintEditorCommitAction(selectedPath, sourceMode),
+		[selectedPath, sourceMode],
 	);
 
 	const editorDraft = useMemo(() => {
@@ -154,8 +225,11 @@ export function useBlueprintEditorDraft({blueprint, rootBlueprint, selectedPath}
 		}
 		selectedBlueprint = removeBlueprintComponents(selectedBlueprint, removedEditorComponents);
 		if (stripTrainsSelected) selectedBlueprint = stripTrains(selectedBlueprint);
+		if (stripVehiclesSelected) selectedBlueprint = stripVehicles(selectedBlueprint);
 		if (stripEntitiesSelected) selectedBlueprint = stripEntities(selectedBlueprint);
 		if (stripModulesSelected) selectedBlueprint = stripModules(selectedBlueprint);
+		if (stripFuelSelected) selectedBlueprint = stripFuel(selectedBlueprint);
+		if (stripStationNamesSelected) selectedBlueprint = stripStationNames(selectedBlueprint);
 		if (stripTilesSelected) selectedBlueprint = stripTiles(selectedBlueprint);
 		if (flattenBookSelected) selectedBlueprint = flattenBook(selectedBlueprint);
 		if (sortBookSelected) selectedBlueprint = sortBookByLabel(selectedBlueprint);
@@ -177,9 +251,12 @@ export function useBlueprintEditorDraft({blueprint, rootBlueprint, selectedPath}
 		selectedPath,
 		sortBookSelected,
 		stripEntitiesSelected,
+		stripFuelSelected,
 		stripModulesSelected,
+		stripStationNamesSelected,
 		stripTilesSelected,
 		stripTrainsSelected,
+		stripVehiclesSelected,
 	]);
 
 	const openBlueprintEditor = useCallback(() => {
@@ -206,15 +283,29 @@ export function useBlueprintEditorDraft({blueprint, rootBlueprint, selectedPath}
 		setCloseConfirmationOpen(false);
 		setBlueprintEditorOpen(false);
 	}, []);
+	const commitBlueprintEditorDraft = useCallback(() => {
+		if (editorDraft.rootBlueprint === undefined) {
+			throw new Error('Cannot commit an invalid blueprint draft.');
+		}
+		setCloseConfirmationOpen(false);
+		setBlueprintEditorOpen(false);
+		return editorDraft.rootBlueprint;
+	}, [editorDraft.rootBlueprint]);
 
 	return {
 		blueprintEditorOpen,
 		closeConfirmationOpen,
 		closeBlueprintEditor,
+		commitBlueprintEditorDraft,
 		discardBlueprintEditorDraft,
+		editorCommitAction,
+		editorCommitDisabled:
+			editorDraft.rootBlueprint === undefined ||
+			(sourceMode === BlueprintEditorSourceMode.ExistingRecord && !editorDirty),
 		editorDescription,
 		editorDirty,
 		editorDraft,
+		editorFilterAnalysis: filterAnalysis,
 		editorIconPickerIndex,
 		editorIcons,
 		editorLabel,
@@ -239,13 +330,19 @@ export function useBlueprintEditorDraft({blueprint, rootBlueprint, selectedPath}
 		setRemovedEditorComponents,
 		setSortBookSelected,
 		setStripEntitiesSelected,
+		setStripFuelSelected,
 		setStripModulesSelected,
+		setStripStationNamesSelected,
 		setStripTilesSelected,
 		setStripTrainsSelected,
+		setStripVehiclesSelected,
 		sortBookSelected,
 		stripEntitiesSelected,
+		stripFuelSelected,
 		stripModulesSelected,
+		stripStationNamesSelected,
 		stripTilesSelected,
 		stripTrainsSelected,
+		stripVehiclesSelected,
 	};
 }
