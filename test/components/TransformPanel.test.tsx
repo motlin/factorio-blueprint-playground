@@ -1411,7 +1411,7 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 				renderCommits:
 				{
 					firstMapping: 6,
-					iconChange: 6,
+					iconChange: 7,
 					initial: 1,
 					loadEmptyPlanner: 4,
 					openPlanner: 1,
@@ -2893,7 +2893,7 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 			},
 			{
 				label: 'Discard local planner',
-				style: 'red_button',
+				style: 'tool_button_red',
 			},
 		]);
 
@@ -6653,6 +6653,14 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 				},
 			),
 		);
+		await user.click(
+			screen.getByRole(
+				'button',
+				{
+					name: 'Rare quality',
+				},
+			),
+		);
 		await searchSignals(user, 'yellow');
 		await chooseSignal(user, 'Signal yellow');
 		fireEvent.contextMenu(
@@ -6719,6 +6727,7 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 													{
 														type: 'virtual',
 														name: 'signal-yellow',
+														quality: 'rare',
 													},
 												},
 												{
