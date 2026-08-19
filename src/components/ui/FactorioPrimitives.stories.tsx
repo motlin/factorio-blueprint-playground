@@ -1,7 +1,8 @@
 import type {Meta, StoryObj} from '@storybook/react-vite';
 import type React from 'react';
-import {expect, within} from 'storybook/test';
+import {expect, waitFor, within} from 'storybook/test';
 
+import {RichText} from '../core/text/RichText';
 import {
 	FactorioButton,
 	FactorioDialog,
@@ -14,6 +15,7 @@ import {
 	FactorioTooltip,
 	FactorioButtonKind,
 	FactorioFrameDepth,
+	FactorioTooltipPlacement,
 } from './FactorioUi';
 
 const meta: Meta = {
@@ -34,6 +36,58 @@ function StateCell({children, label}: {children: React.ReactNode; label: string}
 		</div>
 	);
 }
+
+interface ButtonExampleProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+	kind: FactorioButtonKind;
+	label: string;
+}
+
+function ButtonExample({kind, label, ...buttonProps}: ButtonExampleProps) {
+	const iconOnly = kind === FactorioButtonKind.Search || kind === FactorioButtonKind.Close;
+	return (
+		<FactorioButton {...buttonProps} kind={kind} aria-label={iconOnly ? label : undefined}>
+			{iconOnly ? undefined : label}
+		</FactorioButton>
+	);
+}
+
+function ButtonKindStates({kind, label}: {kind: FactorioButtonKind; label: string}) {
+	return (
+		<section className="factorio-primitive-matrix__button-kind" aria-label={`${label} button states`}>
+			<h3>{label}</h3>
+			<div className="factorio-primitive-matrix__row">
+				<StateCell label="Rest">
+					<ButtonExample data-testid={`${kind}-rest`} kind={kind} label={label} />
+				</StateCell>
+				<StateCell label="Hover">
+					<ButtonExample data-testid={`${kind}-hover`} data-visual-state="hover" kind={kind} label={label} />
+				</StateCell>
+				<StateCell label="Focus">
+					<ButtonExample data-testid={`${kind}-focus`} data-visual-state="focus" kind={kind} label={label} />
+				</StateCell>
+				<StateCell label="Pressed">
+					<ButtonExample
+						data-testid={`${kind}-pressed`}
+						data-visual-state="active"
+						kind={kind}
+						label={label}
+					/>
+				</StateCell>
+				<StateCell label="Disabled">
+					<ButtonExample data-testid={`${kind}-disabled`} disabled kind={kind} label={label} />
+				</StateCell>
+			</div>
+		</section>
+	);
+}
+
+const buttonKinds = [
+	{kind: FactorioButtonKind.Neutral, label: 'Neutral'},
+	{kind: FactorioButtonKind.Confirm, label: 'Confirm'},
+	{kind: FactorioButtonKind.Delete, label: 'Delete'},
+	{kind: FactorioButtonKind.Search, label: 'Search'},
+	{kind: FactorioButtonKind.Close, label: 'Close'},
+];
 
 interface DensityStyle extends React.CSSProperties {
 	'--factorio-ui-density': number;
@@ -167,6 +221,169 @@ export const StateMatrix: Story = {
 	},
 };
 
+export const ButtonStates: Story = {
+	tags: ['visual-conformance'],
+	render: () => (
+		<main className="factorio-primitive-matrix factorio-primitive-matrix--buttons">
+			<h2>Factorio button states</h2>
+			{buttonKinds.map(({kind, label}) => (
+				<ButtonKindStates key={kind} kind={kind} label={label} />
+			))}
+		</main>
+	),
+	play: async ({canvasElement}) => {
+		const canvas = within(canvasElement);
+		const backgrounds = buttonKinds.map(({kind}) =>
+			['rest', 'hover', 'focus', 'pressed', 'disabled'].map(
+				(state) => getComputedStyle(canvas.getByTestId(`${kind}-${state}`)).backgroundColor,
+			),
+		);
+		await expect(backgrounds).toStrictEqual([
+			['rgb(100, 100, 100)', 'rgb(139, 103, 69)', 'rgb(100, 100, 100)', 'rgb(177, 105, 37)', 'rgb(61, 61, 61)'],
+			['rgb(94, 182, 99)', 'rgb(146, 232, 151)', 'rgb(94, 182, 99)', 'rgb(63, 145, 70)', 'rgb(40, 74, 43)'],
+			['rgb(254, 90, 90)', 'rgb(255, 155, 155)', 'rgb(254, 90, 90)', 'rgb(196, 62, 62)', 'rgb(87, 31, 31)'],
+			['rgb(100, 100, 100)', 'rgb(139, 103, 69)', 'rgb(100, 100, 100)', 'rgb(177, 105, 37)', 'rgb(61, 61, 61)'],
+			['rgb(100, 100, 100)', 'rgb(139, 103, 69)', 'rgb(100, 100, 100)', 'rgb(177, 105, 37)', 'rgb(61, 61, 61)'],
+		]);
+		await expect(
+			buttonKinds.map(({kind}) => {
+				const rest = canvas.getByTestId(`${kind}-rest`);
+				const focus = canvas.getByTestId(`${kind}-focus`);
+				const disabled = canvas.getByTestId(`${kind}-disabled`);
+				return {
+					disabled: disabled.hasAttribute('disabled'),
+					disabledAria: disabled.getAttribute('aria-disabled'),
+					focusOutline: getComputedStyle(focus).outlineColor,
+					height: getComputedStyle(rest).height,
+					square: rest.clientWidth === rest.clientHeight,
+					style: rest.getAttribute('data-factorio-style'),
+				};
+			}),
+		).toStrictEqual([
+			{
+				disabled: true,
+				disabledAria: 'true',
+				focusOutline: 'rgb(227, 152, 39)',
+				height: '36px',
+				square: false,
+				style: 'button',
+			},
+			{
+				disabled: true,
+				disabledAria: 'true',
+				focusOutline: 'rgb(227, 152, 39)',
+				height: '36px',
+				square: false,
+				style: 'green_button',
+			},
+			{
+				disabled: true,
+				disabledAria: 'true',
+				focusOutline: 'rgb(227, 152, 39)',
+				height: '36px',
+				square: false,
+				style: 'red_button',
+			},
+			{
+				disabled: true,
+				disabledAria: 'true',
+				focusOutline: 'rgb(227, 152, 39)',
+				height: '36px',
+				square: true,
+				style: 'frame_action_button',
+			},
+			{
+				disabled: true,
+				disabledAria: 'true',
+				focusOutline: 'rgb(227, 152, 39)',
+				height: '36px',
+				square: true,
+				style: 'frame_action_button',
+			},
+		]);
+	},
+};
+
+function TooltipExample() {
+	return (
+		<main className="factorio-tooltip-story">
+			<div className="factorio-tooltip-story__anchor factorio-tooltip-story__anchor--top">
+				<FactorioButton aria-describedby="below-tooltip">Hover or focus</FactorioButton>
+				<FactorioTooltip
+					id="below-tooltip"
+					heading="Fast transport belt"
+					open
+					placement={FactorioTooltipPlacement.Above}
+				>
+					<RichText
+						text="Moves [item=iron-plate] and [item=copper-plate] through this compact factory."
+						iconSize="small"
+					/>
+				</FactorioTooltip>
+			</div>
+			<div className="factorio-tooltip-story__anchor factorio-tooltip-story__anchor--bottom">
+				<FactorioButton aria-describedby="above-tooltip">Keyboard focus</FactorioButton>
+				<FactorioTooltip
+					id="above-tooltip"
+					heading="Upgrade Planner"
+					open
+					placement={FactorioTooltipPlacement.Below}
+				>
+					Applies the selected mappings. <span className="factorio-tooltip__shortcut">U</span>
+				</FactorioTooltip>
+			</div>
+		</main>
+	);
+}
+
+export const TooltipStates: Story = {
+	tags: ['visual-conformance'],
+	render: () => <TooltipExample />,
+	play: async ({canvasElement}) => {
+		const documentBody = within(canvasElement.ownerDocument.body);
+		await waitFor(async () => {
+			await expect(documentBody.getAllByRole('tooltip')).toHaveLength(2);
+		});
+		const tooltips = documentBody.getAllByRole('tooltip');
+		await expect(
+			tooltips.map((tooltip) => {
+				const bounds = tooltip.getBoundingClientRect();
+				return {
+					backgroundColor: getComputedStyle(tooltip).backgroundColor,
+					bottomInsideViewport: bounds.bottom <= window.innerHeight - 10,
+					leftInsideViewport: bounds.left >= 10,
+					open: tooltip.dataset.factorioTooltipOpen,
+					padding: getComputedStyle(tooltip).padding,
+					rightInsideViewport: bounds.right <= window.innerWidth - 10,
+					selectable: getComputedStyle(tooltip).userSelect,
+					topInsideViewport: bounds.top >= 10,
+				};
+			}),
+		).toStrictEqual([
+			{
+				backgroundColor: 'rgba(49, 48, 49, 0.94)',
+				bottomInsideViewport: true,
+				leftInsideViewport: true,
+				open: 'true',
+				padding: '0px 4px',
+				rightInsideViewport: true,
+				selectable: 'text',
+				topInsideViewport: true,
+			},
+			{
+				backgroundColor: 'rgba(49, 48, 49, 0.94)',
+				bottomInsideViewport: true,
+				leftInsideViewport: true,
+				open: 'true',
+				padding: '0px 4px',
+				rightInsideViewport: true,
+				selectable: 'text',
+				topInsideViewport: true,
+			},
+		]);
+	},
+};
+
 function DialogChromeExample({nested}: {nested: boolean}) {
 	return (
 		<>
@@ -239,5 +456,77 @@ export const NestedDialogChrome: Story = {
 			'aria-hidden',
 			'true',
 		);
+	},
+};
+
+function ScrollFrameExample() {
+	const rows = Array.from({length: 12}, (_, index) => `Inventory row ${(index + 1).toString()}`);
+	return (
+		<main className="factorio-scroll-frame-story">
+			<FactorioDialog aria-label="Scrollable inventory" className="factorio-scroll-frame-story__dialog">
+				<FactorioTitleBar>
+					<h2>Inventory</h2>
+					<FactorioButton kind={FactorioButtonKind.Close} aria-label="Close scroll example" />
+				</FactorioTitleBar>
+				<FactorioScrollFrame
+					aria-label="Inventory contents"
+					className="factorio-scroll-frame-story__body"
+					data-testid="scroll-owner"
+					data-visual-state="focus"
+				>
+					{rows.map((row) => (
+						<p key={row}>{row}</p>
+					))}
+				</FactorioScrollFrame>
+				<footer className="factorio-scroll-frame-story__footer">
+					<span>12 rows</span>
+					<FactorioButton kind={FactorioButtonKind.Confirm}>Confirm</FactorioButton>
+				</footer>
+			</FactorioDialog>
+		</main>
+	);
+}
+
+export const ScrollFrameStates: Story = {
+	tags: ['visual-conformance'],
+	render: () => <ScrollFrameExample />,
+	play: async ({canvasElement}) => {
+		const canvas = within(canvasElement);
+		const dialog = canvas.getByRole('dialog', {name: 'Scrollable inventory'});
+		const scrollOwner = canvas.getByTestId('scroll-owner');
+		const header = dialog.querySelector<HTMLElement>(':scope > .factorio-title-bar');
+		const footer = dialog.querySelector<HTMLElement>(':scope > .factorio-scroll-frame-story__footer');
+		if (header === null || footer === null) {
+			throw new Error('Expected the scroll example header and footer.');
+		}
+		scrollOwner.focus();
+		await expect(scrollOwner).toHaveFocus();
+		await expect({
+			dialogOverflow: getComputedStyle(dialog).overflow,
+			focusOutlineColor: getComputedStyle(scrollOwner).outlineColor,
+			focusOutlineOffset: getComputedStyle(scrollOwner).outlineOffset,
+			headerInsideDialog: header.getBoundingClientRect().top >= dialog.getBoundingClientRect().top,
+			footerInsideDialog: footer.getBoundingClientRect().bottom <= dialog.getBoundingClientRect().bottom,
+			horizontalOverflow: getComputedStyle(scrollOwner).overflowX,
+			isScrollable: scrollOwner.scrollHeight > scrollOwner.clientHeight,
+			ownerCount: dialog.querySelectorAll('[data-factorio-scroll-owner="true"]').length,
+			scrollbarColor: getComputedStyle(scrollOwner).scrollbarColor,
+			scrollbarGutter: getComputedStyle(scrollOwner).scrollbarGutter,
+			style: scrollOwner.getAttribute('data-factorio-style'),
+			verticalOverflow: getComputedStyle(scrollOwner).overflowY,
+		}).toStrictEqual({
+			dialogOverflow: 'hidden',
+			focusOutlineColor: 'rgb(227, 152, 39)',
+			focusOutlineOffset: '-3px',
+			headerInsideDialog: true,
+			footerInsideDialog: true,
+			horizontalOverflow: 'hidden',
+			isScrollable: true,
+			ownerCount: 1,
+			scrollbarColor: 'rgb(111, 109, 111) rgb(36, 35, 36)',
+			scrollbarGutter: 'stable',
+			style: 'deep_slots_scroll_pane',
+			verticalOverflow: 'auto',
+		});
 	},
 };

@@ -1,5 +1,5 @@
 import {useNavigate} from '@tanstack/react-router';
-import {useMemo, useState} from 'react';
+import {useId, useMemo, useState} from 'react';
 
 import {BlueprintWrapper} from '../../../../parsing/BlueprintWrapper';
 import {serializeBlueprint} from '../../../../parsing/blueprintParser';
@@ -23,6 +23,7 @@ import {SignalPickerDialog} from './SignalPickerDialog';
 import {UpgradePlannerDialog} from './UpgradePlannerDialog';
 import {chatIconPickerOptions, signalTitle} from './upgradePlannerSignals';
 import {BlueprintEditorSourceMode, useBlueprintEditorDraft} from './useBlueprintEditorDraft';
+import {useDialogFocus} from './useDialogFocus';
 import type {UpgradePlannerChoice} from './UpgradePlannerSelectorDialog';
 import {useUpgradePlannerDraft} from './useUpgradePlannerDraft';
 
@@ -33,6 +34,49 @@ interface TransformPanelProps {
 	onBlueprintCommit?: (committedRoot: BlueprintString) => void;
 	rootBlueprint?: BlueprintString;
 	selectedPath?: string;
+}
+
+function UpgradePlannerDiscardConfirmation({
+	onDiscard,
+	onKeepEditing,
+}: {
+	onDiscard: () => void;
+	onKeepEditing: () => void;
+}) {
+	const headingId = useId();
+	const confirmationReference = useDialogFocus<HTMLElement>({
+		initialFocusSelector: '[data-dialog-initial-focus="true"]',
+		onClose: onKeepEditing,
+	});
+
+	return (
+		<div className="transform-dialog-backdrop transform-dialog-backdrop--confirmation">
+			<section
+				ref={confirmationReference}
+				className="factorio-frame factorio-frame--shallow transform-dialog transform-dialog--confirmation"
+				role="alertdialog"
+				aria-modal="true"
+				aria-labelledby={headingId}
+			>
+				<header className="factorio-title-bar transform-dialog__header">
+					<h3 id={headingId}>Discard unsaved changes?</h3>
+				</header>
+				<p>Your changes have not been written back to the loaded blueprint or book.</p>
+				<div className="transform-dialog__actions">
+					<FactorioButton
+						data-dialog-initial-focus="true"
+						className="transform-button"
+						onClick={onKeepEditing}
+					>
+						Keep editing
+					</FactorioButton>
+					<FactorioButton kind={FactorioButtonKind.Delete} className="transform-button" onClick={onDiscard}>
+						Discard changes
+					</FactorioButton>
+				</div>
+			</section>
+		</div>
+	);
 }
 
 export function TransformPanel({
@@ -404,31 +448,10 @@ export function TransformPanel({
 				/>
 			) : null}
 			{upgradeDraft.discardConfirmationOpen ? (
-				<div className="transform-dialog-backdrop transform-dialog-backdrop--confirmation">
-					<section
-						className="factorio-frame factorio-frame--shallow transform-dialog transform-dialog--confirmation"
-						role="alertdialog"
-						aria-modal="true"
-						aria-labelledby="discard-transform-heading"
-					>
-						<header className="factorio-title-bar transform-dialog__header">
-							<h3 id="discard-transform-heading">Discard unsaved changes?</h3>
-						</header>
-						<p>Your changes have not been written back to the loaded blueprint or book.</p>
-						<div className="transform-dialog__actions">
-							<FactorioButton className="transform-button" onClick={upgradeDraft.keepEditingPlanner}>
-								Keep editing
-							</FactorioButton>
-							<FactorioButton
-								kind={FactorioButtonKind.Delete}
-								className="transform-button"
-								onClick={upgradeDraft.discardPlanner}
-							>
-								Discard changes
-							</FactorioButton>
-						</div>
-					</section>
-				</div>
+				<UpgradePlannerDiscardConfirmation
+					onDiscard={upgradeDraft.discardPlanner}
+					onKeepEditing={upgradeDraft.keepEditingPlanner}
+				/>
 			) : null}
 			{editorIconPickerIndex === undefined ? null : (
 				<SignalPickerDialog
