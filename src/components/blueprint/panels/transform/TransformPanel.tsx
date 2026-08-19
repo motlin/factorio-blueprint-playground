@@ -564,7 +564,9 @@ export function TransformPanel({
 			{editorIconPickerIndex === undefined ? null : (
 				<SignalPickerDialog
 					confirmationMode="required"
+					initialQuality={editorIcons[editorIconPickerIndex]?.quality ?? 'normal'}
 					initialSignal={editorIcons[editorIconPickerIndex]}
+					qualityMode="target"
 					title={`Choose label icon ${(editorIconPickerIndex + 1).toString()}`}
 					options={editorIconOptions}
 					onClose={() =>
@@ -573,10 +575,19 @@ export function TransformPanel({
 					}}
 					onChoose={(signal) =>
 					{
+						const {comparator: _comparator, quality, ...prototype} = signal;
+						const icon =
+							quality === undefined || quality === 'normal'
+								? prototype
+								:
+									{
+										...prototype,
+										quality,
+									};
 						setEditorIcons((current) =>
 						{
 							const next = [...current];
-							next[editorIconPickerIndex] = signal;
+							next[editorIconPickerIndex] = icon;
 							return next;
 						});
 						setEditorIconPickerIndex(undefined);

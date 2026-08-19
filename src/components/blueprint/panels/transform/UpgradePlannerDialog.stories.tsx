@@ -362,7 +362,7 @@ export const EditablePlanner: Story =
 					},
 					{
 						label: 'Discard local planner',
-						style: 'red_button',
+						style: 'tool_button_red',
 					},
 				],
 				source:
@@ -546,7 +546,7 @@ export const SavedDeleteConfirmation: Story =
 					name: 'Delete from Library',
 				},
 			),
-		).toHaveAttribute('data-factorio-style', 'red_button');
+		).toHaveAttribute('data-factorio-style', 'tool_button_red');
 	},
 };
 

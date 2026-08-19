@@ -195,7 +195,7 @@ export const AddAndRemoveControls: Story =
 		await expect(removeButtons).toHaveLength(2);
 		for (const remove of removeButtons)
 		{
-			await expect(remove).toHaveAttribute('data-factorio-style', 'red_button');
+			await expect(remove).toHaveAttribute('data-factorio-style', 'tool_button_red');
 		}
 		await expect(
 			within(dialog).getByRole(
