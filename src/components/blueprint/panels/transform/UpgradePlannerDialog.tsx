@@ -206,7 +206,7 @@ function UpgradePlannerMetadataEditor({
 					/>
 				</header>
 				<div
-					className="factorio-frame factorio-frame--shallow upgrade-planner-metadata__record"
+					className="factorio-frame factorio-frame--inside upgrade-planner-metadata__record"
 					data-factorio-source="BlueprintRecordPreviewEdit"
 					data-factorio-style="entity_frame"
 				>
