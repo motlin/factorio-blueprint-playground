@@ -414,10 +414,7 @@ export function TransformPanel({
 						setStripStationNamesSelected(!included);
 					}}
 					onParametersChange={setEditorParameters}
-					onPlannerPlace={(choice, direction) => {
-						setEditorPlacedPlanner({choice, direction});
-						setEditorPlannerDropError(undefined);
-					}}
+					onApplyPlannerChoice={applyPlannerFromBlueprintEditor}
 					onSnapGridChange={setEditorSnapGrid}
 					onSortBookSelectedChange={setSortBookSelected}
 					onTilesIncludedChange={(included) => {
