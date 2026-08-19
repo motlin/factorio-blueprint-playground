@@ -142,7 +142,7 @@ export const LoadPlanner: Story = {
 				})),
 		}).toStrictEqual({
 			closeControl: 'Close planner draft chooser',
-			columns: '6',
+			columns: '5',
 			dialogVisible: true,
 			instructionText:
 				'Choosing a planner replaces this editable draft and returns to the Upgrade Planner. It does not apply changes to the blueprint.',

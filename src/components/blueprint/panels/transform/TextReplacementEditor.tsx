@@ -51,6 +51,7 @@ export function TextReplacementEditor({
 				<input
 					id={findInputId}
 					type="text"
+					data-factorio-style="textbox"
 					value={find}
 					onChange={(event) => {
 						onFindChange(event.currentTarget.value);
@@ -61,6 +62,7 @@ export function TextReplacementEditor({
 				<input
 					id={replacementInputId}
 					type="text"
+					data-factorio-style="textbox"
 					value={replacement}
 					onChange={(event) => {
 						onReplacementChange(event.currentTarget.value);
