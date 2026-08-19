@@ -17,6 +17,7 @@ describe('UpgradeMappingRow', () => {
 					count={0}
 					from={{type: 'entity', name: 'transport-belt', quality: 'rare', comparator: '≤'}}
 					mappingId="mapping-belt"
+					slotIndex={2}
 					to={{type: 'entity', name: 'fast-transport-belt', quality: 'normal'}}
 					onChooseSource={onChooseSource}
 					onChooseTarget={onChooseTarget}
@@ -39,6 +40,7 @@ describe('UpgradeMappingRow', () => {
 			attributes: {
 				draggable: row.getAttribute('draggable'),
 				key: row.getAttribute('data-mapping-key'),
+				slot: row.getAttribute('data-upgrade-mapping-slot'),
 				sourceTitle: source.title,
 				targetTitle: target.title,
 			},
@@ -54,8 +56,9 @@ describe('UpgradeMappingRow', () => {
 			},
 		}).toStrictEqual({
 			attributes: {
-				draggable: null,
+				draggable: 'true',
 				key: 'mapping-belt',
+				slot: '2',
 				sourceTitle: 'Transport belt\nentity:transport-belt\nQuality: ≤ rare',
 				targetTitle: 'Fast transport belt\nentity:fast-transport-belt\nQuality: = normal',
 			},
@@ -79,6 +82,7 @@ describe('UpgradeMappingRow', () => {
 				<UpgradeMappingRow
 					count={0}
 					mappingId="mapping-target-only"
+					slotIndex={0}
 					to={{type: 'entity', name: 'fast-inserter', quality: 'rare'}}
 					onChooseSource={onChooseSource}
 					onChooseTarget={vi.fn<() => void>()}

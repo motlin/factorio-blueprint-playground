@@ -118,6 +118,14 @@
 			"blob": "6be65eb23429258261beef0132b26929a6aec2e9"
 		},
 		{
+			"path": "src/Gui/BlueprintSettingsGui.cpp",
+			"blob": "a6c5c2107e09f91d2365fe1c8a678407738a610f"
+		},
+		{
+			"path": "src/Gui/BlueprintsList.cpp",
+			"blob": "8c268c557fb7675673198c19e7ca8bd5ddea8220"
+		},
+		{
 			"path": "src/Gui/ChatIconIDIterator.cpp",
 			"blob": "4e8d5e529057a25175c7449a386938b958bf3b2f"
 		},
@@ -138,6 +146,10 @@
 			"blob": "4b17f091bd1c96e3a443bb442f4d6cb0a4e67656"
 		},
 		{
+			"path": "src/Gui/SelectListGui.cpp",
+			"blob": "8a89d84c7c07afb28fbb5b82b110501929177c70"
+		},
+		{
 			"path": "src/Gui/SignalsTable.cpp",
 			"blob": "e1cc4bfb957ea09c4f232fb1685d5f449a741fe8"
 		},
@@ -149,5 +161,41 @@
 			"path": "src/Gui/UpgradeItemGui.hpp",
 			"blob": "ce72bcfe7c639c8b0046cba58ac4ba8dc5a81c1e"
 		}
-	]
+	],
+	"priorArt": {
+		"repository": "teoxoy/factorio-blueprint-editor",
+		"commit": "2bfc95e662cad19e2de89e72016181ca96fdbea6",
+		"license": "MIT",
+		"copyright": "Copyright (c) 2020 Tanasoaia Teodor Andrei",
+		"sources": [
+			{
+				"path": "packages/editor/src/UI/InventoryDialog.ts",
+				"blob": "a723eccca0ec00f07576d68cf4a4f3d30895e9af"
+			},
+			{
+				"path": "packages/editor/src/UI/controls/Button.ts",
+				"blob": "d4c4d06bcb29f6a5dc0e2941986d961563d6816d"
+			},
+			{
+				"path": "packages/editor/src/UI/controls/Dialog.ts",
+				"blob": "d9b4a6f8f5819f45dedac80ed7569c452db24820"
+			},
+			{
+				"path": "packages/editor/src/UI/controls/Panel.ts",
+				"blob": "b61a3482f13def5a24987cfd7f3f92000284c2ed"
+			},
+			{
+				"path": "packages/editor/src/UI/controls/functions.ts",
+				"blob": "f90851e00c6cd674a013fb357e932218e29fb3fd"
+			},
+			{
+				"path": "packages/editor/src/UI/style.ts",
+				"blob": "e64f65935b3dec845524bd995d1778955bc8a452"
+			},
+			{
+				"path": "packages/exporter/src/export-data/data-final-fixes.lua",
+				"blob": "48ee748a865b3c2113986a1a97134cbf63b3f540"
+			}
+		]
+	}
 }

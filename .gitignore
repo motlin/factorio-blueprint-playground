@@ -27,6 +27,7 @@ dist-ssr
 /.vite/
 /JUSTFILE_BRANCH
 /coverage
+/test-results
 /stats.html
 /tsconfig.app.tsbuildinfo
 /tsconfig.eslint.tsbuildinfo
@@ -40,3 +41,4 @@ src/routeTree.gen.ts
 
 *storybook.log
 storybook-static
+/.llm/game-ui-references/

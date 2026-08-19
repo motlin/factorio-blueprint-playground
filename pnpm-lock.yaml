@@ -70,7 +70,7 @@ importers:
         specifier: ^5.20260925.1
         version: 5.20260925.1
       '@playwright/test':
-        specifier: ^1.63.0
+        specifier: 1.63.0
         version: 1.63.0
       '@storybook/addon-a11y':
         specifier: ^10.6.0
@@ -124,7 +124,7 @@ importers:
         specifier: ^6.1.1
         version: 6.1.1(@voidzero-dev/vite-plus-core@0.2.9(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(typescript@7.0.2))
       '@vitest/browser-playwright':
-        specifier: ^5.0.2
+        specifier: 5.0.2
         version: 5.0.2(@voidzero-dev/vite-plus-core@0.2.9(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(typescript@7.0.2))(@voidzero-dev/vite-plus-test@0.1.24)(playwright@1.63.0)
       '@vitest/coverage-v8':
         specifier: ^5.0.2
@@ -151,7 +151,7 @@ importers:
         specifier: ^7.2.0
         version: 7.2.0
       playwright:
-        specifier: ^1.63.0
+        specifier: 1.63.0
         version: 1.63.0
       pngjs:
         specifier: ^7.0.0
