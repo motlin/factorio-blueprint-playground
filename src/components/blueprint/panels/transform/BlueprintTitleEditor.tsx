@@ -12,6 +12,7 @@ interface BlueprintTitleEditorProps
 	inputLabel?: string;
 	label: string;
 	onLabelChange: (label: string) => void;
+	onEdit?: () => void;
 	saveLabel?: string;
 }
 
@@ -21,6 +22,7 @@ export function BlueprintTitleEditor({
 	inputLabel = 'Blueprint title',
 	label,
 	onLabelChange,
+	onEdit,
 	saveLabel = 'Save label',
 }: BlueprintTitleEditorProps)
 {
@@ -29,6 +31,11 @@ export function BlueprintTitleEditor({
 
 	const beginEditing = () =>
 	{
+		if (onEdit !== undefined)
+		{
+			onEdit();
+			return;
+		}
 		setDraftLabel(label);
 		setEditing(true);
 	};

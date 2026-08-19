@@ -114,7 +114,7 @@ test('uses root icons as sources and preserves mappings while incomplete choices
 		{
 			activeElement: document.activeElement?.getAttribute('aria-label'),
 			count: mapping.querySelector('strong')?.textContent,
-			endpointClasses: ['Source Signal red', 'Target Signal blue'].map(
+			endpointClasses: ['Edit source, currently Signal red', 'Edit target, currently Signal blue'].map(
 				(name) =>
 					screen.getByRole(
 						'button',
@@ -126,7 +126,7 @@ test('uses root icons as sources and preserves mappings while incomplete choices
 			names: [...mapping.querySelectorAll('.icon-replacement-editor__name')].map(
 				(element) => element.textContent,
 			),
-			titles: ['Source Signal red', 'Target Signal blue'].map((name) =>
+			titles: ['Edit source, currently Signal red', 'Edit target, currently Signal blue'].map((name) =>
 				screen
 					.getByRole(
 						'button',
@@ -270,7 +270,7 @@ test('uses root icons as sources and preserves mappings while incomplete choices
 				.getByRole(
 					'button',
 					{
-						name: 'Clear source Signal green',
+						name: 'Dismiss new replacement',
 					},
 				)
 				.getAttribute('aria-label'),
@@ -291,7 +291,7 @@ test('uses root icons as sources and preserves mappings while incomplete choices
 		},
 	).toStrictEqual(
 		{
-			clearSource: 'Clear source Signal green',
+			clearSource: 'Dismiss new replacement',
 			committedMapping: 'Remove replacement for Signal red',
 			picker: null,
 		},
@@ -301,7 +301,7 @@ test('uses root icons as sources and preserves mappings while incomplete choices
 		screen.getByRole(
 			'button',
 			{
-				name: 'Clear source Signal green',
+				name: 'Dismiss new replacement',
 			},
 		),
 	);
@@ -310,7 +310,7 @@ test('uses root icons as sources and preserves mappings while incomplete choices
 			clearSource: screen.queryByRole(
 				'button',
 				{
-					name: /Clear source/,
+					name: 'Dismiss new replacement',
 				},
 			),
 			targetDisabled: screen
@@ -325,7 +325,7 @@ test('uses root icons as sources and preserves mappings while incomplete choices
 	).toStrictEqual(
 		{
 			clearSource: null,
-			targetDisabled: 'true',
+			targetDisabled: 'false',
 		},
 	);
 
@@ -355,6 +355,187 @@ test('uses root icons as sources and preserves mappings while incomplete choices
 		},
 		{
 			from: greenSignal,
+			to:
+			{
+				type: 'virtual',
+				name: 'signal-yellow',
+			},
+		},
+	]);
+});
+
+test('edits existing replacement endpoints in place through the nested pickers', async () =>
+{
+	const user = userEvent.setup();
+	const onChange = vi.fn<IconReplacementDialogProps['onChange']>();
+	render(
+		<IconReplacementDialog
+			onChange={onChange}
+			onClose={vi.fn<IconReplacementDialogProps['onClose']>()}
+			replacements={replacements}
+			rootBlueprint={rootBlueprint}
+		/>,
+	);
+
+	await user.click(
+		screen.getByRole(
+			'button',
+			{
+				name: 'Edit target, currently Signal blue',
+			},
+		),
+	);
+	const targetPicker = screen.getByRole(
+		'dialog',
+		{
+			name: 'Choose target icon',
+		},
+	);
+	await user.click(
+		within(targetPicker).getByRole(
+			'button',
+			{
+				name: 'Choose Signal yellow',
+			},
+		),
+	);
+	expect(onChange).toHaveBeenLastCalledWith([
+		{
+			from: redSignal,
+			to:
+			{
+				type: 'virtual',
+				name: 'signal-yellow',
+			},
+		},
+	]);
+
+	await user.click(
+		screen.getByRole(
+			'button',
+			{
+				name: 'Edit source, currently Signal red',
+			},
+		),
+	);
+	const sourcePicker = screen.getByRole(
+		'dialog',
+		{
+			name: 'Choose source icon used here',
+		},
+	);
+	expect(
+		within(sourcePicker)
+			.getAllByRole('button')
+			.map((button) => button.getAttribute('aria-label'))
+			.filter((label): label is string => label?.startsWith('Choose ') === true),
+	).toStrictEqual(['Choose Signal red', 'Choose Signal green']);
+	await user.click(
+		within(sourcePicker).getByRole(
+			'button',
+			{
+				name: 'Choose Signal green',
+			},
+		),
+	);
+	expect(onChange).toHaveBeenLastCalledWith([
+		{
+			from: greenSignal,
+			to: blueSignal,
+		},
+	]);
+});
+
+test('starts a new replacement from the target endpoint without silently committing', async () =>
+{
+	const user = userEvent.setup();
+	const onChange = vi.fn<IconReplacementDialogProps['onChange']>();
+	render(
+		<IconReplacementDialog
+			onChange={onChange}
+			onClose={vi.fn<IconReplacementDialogProps['onClose']>()}
+			replacements={[]}
+			rootBlueprint={rootBlueprint}
+		/>,
+	);
+
+	await user.click(
+		screen.getByRole(
+			'button',
+			{
+				name: 'Choose target icon',
+			},
+		),
+	);
+	const targetPicker = screen.getByRole(
+		'dialog',
+		{
+			name: 'Choose target icon',
+		},
+	);
+	const signalsTab = within(targetPicker).queryByRole(
+		'tab',
+		{
+			name: 'Signals',
+		},
+	);
+	if (signalsTab !== null)
+	{
+		await user.click(signalsTab);
+	}
+	await user.click(
+		within(targetPicker).getByRole(
+			'button',
+			{
+				name: 'Choose Signal yellow',
+			},
+		),
+	);
+	expect(
+		{
+			committed: onChange.mock.calls,
+			dismiss: screen
+				.getByRole(
+					'button',
+					{
+						name: 'Dismiss new replacement',
+					},
+				)
+				.getAttribute('aria-label'),
+		},
+	).toStrictEqual(
+		{
+			committed: [],
+			dismiss: 'Dismiss new replacement',
+		},
+	);
+
+	await user.click(
+		screen.getByRole(
+			'button',
+			{
+				name: 'Choose source icon',
+			},
+		),
+	);
+	await user.click(
+		within(
+			screen.getByRole(
+				'dialog',
+				{
+					name: 'Choose source icon used here',
+				},
+			),
+		).getByRole(
+			'button',
+			{
+				name: 'Choose Signal red',
+			},
+		),
+	);
+	expect(onChange).toHaveBeenCalledExactlyOnceWith([
+		{
+			from: redSignal,
 			to:
 			{
 				type: 'virtual',

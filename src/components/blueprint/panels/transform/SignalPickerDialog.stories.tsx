@@ -556,7 +556,7 @@ export const SignalOptionStates: Story =
 					name: 'Choose Processing unit',
 				},
 			),
-		).toBeDisabled();
+		).toHaveAttribute('aria-disabled', 'true');
 		await expect(screen.getAllByTestId('quality')).toHaveLength(2);
 		await expect(
 			screen.getByRole(

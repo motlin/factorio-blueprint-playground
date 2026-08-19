@@ -201,6 +201,7 @@ function renderPlannerHtml(): string
 				onSourceChange: noop,
 				onTargetChange: noop,
 				plannerInput: '',
+				plannerInputError: undefined,
 				rootBlueprint,
 				source: 'suggested',
 				sourceLabel: 'Default Upgrade',
@@ -240,6 +241,20 @@ function renderPlannerHtml(): string
 				onDescriptionChange: noop,
 				onIconsChange: noop,
 				onLabelChange: noop,
+			}}
+			recordTools={
+			{
+				deleteKind: 'local',
+				onCopy: async () =>
+				{
+					await Promise.resolve();
+					return true;
+				},
+				onDelete: async () =>
+				{
+					await Promise.resolve();
+				},
+				onExport: noop,
 			}}
 			saveDisabled={false}
 			savePrompt={
@@ -299,8 +314,10 @@ test('keeps the planner shell and mapping inside narrow and short viewports', as
 		dialogFitsViewport: true,
 		footerVisible: true,
 		headerVisible: true,
-		mappingFitsHorizontally: true,
+		mapperOwnsHorizontalScrolling: true,
+		mappingSourceWidthHonored: true,
 		panelInsetsPreserved: true,
+		singleMapperScrollRegion: true,
 		titleColorMatchesPriorArt: true,
 	};
 

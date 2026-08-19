@@ -86,6 +86,8 @@ const gameUiSpecSchema = z.object(
 			{
 				anyQuality: z.string().min(1),
 				qualitySelectionTooltip: z.string().min(1),
+				upgradeFrom: z.string().min(1),
+				upgradeTo: z.string().min(1),
 			},
 		),
 		signals: z.object(
@@ -116,6 +118,12 @@ const gameUiSpecSchema = z.object(
 				),
 			},
 		),
+		upgradePlanner: z.object(
+			{
+				mappingsPerRow: z.number().int().positive(),
+				minimumMappingRows: z.number().int().positive(),
+			},
+		),
 		utilityConstants: z.object(
 			{
 				blueprintBigSlotsPerRow: z.number().int().positive(),
@@ -139,13 +147,23 @@ const gameUiSpecSchema = z.object(
 				labelUnderWidgetBottomMargin: z.number().int(),
 				labelUnderWidgetHeight: z.number().int().positive(),
 				labelUnderWidgetTopMargin: z.number().int(),
+				mappingPairWidth: z.number().int().positive(),
+				mappingTableHorizontalSpacing: z.tuple([
+					z.number().int().nonnegative(),
+					z.number().int().nonnegative(),
+					z.number().int().nonnegative(),
+				]),
+				mappingTableVerticalSpacing: z.number().int().nonnegative(),
 				signalsTableColumnCount: z.number().int().positive(),
 				signalsTableMinimumWidth: z.number().int().positive(),
+				slotColumnHeaderWidth: z.number().int().positive(),
 				bindings: z.object(
 					{
 						slotButton: z.string().min(1),
 						filterSlotTable: z.string().min(1),
 						deepSlotsScrollPane: z.string().min(1),
+						mappingScrollPane: z.string().min(1),
+						mappingTable: z.string().min(1),
 					},
 				),
 			},

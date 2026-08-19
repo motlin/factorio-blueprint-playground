@@ -487,6 +487,12 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 			selectedPlanner,
 		);
 	};
+	const serializedPlannerDraft = (): string =>
+		serializeBlueprint(
+			{
+				upgrade_planner: plannerFromMappings(mappingDrafts, recordMetadataDraft, selectedPlanner),
+			},
+		);
 	const libraryRecordContent = (): LibraryRecordContent =>
 	{
 		const planner = plannerForLibrary();
@@ -559,7 +565,7 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 		},
 		mappings:
 		{
-			error,
+			error: mappingRuleError,
 			mappings,
 			onClearEndpoint: (mappingId: string, endpoint: 'from' | 'to') =>
 			{
@@ -735,6 +741,7 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 				});
 			},
 			plannerInput,
+			plannerInputError: plannerError,
 			source,
 			sourceLabel,
 			sourceOptions,
@@ -795,6 +802,7 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 				setPlannerOpen(false);
 			}
 		},
+		serializedPlannerDraft,
 		libraryRecordContent,
 		libraryRecordId: source.startsWith('library:') ? source.slice('library:'.length) : undefined,
 		onLibraryRecordSaved: (record: LibraryRecord) =>

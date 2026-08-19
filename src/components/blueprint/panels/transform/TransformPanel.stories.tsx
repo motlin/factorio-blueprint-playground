@@ -242,7 +242,7 @@ export const UpgradePlanner: Story =
 			canvas.getByRole(
 				'button',
 				{
-					name: 'Save Planner',
+					name: 'Save to Library',
 				},
 			),
 		).toBeVisible();
@@ -291,7 +291,7 @@ export const UpgradePlanner: Story =
 			canvas.getByRole(
 				'button',
 				{
-					name: /Load planner, currently Default Upgrade/,
+					name: 'Load planner to replace draft',
 				},
 			),
 		);
@@ -299,7 +299,7 @@ export const UpgradePlanner: Story =
 			canvas.getByRole(
 				'dialog',
 				{
-					name: 'Load an upgrade planner',
+					name: 'Choose a planner for this draft',
 				},
 			),
 		).toBeVisible();
@@ -358,22 +358,29 @@ export const ResponsiveUpgradePlanner: Story =
 				name: 'Upgrade Planner',
 			},
 		);
-		const body = canvas.getByRole(
+		const body = dialog.querySelector<HTMLElement>('.upgrade-planner-dialog__body');
+		const mapperScroll = canvas.getByRole(
 			'region',
 			{
-				name: 'Upgrade Planner configuration',
+				name: 'Upgrade mappings',
 			},
 		);
 		const header = dialog.firstElementChild;
 		const footer = dialog.lastElementChild;
-		const configuration = canvas
+		const editor = canvas.getByRole(
+			'region',
+			{
+				name: 'Upgrade planner editor',
+			},
+		);
+		const application = canvas
 			.getByRole(
 				'heading',
 				{
-					name: 'Upgrade mappings',
+					name: 'Website application',
 				},
 			)
-			.closest('.upgrade-planner-dialog__configuration');
+			.closest('.upgrade-planner-dialog__application');
 		const replacements = canvas
 			.getByRole(
 				'heading',
@@ -383,9 +390,10 @@ export const ResponsiveUpgradePlanner: Story =
 			)
 			.closest('.book-wide-replacements');
 		if (
+			body === null ||
 			!(header instanceof HTMLElement) ||
 			!(footer instanceof HTMLElement) ||
-			!(configuration instanceof HTMLElement) ||
+			!(application instanceof HTMLElement) ||
 			!(replacements instanceof HTMLElement)
 		)
 		{
@@ -395,7 +403,8 @@ export const ResponsiveUpgradePlanner: Story =
 		const dialogBounds = dialog.getBoundingClientRect();
 		const headerBounds = header.getBoundingClientRect();
 		const footerBounds = footer.getBoundingClientRect();
-		const configurationBounds = configuration.getBoundingClientRect();
+		const editorBounds = editor.getBoundingClientRect();
+		const applicationBounds = application.getBoundingClientRect();
 		const replacementsBounds = replacements.getBoundingClientRect();
 		await expect(
 			{
@@ -403,7 +412,10 @@ export const ResponsiveUpgradePlanner: Story =
 				dialogFitsHorizontally: dialogBounds.left >= 0 && dialogBounds.right <= window.innerWidth,
 				footerVisible: footerBounds.bottom <= window.innerHeight,
 				headerVisible: headerBounds.top >= 0,
-				panelBordersAligned: Math.abs(configurationBounds.left - replacementsBounds.left) < 1,
+				mappingSourceWidth: mapperScroll.querySelector('.upgrade-mapping-grid')?.getBoundingClientRect().width,
+				panelInsetsPreserved:
+					Math.abs(applicationBounds.left - editorBounds.left - 4) < 1 &&
+					Math.abs(editorBounds.left - replacementsBounds.left) < 1,
 			},
 		).toStrictEqual(
 			{
@@ -411,7 +423,8 @@ export const ResponsiveUpgradePlanner: Story =
 				dialogFitsHorizontally: true,
 				footerVisible: true,
 				headerVisible: true,
-				panelBordersAligned: true,
+				mappingSourceWidth: 400,
+				panelInsetsPreserved: true,
 			},
 		);
 	},
