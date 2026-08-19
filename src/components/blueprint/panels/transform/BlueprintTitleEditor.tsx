@@ -3,20 +3,24 @@ import {useState} from 'react';
 
 import {FactorioButton} from '../../../ui/FactorioUi';
 
+const MAXIMUM_LABEL_LENGTH = 200;
+
 interface BlueprintTitleEditorProps {
 	editLabel?: string;
 	emptyLabel?: string;
 	inputLabel?: string;
 	label: string;
 	onLabelChange: (label: string) => void;
+	saveLabel?: string;
 }
 
 export function BlueprintTitleEditor({
 	editLabel = 'Edit blueprint title',
-	emptyLabel = 'Untitled blueprint',
+	emptyLabel = '<Unnamed blueprint>',
 	inputLabel = 'Blueprint title',
 	label,
 	onLabelChange,
+	saveLabel = 'Save label',
 }: BlueprintTitleEditorProps) {
 	const [editing, setEditing] = useState(false);
 	const [draftLabel, setDraftLabel] = useState(label);
@@ -26,7 +30,9 @@ export function BlueprintTitleEditor({
 		setEditing(true);
 	};
 	const commit = () => {
-		onLabelChange(draftLabel);
+		if (draftLabel !== label) {
+			onLabelChange(draftLabel);
+		}
 		setEditing(false);
 	};
 	const cancel = () => {
@@ -35,14 +41,20 @@ export function BlueprintTitleEditor({
 	};
 
 	return (
-		<div className="blueprint-editor__title-editor">
+		<div
+			className="blueprint-editor__title-editor"
+			data-testid="blueprint-title-editor"
+			data-factorio-source="BlueprintLabelEdit"
+		>
 			{editing ? (
 				<label className="blueprint-editor__title-input">
 					<span className="transform-visually-hidden">{inputLabel}</span>
 					<input
 						type="text"
 						autoFocus
+						maxLength={MAXIMUM_LABEL_LENGTH}
 						value={draftLabel}
+						data-factorio-style="textbox"
 						onBlur={commit}
 						onChange={(event) => {
 							setDraftLabel(event.currentTarget.value);
@@ -61,18 +73,24 @@ export function BlueprintTitleEditor({
 					/>
 				</label>
 			) : (
-				<>
-					<span className="blueprint-editor__title">{label === '' ? emptyLabel : label}</span>
-					<FactorioButton
-						className="blueprint-editor__title-edit"
-						aria-label={editLabel}
-						title={editLabel}
-						onClick={beginEditing}
-					>
-						<Pencil size={14} aria-hidden="true" />
-					</FactorioButton>
-				</>
+				<span className="blueprint-editor__title" data-factorio-style="subheader_caption_label">
+					{label === '' ? emptyLabel : label}
+				</span>
 			)}
+			<FactorioButton
+				className="blueprint-editor__title-edit"
+				aria-label={editing ? saveLabel : editLabel}
+				data-factorio-source-style="mini_button_aligned_to_text_vertically_when_centered"
+				title={editing ? 'Save label' : 'Edit label'}
+				onClick={editing ? commit : beginEditing}
+				onPointerDown={(event) => {
+					if (editing) {
+						event.preventDefault();
+					}
+				}}
+			>
+				<Pencil size={12} aria-hidden="true" />
+			</FactorioButton>
 		</div>
 	);
 }
