@@ -69,6 +69,12 @@ export function FactorioButton({
 	type = 'button',
 	...buttonProps
 }: FactorioButtonProps) {
+	/*
+	 * Delete covers both `tool_button_red` (icon-only square) and the red text
+	 * button. Only the icon-only form takes the square geometry; a caption keeps
+	 * the standard button box so the label is not clipped.
+	 */
+	const iconOnly = children === undefined || children === null;
 	return (
 		<button
 			{...buttonProps}
@@ -76,8 +82,15 @@ export function FactorioButton({
 			type={type}
 			disabled={disabled}
 			aria-disabled={disabled ?? false}
-			data-factorio-style={factorioButtonStyleByKind[kind]}
-			className={classes('factorio-button', `factorio-button--${kind}`, className)}
+			data-factorio-style={
+				kind === FactorioButtonKind.Delete && !iconOnly ? 'red_button' : factorioButtonStyleByKind[kind]
+			}
+			className={classes(
+				'factorio-button',
+				`factorio-button--${kind}`,
+				iconOnly ? 'factorio-button--icon-only' : undefined,
+				className,
+			)}
 		>
 			<span className="factorio-button__content">{children ?? defaultButtonContents(kind)}</span>
 		</button>

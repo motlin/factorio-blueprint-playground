@@ -370,3 +370,83 @@ export async function inspectDialogViewport(
 		await Promise.all([viewportPage.close(), fs.rm(htmlPath, {force: true})]);
 	}
 }
+
+export interface DiscardConfirmationLayout {
+	actionsFitHorizontally: boolean;
+	backdropCoversViewport: boolean;
+	buttonLabelsFit: boolean;
+	buttonsDoNotOverlap: boolean;
+	confirmationCentered: boolean;
+	confirmationFitsViewport: boolean;
+}
+
+export async function inspectDiscardConfirmationViewport(
+	testName: string,
+	html: string,
+	viewport: {height: number; width: number},
+): Promise<DiscardConfirmationLayout | undefined> {
+	if (skipBrowserTests || browser === null) {
+		return undefined;
+	}
+
+	const viewportPage = await browser.newPage({viewport});
+	const htmlPath = await renderToHtmlFile(
+		html,
+		`${testName}-${viewport.width.toString()}x${viewport.height.toString()}`,
+	);
+	try {
+		await viewportPage.goto(`file://${htmlPath}`);
+		await viewportPage.waitForSelector('.transform-dialog--confirmation');
+
+		return await viewportPage.evaluate(() => {
+			const backdrop = document.querySelector<HTMLElement>('.transform-dialog-backdrop--confirmation');
+			const confirmation = document.querySelector<HTMLElement>('.transform-dialog--confirmation');
+			if (backdrop === null || confirmation === null) {
+				throw new Error('Expected the discard confirmation backdrop and dialog.');
+			}
+			const actions = confirmation.querySelector<HTMLElement>('.transform-dialog__actions');
+			if (actions === null) {
+				throw new Error('Expected the discard confirmation actions.');
+			}
+			const buttons = [...actions.querySelectorAll<HTMLElement>('.factorio-button')];
+			if (buttons.length !== 2) {
+				throw new Error('Expected two discard confirmation buttons.');
+			}
+
+			const backdropBounds = backdrop.getBoundingClientRect();
+			const confirmationBounds = confirmation.getBoundingClientRect();
+			const [keepEditing, discard] = buttons.map((button) => button.getBoundingClientRect());
+
+			return {
+				actionsFitHorizontally: actions.scrollWidth <= actions.clientWidth,
+				backdropCoversViewport:
+					backdropBounds.top <= 0 &&
+					backdropBounds.left <= 0 &&
+					backdropBounds.right >= window.innerWidth &&
+					backdropBounds.bottom >= window.innerHeight,
+				buttonLabelsFit: buttons.every((button) => {
+					const content = button.querySelector<HTMLElement>('.factorio-button__content');
+					const contentBounds = content?.getBoundingClientRect();
+					const buttonBounds = button.getBoundingClientRect();
+					return (
+						contentBounds !== undefined &&
+						contentBounds.left >= buttonBounds.left - 1 &&
+						contentBounds.right <= buttonBounds.right + 1 &&
+						contentBounds.top >= buttonBounds.top - 1 &&
+						contentBounds.bottom <= buttonBounds.bottom + 1
+					);
+				}),
+				buttonsDoNotOverlap: keepEditing.right <= discard.left + 1 || discard.right <= keepEditing.left + 1,
+				confirmationCentered:
+					Math.abs(confirmationBounds.left - (window.innerWidth - confirmationBounds.width) / 2) < 2,
+				confirmationFitsViewport:
+					confirmationBounds.top >= 0 &&
+					confirmationBounds.left >= 0 &&
+					confirmationBounds.right <= window.innerWidth &&
+					confirmationBounds.bottom <= window.innerHeight,
+			};
+		});
+	} finally {
+		await Promise.all([viewportPage.close(), fs.rm(htmlPath, {force: true})]);
+	}
+}
