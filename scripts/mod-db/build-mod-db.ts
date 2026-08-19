@@ -5,6 +5,7 @@ import {z} from 'zod';
 import {FACTORIOLAB_DATASETS, parseSourceLock} from './sources';
 import {
 	extractHiddenPlaceResults,
+	extractPickerSignals,
 	extractPrototypeNames,
 	extractPrototypeUpgrades,
 	parseBaseSupplement,
@@ -140,10 +141,12 @@ const database = transformDatasets({
 const output = `${JSON.stringify(database, undefined, '\t')}\n`;
 const nextUpgrades = extractPrototypeUpgrades([...factorioDataSources.values()]);
 const virtualSignals = extractPrototypeNames([...factorioDataSources.values()], 'virtual-signal');
+const pickerSignals = extractPickerSignals([...factorioDataSources.values()]);
 const gameDataOutput = `${JSON.stringify(
 	{
 		factorioDataVersion: sourceLock.factorioData.version,
 		nextUpgrades,
+		pickerSignals,
 		virtualSignals,
 	},
 	undefined,
@@ -162,4 +165,5 @@ console.log(
 console.log(
 	`Generated ${nextUpgrades.length.toString()} native next-upgrade mappings from Factorio ${sourceLock.factorioData.version}.`,
 );
+console.log(`Generated ${pickerSignals.length.toString()} categorized signals for the signal picker.`);
 console.log(`Generated ${virtualSignals.length.toString()} virtual signals for the replacement picker.`);

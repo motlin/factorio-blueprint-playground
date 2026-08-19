@@ -39,6 +39,7 @@ describe('generated mod database', () => {
 			factorioDataVersion: database.factorioDataVersion,
 			gameDataFactorioVersion: gameDataJson.factorioDataVersion,
 			nextUpgradeCount: gameDataJson.nextUpgrades.length,
+			pickerSignalCount: gameDataJson.pickerSignals.length,
 			virtualSignalCount: gameDataJson.virtualSignals.length,
 		}).toStrictEqual({
 			generatedAt: sourceLock.factorioLab.committedAt.slice(0, 10),
@@ -46,6 +47,7 @@ describe('generated mod database', () => {
 			factorioDataVersion: sourceLock.factorioData.version,
 			gameDataFactorioVersion: sourceLock.factorioData.version,
 			nextUpgradeCount: 14,
+			pickerSignalCount: 1230,
 			virtualSignalCount: 155,
 		});
 	});
