@@ -1,4 +1,5 @@
 import type {SignalID, SignalType} from '../../../parsing/types';
+import {FactorioQualityBadge} from '../../ui/FactorioUi';
 
 import styles from './FactorioIcon.module.css';
 
@@ -22,6 +23,11 @@ interface FactorioIconProps
 	size: 'small' | 'large';
 }
 
+/**
+ * Shared signal presentation for the canonical picker contract. This component
+ * renders the prototype and its quality badge only; picker slots own
+ * selected/disabled state and `SignalPickerDialog` owns quality selection.
+ */
 function getQualityNode(icon: SignalID)
 {
 	if (!icon.quality)
@@ -30,12 +36,10 @@ function getQualityNode(icon: SignalID)
 	}
 
 	return (
-		<img
+		<FactorioQualityBadge
 			loading="lazy"
 			className={styles.iconQuality}
-			src={`https://factorio-icon-cdn.pages.dev/quality/${icon.quality}.webp`}
-			alt={icon.quality}
-			title={`Quality: ${icon.quality}`}
+			quality={icon.quality}
 			data-testid="quality"
 		/>
 	);

@@ -64,7 +64,7 @@ test('renders the supported Factorio editor action with accessible states and a 
 	).toStrictEqual(
 		{
 			buttonClass:
-				'factorio-toolbar-button blueprint-editor-toolbar__button blueprint-editor-toolbar__button--upgrade',
+				'factorio-button factorio-button--neutral blueprint-editor-toolbar__button blueprint-editor-toolbar__button--upgrade',
 			controls: 'upgrade-planner-selector',
 			describedBy: tooltip.id,
 			expanded: 'false',
