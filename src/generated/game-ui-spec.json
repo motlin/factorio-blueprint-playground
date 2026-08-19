@@ -56,6 +56,10 @@
 				"blob": "6264e4d1cf9598dbf1b641c6246261ff8c088abd"
 			},
 			{
+				"path": "data/core/prototypes/fonts.lua",
+				"blob": "98a24e6e754df95cdd8637e083414fb39099e9e3"
+			},
+			{
 				"path": "data/core/prototypes/style.lua",
 				"blob": "39ffe2a319963ddf0b192086fb1f90500a42c18e"
 			},
@@ -1717,6 +1721,22 @@
 		"signalsTableColumnCount": 10,
 		"signalsTableMinimumWidth": 400,
 		"slotColumnHeaderWidth": 40,
+		"buttonHorizontalPadding": 8,
+		"buttonMinimalHeight": 28,
+		"buttonMinimalWidth": 108,
+		"draggableSpaceHeaderLeftMargin": 4,
+		"frameActionButtonSize": 24,
+		"framePaddingBottom": 8,
+		"framePaddingLeft": 8,
+		"framePaddingRight": 8,
+		"framePaddingTop": 4,
+		"frameTitleFontSize": 18,
+		"headerFillerHeight": 24,
+		"scrollbarThumbWidth": 10,
+		"scrollbarWidth": 12,
+		"tooltipFrameOpacity": 0.88,
+		"tooltipLabelMaximalWidth": 356,
+		"tooltipLabelMinimalWidth": 50,
 		"bindings": {
 			"slotButton": "slot_button",
 			"filterSlotTable": "filter_slot_table",

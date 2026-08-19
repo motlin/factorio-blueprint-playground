@@ -344,9 +344,9 @@ export async function inspectDialogViewport(
 				bodyFitsHorizontally: body.scrollWidth <= body.clientWidth,
 				bodyOwnsScrolling: bodyStyle.overflowY === 'auto' && dialogStyle.overflow === 'hidden',
 				closeControlMatchesPriorArt:
-					closeBounds.width === 36 &&
-					closeBounds.height === 36 &&
-					closeStyle.backgroundColor === 'rgb(100, 100, 100)',
+					closeBounds.width === 24 &&
+					closeBounds.height === 24 &&
+					closeStyle.backgroundColor === 'rgba(0, 0, 0, 0)',
 				dialogFaceMatchesPriorArt: dialogStyle.backgroundColor === 'rgb(48, 48, 48)',
 				dialogFitsViewport:
 					dialogBounds.top >= 0 &&

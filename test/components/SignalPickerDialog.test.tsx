@@ -1,4 +1,4 @@
-import {fireEvent, render, screen, within} from '@testing-library/react';
+import {cleanup, fireEvent, render, screen, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {useState} from 'react';
 import {describe, expect, test, vi} from 'vite-plus/test';
@@ -102,7 +102,7 @@ test('groups only caller-supplied game signals and confirms a selected icon', as
 		searchExpanded: 'false',
 		searchField: null,
 		searchStyle: 'frame_action_button',
-		tabColumns: 'repeat(6, 71px)',
+		tabColumns: 'repeat(5, minmax(71px, 1fr))',
 		tabRows: '',
 		tabLabels: ['Logistics', 'Intermediate products', 'Fluids', 'Signals', 'Unsorted'],
 		visibleChoices: ['Choose Transport belt'],
@@ -797,10 +797,10 @@ test('lays source-ordered categories into six-column rows with one selected keyb
 		tabIndexes: Object.fromEntries(categoryTabs.map((tab) => [tab.getAttribute('aria-label'), tab.tabIndex])),
 		tabLabels,
 		tabTemplate: tabs.style.gridTemplateColumns,
-		tabWidths: [...new Set(categoryTabs.map((tab) => tab.style.width))],
+		tabWidths: [...new Set(categoryTabs.map((tab) => tab.style.minWidth))],
 	}).toStrictEqual({
 		categoryCount: 10,
-		categoryStyle: Array.from({length: 10}, () => 'filter_group_tab'),
+		categoryStyle: Array.from({length: 10}, () => 'filter_group_slot_tab'),
 		distinctCategoryCount: 10,
 		selectedTabs: ['Logistics'],
 		tabOrientation: 'horizontal',
@@ -907,6 +907,23 @@ test('filters hidden prototypes by default and admits them only through the expl
 		screen.getAllByRole('button', {name: /^Choose /}).map((button) => button.getAttribute('aria-label')),
 	).toStrictEqual(['Choose Iron plate']);
 
+	await user.click(screen.getByRole('tab', {name: 'Unsorted'}));
+	expect(
+		screen.getAllByRole('button', {name: /^Choose /}).map((button) => button.getAttribute('aria-label')),
+	).toStrictEqual(['Choose Fluid unknown']);
+
+	cleanup();
+	render(
+		<SignalPickerDialog
+			confirmationMode="required"
+			includeHiddenSignals
+			includeParameterSignals
+			title="All prototypes and parameters"
+			options={hiddenOptions}
+			onChoose={vi.fn<SignalPickerDialogProps['onChoose']>()}
+			onClose={vi.fn<() => void>()}
+		/>,
+	);
 	await user.click(screen.getByRole('tab', {name: 'Unsorted'}));
 	expect(
 		screen.getAllByRole('button', {name: /^Choose /}).map((button) => button.getAttribute('aria-label')),
@@ -1150,20 +1167,42 @@ test('rejects quality controls in immediate-selection mode', () => {
 	}).toThrow('Immediate signal selection cannot include staged quality controls.');
 });
 
-test('keeps required confirmation disabled and ignores Enter until a valid signal is staged', () => {
+test('preselects the only eligible option so confirmation is immediately available', () => {
 	const onChoose = vi.fn<SignalPickerDialogProps['onChoose']>();
 	render(
 		<SignalPickerDialog
 			confirmationMode="required"
-			title="Required confirmation"
+			title="Single option"
 			options={[qualitySignal]}
 			onChoose={onChoose}
 			onClose={vi.fn<() => void>()}
 		/>,
 	);
 
+	expect({
+		confirmDisabled: screen.getByRole<HTMLButtonElement>('button', {name: 'Confirm'}).disabled,
+		selected: screen.getByRole('button', {name: 'Choose Test entity'}).getAttribute('aria-pressed'),
+	}).toStrictEqual({
+		confirmDisabled: false,
+		selected: 'true',
+	});
+	cleanup();
+});
+
+test('keeps required confirmation disabled and ignores Enter until a valid signal is staged', () => {
+	const onChoose = vi.fn<SignalPickerDialogProps['onChoose']>();
+	render(
+		<SignalPickerDialog
+			confirmationMode="required"
+			title="Required confirmation"
+			options={[qualitySignal, {type: 'entity', name: 'test-entity-sibling'}]}
+			onChoose={onChoose}
+			onClose={vi.fn<() => void>()}
+		/>,
+	);
+
 	const confirm = screen.getByRole<HTMLButtonElement>('button', {name: 'Confirm'});
-	const grid = screen.getByRole('region', {name: 'Logistics choices'});
+	const grid = screen.getByRole('region', {name: 'Unsorted choices'});
 	grid.focus();
 	fireEvent.keyDown(grid, {key: 'Enter'});
 	expect({
@@ -1295,8 +1334,8 @@ describe('SignalPickerDialog golden cancellation and focus source contracts', ()
 test('lets tab clicks change the grid after an exact search match activates a category', async () => {
 	const user = userEvent.setup();
 	const options: SignalID[] = [
-		{type: 'entity', name: 'iron-plate-conveyor'},
-		{type: 'item', name: 'iron-plate'},
+		{type: 'entity', name: 'pumpjack'},
+		{type: 'entity', name: 'pump'},
 	];
 	render(
 		<SignalPickerDialog
@@ -1309,13 +1348,13 @@ test('lets tab clicks change the grid after an exact search match activates a ca
 	);
 
 	await user.click(screen.getByRole('button', {name: 'Search'}));
-	await user.type(screen.getByRole('searchbox', {name: 'Search'}), 'Iron plate');
+	await user.type(screen.getByRole('searchbox', {name: 'Search'}), 'Pump');
 	expect(
 		screen.getAllByRole('button', {name: /^Choose /}).map((button) => button.getAttribute('aria-label')),
-	).toStrictEqual(['Choose Iron plate']);
+	).toStrictEqual(['Choose Pump']);
 
-	await user.click(screen.getByRole('tab', {name: 'Logistics'}));
+	await user.click(screen.getByRole('tab', {name: 'Production'}));
 	expect(
 		screen.getAllByRole('button', {name: /^Choose /}).map((button) => button.getAttribute('aria-label')),
-	).toStrictEqual(['Choose Iron plate conveyor']);
+	).toStrictEqual(['Choose Pumpjack']);
 });
