@@ -252,7 +252,8 @@
 	"qualityComparators": [">", "<", "=", "≥", "≤", "≠"],
 	"labels":
 	{
-		"anyQuality": "Any quality"
+		"anyQuality": "Any quality",
+		"qualitySelectionTooltip": "Quality: __1__"
 	},
 	"signals":
 	{

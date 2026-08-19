@@ -2,6 +2,7 @@ import {describe, expect, test} from 'vite-plus/test';
 
 import
 {
+	canonicalPickerOptions,
 	chatIconPickerOptions,
 	isUpgradeSourceOption,
 	isUpgradeTargetSelectionAllowed,
@@ -23,6 +24,53 @@ function optionNames(
 
 describe('upgradePlannerSignals', () =>
 {
+	test('canonicalizes repeated item, entity, and recipe prototypes before source-order sorting', () =>
+	{
+		const options = canonicalPickerOptions([
+			{
+				type: 'recipe',
+				name: 'transport-belt',
+			},
+			{
+				type: 'entity',
+				name: 'fast-transport-belt',
+			},
+			{
+				type: 'item',
+				name: 'transport-belt',
+			},
+			{
+				type: 'item',
+				name: 'fast-transport-belt',
+			},
+			{
+				type: 'entity',
+				name: 'transport-belt',
+			},
+			{
+				type: 'item',
+				name: 'transport-belt',
+			},
+		]);
+
+		expect(
+			options.map(({name, type}) => (
+			{
+				name,
+				type,
+			})),
+		).toStrictEqual([
+			{
+				type: 'item',
+				name: 'transport-belt',
+			},
+			{
+				type: 'item',
+				name: 'fast-transport-belt',
+			},
+		]);
+	});
+
 	test('builds the game chat-icon catalog without duplicate item, entity, recipe, or unsupported signals', () =>
 	{
 		const options = chatIconPickerOptions([
