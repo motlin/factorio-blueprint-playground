@@ -17,6 +17,12 @@ interface ExportActionsProps
 	title: string;
 }
 
+interface BlueprintExportButtonsProps
+{
+	blueprint: BlueprintString;
+	path?: string;
+}
+
 async function copyToClipboard(text: string): Promise<boolean>
 {
 	// Try the modern Clipboard API first
@@ -174,10 +180,8 @@ const ButtonWithIcon = ({icon: Icon, text, onClick}: ButtonWithIconProps) => (
 	</ButtonGreen>
 );
 
-const ExportActionsComponent = ({blueprint, path, title}: ExportActionsProps) =>
+export function BlueprintExportButtons({blueprint, path}: BlueprintExportButtonsProps)
 {
-	if (!blueprint) return null;
-
 	const handleCopyString = () =>
 	{
 		const str = serializeBlueprint(blueprint);
@@ -198,14 +202,23 @@ const ExportActionsComponent = ({blueprint, path, title}: ExportActionsProps) =>
 	};
 
 	return (
+		<div className="flex-space-between">
+			<ButtonWithIcon icon={ClipboardCopy} text="Copy String" onClick={handleCopyString} />
+			<ButtonWithIcon icon={FileJson} text="Copy JSON" onClick={handleCopyJSON} />
+			<ButtonWithIcon icon={Download} text="Download String" onClick={handleDownloadString} />
+		</div>
+	);
+}
+
+const ExportActionsComponent = ({blueprint, path, title}: ExportActionsProps) =>
+{
+	if (!blueprint) return null;
+
+	return (
 		<Panel title={`Export ${title}`}>
 			<InsetLight>
 				<h3>{title}</h3>
-				<div className="flex-space-between">
-					<ButtonWithIcon icon={ClipboardCopy} text="Copy String" onClick={handleCopyString} />
-					<ButtonWithIcon icon={FileJson} text="Copy JSON" onClick={handleCopyJSON} />
-					<ButtonWithIcon icon={Download} text="Download String" onClick={handleDownloadString} />
-				</div>
+				<BlueprintExportButtons blueprint={blueprint} path={path} />
 			</InsetLight>
 		</Panel>
 	);
