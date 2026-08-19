@@ -1,22 +1,26 @@
 import {useId, useState} from 'react';
 
 import type {BlueprintString, SignalID, UpgradeSourceSignal} from '../../../../parsing/types';
-import type {UpgradeRule} from '../../../../transform/upgradePlanner';
+import type {UpgradeDirection} from '../../../../transform/upgradePlanner';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
-import {ButtonGreen} from '../../../ui/ButtonGreen';
 import {FactorioButton, FactorioButtonKind} from '../../../ui/FactorioUi';
 import {Textarea} from '../../../ui/Textarea';
 import {BookWideReplacements, type BookWideReplacementsProps} from './BookWideReplacements';
+import {BlueprintDescriptionEditor} from './BlueprintDescriptionEditor';
+import {BlueprintLabelIcons} from './BlueprintLabelIcons';
+import {BlueprintTitleEditor} from './BlueprintTitleEditor';
 import {SignalPickerDialog} from './SignalPickerDialog';
-import {UpgradeMappingGrid, type PositionedUpgradeCandidate} from './UpgradeMappingGrid';
+import {UpgradeMappingGrid, type PositionedUpgradeMapping} from './UpgradeMappingGrid';
 import {
-	isUpgradeSourceOption,
+	chatIconPickerOptions,
 	isUpgradeTargetSelectionAllowed,
 	signalIdentity,
 	signalPrototypeIdentity,
+	signalTitle,
 	upgradeTargetOptions,
 } from './upgradePlannerSignals';
 import {UpgradePlannerSelectorDialog, type UpgradePlannerChoice} from './UpgradePlannerSelectorDialog';
+import {useDialogFocus} from './useDialogFocus';
 
 /**
  * Factorio 2.1.12 Upgrade Planner editor source contract:
@@ -37,15 +41,16 @@ import {UpgradePlannerSelectorDialog, type UpgradePlannerChoice} from './Upgrade
  *
  * Blueprint application
  *
- * - Applying a saved planner is a separate explicit operation. Upgrade reads the
- *   same records From to To; downgrade reads them in reverse. Direction never
- *   changes the editor shape or creates another mapper set.
+ * - Applying the displayed draft is a separate explicit operation. Upgrade
+ *   reads the same records From to To; downgrade reads them in reverse.
+ *   Direction never changes the editor shape or creates another mapper set.
  * - A mapper remains part of the planner when the current blueprint has no
  *   matches. Counts may describe a proposed application, but must not add,
  *   remove, reorder, or otherwise become the source of editor rows.
- * - Saving a planner definition and applying it to a selected blueprint/root are
- *   distinct commands. The application selector may follow a save in this
- *   product, but saving alone must not apply the planner.
+ * - Saving a planner definition to the Blueprint Library and applying it to a
+ *   selected blueprint/root are distinct commands. Apply reads the draft already
+ *   visible here and never opens another planner selector. Saving alone does not
+ *   transform or close the current blueprint.
  *
  * Evidence: UpgradeItemGui, UpgradeFilterSelectListGui,
  * UpgradeDestinationSelectListGui, UpgradeRecord, UpgradeItem, UpgradeData, and
@@ -53,16 +58,13 @@ import {UpgradePlannerSelectorDialog, type UpgradePlannerChoice} from './Upgrade
  * source-filter, quality-condition, and restricted-target captures.
  */
 interface UpgradePlannerMappings {
-	candidates: PositionedUpgradeCandidate[];
 	error: string | undefined;
-	excludedSources: ReadonlySet<string>;
-	manualRules: readonly UpgradeRule[];
-	onAddManualRule: (rule: UpgradeRule, slotIndex: number) => void;
-	onChangeManualRule: (previousSource: UpgradeSourceSignal, rule: UpgradeRule) => void;
+	mappings: PositionedUpgradeMapping[];
+	onClearEndpoint: (mappingId: string, endpoint: 'from' | 'to') => void;
 	onPlannerLoad: (choice: UpgradePlannerChoice) => void;
 	onPlannerInputChange: (value: string) => void;
-	onRemoveRule: (source: UpgradeSourceSignal, manual: boolean) => void;
-	onTargetChange: (source: SignalID, target: SignalID) => void;
+	onSourceChange: (mappingId: string | undefined, slotIndex: number, source: UpgradeSourceSignal) => void;
+	onTargetChange: (mappingId: string | undefined, slotIndex: number, target: SignalID) => void;
 	plannerInput: string;
 	rootBlueprint: BlueprintString;
 	source: string;
@@ -75,26 +77,125 @@ interface UpgradePlannerDialogProps {
 	canChooseRootScope: boolean;
 	mappings: UpgradePlannerMappings;
 	matchCount: number;
+	onApply: (direction: UpgradeDirection) => void;
 	onClose: () => void;
-	onSave: () => void;
 	onScopeChange: (scope: 'selection' | 'root') => void;
 	replacements: BookWideReplacementsProps;
+	recordMetadata: UpgradePlannerRecordMetadataProps;
 	saveDisabled: boolean;
+	savePrompt: UpgradePlannerSavePromptProps;
+	savedRecordName?: string;
+	savedLibraryMessage?: string;
 	scope: 'selection' | 'root';
 	selectionScopeDisabled: boolean;
 	selectionScopeLabel: string;
 }
 
+interface UpgradePlannerRecordMetadataProps {
+	description: string;
+	icons: readonly SignalID[];
+	label: string;
+	onDescriptionChange: (description: string) => void;
+	onIconsChange: (icons: SignalID[]) => void;
+	onLabelChange: (label: string) => void;
+}
+
+interface UpgradePlannerSavePromptProps {
+	existingRecordName?: string;
+	label: string;
+	onCancel: () => void;
+	onOpen: () => void;
+	onSaveAsNew: () => void;
+	onUpdateExisting?: () => void;
+	open: boolean;
+	pending: boolean;
+}
+
+function UpgradePlannerSavePrompt({
+	existingRecordName,
+	label,
+	onCancel,
+	onSaveAsNew,
+	onUpdateExisting,
+	open,
+	pending,
+}: UpgradePlannerSavePromptProps) {
+	const headingId = useId();
+	const dialogReference = useDialogFocus<HTMLElement>({
+		initialFocusSelector: '.factorio-button--green',
+		onClose: () => {
+			if (!pending) {
+				onCancel();
+			}
+		},
+	});
+
+	if (!open) {
+		return null;
+	}
+
+	return (
+		<div className="transform-dialog-backdrop transform-dialog-backdrop--confirmation">
+			<section
+				ref={dialogReference}
+				className="factorio-frame factorio-frame--shallow transform-dialog transform-dialog--confirmation upgrade-planner-save"
+				role="dialog"
+				aria-modal="true"
+				aria-labelledby={headingId}
+			>
+				<header className="factorio-title-bar transform-dialog__header">
+					<h3 id={headingId}>Save to Blueprint Library</h3>
+				</header>
+				<p>
+					{existingRecordName === undefined ? (
+						<>
+							Save <strong>“{label}”</strong> to <strong>Blueprint Library › Root shelf</strong>.
+						</>
+					) : (
+						<>
+							Update the saved record <strong>“{existingRecordName}”</strong> in its current Blueprint
+							Library location, or save <strong>“{label}”</strong> as a copy on{' '}
+							<strong>Blueprint Library › Root shelf</strong>.
+						</>
+					)}
+				</p>
+				<div className="transform-dialog__actions">
+					<FactorioButton className="transform-button" disabled={pending} onClick={onCancel}>
+						Cancel Save
+					</FactorioButton>
+					{onUpdateExisting === undefined ? null : (
+						<FactorioButton
+							className="transform-button"
+							disabled={pending}
+							onClick={() => {
+								onUpdateExisting();
+							}}
+						>
+							Update Planner
+						</FactorioButton>
+					)}
+					<FactorioButton
+						kind={FactorioButtonKind.Confirm}
+						disabled={pending}
+						onClick={() => {
+							onSaveAsNew();
+						}}
+					>
+						{onUpdateExisting === undefined ? 'Save Planner' : 'Save a Copy'}
+					</FactorioButton>
+				</div>
+			</section>
+		</div>
+	);
+}
+
 function UpgradeMappingsEditor({
-	candidates,
 	error,
-	excludedSources,
-	manualRules,
-	onAddManualRule,
-	onChangeManualRule,
+	mappings,
+	onClearEndpoint,
 	onPlannerLoad,
 	onPlannerInputChange,
-	onRemoveRule,
+	onSourceChange,
 	onTargetChange,
 	plannerInput,
 	rootBlueprint,
@@ -104,33 +205,28 @@ function UpgradeMappingsEditor({
 }: UpgradePlannerMappings) {
 	const plannerSelectorId = useId();
 	const [plannerSelectorOpen, setPlannerSelectorOpen] = useState(false);
-	const [targetPickerCandidate, setTargetPickerCandidate] = useState<PositionedUpgradeCandidate>();
-	const [sourcePickerCandidate, setSourcePickerCandidate] = useState<PositionedUpgradeCandidate>();
-	const [addMappingSource, setAddMappingSource] = useState<UpgradeSourceSignal>();
-	const [addMappingSlotIndex, setAddMappingSlotIndex] = useState<number>();
-	const [addSourcePickerOpen, setAddSourcePickerOpen] = useState(false);
-	const [addTargetPickerOpen, setAddTargetPickerOpen] = useState(false);
-	const visibleCandidates = candidates.filter((candidate) => !excludedSources.has(signalIdentity(candidate.from)));
-	const occupiedSourcePrototypes = new Set(
-		visibleCandidates.map((candidate) => signalPrototypeIdentity(candidate.from)),
-	);
-	const availableAddSources = sourceOptions.filter(
-		(signal) => isUpgradeSourceOption(signal) && !occupiedSourcePrototypes.has(signalPrototypeIdentity(signal)),
-	);
-	const availableEditSources = (candidate: PositionedUpgradeCandidate): SignalID[] => {
-		const occupiedByOtherMapping = new Set(
-			visibleCandidates
-				.filter((visibleCandidate) => visibleCandidate !== candidate)
-				.map((visibleCandidate) => signalPrototypeIdentity(visibleCandidate.from)),
+	const [sourcePicker, setSourcePicker] = useState<{mappingId?: string; slotIndex: number}>();
+	const [targetPicker, setTargetPicker] = useState<{mappingId?: string; slotIndex: number}>();
+	const sourcePickerMapping = mappings.find((mapping) => mapping.mappingId === sourcePicker?.mappingId);
+	const targetPickerMapping = mappings.find((mapping) => mapping.mappingId === targetPicker?.mappingId);
+	const sourceSelectionAllowed = (sourceSignal: UpgradeSourceSignal): boolean => {
+		const duplicate = mappings.some(
+			(mapping) =>
+				mapping.mappingId !== sourcePicker?.mappingId &&
+				mapping.from !== undefined &&
+				signalIdentity(mapping.from) === signalIdentity(sourceSignal),
 		);
-		return [
-			...new Map(
-				[...sourceOptions.filter(isUpgradeSourceOption), candidate.from]
-					.filter((signal) => !occupiedByOtherMapping.has(signalPrototypeIdentity(signal)))
-					.map((signal) => [signalIdentity(signal), signal]),
-			).values(),
-		];
+		return !duplicate;
 	};
+	const sourcePickerOptions = [
+		...new Map(
+			[...sourceOptions, ...(sourcePickerMapping?.from === undefined ? [] : [sourcePickerMapping.from])].map(
+				(signal) => [signalPrototypeIdentity(signal), signal],
+			),
+		).values(),
+	];
+	const targetPickerOptions =
+		targetPickerMapping?.from === undefined ? sourceOptions : upgradeTargetOptions(targetPickerMapping.from);
 
 	return (
 		<>
@@ -171,36 +267,16 @@ function UpgradeMappingsEditor({
 					</p>
 				)}
 				<UpgradeMappingGrid
-					candidates={candidates}
-					draftSlotIndex={addMappingSlotIndex}
-					draftSource={addMappingSource}
-					excludedSources={excludedSources}
-					manualRules={manualRules}
-					onDraftRemove={() => {
-						setAddMappingSource(undefined);
-						setAddMappingSlotIndex(undefined);
-						setAddSourcePickerOpen(false);
-						setAddTargetPickerOpen(false);
+					mappings={mappings}
+					onChooseSource={(mappingId, slotIndex) => {
+						setSourcePicker({mappingId, slotIndex});
+						setTargetPicker(undefined);
 					}}
-					onDraftSourceChoose={(slotIndex) => {
-						setAddMappingSlotIndex(slotIndex);
-						setAddSourcePickerOpen(true);
-						setAddTargetPickerOpen(false);
+					onChooseTarget={(mappingId, slotIndex) => {
+						setTargetPicker({mappingId, slotIndex});
+						setSourcePicker(undefined);
 					}}
-					onDraftTargetChoose={() => {
-						if (addMappingSource !== undefined) {
-							setAddTargetPickerOpen(true);
-						}
-					}}
-					onRemove={(candidate, manual) => {
-						onRemoveRule(candidate.from, manual);
-					}}
-					onSourceChoose={(candidate) => {
-						setSourcePickerCandidate(candidate);
-					}}
-					onTargetChoose={(candidate) => {
-						setTargetPickerCandidate(candidate);
-					}}
+					onClearEndpoint={onClearEndpoint}
 				/>
 			</div>
 			{plannerSelectorOpen ? (
@@ -214,106 +290,52 @@ function UpgradeMappingsEditor({
 					}}
 					onChoose={(choice) => {
 						onPlannerLoad(choice);
-						setAddMappingSource(undefined);
-						setAddMappingSlotIndex(undefined);
-						setAddSourcePickerOpen(false);
-						setAddTargetPickerOpen(false);
+						setSourcePicker(undefined);
+						setTargetPicker(undefined);
 						setPlannerSelectorOpen(false);
 					}}
 				/>
 			) : null}
-			{targetPickerCandidate === undefined ? null : (
+			{targetPicker === undefined ? null : (
 				<SignalPickerDialog
-					initialSignal={targetPickerCandidate.to}
-					initialQuality={targetPickerCandidate.to.quality ?? 'normal'}
+					confirmationMode="required"
+					includeHiddenSignals
+					initialSignal={targetPickerMapping?.to}
+					initialQuality={targetPickerMapping?.to?.quality ?? 'normal'}
 					title="Select upgrade"
-					options={upgradeTargetOptions(targetPickerCandidate.from, targetPickerCandidate.to)}
+					options={targetPickerOptions}
 					qualityMode="target"
-					isSelectionAllowed={(target) => isUpgradeTargetSelectionAllowed(targetPickerCandidate.from, target)}
-					onClose={() => {
-						setTargetPickerCandidate(undefined);
-					}}
-					onChoose={(target) => {
-						onTargetChange(targetPickerCandidate.from, target);
-						setTargetPickerCandidate(undefined);
-					}}
-				/>
-			)}
-			{sourcePickerCandidate === undefined ? null : (
-				<SignalPickerDialog
-					initialSignal={sourcePickerCandidate.from}
-					title="Set the filter"
-					options={availableEditSources(sourcePickerCandidate)}
-					qualityMode="source"
-					onClose={() => {
-						setSourcePickerCandidate(undefined);
-					}}
-					onChoose={(sourceSignal) => {
-						onChangeManualRule(sourcePickerCandidate.from, {
-							from: sourceSignal,
-							preserveQuality: false,
-							to: sourcePickerCandidate.to,
-						});
-						setSourcePickerCandidate(undefined);
-					}}
-				/>
-			)}
-			{addSourcePickerOpen ? (
-				<SignalPickerDialog
-					initialSignal={addMappingSource}
-					title="Set the filter"
-					options={
-						addMappingSource === undefined
-							? availableAddSources
-							: [
-									...new Map(
-										[...availableAddSources, addMappingSource].map((signal) => [
-											signalIdentity(signal),
-											signal,
-										]),
-									).values(),
-								]
+					isSelectionAllowed={(target) =>
+						targetPickerMapping?.from === undefined ||
+						isUpgradeTargetSelectionAllowed(targetPickerMapping.from, target)
 					}
-					qualityMode="source"
 					onClose={() => {
-						setAddSourcePickerOpen(false);
-						if (addMappingSource === undefined) {
-							setAddMappingSlotIndex(undefined);
-						}
-					}}
-					onChoose={(sourceSignal) => {
-						if (occupiedSourcePrototypes.has(signalPrototypeIdentity(sourceSignal))) {
-							setAddSourcePickerOpen(false);
-							return;
-						}
-						setAddMappingSource(sourceSignal);
-						setAddSourcePickerOpen(false);
-					}}
-				/>
-			) : null}
-			{addTargetPickerOpen && addMappingSource !== undefined ? (
-				<SignalPickerDialog
-					title="Select upgrade"
-					options={upgradeTargetOptions(addMappingSource, addMappingSource)}
-					qualityMode="target"
-					isSelectionAllowed={(target) => isUpgradeTargetSelectionAllowed(addMappingSource, target)}
-					onClose={() => {
-						setAddTargetPickerOpen(false);
+						setTargetPicker(undefined);
 					}}
 					onChoose={(target) => {
-						if (addMappingSlotIndex === undefined) {
-							throw new Error('A mapping slot must be selected before choosing a target.');
-						}
-						onAddManualRule(
-							{from: addMappingSource, preserveQuality: false, to: target},
-							addMappingSlotIndex,
-						);
-						setAddMappingSource(undefined);
-						setAddMappingSlotIndex(undefined);
-						setAddTargetPickerOpen(false);
+						onTargetChange(targetPicker.mappingId, targetPicker.slotIndex, target);
+						setTargetPicker(undefined);
 					}}
 				/>
-			) : null}
+			)}
+			{sourcePicker === undefined ? null : (
+				<SignalPickerDialog
+					confirmationMode="required"
+					includeHiddenSignals
+					initialSignal={sourcePickerMapping?.from}
+					title="Set the filter"
+					options={sourcePickerOptions}
+					qualityMode="source"
+					isSelectionAllowed={sourceSelectionAllowed}
+					onClose={() => {
+						setSourcePicker(undefined);
+					}}
+					onChoose={(sourceSignal) => {
+						onSourceChange(sourcePicker.mappingId, sourcePicker.slotIndex, sourceSignal);
+						setSourcePicker(undefined);
+					}}
+				/>
+			)}
 		</>
 	);
 }
@@ -323,30 +345,39 @@ export function UpgradePlannerDialog({
 	canChooseRootScope,
 	mappings,
 	matchCount,
+	onApply,
 	onClose,
-	onSave,
 	onScopeChange,
 	replacements,
+	recordMetadata,
 	saveDisabled,
+	savePrompt,
+	savedRecordName,
+	savedLibraryMessage,
 	scope,
 	selectionScopeDisabled,
 	selectionScopeLabel,
 }: UpgradePlannerDialogProps) {
 	const dialogHeadingId = useId();
 	const configurationHeadingId = useId();
+	const recordHeadingId = useId();
+	const [previewIconPickerIndex, setPreviewIconPickerIndex] = useState<number>();
+	const previewIconOptions = chatIconPickerOptions([...mappings.sourceOptions, ...recordMetadata.icons]);
+	const dialogReference = useDialogFocus<HTMLElement>({
+		initialFocusSelector: '.upgrade-planner-dialog__scroll-region',
+		onClose,
+	});
 
 	return (
 		<div className="transform-dialog-backdrop transform-workbench-backdrop upgrade-planner-dialog__backdrop">
 			<section
+				ref={dialogReference}
 				className="factorio-frame factorio-frame--shallow transform-dialog transform-workbench transform-workbench--planner upgrade-planner-dialog"
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby={dialogHeadingId}
-				onKeyDown={(event) => {
-					if (event.key === 'Escape') {
-						onClose();
-					}
-				}}
+				aria-hidden={savePrompt.open || undefined}
+				inert={savePrompt.open}
 			>
 				<header className="factorio-title-bar transform-dialog__header transform-workbench__header">
 					<div className="transform-workbench__title">
@@ -381,6 +412,52 @@ export function UpgradePlannerDialog({
 					tabIndex={0}
 				>
 					<div className="upgrade-planner-dialog__content transform-workflow">
+						<section
+							className="panel-hole upgrade-planner-dialog__record"
+							aria-labelledby={recordHeadingId}
+						>
+							<header className="factorio-title-bar upgrade-planner-dialog__panel-heading">
+								<h4 id={recordHeadingId}>Planner record</h4>
+								<span className="upgrade-planner-dialog__record-state">
+									{savedRecordName === undefined
+										? 'Not saved to Blueprint Library'
+										: `Saved record: ${savedRecordName}`}
+								</span>
+							</header>
+							<div className="panel-hole-inner blueprint-editor__title-row">
+								<BlueprintTitleEditor
+									editLabel="Edit planner name"
+									emptyLabel="Planner name required"
+									inputLabel="Planner name"
+									label={recordMetadata.label}
+									onLabelChange={recordMetadata.onLabelChange}
+								/>
+							</div>
+							<section
+								className="transform-workflow__section blueprint-editor__icons upgrade-planner-dialog__preview-icons"
+								aria-labelledby="upgrade-planner-preview-icons-heading"
+							>
+								<h4 id="upgrade-planner-preview-icons-heading">Preview icons</h4>
+								<div>
+									<BlueprintLabelIcons
+										icons={recordMetadata.icons}
+										labelPrefix="preview icon"
+										onChange={recordMetadata.onIconsChange}
+										onChoose={setPreviewIconPickerIndex}
+										signalTitle={signalTitle}
+									/>
+								</div>
+								<small>
+									These icons identify the saved planner record; changing them does not apply the
+									planner.
+								</small>
+							</section>
+							<BlueprintDescriptionEditor
+								accessibleLabel="Planner description"
+								description={recordMetadata.description}
+								onDescriptionChange={recordMetadata.onDescriptionChange}
+							/>
+						</section>
 						<section
 							className="panel-hole upgrade-planner-dialog__configuration"
 							aria-labelledby={configurationHeadingId}
@@ -421,13 +498,62 @@ export function UpgradePlannerDialog({
 							onClose();
 						}}
 					>
-						Cancel
+						Close Planner
 					</FactorioButton>
-					<ButtonGreen disabled={saveDisabled} onClick={onSave}>
-						Save planner
-					</ButtonGreen>
+					{savedLibraryMessage === undefined ? null : (
+						<p className="upgrade-planner-dialog__saved-record" role="status">
+							{savedLibraryMessage}
+						</p>
+					)}
+					<div className="transform-workbench__apply-actions">
+						<FactorioButton
+							className="transform-button"
+							disabled={saveDisabled}
+							onClick={() => {
+								savePrompt.onOpen();
+							}}
+						>
+							Save Planner
+						</FactorioButton>
+						<FactorioButton
+							className="transform-button"
+							disabled={saveDisabled}
+							onClick={() => {
+								onApply('downgrade');
+							}}
+						>
+							Apply Downgrade to {scope === 'root' ? 'Entire Root Book' : 'Current Blueprint'}
+						</FactorioButton>
+						<FactorioButton
+							kind={FactorioButtonKind.Confirm}
+							disabled={saveDisabled}
+							onClick={() => {
+								onApply('upgrade');
+							}}
+						>
+							Apply Upgrade to {scope === 'root' ? 'Entire Root Book' : 'Current Blueprint'}
+						</FactorioButton>
+					</div>
 				</footer>
 			</section>
+			{savePrompt.open ? <UpgradePlannerSavePrompt {...savePrompt} /> : null}
+			{previewIconPickerIndex === undefined ? null : (
+				<SignalPickerDialog
+					confirmationMode="required"
+					initialSignal={recordMetadata.icons[previewIconPickerIndex]}
+					title={`Choose planner preview icon ${(previewIconPickerIndex + 1).toString()}`}
+					options={previewIconOptions}
+					onClose={() => {
+						setPreviewIconPickerIndex(undefined);
+					}}
+					onChoose={(signal) => {
+						const next = [...recordMetadata.icons];
+						next[Math.min(previewIconPickerIndex, next.length)] = signal;
+						recordMetadata.onIconsChange(next);
+						setPreviewIconPickerIndex(undefined);
+					}}
+				/>
+			)}
 		</div>
 	);
 }

@@ -3,7 +3,7 @@ import {type ReactNode, useId, useState} from 'react';
 import type {BlueprintString, Parameter, SignalID} from '../../../../parsing/types';
 import type {BlueprintSnapGrid} from '../../../../transform/blueprintEditor';
 import type {BlueprintComponentIdentity, BlueprintComponentRemovalKey} from '../../../../transform/componentRemoval';
-import type {BlueprintFilterCategories} from '../../../../transform/strip';
+import type {BlueprintFilterAnalysis} from '../../../../transform/strip';
 import type {UpgradeDirection} from '../../../../transform/upgradePlanner';
 import {FactorioButton, FactorioButtonKind} from '../../../ui/FactorioUi';
 import {BlueprintComponentsGrid} from './BlueprintComponentsGrid';
@@ -15,14 +15,15 @@ import {BlueprintParameterizationDialog} from './BlueprintParameterizationDialog
 import {BlueprintSnapGridEditor} from './BlueprintSnapGridEditor';
 import {BlueprintTitleEditor} from './BlueprintTitleEditor';
 import {UpgradePlannerSelectorDialog, type UpgradePlannerChoice} from './UpgradePlannerSelectorDialog';
+import type {BlueprintEditorCommitAction} from './useBlueprintEditorDraft';
+import {useDialogFocus} from './useDialogFocus';
 
 /**
  * Factorio 2.1.12 source contract for the editor shell:
  *
- * - The caption is explicit `NewBlueprint`, `ExistingBlueprint`, or library-record
- *   view-mode state; new and existing captions must not be inferred from an empty
- *   title. The playground currently opens loaded blueprints and library entries,
- *   not new-item setup sessions.
+ * - `BlueprintEditorCommitAction` carries explicit captured-draft, existing-record,
+ *   or child-book state into the confirm caption. Empty titles remain valid in
+ *   every mode and do not decide the action.
  * - `BlueprintTitleEditor`, `BlueprintDescriptionEditor`, and
  *   `BlueprintLabelIcons` own the label fields shown in BE-1. Four icon slots are
  *   edited independently; the signal chooser follows BE-6.
@@ -31,9 +32,9 @@ import {UpgradePlannerSelectorDialog, type UpgradePlannerChoice} from './Upgrade
  *   persisted fields.
  * - `BlueprintComponentsGrid` owns the BE-7 inventory: secondary activation
  *   removes a component type and primary activation restores it.
- * - `BlueprintContentFilters` owns the BE-8 options. Modules appear only when
- *   present; Entities, Trains, and Tiles appear only when more than one structural
- *   category is relevant.
+ * - `BlueprintContentFilters` owns the BE-8 options. Module, station-name, and
+ *   fuel filters appear when relevant. Entity, tile, train, and vehicle filters
+ *   appear when more than one structural category is present.
  * - `BlueprintParameterizationDialog` is the local BE-5 child editor for parameter
  *   name, value signal, enabled state, and dependency. Its confirmation updates
  *   the parent draft only.
@@ -50,46 +51,51 @@ interface BlueprintEditorDialogProps {
 	bookOperationSelected: boolean;
 	breadcrumb: string;
 	closeConfirmationOpen: boolean;
+	commitAction: BlueprintEditorCommitAction;
+	commitDisabled: boolean;
 	description: string;
-	dirty: boolean;
-	draftBlueprint?: BlueprintString;
-	filters: BlueprintFilterCategories;
+	filterAnalysis: BlueprintFilterAnalysis;
 	flattenBookSelected: boolean;
 	icons: ReactNode;
 	label: string;
 	onApplyPlacedPlanner: (direction: UpgradeDirection) => void;
 	onClose: () => void;
 	onClearPlacedPlanner: () => void;
+	onCommit: () => void;
 	onComponentRemovedChange: (component: BlueprintComponentIdentity, removed: boolean) => void;
 	onDescriptionChange: (description: string) => void;
 	onDiscard: () => void;
 	onDropPlanner: (serializedPlanner: string) => void;
 	onEntitiesIncludedChange: (included: boolean) => void;
+	onFuelIncludedChange: (included: boolean) => void;
 	onFlattenBookSelectedChange: (selected: boolean) => void;
 	onLabelChange: (label: string) => void;
 	onKeepEditing: () => void;
 	onModulesIncludedChange: (included: boolean) => void;
+	onStationNamesIncludedChange: (included: boolean) => void;
 	onParametersChange: (parameters: Parameter[]) => void;
 	onPlannerPlace: (choice: UpgradePlannerChoice, direction: UpgradeDirection) => void;
-	onSaved: (savedRoot: BlueprintString) => void;
 	onSnapGridChange: (settings: BlueprintSnapGrid) => void;
 	onSortBookSelectedChange: (selected: boolean) => void;
 	onTilesIncludedChange: (included: boolean) => void;
 	onTrainsIncludedChange: (included: boolean) => void;
+	onVehiclesIncludedChange: (included: boolean) => void;
 	parameters: readonly Parameter[];
 	plannerDropError: string | undefined;
 	placedPlanner: PlacedUpgradePlanner | undefined;
 	rootBlueprint: BlueprintString;
 	removedComponents: ReadonlySet<BlueprintComponentRemovalKey>;
-	selectedPath: string;
 	sessionPlanner?: UpgradePlannerChoice;
 	signalOptions: readonly SignalID[];
 	snapGrid: BlueprintSnapGrid | undefined;
 	sortBookSelected: boolean;
 	stripEntitiesSelected: boolean;
+	stripFuelSelected: boolean;
 	stripModulesSelected: boolean;
+	stripStationNamesSelected: boolean;
 	stripTilesSelected: boolean;
 	stripTrainsSelected: boolean;
+	stripVehiclesSelected: boolean;
 }
 
 export function BlueprintEditorDialog({
@@ -98,64 +104,69 @@ export function BlueprintEditorDialog({
 	bookOperationSelected,
 	breadcrumb,
 	closeConfirmationOpen,
+	commitAction,
+	commitDisabled,
 	description,
-	dirty,
-	draftBlueprint,
-	filters,
+	filterAnalysis,
 	flattenBookSelected,
 	icons,
 	label,
 	onApplyPlacedPlanner,
 	onClose,
 	onClearPlacedPlanner,
+	onCommit,
 	onComponentRemovedChange,
 	onDescriptionChange,
 	onDiscard,
 	onDropPlanner,
 	onEntitiesIncludedChange,
+	onFuelIncludedChange,
 	onFlattenBookSelectedChange,
 	onLabelChange,
 	onKeepEditing,
 	onModulesIncludedChange,
+	onStationNamesIncludedChange,
 	onParametersChange,
 	onPlannerPlace,
-	onSaved,
 	onSnapGridChange,
 	onSortBookSelectedChange,
 	onTilesIncludedChange,
 	onTrainsIncludedChange,
+	onVehiclesIncludedChange,
 	parameters,
 	plannerDropError,
 	placedPlanner,
 	rootBlueprint,
 	removedComponents,
-	selectedPath,
 	sessionPlanner,
 	signalOptions,
 	snapGrid,
 	sortBookSelected,
 	stripEntitiesSelected,
+	stripFuelSelected,
 	stripModulesSelected,
+	stripStationNamesSelected,
 	stripTilesSelected,
 	stripTrainsSelected,
+	stripVehiclesSelected,
 }: BlueprintEditorDialogProps) {
 	const [upgradePlannerSelectorOpen, setUpgradePlannerSelectorOpen] = useState(false);
 	const [parameterizationOpen, setParameterizationOpen] = useState(false);
 	const upgradePlannerSelectorId = useId();
 	const parameterizationDialogId = useId();
+	const dialogReference = useDialogFocus<HTMLElement>({
+		initialFocusSelector: '.blueprint-editor__settings button',
+		onClose,
+	});
 
 	return (
 		<div className="transform-dialog-backdrop transform-workbench-backdrop blueprint-editor__backdrop">
 			<section
+				ref={dialogReference}
 				className="factorio-frame factorio-frame--shallow transform-dialog transform-workbench transform-workbench--blueprint"
 				role="dialog"
 				aria-modal="true"
 				aria-label="Blueprint Editor"
-				onKeyDown={(event) => {
-					if (event.key === 'Escape') {
-						onClose();
-					}
-				}}
 			>
 				<header className="factorio-title-bar transform-dialog__header transform-workbench__header">
 					<div className="transform-workbench__title">
@@ -226,15 +237,21 @@ export function BlueprintEditorDialog({
 						/>
 
 						<BlueprintContentFilters
-							categories={filters}
+							analysis={filterAnalysis}
 							entitiesIncluded={!stripEntitiesSelected}
+							fuelIncluded={!stripFuelSelected}
 							modulesIncluded={!stripModulesSelected}
 							onEntitiesIncludedChange={onEntitiesIncludedChange}
+							onFuelIncludedChange={onFuelIncludedChange}
 							onModulesIncludedChange={onModulesIncludedChange}
+							onStationNamesIncludedChange={onStationNamesIncludedChange}
 							onTilesIncludedChange={onTilesIncludedChange}
 							onTrainsIncludedChange={onTrainsIncludedChange}
+							onVehiclesIncludedChange={onVehiclesIncludedChange}
+							stationNamesIncluded={!stripStationNamesSelected}
 							tilesIncluded={!stripTilesSelected}
 							trainsIncluded={!stripTrainsSelected}
+							vehiclesIncluded={!stripVehiclesSelected}
 						/>
 
 						{book ? (
@@ -274,14 +291,12 @@ export function BlueprintEditorDialog({
 
 				<BlueprintEditorActions
 					closeConfirmationOpen={closeConfirmationOpen}
-					dirty={dirty}
-					draftBlueprint={draftBlueprint}
+					commitAction={commitAction}
+					commitDisabled={commitDisabled}
 					onClose={onClose}
+					onCommit={onCommit}
 					onDiscard={onDiscard}
 					onKeepEditing={onKeepEditing}
-					onSaved={onSaved}
-					rootBlueprint={rootBlueprint}
-					selectedPath={selectedPath}
 				/>
 			</section>
 			{upgradePlannerSelectorOpen ? (

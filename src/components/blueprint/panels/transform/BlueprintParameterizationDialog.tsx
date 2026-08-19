@@ -3,7 +3,6 @@ import {createPortal} from 'react-dom';
 
 import type {Parameter, SignalID} from '../../../../parsing/types';
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
-import {ButtonGreen} from '../../../ui/ButtonGreen';
 import {FactorioButton, FactorioButtonKind, FactorioInventorySlot} from '../../../ui/FactorioUi';
 import {SignalPickerDialog} from './SignalPickerDialog';
 import {useDialogFocus} from './useDialogFocus';
@@ -385,7 +384,8 @@ export function BlueprintParameterizationDialog({
 				</div>
 
 				<footer className="blueprint-parameterization__footer">
-					<ButtonGreen
+					<FactorioButton
+						kind={FactorioButtonKind.Confirm}
 						disabled={!dependenciesValid(draftParameters)}
 						onClick={(event) => {
 							event.preventDefault();
@@ -394,12 +394,13 @@ export function BlueprintParameterizationDialog({
 					>
 						<span aria-hidden="true">✓</span>
 						<span>Confirm</span>
-					</ButtonGreen>
+					</FactorioButton>
 				</footer>
 			</section>
 
 			{choosingValueIndex === undefined || choosingParameter?.type !== 'id' ? null : (
 				<SignalPickerDialog
+					confirmationMode="required"
 					initialQuality={choosingParameter['quality-condition']?.quality ?? 'any'}
 					initialSignal={inferredSignal(choosingParameter, pickerOptions)}
 					onChoose={(signal) => {

@@ -7,11 +7,10 @@ import {
 	type IconReplacement,
 	type MetadataIconCandidate,
 } from '../../../../transform/metadataSubstitution';
-import {ButtonGreen} from '../../../ui/ButtonGreen';
 import {FactorioButton, FactorioButtonKind} from '../../../ui/FactorioUi';
 import {SignalPickerDialog} from './SignalPickerDialog';
 import {SignalSlot} from './UpgradeMappingRow';
-import {normalizedSignalType, pickerSignals, signalIdentity, signalName} from './upgradePlannerSignals';
+import {chatIconPickerOptions, normalizedSignalType, signalIdentity, signalName} from './upgradePlannerSignals';
 import {useDialogFocus} from './useDialogFocus';
 
 export interface IconReplacementDialogProps {
@@ -42,7 +41,7 @@ function metadataIconCandidates(rootBlueprint: BlueprintString): MetadataIconCan
 function ReplacementEndpoint({label, onClick, signal}: ReplacementEndpointProps) {
 	return (
 		<span className="icon-replacement-editor__endpoint">
-			<SignalSlot label={label} onClick={onClick} signal={signal} />
+			<SignalSlot label={label} onChoose={onClick} signal={signal} />
 			{signal === undefined ? null : (
 				<span className="icon-replacement-editor__name" aria-hidden="true">
 					{signalName(signal)}
@@ -57,7 +56,7 @@ function replacementCount(candidates: readonly MetadataIconCandidate[], signal: 
 }
 
 function targetOptions(source: SignalID): SignalID[] {
-	return pickerSignals.filter(
+	return chatIconPickerOptions().filter(
 		(signal) =>
 			normalizedSignalType(signal) === normalizedSignalType(source) &&
 			signalIdentity(signal) !== signalIdentity(source),
@@ -172,11 +171,14 @@ export function IconReplacementDialog({onChange, onClose, replacements, rootBlue
 					</div>
 				</div>
 				<div className="transform-dialog__actions">
-					<ButtonGreen onClick={onClose}>Done</ButtonGreen>
+					<FactorioButton kind={FactorioButtonKind.Confirm} onClick={onClose}>
+						Done
+					</FactorioButton>
 				</div>
 			</section>
 			{choosingSource ? (
 				<SignalPickerDialog
+					confirmationMode="immediate"
 					title="Choose source icon used here"
 					options={availableCandidates.map((candidate) => candidate.signal)}
 					onClose={() => {
@@ -190,6 +192,7 @@ export function IconReplacementDialog({onChange, onClose, replacements, rootBlue
 			) : null}
 			{choosingTarget && draftFrom !== undefined ? (
 				<SignalPickerDialog
+					confirmationMode="immediate"
 					title="Choose target icon"
 					options={targetOptions(draftFrom)}
 					onClose={() => {

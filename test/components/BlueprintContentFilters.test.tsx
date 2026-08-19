@@ -3,89 +3,305 @@ import userEvent from '@testing-library/user-event';
 import {expect, test, vi} from 'vite-plus/test';
 
 import {BlueprintContentFilters} from '../../src/components/blueprint/panels/transform/BlueprintContentFilters';
-import type {BlueprintFilterCategories} from '../../src/transform/strip';
+import type {BlueprintString, Entity} from '../../src/parsing/types';
+import {BlueprintEditorSourceMode} from '../../src/transform/blueprintEditor';
+import {
+	blueprintFilterAnalysis,
+	type BlueprintFilterAnalysis,
+	type BlueprintFilterCategories,
+} from '../../src/transform/strip';
 
-interface VisibilityCase {
-	categories: BlueprintFilterCategories;
-	expectedLabels: string[];
+interface FilterMatrixCase {
+	blueprint: BlueprintString;
+	capturedOnSpacePlatform?: boolean;
+	expectedAnalysis: BlueprintFilterAnalysis;
+	expectedControls: {checked: boolean; label: string}[];
 	name: string;
+	sourceMode: BlueprintEditorSourceMode;
 }
 
-const visibilityCases: VisibilityCase[] = [
+const absentCategories: BlueprintFilterCategories = {
+	entities: false,
+	fuel: false,
+	modules: false,
+	stationNames: false,
+	tiles: false,
+	trains: false,
+	vehicles: false,
+};
+
+const allIncluded: BlueprintFilterCategories = {
+	entities: true,
+	fuel: true,
+	modules: true,
+	stationNames: true,
+	tiles: true,
+	trains: true,
+	vehicles: true,
+};
+
+function blueprint(entities: Entity[] = [], tiles: NonNullable<BlueprintString['blueprint']>['tiles'] = []) {
+	return {
+		blueprint: {
+			item: 'blueprint',
+			version: 0,
+			...(entities.length === 0 ? {} : {entities}),
+			...(tiles.length === 0 ? {} : {tiles}),
+		},
+	} satisfies BlueprintString;
+}
+
+const assemblingMachine: Entity = {
+	entity_number: 100,
+	name: 'assembling-machine-3',
+	position: {x: 0, y: 0},
+};
+const locomotive: Entity = {
+	entity_number: 200,
+	name: 'locomotive',
+	position: {x: 1, y: 0},
+};
+const car: Entity = {
+	entity_number: 300,
+	name: 'car',
+	position: {x: 2, y: 0},
+};
+const concrete = {name: 'concrete', position: {x: 0, y: 1}};
+
+const filterMatrix: FilterMatrixCase[] = [
 	{
-		categories: {entities: true, modules: true, tiles: false, trains: false},
-		expectedLabels: ['Modules'],
-		name: 'modules-only',
+		blueprint: blueprint([assemblingMachine]),
+		expectedAnalysis: {
+			categories: {...absentCategories, entities: true},
+			defaults: {...allIncluded, trains: false, vehicles: false},
+			showGroup: false,
+			visible: absentCategories,
+		},
+		expectedControls: [],
+		name: 'new entity-only capture',
+		sourceMode: BlueprintEditorSourceMode.CapturedDraft,
 	},
 	{
-		categories: {entities: true, modules: false, tiles: true, trains: false},
-		expectedLabels: ['Entities', 'Tiles'],
-		name: 'mixed entities and tiles',
+		blueprint: blueprint([assemblingMachine]),
+		expectedAnalysis: {
+			categories: {...absentCategories, entities: true},
+			defaults: allIncluded,
+			showGroup: false,
+			visible: absentCategories,
+		},
+		expectedControls: [],
+		name: 'existing entity-only blueprint',
+		sourceMode: BlueprintEditorSourceMode.ExistingRecord,
 	},
 	{
-		categories: {entities: true, modules: false, tiles: false, trains: true},
-		expectedLabels: ['Entities', 'Trains'],
-		name: 'mixed entities and trains',
+		blueprint: blueprint([], [concrete]),
+		expectedAnalysis: {
+			categories: {...absentCategories, tiles: true},
+			defaults: {...allIncluded, trains: false, vehicles: false},
+			showGroup: false,
+			visible: absentCategories,
+		},
+		expectedControls: [],
+		name: 'new tile-only capture',
+		sourceMode: BlueprintEditorSourceMode.CapturedDraft,
 	},
 	{
-		categories: {entities: false, modules: false, tiles: false, trains: false},
-		expectedLabels: [],
-		name: 'absent categories',
+		blueprint: blueprint([assemblingMachine], [concrete]),
+		expectedAnalysis: {
+			categories: {...absentCategories, entities: true, tiles: true},
+			defaults: {...allIncluded, tiles: false, trains: false, vehicles: false},
+			showGroup: true,
+			visible: {...absentCategories, entities: true, tiles: true},
+		},
+		expectedControls: [
+			{checked: true, label: 'Entities'},
+			{checked: false, label: 'Tiles'},
+		],
+		name: 'new mixed entity and tile capture',
+		sourceMode: BlueprintEditorSourceMode.CapturedDraft,
+	},
+	{
+		blueprint: blueprint([assemblingMachine], [concrete]),
+		expectedAnalysis: {
+			categories: {...absentCategories, entities: true, tiles: true},
+			defaults: allIncluded,
+			showGroup: true,
+			visible: {...absentCategories, entities: true, tiles: true},
+		},
+		expectedControls: [
+			{checked: true, label: 'Entities'},
+			{checked: true, label: 'Tiles'},
+		],
+		name: 'existing mixed entity and tile blueprint',
+		sourceMode: BlueprintEditorSourceMode.ExistingRecord,
+	},
+	{
+		blueprint: blueprint([{...assemblingMachine, name: 'train-stop', station: 'Alice'}]),
+		expectedAnalysis: {
+			categories: {...absentCategories, entities: true, stationNames: true},
+			defaults: allIncluded,
+			showGroup: true,
+			visible: {...absentCategories, stationNames: true},
+		},
+		expectedControls: [{checked: true, label: 'Station names'}],
+		name: 'named station',
+		sourceMode: BlueprintEditorSourceMode.ExistingRecord,
+	},
+	{
+		blueprint: blueprint([
+			{
+				...locomotive,
+				items: [
+					{
+						id: {name: 'coal'},
+						items: {in_inventory: [{inventory: 1, stack: 0, count: 10}]},
+					},
+				],
+			},
+		]),
+		expectedAnalysis: {
+			categories: {...absentCategories, fuel: true, trains: true},
+			defaults: allIncluded,
+			showGroup: true,
+			visible: {...absentCategories, fuel: true},
+		},
+		expectedControls: [{checked: true, label: 'Fuel'}],
+		name: 'fuel in a train-only blueprint',
+		sourceMode: BlueprintEditorSourceMode.ExistingRecord,
+	},
+	{
+		blueprint: blueprint([assemblingMachine, locomotive]),
+		expectedAnalysis: {
+			categories: {...absentCategories, entities: true, trains: true},
+			defaults: {...allIncluded, trains: false, vehicles: false},
+			showGroup: true,
+			visible: {...absentCategories, entities: true, trains: true},
+		},
+		expectedControls: [
+			{checked: true, label: 'Entities'},
+			{checked: false, label: 'Trains'},
+		],
+		name: 'new capture with entities and trains',
+		sourceMode: BlueprintEditorSourceMode.CapturedDraft,
+	},
+	{
+		blueprint: blueprint([assemblingMachine, car]),
+		expectedAnalysis: {
+			categories: {...absentCategories, entities: true, vehicles: true},
+			defaults: {...allIncluded, trains: false, vehicles: false},
+			showGroup: true,
+			visible: {...absentCategories, entities: true, vehicles: true},
+		},
+		expectedControls: [
+			{checked: true, label: 'Entities'},
+			{checked: false, label: 'Vehicles'},
+		],
+		name: 'new capture with entities and vehicles',
+		sourceMode: BlueprintEditorSourceMode.CapturedDraft,
+	},
+	{
+		blueprint: blueprint([assemblingMachine], [concrete]),
+		capturedOnSpacePlatform: true,
+		expectedAnalysis: {
+			categories: {...absentCategories, entities: true, tiles: true},
+			defaults: {...allIncluded, trains: false, vehicles: false},
+			showGroup: true,
+			visible: {...absentCategories, entities: true, tiles: true},
+		},
+		expectedControls: [
+			{checked: true, label: 'Entities'},
+			{checked: true, label: 'Tiles'},
+		],
+		name: 'new mixed capture on a space platform',
+		sourceMode: BlueprintEditorSourceMode.CapturedDraft,
+	},
+	{
+		blueprint: blueprint([
+			{
+				...assemblingMachine,
+				items: [
+					{
+						id: {name: 'speed-module-3'},
+						items: {in_inventory: [{inventory: 4, stack: 0, count: 2}]},
+					},
+				],
+			},
+		]),
+		expectedAnalysis: {
+			categories: {...absentCategories, entities: true, modules: true},
+			defaults: allIncluded,
+			showGroup: true,
+			visible: {...absentCategories, modules: true},
+		},
+		expectedControls: [{checked: true, label: 'Modules'}],
+		name: 'modules in an entity-only blueprint',
+		sourceMode: BlueprintEditorSourceMode.ExistingRecord,
 	},
 ];
 
-function renderFilters(categories: BlueprintFilterCategories) {
-	const onEntitiesIncludedChange = vi.fn<(included: boolean) => void>();
-	const onModulesIncludedChange = vi.fn<(included: boolean) => void>();
-	const onTilesIncludedChange = vi.fn<(included: boolean) => void>();
-	const onTrainsIncludedChange = vi.fn<(included: boolean) => void>();
+function renderFilters(analysis: BlueprintFilterAnalysis) {
+	const callbacks = {
+		entities: vi.fn<(included: boolean) => void>(),
+		fuel: vi.fn<(included: boolean) => void>(),
+		modules: vi.fn<(included: boolean) => void>(),
+		stationNames: vi.fn<(included: boolean) => void>(),
+		tiles: vi.fn<(included: boolean) => void>(),
+		trains: vi.fn<(included: boolean) => void>(),
+		vehicles: vi.fn<(included: boolean) => void>(),
+	};
 
 	render(
 		<BlueprintContentFilters
-			categories={categories}
-			entitiesIncluded
-			modulesIncluded
-			onEntitiesIncludedChange={onEntitiesIncludedChange}
-			onModulesIncludedChange={onModulesIncludedChange}
-			onTilesIncludedChange={onTilesIncludedChange}
-			onTrainsIncludedChange={onTrainsIncludedChange}
-			tilesIncluded
-			trainsIncluded
+			analysis={analysis}
+			entitiesIncluded={analysis.defaults.entities}
+			fuelIncluded={analysis.defaults.fuel}
+			modulesIncluded={analysis.defaults.modules}
+			onEntitiesIncludedChange={callbacks.entities}
+			onFuelIncludedChange={callbacks.fuel}
+			onModulesIncludedChange={callbacks.modules}
+			onStationNamesIncludedChange={callbacks.stationNames}
+			onTilesIncludedChange={callbacks.tiles}
+			onTrainsIncludedChange={callbacks.trains}
+			onVehiclesIncludedChange={callbacks.vehicles}
+			stationNamesIncluded={analysis.defaults.stationNames}
+			tilesIncluded={analysis.defaults.tiles}
+			trainsIncluded={analysis.defaults.trains}
+			vehiclesIncluded={analysis.defaults.vehicles}
 		/>,
 	);
 
-	return {
-		onEntitiesIncludedChange,
-		onModulesIncludedChange,
-		onTilesIncludedChange,
-		onTrainsIncludedChange,
-	};
+	return callbacks;
 }
 
-test.each(visibilityCases)('shows only meaningful filters for $name', ({categories, expectedLabels}) => {
-	renderFilters(categories);
+test.each(filterMatrix)(
+	'source-backed filter matrix: $name',
+	({blueprint, capturedOnSpacePlatform = false, expectedAnalysis, expectedControls, sourceMode}) => {
+		const analysis = blueprintFilterAnalysis(blueprint, sourceMode, capturedOnSpacePlatform);
+		renderFilters(analysis);
 
-	expect({
-		checkboxCount: screen.queryAllByRole('checkbox').length,
-		controls: expectedLabels.map((label) => {
-			const checkbox = screen.getByRole<HTMLInputElement>('checkbox', {name: label});
-			return {
+		expect({
+			analysis,
+			controls: screen.queryAllByRole<HTMLInputElement>('checkbox').map((checkbox) => ({
 				checked: checkbox.checked,
 				label: checkbox.labels?.[0]?.textContent,
 				type: checkbox.type,
-			};
-		}),
-		heading: screen.queryByRole('heading', {name: 'Filters'})?.textContent ?? null,
-	}).toStrictEqual({
-		checkboxCount: expectedLabels.length,
-		controls: expectedLabels.map((label) => ({checked: true, label, type: 'checkbox'})),
-		heading: expectedLabels.length === 0 ? null : 'Filters',
-	});
-});
+			})),
+			heading: screen.queryByRole('heading', {name: 'Filters'})?.textContent ?? null,
+		}).toStrictEqual({
+			analysis: expectedAnalysis,
+			controls: expectedControls.map(({checked, label}) => ({checked, label, type: 'checkbox'})),
+			heading: expectedControls.length === 0 ? null : 'Filters',
+		});
+	},
+);
 
-test('toggles a fully named filter with the native keyboard control', async () => {
+test('toggles a selectable label with the native keyboard control', async () => {
 	const user = userEvent.setup();
-	const callbacks = renderFilters({entities: true, modules: true, tiles: true, trains: true});
+	const analysis = blueprintFilterAnalysis(
+		blueprint([assemblingMachine, locomotive]),
+		BlueprintEditorSourceMode.ExistingRecord,
+	);
+	const callbacks = renderFilters(analysis);
 	const trains = screen.getByRole<HTMLInputElement>('checkbox', {name: 'Trains'});
 
 	trains.focus();
@@ -93,13 +309,15 @@ test('toggles a fully named filter with the native keyboard control', async () =
 
 	expect({
 		activeElement: document.activeElement,
-		calls: callbacks.onTrainsIncludedChange.mock.calls,
+		calls: callbacks.trains.mock.calls,
 		factorioCheckbox: trains.nextElementSibling?.className,
 		labelElement: trains.labels?.[0]?.tagName,
+		labelText: trains.labels?.[0]?.textContent,
 	}).toStrictEqual({
 		activeElement: trains,
 		calls: [[false]],
 		factorioCheckbox: 'checkbox',
 		labelElement: 'LABEL',
+		labelText: 'Trains',
 	});
 });

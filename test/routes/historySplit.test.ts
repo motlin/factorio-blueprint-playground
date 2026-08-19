@@ -38,51 +38,61 @@ describe('addSplitBookToHistory', () => {
 				],
 			},
 		};
-		const addBlueprint = vi
-			.spyOn(db, 'addBlueprint')
+		const importToHistory = vi
+			.spyOn(db, 'importToHistory')
 			.mockResolvedValueOnce({
+				id: 'history-alice',
+				importedOn: 0,
 				metadata: {sha: 'alice-sha', createdOn: 0, lastUpdatedOn: 0, data: serializeBlueprint(alice)},
 				gameData: {type: 'blueprint', label: 'Alice', icons: []},
 			})
 			.mockResolvedValueOnce({
+				id: 'history-bob',
+				importedOn: 0,
 				metadata: {sha: 'bob-sha', createdOn: 0, lastUpdatedOn: 0, data: serializeBlueprint(bob)},
 				gameData: {type: 'upgrade_planner', label: 'Bob', icons: []},
 			});
 
 		const added = await addSplitBookToHistory(book);
 
-		expect(addBlueprint.mock.calls).toStrictEqual([
+		expect(importToHistory.mock.calls).toStrictEqual([
 			[
-				serializeBlueprint(alice),
 				{
-					type: 'blueprint',
-					label: 'Alice',
-					description: 'Alice test blueprint',
-					gameVersion: '10',
-					icons: [{type: 'item', name: 'transport-belt'}],
+					data: serializeBlueprint(alice),
+					fetchMethod: 'data',
+					gameData: {
+						type: 'blueprint',
+						label: 'Alice',
+						description: 'Alice test blueprint',
+						gameVersion: '10',
+						icons: [{type: 'item', name: 'transport-belt'}],
+					},
 				},
-				undefined,
-				'data',
 			],
 			[
-				serializeBlueprint(bob),
 				{
-					type: 'upgrade_planner',
-					label: 'Bob',
-					description: 'Bob test planner',
-					gameVersion: '20',
-					icons: [],
+					data: serializeBlueprint(bob),
+					fetchMethod: 'data',
+					gameData: {
+						type: 'upgrade_planner',
+						label: 'Bob',
+						description: 'Bob test planner',
+						gameVersion: '20',
+						icons: [],
+					},
 				},
-				undefined,
-				'data',
 			],
 		]);
 		expect(added).toStrictEqual([
 			{
+				id: 'history-alice',
+				importedOn: 0,
 				metadata: {sha: 'alice-sha', createdOn: 0, lastUpdatedOn: 0, data: serializeBlueprint(alice)},
 				gameData: {type: 'blueprint', label: 'Alice', icons: []},
 			},
 			{
+				id: 'history-bob',
+				importedOn: 0,
 				metadata: {sha: 'bob-sha', createdOn: 0, lastUpdatedOn: 0, data: serializeBlueprint(bob)},
 				gameData: {type: 'upgrade_planner', label: 'Bob', icons: []},
 			},
@@ -90,11 +100,11 @@ describe('addSplitBookToHistory', () => {
 	});
 
 	test('rejects a non-book input before writing history', async () => {
-		const addBlueprint = vi.spyOn(db, 'addBlueprint');
+		const importToHistory = vi.spyOn(db, 'importToHistory');
 
 		await expect(
 			addSplitBookToHistory({blueprint: {item: 'blueprint', label: 'Alice', version: 10}}),
 		).rejects.toThrow('Cannot split a blueprint that is not a book');
-		expect(addBlueprint.mock.calls).toStrictEqual([]);
+		expect(importToHistory.mock.calls).toStrictEqual([]);
 	});
 });

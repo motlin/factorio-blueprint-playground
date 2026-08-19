@@ -74,6 +74,7 @@
 		"@vitest/coverage-v8": "^5.1.0",
 		"eslint": "^10.14.0",
 		"eslint-plugin-storybook": "^10.6.5",
+		"fake-indexeddb": "^6.2.5",
 		"fallow": "^3.39.0",
 		"happy-dom": "^21.0.4",
 		"markdownlint-cli2": "^0.24.0",
