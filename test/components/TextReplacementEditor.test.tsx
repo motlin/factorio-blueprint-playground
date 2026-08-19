@@ -67,6 +67,12 @@ test('renders a compact affected-count row and reports each edit', () =>
 			affected: screen.getByText('3 affected').textContent,
 			enabledCalls: vi.mocked(props.onEnabledChange).mock.calls,
 			findCalls: vi.mocked(props.onFindChange).mock.calls,
+			findStyle: screen.getByRole<HTMLInputElement>(
+				'textbox',
+				{
+					name: 'Find',
+				},
+			).dataset.factorioStyle,
 			groupClass: screen.getByRole(
 				'group',
 				{
@@ -80,15 +86,23 @@ test('renders a compact affected-count row and reports each edit', () =>
 				},
 			),
 			replacementCalls: vi.mocked(props.onReplacementChange).mock.calls,
+			replacementStyle: screen.getByRole<HTMLInputElement>(
+				'textbox',
+				{
+					name: 'Replace',
+				},
+			).dataset.factorioStyle,
 		},
 	).toStrictEqual(
 		{
 			affected: '3 affected',
 			enabledCalls: [[false]],
 			findCalls: [['Red']],
+			findStyle: 'textbox',
 			groupClass: 'text-replacement-editor',
 			preserveCase: null,
 			replacementCalls: [['Blue']],
+			replacementStyle: 'textbox',
 		},
 	);
 });

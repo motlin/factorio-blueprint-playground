@@ -49,6 +49,7 @@ export function BlueprintToolbelt({
 	const upgradePlannerButtonReference = useRef<HTMLButtonElement>(null);
 	const blueprintEditorTooltipId = useId();
 	const upgradePlannerTooltipId = useId();
+	const modalOpen = blueprintEditorOpen || upgradePlannerOpen;
 
 	useEffect(() =>
 	{
@@ -90,6 +91,7 @@ export function BlueprintToolbelt({
 			className="transform-toolbelt"
 			role="toolbar"
 			aria-label="Blueprint tools"
+			inert={modalOpen}
 			data-factorio-source="BottomContainer::updateLocation"
 			data-factorio-style="shortcut_bar_window_frame"
 			data-website-extension="blueprint-editor-tools"
@@ -129,6 +131,7 @@ export function BlueprintToolbelt({
 							id={blueprintEditorTooltipId}
 							className="factorio-toolbar-tooltip"
 							heading="Blueprint Editor"
+							open={modalOpen ? false : undefined}
 							placement={FactorioTooltipPlacement.Above}
 						>
 							Open this blueprint or book to edit its settings and contents.{' '}
@@ -165,6 +168,7 @@ export function BlueprintToolbelt({
 						id={upgradePlannerTooltipId}
 						className="factorio-toolbar-tooltip"
 						heading="Upgrade Planner"
+						open={modalOpen ? false : undefined}
 						placement={FactorioTooltipPlacement.Above}
 					>
 						Open the Upgrade Planner to create and edit upgrade mappings.{' '}

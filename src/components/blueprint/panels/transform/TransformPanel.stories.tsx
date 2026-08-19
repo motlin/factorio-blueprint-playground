@@ -250,7 +250,7 @@ export const UpgradePlanner: Story =
 			canvas.getByRole(
 				'button',
 				{
-					name: 'Apply Upgrade to Current Blueprint',
+					name: 'Apply Upgrade',
 				},
 			),
 		).toBeVisible();
@@ -258,7 +258,7 @@ export const UpgradePlanner: Story =
 			canvas.getByRole(
 				'button',
 				{
-					name: 'Apply Downgrade to Current Blueprint',
+					name: 'Apply Downgrade',
 				},
 			),
 		).toBeVisible();

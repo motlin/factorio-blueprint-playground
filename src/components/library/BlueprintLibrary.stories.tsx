@@ -263,7 +263,7 @@ export const NestedBookNavigationAndFocusRestoration: Story =
 		await expect(railBookButton.parentElement).toHaveAttribute('data-book-depth', '1');
 		await expect(stationBookButton.parentElement).toHaveAttribute('data-book-depth', '2');
 		await expect(stationBookButton).toHaveAttribute('aria-current', 'location');
-		await expect(stationBookButton).toHaveAttribute('aria-pressed', 'true');
+		await expect(stationBookButton).not.toHaveAttribute('aria-pressed');
 		await expect(within(navigation).getByText('Current book')).toBeVisible();
 		await expect(
 			canvas.getByRole(
@@ -364,7 +364,7 @@ export const EmptyLibraryShelf: Story =
 			'data-website-extension',
 			'empty-shelf-help',
 		);
-		await expect(emptyState.querySelectorAll('.blueprint-library__empty-slot')).toHaveLength(10);
+		await expect(emptyState.querySelectorAll('.factorio-inventory-slot')).toHaveLength(0);
 		await expect(recordsSurface).toHaveClass('blueprint-library__records-surface');
 	},
 };

@@ -3,6 +3,7 @@ import {Link} from '@tanstack/react-router';
 import {getSourceLabel} from '../fetching/blueprintFetcher';
 import type {SignalType} from '../parsing/types';
 import type {ImportHistoryRecord} from '../storage/db';
+import {BLUEPRINT_RECORD_TYPE_LABELS} from './library/blueprintRecordModel';
 
 const SIGNAL_TYPES = new Set<string>([
 	'item',
@@ -55,8 +56,8 @@ interface HistoryBlueprintRowProps
 export function HistoryBlueprintRow({blueprint, isSelected, onToggleSelection}: HistoryBlueprintRowProps)
 {
 	const label = blueprint.gameData.label?.trim();
-	const rowName =
-		label === undefined || label === '' ? `Untitled ${blueprint.gameData.type.replace('_', ' ')}` : label;
+	const typeLabel = BLUEPRINT_RECORD_TYPE_LABELS[blueprint.gameData.type];
+	const rowName = label === undefined || label === '' ? `Untitled ${typeLabel.toLowerCase()}` : label;
 
 	return (
 		<div
@@ -81,6 +82,7 @@ export function HistoryBlueprintRow({blueprint, isSelected, onToggleSelection}: 
 			{/* Type column */}
 			<div className="history-type-container">
 				<FactorioIcon
+					decorative
 					icon={
 					{
 						type: 'item',
@@ -88,6 +90,7 @@ export function HistoryBlueprintRow({blueprint, isSelected, onToggleSelection}: 
 					}}
 					size="small"
 				/>
+				<span>{typeLabel}</span>
 			</div>
 
 			{/* Version column */}

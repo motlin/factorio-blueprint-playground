@@ -299,11 +299,11 @@ export function useDialogFocus<T extends HTMLElement>({
 			}
 		};
 
-		window.addEventListener('keydown', handleKeyDown, true);
+		window.addEventListener('keydown', handleKeyDown);
 		document.addEventListener('focusin', handleFocusIn);
 		return () =>
 		{
-			window.removeEventListener('keydown', handleKeyDown, true);
+			window.removeEventListener('keydown', handleKeyDown);
 			document.removeEventListener('focusin', handleFocusIn);
 			unregisterDialog(dialog);
 			const nextTopmostDialog = dialogStack.at(-1);
