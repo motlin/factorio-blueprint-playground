@@ -1,17 +1,21 @@
-import {useState} from 'react';
+import {useRef, useState} from 'react';
+import {createPortal} from 'react-dom';
 
 import type {QualityComparator} from '../../../../parsing/types';
-import {FactorioIcon} from '../../../core/icons/FactorioIcon';
-import {FactorioInventorySlot} from '../../../ui/FactorioUi';
+import {FactorioInventorySlot, FactorioQualityBadge} from '../../../ui/FactorioUi';
 import {
 	anyQualityLabel,
+	explicitQuality,
+	qualitySelectorUsesDropdown,
 	upgradeQualities,
 	upgradeQualityComparators,
 	upgradeQualityLabel,
+	type ExplicitQuality,
 	type UpgradeQualityMode,
 	type UpgradeQualitySelection,
 } from './upgradeQuality';
 import {signalName} from './upgradePlannerSignals';
+import {useDialogFocus} from './useDialogFocus';
 
 interface UpgradeQualityControlsProps {
 	mode: UpgradeQualityMode;
@@ -25,9 +29,80 @@ function AnyQualityIcon() {
 	return (
 		<span className="upgrade-quality-controls__any-icon" aria-hidden="true">
 			{upgradeQualities.slice(1).map((quality) => (
-				<img key={quality} src={`https://factorio-icon-cdn.pages.dev/quality/${quality}.webp`} alt="" />
+				<FactorioQualityBadge key={quality} quality={quality} />
 			))}
 		</span>
+	);
+}
+
+interface QualityComparatorMenuProps {
+	anchorBottom: number;
+	anchorLeft: number;
+	onAnyChoose: () => void;
+	onCancel: () => void;
+	onComparatorChoose: (comparator: QualityComparator) => void;
+	qualityComparator: QualityComparator;
+	qualitySelection: UpgradeQualitySelection;
+}
+
+function QualityComparatorMenu({
+	anchorBottom,
+	anchorLeft,
+	onAnyChoose,
+	onCancel,
+	onComparatorChoose,
+	qualityComparator,
+	qualitySelection,
+}: QualityComparatorMenuProps) {
+	const dialogReference = useDialogFocus<HTMLElement>({
+		initialFocusSelector: '[role="menuitemradio"]',
+		onClose: onCancel,
+	});
+
+	return createPortal(
+		<div
+			className="upgrade-quality-controls__menu-layer"
+			onMouseDown={(event) => {
+				if (event.target === event.currentTarget) {
+					onCancel();
+				}
+			}}
+		>
+			<section
+				ref={dialogReference}
+				className="factorio-frame factorio-frame--shallow upgrade-quality-controls__menu-dialog"
+				role="dialog"
+				aria-modal="true"
+				aria-label="Quality comparison"
+				style={{bottom: anchorBottom, left: anchorLeft}}
+			>
+				<div className="upgrade-quality-controls__comparator-menu" role="menu" aria-label="Quality comparison">
+					<button
+						type="button"
+						role="menuitemradio"
+						aria-checked={qualitySelection === 'any'}
+						onClick={onAnyChoose}
+					>
+						<AnyQualityIcon />
+						<span>{anyQualityLabel}</span>
+					</button>
+					{upgradeQualityComparators.map((comparator) => (
+						<button
+							type="button"
+							key={comparator}
+							role="menuitemradio"
+							aria-checked={qualitySelection !== 'any' && qualityComparator === comparator}
+							onClick={() => {
+								onComparatorChoose(comparator);
+							}}
+						>
+							{comparator}
+						</button>
+					))}
+				</div>
+			</section>
+		</div>,
+		document.body,
 	);
 }
 
@@ -43,63 +118,98 @@ function QualityComparatorControl({
 	qualitySelection: UpgradeQualitySelection;
 }) {
 	const [menuOpen, setMenuOpen] = useState(false);
+	const [menuAnchor, setMenuAnchor] = useState({bottom: 0, left: 0});
+	const toggleReference = useRef<HTMLButtonElement>(null);
+	const comparisonLabel = qualitySelection === 'any' ? anyQualityLabel : `Quality comparison: ${qualityComparator}`;
 
 	return (
 		<div className="upgrade-quality-controls__condition">
 			<FactorioInventorySlot
-				className="upgrade-quality-controls__any"
-				aria-label={anyQualityLabel}
-				selected={qualitySelection === 'any'}
-				title={anyQualityLabel}
-				onClick={() => {
-					onQualityChange('any');
-				}}
-			>
-				<AnyQualityIcon />
-			</FactorioInventorySlot>
-			<FactorioInventorySlot
+				ref={toggleReference}
 				className="upgrade-quality-controls__comparator-toggle"
-				aria-label={`Quality comparison: ${qualityComparator}`}
+				aria-label={comparisonLabel}
 				aria-expanded={menuOpen}
-				aria-haspopup="menu"
-				title={`Quality comparison: ${qualityComparator}`}
+				aria-haspopup="dialog"
+				selected={qualitySelection === 'any'}
+				title={comparisonLabel}
 				onClick={() => {
-					setMenuOpen((current) => !current);
+					const bounds = toggleReference.current?.getBoundingClientRect();
+					if (bounds !== undefined) {
+						setMenuAnchor({
+							bottom: window.innerHeight - bounds.top + 3,
+							left: bounds.left,
+						});
+					}
+					setMenuOpen(true);
 				}}
 			>
-				<span aria-hidden="true">▾</span>
+				{qualitySelection === 'any' ? <AnyQualityIcon /> : <span aria-hidden="true">{qualityComparator}</span>}
+				<span className="upgrade-quality-controls__dropdown-arrow" aria-hidden="true">
+					▾
+				</span>
 			</FactorioInventorySlot>
 			{menuOpen ? (
-				<div className="upgrade-quality-controls__comparator-menu" role="menu" aria-label="Quality comparison">
-					{upgradeQualityComparators.map((comparator) => (
-						<button
-							type="button"
-							key={comparator}
-							role="menuitemradio"
-							aria-checked={qualityComparator === comparator}
-							onClick={() => {
-								onComparatorChange(comparator);
-								setMenuOpen(false);
-							}}
-						>
-							{comparator}
-						</button>
-					))}
-				</div>
+				<QualityComparatorMenu
+					anchorBottom={menuAnchor.bottom}
+					anchorLeft={menuAnchor.left}
+					onAnyChoose={() => {
+						onQualityChange('any');
+						setMenuOpen(false);
+					}}
+					onCancel={() => {
+						setMenuOpen(false);
+					}}
+					onComparatorChoose={(comparator) => {
+						onComparatorChange(comparator);
+						if (qualitySelection === 'any') {
+							onQualityChange('normal');
+						}
+						setMenuOpen(false);
+					}}
+					qualityComparator={qualityComparator}
+					qualitySelection={qualitySelection}
+				/>
 			) : null}
 		</div>
 	);
 }
 
-function QualityButtons({
+function qualityLabel(quality: ExplicitQuality): string {
+	return `${upgradeQualityLabel(quality)} quality`;
+}
+
+function QualitySelector({
 	onQualityChange,
 	qualitySelection,
 }: {
 	onQualityChange: (selection: UpgradeQualitySelection) => void;
 	qualitySelection: UpgradeQualitySelection;
 }) {
+	const exactQuality = qualitySelection === 'any' ? 'normal' : qualitySelection;
+	if (qualitySelectorUsesDropdown(upgradeQualities.length)) {
+		return (
+			<label className="upgrade-quality-controls__quality-dropdown">
+				<span>Quality</span>
+				<FactorioQualityBadge quality={exactQuality} aria-hidden="true" />
+				<select
+					aria-label="Quality"
+					value={exactQuality}
+					onChange={(event) => {
+						onQualityChange(explicitQuality(event.currentTarget.value));
+					}}
+				>
+					{upgradeQualities.map((quality) => (
+						<option key={quality} value={quality}>
+							{upgradeQualityLabel(quality)}
+						</option>
+					))}
+				</select>
+			</label>
+		);
+	}
+
 	return upgradeQualities.map((quality) => {
-		const label = `${upgradeQualityLabel(quality)} quality`;
+		const label = qualityLabel(quality);
 		return (
 			<FactorioInventorySlot
 				className="upgrade-quality-controls__quality"
@@ -111,20 +221,19 @@ function QualityButtons({
 					onQualityChange(quality);
 				}}
 			>
-				<FactorioIcon icon={{type: 'quality', name: quality}} size="small" />
+				<FactorioQualityBadge quality={quality} aria-hidden="true" />
 			</FactorioInventorySlot>
 		);
 	});
 }
 
 /**
- * Quality footer profile for `SignalPickerDialog`.
+ * The single quality footer used by `SignalPickerDialog`.
  *
- * Source mode represents Factorio's `QualityConditionGui`: Any plus an ordered
- * comparator menu and the shared quality selector. Target mode, also used by
- * local blueprint icons, represents `QualityGui`: one exact quality. A generated
- * quality count may switch the selector from buttons to a dropdown, but must not
- * introduce another quality state or picker.
+ * Source mode models `QualityConditionGui`: an Any sentinel or ordered
+ * comparator plus the shared exact selector. Target mode models `QualityGui`.
+ * The exact selector uses registered visible qualities and switches to the
+ * configured dropdown representation at the generated threshold.
  */
 export function UpgradeQualityControls({
 	mode,
@@ -155,7 +264,7 @@ export function UpgradeQualityControls({
 					qualitySelection={qualitySelection}
 				/>
 			) : null}
-			<QualityButtons onQualityChange={onQualityChange} qualitySelection={qualitySelection} />
+			<QualitySelector onQualityChange={onQualityChange} qualitySelection={qualitySelection} />
 		</div>
 	);
 }

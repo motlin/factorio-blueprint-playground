@@ -592,6 +592,26 @@ export function buildGameUiSpec(sourceLock: GameUiSourceLock, sources: ReadonlyM
 	if (!qualitySelectorSource.includes('qualitySelectorDropdownThreshold')) {
 		throw new Error('Quality selector no longer uses the configured dropdown threshold.');
 	}
+	const upgradeRecordSource = requiredSource(sources, 'src/Blueprint/UpgradeRecord.cpp');
+	for (const recordContract of [
+		'this->label = other.label;',
+		'this->upgradeData.description = description;',
+		'this->upgradeData.previewIcons = previewIcons;',
+	]) {
+		if (!upgradeRecordSource.includes(recordContract)) {
+			throw new Error(`Upgrade record metadata contract changed: ${recordContract}`);
+		}
+	}
+	const upgradeItemGuiSource = requiredSource(sources, 'src/Gui/UpgradeItemGui.cpp');
+	for (const editorField of [
+		'UpgradeItemGui::getItemLabel(this->upgradeItem, this->upgradeRecord)',
+		'UpgradeItemGui::getUpgradeData(this->upgradeItem, this->upgradeRecord).description',
+		'UpgradeItemGui::getUpgradeData(this->upgradeItem, this->upgradeRecord).previewIcons',
+	]) {
+		if (!upgradeItemGuiSource.includes(editorField)) {
+			throw new Error(`Upgrade item metadata editor contract changed: ${editorField}`);
+		}
+	}
 
 	return parseGameUiSpec({
 		schemaVersion: 1,
