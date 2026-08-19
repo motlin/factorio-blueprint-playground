@@ -37,6 +37,21 @@ const records = [
 	historyRecord('two', 'Alpha assemblers', 'blueprint', 100),
 ];
 
+test('renders human-readable blueprint type labels', () => {
+	render(
+		<BlueprintHistoryTable
+			blueprints={records}
+			selectedItems={new Set<string>()}
+			toggleSelection={vi.fn<(id: string) => void>()}
+		/>,
+	);
+
+	expect([...document.querySelectorAll('.history-type-container')].map((cell) => cell.textContent)).toStrictEqual([
+		'Blueprint book',
+		'Blueprint',
+	]);
+});
+
 test('sorts history rows by a keyboard-operable header and announces the sort state', async () => {
 	const user = userEvent.setup();
 	render(

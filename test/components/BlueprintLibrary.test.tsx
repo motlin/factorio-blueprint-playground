@@ -197,13 +197,13 @@ describe('BlueprintLibrary', () => {
 				current: null,
 				factorioStyle: 'mini_button_aligned_to_text_vertically',
 				label: 'Go to book: My blueprints',
-				pressed: 'false',
+				pressed: null,
 			},
 			{
 				current: 'location',
-				factorioStyle: 'mini_button_aligned_to_text_vertically_when_centered',
+				factorioStyle: 'mini_button_aligned_to_text_vertically',
 				label: 'Current book: Alice rail book',
-				pressed: 'true',
+				pressed: null,
 			},
 		]);
 		pathButtons[0].focus();
@@ -281,7 +281,7 @@ describe('BlueprintLibrary', () => {
 		);
 		const emptyState = screen.getByRole('status');
 		expect({
-			emptySlotCount: emptyState.querySelectorAll('.blueprint-library__empty-slot').length,
+			emptySlots: emptyState.querySelectorAll('.factorio-inventory-slot').length,
 			factorioSource: emptyState.dataset.factorioSource,
 			heading: screen.getByRole('heading', {name: 'My blueprints'}).textContent,
 			itemCount: screen.getByText('0 items').textContent,
@@ -290,11 +290,11 @@ describe('BlueprintLibrary', () => {
 			websiteExtension: emptyState.querySelector<HTMLElement>('.blueprint-library__empty-copy')?.dataset
 				.websiteExtension,
 		}).toStrictEqual({
-			emptySlotCount: 10,
+			emptySlots: 0,
 			factorioSource: 'BlueprintShelfWidget::updateRecords',
 			heading: 'My blueprints',
 			itemCount: '0 items',
-			message: 'No blueprints saved yetSaved blueprints and planners will appear in these slots.',
+			message: 'No blueprints saved yetSaved blueprints and planners will appear here.',
 			recordsSurfaceClass: 'blueprint-library__records-surface',
 			websiteExtension: 'empty-shelf-help',
 		});

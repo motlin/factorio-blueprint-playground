@@ -69,7 +69,6 @@ test('groups only caller-supplied game signals and confirms a selected icon', as
 		backdropLayer: dialog.parentElement?.getAttribute('data-factorio-dialog-layer'),
 		closeTooltip: close.getAttribute('title'),
 		closeStyle: close.getAttribute('data-factorio-style'),
-		confirmControlStyle: confirm.getAttribute('data-factorio-control-style'),
 		confirmDisabled: confirm.disabled,
 		confirmStyle: confirm.getAttribute('data-factorio-style'),
 		dialogLabelledBy: dialog.getAttribute('aria-labelledby'),
@@ -92,7 +91,6 @@ test('groups only caller-supplied game signals and confirms a selected icon', as
 		backdropLayer: 'nested',
 		closeTooltip: 'Close Choose test signal',
 		closeStyle: 'frame_action_button',
-		confirmControlStyle: 'item_and_count_select_confirm',
 		initialFocusIsSearch: true,
 		confirmDisabled: true,
 		confirmStyle: 'green_button',
@@ -195,13 +193,13 @@ test('moves keyboard focus by grid geometry while skipping inaccessible targets'
 	});
 });
 
-test('stages on one click and confirms the clicked option on a double click', async () => {
+test('never commits on a double click, a gesture the game does not use', async () => {
 	const user = userEvent.setup();
 	const onChoose = vi.fn<SignalPickerDialogProps['onChoose']>();
 	render(
 		<SignalPickerDialog
 			confirmationMode="required"
-			title="Choose with double click"
+			title="Choose without double click"
 			options={[
 				{type: 'item', name: 'iron-plate'},
 				{type: 'item', name: 'copper-plate'},
@@ -223,7 +221,13 @@ test('stages on one click and confirms the clicked option on a double click', as
 
 	const iron = screen.getByRole('button', {name: 'Choose Iron plate'});
 	await user.dblClick(iron);
-	expect(onChoose.mock.calls).toStrictEqual([[{type: 'item', name: 'iron-plate'}]]);
+	expect({
+		chooseCalls: onChoose.mock.calls,
+		selected: iron.getAttribute('aria-pressed'),
+	}).toStrictEqual({
+		chooseCalls: [],
+		selected: 'true',
+	});
 });
 
 test('exposes rest, selected, disabled, and quality-badge option states', () => {
@@ -350,7 +354,12 @@ test('shows source quality controls with the Factorio comparators and quality ic
 	);
 
 	const qualityBar = screen.getByRole('group', {name: 'Source quality'});
+	const comparisonControl = within(qualityBar).getByRole('button', {name: 'Quality comparison: any'});
 	expect({
+		comparisonControl: {
+			label: comparisonControl.getAttribute('aria-label'),
+			text: comparisonControl.textContent,
+		},
 		qualityButtons: within(qualityBar)
 			.getAllByRole('button')
 			.map((button) => button.getAttribute('aria-label') ?? button.textContent),
@@ -358,8 +367,12 @@ test('shows source quality controls with the Factorio comparators and quality ic
 			...qualityBar.querySelectorAll('.upgrade-quality-controls__quality > .factorio-quality-badge'),
 		].map((icon) => icon.getAttribute('src')),
 	}).toStrictEqual({
+		comparisonControl: {
+			label: 'Quality comparison: any',
+			text: 'Any▾',
+		},
 		qualityButtons: [
-			'Any quality',
+			'Quality comparison: any',
 			'Normal quality',
 			'Uncommon quality',
 			'Rare quality',
@@ -573,7 +586,7 @@ test('defaults a target to exact normal quality and has no source-preserving cho
 	expect(onChoose.mock.calls).toStrictEqual([[{type: 'entity', name: 'test-entity', quality: 'normal'}]]);
 });
 
-test('confirms the selected signal with Enter and the visible green check', async () => {
+test('confirms the selected signal with Enter and the standard green confirm button', async () => {
 	const user = userEvent.setup();
 	const enterChoose = vi.fn<SignalPickerDialogProps['onChoose']>();
 	const {unmount} = render(
@@ -607,7 +620,17 @@ test('confirms the selected signal with Enter and the visible green check', asyn
 	);
 
 	const confirm = screen.getByRole('button', {name: 'Confirm'});
-	expect(confirm.querySelector('[aria-hidden="true"]')?.textContent).toBe('✓');
+	expect({
+		className: confirm.className,
+		controlStyle: confirm.getAttribute('data-factorio-control-style'),
+		factorioStyle: confirm.getAttribute('data-factorio-style'),
+		text: confirm.textContent,
+	}).toStrictEqual({
+		className: 'factorio-button factorio-button--confirm',
+		controlStyle: null,
+		factorioStyle: 'green_button',
+		text: 'Confirm',
+	});
 	await user.click(confirm);
 	expect(checkChoose.mock.calls).toStrictEqual([[{type: 'entity', name: 'test-entity'}]]);
 });
@@ -1152,19 +1175,28 @@ test('chooses immediately with Enter without rendering a subfooter or green conf
 	expect(onChoose.mock.calls).toStrictEqual([[qualitySignal]]);
 });
 
-test('rejects quality controls in immediate-selection mode', () => {
-	expect(() => {
-		render(
-			<SignalPickerDialog
-				confirmationMode="immediate"
-				title="Invalid immediate quality picker"
-				options={[qualitySignal]}
-				qualityMode="target"
-				onChoose={vi.fn<SignalPickerDialogProps['onChoose']>()}
-				onClose={vi.fn<() => void>()}
-			/>,
-		);
-	}).toThrow('Immediate signal selection cannot include staged quality controls.');
+test('commits the footer quality already showing when an immediate picker is clicked', async () => {
+	const user = userEvent.setup();
+	const onChoose = vi.fn<SignalPickerDialogProps['onChoose']>();
+	render(
+		<SignalPickerDialog
+			confirmationMode="immediate"
+			title="Immediate quality picker"
+			options={[qualitySignal]}
+			initialSignal={qualitySignal}
+			qualityMode="target"
+			onChoose={onChoose}
+			onClose={vi.fn<() => void>()}
+		/>,
+	);
+
+	/*
+	 * The quality selector is a live modifier, not a staged field: pick the
+	 * quality first, then the click that chooses the signal carries it.
+	 */
+	await user.click(screen.getByRole('button', {name: 'Rare quality'}));
+	await user.click(screen.getByRole('button', {name: 'Choose Test entity'}));
+	expect(onChoose.mock.calls).toStrictEqual([[{...qualitySignal, quality: 'rare'}]]);
 });
 
 test('preselects the only eligible option so confirmation is immediately available', () => {
