@@ -1,0 +1,68 @@
+{
+	"blueprint": {
+		"item": "blueprint",
+		"label": "Quality metadata test",
+		"version": 0,
+		"icons": [
+			{
+				"index": 1,
+				"signal": {"type": "quality", "name": "quality", "quality": "legendary"}
+			}
+		],
+		"entities": [
+			{
+				"entity_number": 1,
+				"name": "assembling-machine-3",
+				"position": {"x": 0, "y": 0},
+				"quality": "rare",
+				"recipe": "electronic-circuit",
+				"recipe_quality": "epic",
+				"items": [
+					{
+						"id": {"name": "speed-module-3", "quality": "legendary"},
+						"items": {
+							"in_inventory": [{"inventory": 1, "stack": 0, "count": 2}]
+						}
+					}
+				],
+				"filters": [{"index": 1, "name": "iron-plate", "quality": "uncommon", "comparator": "="}]
+			},
+			{
+				"entity_number": 2,
+				"name": "logistic-chest-requester",
+				"position": {"x": 1, "y": 0},
+				"request_filters": {
+					"sections": [
+						{
+							"index": 1,
+							"filters": [{"index": 1, "name": "copper-plate", "quality": "epic", "count": 100}]
+						}
+					]
+				}
+			},
+			{
+				"entity_number": 3,
+				"name": "constant-combinator",
+				"position": {"x": 2, "y": 0},
+				"control_behavior": {
+					"sections": {
+						"sections": [
+							{
+								"index": 1,
+								"filters": [
+									{
+										"index": 1,
+										"type": "quality",
+										"name": "quality",
+										"quality": "rare",
+										"count": 1
+									}
+								]
+							}
+						]
+					}
+				}
+			}
+		]
+	}
+}
