@@ -419,7 +419,17 @@ export const MetadataEditor: Story =
 			},
 		);
 		await expect(planner).toHaveAttribute('inert');
-		await expect(Math.round(heading.getBoundingClientRect().left - editor.getBoundingClientRect().left)).toBe(8);
+		const [header] = editor.getElementsByClassName('upgrade-planner-metadata__header');
+		const editorBox = editor.getBoundingClientRect();
+		const headerBox = header.getBoundingClientRect();
+		await expect(Math.round(heading.getBoundingClientRect().left - editorBox.left)).toBe(8);
+		await expect(Math.round(headerBox.left - editorBox.left)).toBe(0);
+		await expect(Math.round(editorBox.right - headerBox.right)).toBe(0);
+		await expect(
+			[...editor.children]
+				.filter((child) => child.classList.contains('factorio-frame'))
+				.map((child) => [...child.classList].filter((name) => name.startsWith('factorio-frame--'))),
+		).toStrictEqual([['factorio-frame--inside']]);
 		await expect(
 			within(editor).getByRole(
 				'textbox',
@@ -553,7 +563,7 @@ export const SavedDeleteConfirmation: Story =
 					name: 'Delete from Library',
 				},
 			),
-		).toHaveAttribute('data-factorio-style', 'tool_button_red');
+		).toHaveAttribute('data-factorio-style', 'red_button');
 	},
 };
 
