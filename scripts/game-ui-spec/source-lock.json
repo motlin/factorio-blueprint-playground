@@ -106,6 +106,14 @@
 			"blob": "a7cb9ec6a9b71c03bfa4b6936b099d6d3e44e6a6"
 		},
 		{
+			"path": "src/Blueprint/UpgradeRecord.cpp",
+			"blob": "0d223364fba3c7e89e5932484be64a094634bac4"
+		},
+		{
+			"path": "src/Blueprint/UpgradeRecord.hpp",
+			"blob": "51e6372850d82d02cd64d48ef904cc6fe89628ed"
+		},
+		{
 			"path": "src/Comparison.cpp",
 			"blob": "6be65eb23429258261beef0132b26929a6aec2e9"
 		},
@@ -132,6 +140,14 @@
 		{
 			"path": "src/Gui/SignalsTable.cpp",
 			"blob": "e1cc4bfb957ea09c4f232fb1685d5f449a741fe8"
+		},
+		{
+			"path": "src/Gui/UpgradeItemGui.cpp",
+			"blob": "d3b4ca0f66f2bfe398b4d0a7494e3f6f1891889a"
+		},
+		{
+			"path": "src/Gui/UpgradeItemGui.hpp",
+			"blob": "ce72bcfe7c639c8b0046cba58ac4ba8dc5a81c1e"
 		}
 	]
 }
