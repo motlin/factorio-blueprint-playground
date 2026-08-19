@@ -2,7 +2,15 @@ import {describe, expect, test} from 'vite-plus/test';
 
 import {deserializeBlueprint, serializeBlueprint} from '../../src/parsing/blueprintParser';
 import type {Blueprint, BlueprintString} from '../../src/parsing/types';
-import {stripQuality, stripTiles, stripTrains, stripWires} from '../../src/transform/strip';
+import
+{
+	blueprintFilterCategories,
+	stripEntities,
+	stripModules,
+	stripQuality,
+	stripTiles,
+	stripTrains,
+} from '../../src/transform/strip';
 import {removeEntities} from '../../src/transform/visit';
 import {readFixtureFile} from '../fixtures/utils';
 
@@ -17,6 +25,125 @@ function deepFreeze(value: unknown): void
 		}
 	}
 }
+
+const nestedTrainBook: BlueprintString =
+{
+	blueprint_book:
+	{
+		item: 'blueprint-book',
+		label: "Alice's rail book",
+		version: 0,
+		blueprints: [
+			{
+				index: 100,
+				blueprint_book:
+				{
+					item: 'blueprint-book',
+					label: "Alice's rolling stock",
+					version: 0,
+					blueprints: [
+						{
+							index: 200,
+							blueprint:
+							{
+								item: 'blueprint',
+								label: 'All rolling stock',
+								version: 0,
+								entities: [
+									{
+										entity_number: 100,
+										name: 'locomotive',
+										position:
+										{
+											x: 0,
+											y: 0,
+										},
+									},
+									{
+										entity_number: 200,
+										name: 'cargo-wagon',
+										position:
+										{
+											x: 1,
+											y: 0,
+										},
+									},
+									{
+										entity_number: 300,
+										name: 'fluid-wagon',
+										position:
+										{
+											x: 2,
+											y: 0,
+										},
+									},
+									{
+										entity_number: 400,
+										name: 'artillery-wagon',
+										position:
+										{
+											x: 3,
+											y: 0,
+										},
+									},
+									{
+										entity_number: 500,
+										name: 'train-stop',
+										position:
+										{
+											x: 4,
+											y: 0,
+										},
+									},
+								],
+								schedules: [
+									{
+										locomotives: [100],
+										schedule:
+										{
+											records: [],
+										},
+									},
+								],
+								wires: [[100, 1, 500, 1]],
+								tiles: [
+									{
+										name: 'landfill',
+										position:
+										{
+											x: 0,
+											y: 1,
+										},
+									},
+								],
+							},
+						},
+					],
+				},
+			},
+			{
+				index: 300,
+				blueprint:
+				{
+					item: 'blueprint',
+					label: "Bob's factory",
+					version: 0,
+					entities: [
+						{
+							entity_number: 600,
+							name: 'assembling-machine-1',
+							position:
+							{
+								x: 0,
+								y: 0,
+							},
+						},
+					],
+				},
+			},
+		],
+	},
+};
 
 describe('strip transforms', () =>
 {
@@ -38,17 +165,382 @@ describe('strip transforms', () =>
 
 		expect(
 			{
+				entities: stripEntities(empty),
+				modules: stripModules(planner),
 				quality: stripQuality(empty),
-				wires: stripWires(empty),
 				trains: stripTrains(planner),
 				tiles: stripTiles(planner),
 			},
 		).toStrictEqual(
 			{
+				entities: empty,
+				modules: planner,
 				quality: empty,
-				wires: empty,
 				trains: planner,
 				tiles: planner,
+			},
+		);
+	});
+
+	test('valid: entity and module filters remove their matching blueprint content', () =>
+	{
+		const input: BlueprintString =
+		{
+			blueprint:
+			{
+				item: 'blueprint',
+				version: 0,
+				entities: [
+					{
+						entity_number: 10,
+						name: 'assembling-machine-3',
+						position:
+						{
+							x: 0,
+							y: 0,
+						},
+						items: [
+							{
+								id:
+								{
+									name: 'speed-module-3',
+								},
+								items:
+								{
+									in_inventory: [
+										{
+											inventory: 1,
+											stack: 0,
+											count: 2,
+										},
+									],
+								},
+							},
+						],
+					},
+				],
+				wires: [[10, 1, 10, 2]],
+			},
+		};
+
+		expect(
+			{
+				entities: stripEntities(input),
+				modules: stripModules(input),
+			},
+		).toStrictEqual(
+			{
+				entities:
+				{
+					blueprint:
+					{
+						item: 'blueprint',
+						version: 0,
+						entities: [],
+						wires: [],
+					},
+				},
+				modules:
+				{
+					blueprint:
+					{
+						item: 'blueprint',
+						version: 0,
+						entities: [
+							{
+								entity_number: 10,
+								name: 'assembling-machine-3',
+								position:
+								{
+									x: 0,
+									y: 0,
+								},
+							},
+						],
+						wires: [[10, 1, 10, 2]],
+					},
+				},
+			},
+		);
+	});
+
+	test('valid: treats trains and ordinary entities as independent filters in a mixed blueprint', () =>
+	{
+		const input: BlueprintString =
+		{
+			blueprint:
+			{
+				item: 'blueprint',
+				version: 0,
+				entities: [
+					{
+						entity_number: 1,
+						name: 'locomotive',
+						position:
+						{
+							x: 0,
+							y: 0,
+						},
+					},
+					{
+						entity_number: 2,
+						name: 'cargo-wagon',
+						position:
+						{
+							x: 1,
+							y: 0,
+						},
+					},
+					{
+						entity_number: 10,
+						name: 'train-stop',
+						position:
+						{
+							x: 1,
+							y: 0,
+						},
+					},
+					{
+						entity_number: 20,
+						name: 'assembling-machine-3',
+						position:
+						{
+							x: 2,
+							y: 0,
+						},
+					},
+				],
+				schedules: [
+					{
+						locomotives: [1],
+						schedule:
+						{
+							records: [
+								{
+									station: 'Test stop',
+									wait_conditions: [],
+								},
+							],
+						},
+					},
+				],
+				wires: [
+					[1, 1, 2, 1],
+					[10, 2, 20, 1],
+				],
+				tiles: [
+					{
+						name: 'landfill',
+						position:
+						{
+							x: 0,
+							y: 0,
+						},
+					},
+				],
+			},
+		};
+
+		expect(
+			{
+				categories: blueprintFilterCategories(input),
+				withoutEntities: stripEntities(input),
+				withoutTrains: stripTrains(input),
+			},
+		).toStrictEqual(
+			{
+				categories:
+				{
+					entities: true,
+					modules: false,
+					tiles: true,
+					trains: true,
+				},
+				withoutEntities:
+				{
+					blueprint:
+					{
+						item: 'blueprint',
+						version: 0,
+						entities: [
+							{
+								entity_number: 1,
+								name: 'locomotive',
+								position:
+								{
+									x: 0,
+									y: 0,
+								},
+							},
+							{
+								entity_number: 2,
+								name: 'cargo-wagon',
+								position:
+								{
+									x: 1,
+									y: 0,
+								},
+							},
+						],
+						schedules: [
+							{
+								locomotives: [1],
+								schedule:
+								{
+									records: [
+										{
+											station: 'Test stop',
+											wait_conditions: [],
+										},
+									],
+								},
+							},
+						],
+						wires: [[1, 1, 2, 1]],
+						tiles: [
+							{
+								name: 'landfill',
+								position:
+								{
+									x: 0,
+									y: 0,
+								},
+							},
+						],
+					},
+				},
+				withoutTrains:
+				{
+					blueprint:
+					{
+						item: 'blueprint',
+						version: 0,
+						entities: [
+							{
+								entity_number: 10,
+								name: 'train-stop',
+								position:
+								{
+									x: 1,
+									y: 0,
+								},
+							},
+							{
+								entity_number: 20,
+								name: 'assembling-machine-3',
+								position:
+								{
+									x: 2,
+									y: 0,
+								},
+							},
+						],
+						wires: [[10, 2, 20, 1]],
+						tiles: [
+							{
+								name: 'landfill',
+								position:
+								{
+									x: 0,
+									y: 0,
+								},
+							},
+						],
+					},
+				},
+			},
+		);
+	});
+
+	test('valid: train filters recurse through books and recognize every rolling-stock prototype', () =>
+	{
+		expect(
+			{
+				categories: blueprintFilterCategories(nestedTrainBook),
+				withoutTrains: stripTrains(nestedTrainBook),
+			},
+		).toStrictEqual(
+			{
+				categories:
+				{
+					entities: true,
+					modules: false,
+					tiles: true,
+					trains: true,
+				},
+				withoutTrains:
+				{
+					blueprint_book:
+					{
+						item: 'blueprint-book',
+						label: "Alice's rail book",
+						version: 0,
+						blueprints: [
+							{
+								index: 100,
+								blueprint_book:
+								{
+									item: 'blueprint-book',
+									label: "Alice's rolling stock",
+									version: 0,
+									blueprints: [
+										{
+											index: 200,
+											blueprint:
+											{
+												item: 'blueprint',
+												label: 'All rolling stock',
+												version: 0,
+												entities: [
+													{
+														entity_number: 500,
+														name: 'train-stop',
+														position:
+														{
+															x: 4,
+															y: 0,
+														},
+													},
+												],
+												wires: [],
+												tiles: [
+													{
+														name: 'landfill',
+														position:
+														{
+															x: 0,
+															y: 1,
+														},
+													},
+												],
+											},
+										},
+									],
+								},
+							},
+							{
+								index: 300,
+								blueprint:
+								{
+									item: 'blueprint',
+									label: "Bob's factory",
+									version: 0,
+									entities: [
+										{
+											entity_number: 600,
+											name: 'assembling-machine-1',
+											position:
+											{
+												x: 0,
+												y: 0,
+											},
+										},
+									],
+								},
+							},
+						],
+					},
+				},
 			},
 		);
 	});
@@ -235,7 +727,7 @@ describe('strip transforms', () =>
 		expect(input).toStrictEqual(fixtureJson);
 	});
 
-	test('valid: wire and tile strips remove only their matching blueprint fields', () =>
+	test('valid: tile filter removes only blueprint tiles', () =>
 	{
 		const input: BlueprintString =
 		{
@@ -277,140 +769,33 @@ describe('strip transforms', () =>
 			},
 		};
 
-		expect(
+		expect(stripTiles(input)).toStrictEqual(
 			{
-				wires: stripWires(input),
-				tiles: stripTiles(input),
-			},
-		).toStrictEqual(
-			{
-				wires:
+				blueprint:
 				{
-					blueprint:
-					{
-						item: 'blueprint',
-						version: 0,
-						entities: [
-							{
-								entity_number: 10,
-								name: 'constant-combinator',
-								position:
-								{
-									x: 0,
-									y: 0,
-								},
-							},
-							{
-								entity_number: 20,
-								name: 'small-lamp',
-								position:
-								{
-									x: 1,
-									y: 0,
-								},
-							},
-						],
-						tiles: [
-							{
-								name: 'landfill',
-								position:
-								{
-									x: 0,
-									y: 0,
-								},
-							},
-						],
-					},
-				},
-				tiles:
-				{
-					blueprint:
-					{
-						item: 'blueprint',
-						version: 0,
-						entities: [
-							{
-								entity_number: 10,
-								name: 'constant-combinator',
-								position:
-								{
-									x: 0,
-									y: 0,
-								},
-							},
-							{
-								entity_number: 20,
-								name: 'small-lamp',
-								position:
-								{
-									x: 1,
-									y: 0,
-								},
-							},
-						],
-						wires: [[10, 1, 20, 1]],
-					},
-				},
-			},
-		);
-	});
-
-	test('edge: recurses through books while preserving child indexes and planners', () =>
-	{
-		const input: BlueprintString =
-		{
-			blueprint_book:
-			{
-				item: 'blueprint-book',
-				version: 0,
-				blueprints: [
-					{
-						index: 10,
-						blueprint:
-						{
-							item: 'blueprint',
-							version: 0,
-							wires: [[1, 1, 2, 1]],
-						},
-					},
-					{
-						index: 20,
-						deconstruction_planner:
-						{
-							item: 'deconstruction-planner',
-							version: 0,
-							settings: {},
-						},
-					},
-				],
-			},
-		};
-
-		expect(stripWires(input)).toStrictEqual(
-			{
-				blueprint_book:
-				{
-					item: 'blueprint-book',
+					item: 'blueprint',
 					version: 0,
-					blueprints: [
+					entities: [
 						{
-							index: 10,
-							blueprint:
+							entity_number: 10,
+							name: 'constant-combinator',
+							position:
 							{
-								item: 'blueprint',
-								version: 0,
+								x: 0,
+								y: 0,
 							},
 						},
 						{
-							index: 20,
-							deconstruction_planner:
+							entity_number: 20,
+							name: 'small-lamp',
+							position:
 							{
-								item: 'deconstruction-planner',
-								version: 0,
-								settings: {},
+								x: 1,
+								y: 0,
 							},
 						},
 					],
+					wires: [[10, 1, 20, 1]],
 				},
 			},
 		);
