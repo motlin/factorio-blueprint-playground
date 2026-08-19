@@ -12,7 +12,14 @@ import {
 } from 'react';
 
 import {FactorioIcon} from '../core/icons/FactorioIcon';
-import {FactorioButton, FactorioInventorySlot, FactorioScrollFrame, FactorioTooltip} from '../ui/FactorioUi';
+import {RichText} from '../core/text/RichText';
+import {
+	FactorioButton,
+	FactorioInventorySlot,
+	FactorioScrollFrame,
+	FactorioTooltip,
+	FactorioTooltipPlacement,
+} from '../ui/FactorioUi';
 import {
 	BLUEPRINT_RECORD_TYPE_LABELS,
 	BLUEPRINT_RECORD_VIEW_STORAGE_KEY,
@@ -131,10 +138,19 @@ function BlueprintRecordIcons({record}: {record: BlueprintRecordModel}) {
 function BlueprintRecordTooltip({record, tooltipId}: {record: BlueprintRecordModel; tooltipId: string}) {
 	const description = record.gameData.description?.trim();
 	return (
-		<FactorioTooltip id={tooltipId} className="blueprint-record-item__tooltip">
-			<strong>{blueprintRecordLabel(record)}</strong>
-			<span>{BLUEPRINT_RECORD_TYPE_LABELS[record.gameData.type]}</span>
-			<span>{description === undefined || description === '' ? 'No description.' : description}</span>
+		<FactorioTooltip
+			id={tooltipId}
+			className="blueprint-record-item__tooltip"
+			heading={<RichText text={blueprintRecordLabel(record)} iconSize="small" />}
+			placement={FactorioTooltipPlacement.Above}
+		>
+			<span className="blueprint-record-item__tooltip-type">
+				{BLUEPRINT_RECORD_TYPE_LABELS[record.gameData.type]}
+			</span>
+			<RichText
+				text={description === undefined || description === '' ? 'No description.' : description}
+				iconSize="small"
+			/>
 		</FactorioTooltip>
 	);
 }
