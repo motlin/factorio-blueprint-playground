@@ -2,7 +2,7 @@ import {Link} from '@tanstack/react-router';
 
 import {getSourceLabel} from '../fetching/blueprintFetcher';
 import type {SignalType} from '../parsing/types';
-import type {DatabaseBlueprint} from '../storage/db';
+import type {ImportHistoryRecord} from '../storage/db';
 
 const SIGNAL_TYPES = new Set<string>([
 	'item',
@@ -41,17 +41,16 @@ import {ButtonGreen} from './ui/ButtonGreen';
 
 interface HistoryBlueprintRowProps
 {
-	blueprint: DatabaseBlueprint;
+	blueprint: ImportHistoryRecord;
 	isSelected: boolean;
-	onToggleSelection: (sha: string) => void;
+	onToggleSelection: (id: string) => void;
 }
 
 /**
- * One row is one library record preview. Type, label, description, and up to four
- * icons describe the record; source and timestamps describe only how this browser
- * obtained it. Opening a book restores its selected child path, while editing
- * record metadata or contents must preserve that root/book identity. Checkbox
- * selection is a browser bulk action and is not Factorio's grabbed-record cursor.
+ * One row is one chronological import event. Type, label, description, and icons
+ * preview the imported bytes; source, selection, and timestamps describe how the
+ * browser obtained and reopened them. Saving to the Blueprint Library is a
+ * separate explicit operation.
  */
 export function HistoryBlueprintRow({blueprint, isSelected, onToggleSelection}: HistoryBlueprintRowProps)
 {
@@ -60,18 +59,18 @@ export function HistoryBlueprintRow({blueprint, isSelected, onToggleSelection}: 
 		if (event.key === 'Enter' || event.key === ' ')
 		{
 			event.preventDefault();
-			onToggleSelection(blueprint.metadata.sha);
+			onToggleSelection(blueprint.id);
 		}
 	};
 
 	return (
 		<button
 			type="button"
-			key={blueprint.metadata.sha}
+			key={blueprint.id}
 			className={`history-blueprint-item ${isSelected ? 'selected' : ''}`}
 			onClick={() =>
 			{
-				onToggleSelection(blueprint.metadata.sha);
+				onToggleSelection(blueprint.id);
 			}}
 			onKeyDown={handleKeyDown}
 			aria-pressed={isSelected}
@@ -82,7 +81,7 @@ export function HistoryBlueprintRow({blueprint, isSelected, onToggleSelection}: 
 				isSelected={isSelected}
 				onToggle={() =>
 				{
-					onToggleSelection(blueprint.metadata.sha);
+					onToggleSelection(blueprint.id);
 				}}
 			/>
 

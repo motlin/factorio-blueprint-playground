@@ -75,6 +75,12 @@ export const Route = createFileRoute('/')(
 										{
 											type: signal.type,
 											name: signal.name,
+											...(signal.quality === undefined
+												? {}
+												:
+													{
+														quality: signal.quality,
+													}),
 										},
 									],
 						),

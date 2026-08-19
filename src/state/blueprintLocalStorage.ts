@@ -7,12 +7,19 @@ export async function addBlueprint(
 	fetchMethod?: 'url' | 'json' | 'data',
 )
 {
-	const blueprint = await db.addBlueprint(data, parsedGameData, selection, fetchMethod);
+	const blueprint = await db.importToHistory(
+		{
+			data,
+			gameData: parsedGameData,
+			selection,
+			fetchMethod,
+		},
+	);
 	return blueprint;
 }
 
 async function updateBlueprint(
-	sha: string,
+	id: string,
 	changes:
 	{
 		metadata?: Partial<Omit<BlueprintStorageMetadata, 'sha'>>;
@@ -21,8 +28,8 @@ async function updateBlueprint(
 	updateTimestamp = true,
 )
 {
-	return await db.updateBlueprint(
-		sha,
+	return await db.updateHistoryRecord(
+		id,
 		changes,
 		{
 			updateTimestamp,
@@ -36,12 +43,12 @@ async function updateBlueprint(
  * a new history entry or bring the blueprint to the front of history.
  */
 export async function updateBlueprintMetadata(
-	sha: string,
+	id: string,
 	metadataChanges: Partial<Omit<BlueprintStorageMetadata, 'sha'>>,
 )
 {
 	return await updateBlueprint(
-		sha,
+		id,
 		{
 			metadata: metadataChanges,
 		},

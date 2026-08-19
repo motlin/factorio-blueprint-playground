@@ -44,7 +44,7 @@ const meta =
 		canChooseRootScope: false,
 		mappings:
 		{
-			candidates: [
+			mappings: [
 				{
 					count: 1,
 					from:
@@ -52,7 +52,7 @@ const meta =
 						type: 'entity',
 						name: 'transport-belt',
 					},
-					preserveQuality: true,
+					mappingId: 'mapping-belt',
 					slotIndex: 0,
 					to:
 					{
@@ -62,13 +62,10 @@ const meta =
 				},
 			],
 			error: undefined,
-			excludedSources: new Set(),
-			manualRules: [],
-			onAddManualRule: fn(),
-			onChangeManualRule: fn(),
+			onClearEndpoint: fn(),
 			onPlannerLoad: fn(),
 			onPlannerInputChange: fn(),
-			onRemoveRule: fn(),
+			onSourceChange: fn(),
 			onTargetChange: fn(),
 			plannerInput: '',
 			rootBlueprint,
@@ -86,8 +83,8 @@ const meta =
 			],
 		},
 		matchCount: 1,
+		onApply: fn(),
 		onClose: fn(),
-		onSave: fn(),
 		onScopeChange: fn(),
 		replacements:
 		{
@@ -102,7 +99,30 @@ const meta =
 			onTextReplacementEnabledChange: fn(),
 			textReplacementEnabled: true,
 		},
+		recordMetadata:
+		{
+			description: 'Upgrade the starter belt line.',
+			icons: [
+				{
+					type: 'entity',
+					name: 'fast-transport-belt',
+				},
+			],
+			label: 'Starter belt upgrades',
+			onDescriptionChange: fn(),
+			onIconsChange: fn(),
+			onLabelChange: fn(),
+		},
 		saveDisabled: false,
+		savePrompt:
+		{
+			label: 'Starter belt upgrades',
+			onCancel: fn(),
+			onOpen: fn(),
+			onSaveAsNew: fn(),
+			open: false,
+			pending: false,
+		},
 		scope: 'selection',
 		selectionScopeDisabled: false,
 		selectionScopeLabel: 'Selected blueprint',

@@ -12,6 +12,7 @@ function classes(...values: Array<string | undefined>): string
 export interface FactorioButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>
 {
 	kind?: FactorioButtonKind;
+	ref?: React.Ref<HTMLButtonElement>;
 }
 
 function defaultButtonContents(kind: FactorioButtonKind): React.ReactNode
@@ -35,6 +36,7 @@ export function FactorioButton({
 	children,
 	className,
 	kind = FactorioButtonKind.Neutral,
+	ref,
 	type = 'button',
 	...buttonProps
 }: FactorioButtonProps)
@@ -42,6 +44,7 @@ export function FactorioButton({
 	return (
 		<button
 			{...buttonProps}
+			ref={ref}
 			type={type}
 			className={classes('factorio-button', `factorio-button--${kind}`, className)}
 		>

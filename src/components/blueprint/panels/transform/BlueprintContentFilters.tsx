@@ -1,18 +1,24 @@
 import {useId} from 'react';
 
-import type {BlueprintFilterCategories} from '../../../../transform/strip';
+import type {BlueprintFilterAnalysis} from '../../../../transform/strip';
 
 interface BlueprintContentFiltersProps
 {
-	categories: BlueprintFilterCategories;
+	analysis: BlueprintFilterAnalysis;
 	entitiesIncluded: boolean;
+	fuelIncluded: boolean;
 	modulesIncluded: boolean;
 	onEntitiesIncludedChange: (included: boolean) => void;
+	onFuelIncludedChange: (included: boolean) => void;
 	onModulesIncludedChange: (included: boolean) => void;
+	onStationNamesIncludedChange: (included: boolean) => void;
 	onTilesIncludedChange: (included: boolean) => void;
 	onTrainsIncludedChange: (included: boolean) => void;
+	onVehiclesIncludedChange: (included: boolean) => void;
+	stationNamesIncluded: boolean;
 	tilesIncluded: boolean;
 	trainsIncluded: boolean;
+	vehiclesIncluded: boolean;
 }
 
 interface ContentFilterCheckboxProps
@@ -41,51 +47,26 @@ function ContentFilterCheckbox({included, label, onIncludedChange}: ContentFilte
 }
 
 export function BlueprintContentFilters({
-	categories,
+	analysis,
 	entitiesIncluded,
+	fuelIncluded,
 	modulesIncluded,
 	onEntitiesIncludedChange,
+	onFuelIncludedChange,
 	onModulesIncludedChange,
+	onStationNamesIncludedChange,
 	onTilesIncludedChange,
 	onTrainsIncludedChange,
+	onVehiclesIncludedChange,
+	stationNamesIncluded,
 	tilesIncluded,
 	trainsIncluded,
+	vehiclesIncluded,
 }: BlueprintContentFiltersProps)
 {
 	const headingId = useId();
-	const structuralOptions: ContentFilterCheckboxProps[] = [];
-	if (categories.entities)
-	{
-		structuralOptions.push(
-			{
-				included: entitiesIncluded,
-				label: 'Entities',
-				onIncludedChange: onEntitiesIncludedChange,
-			},
-		);
-	}
-	if (categories.trains)
-	{
-		structuralOptions.push(
-			{
-				included: trainsIncluded,
-				label: 'Trains',
-				onIncludedChange: onTrainsIncludedChange,
-			},
-		);
-	}
-	if (categories.tiles)
-	{
-		structuralOptions.push(
-			{
-				included: tilesIncluded,
-				label: 'Tiles',
-				onIncludedChange: onTilesIncludedChange,
-			},
-		);
-	}
 	const options: ContentFilterCheckboxProps[] = [];
-	if (categories.modules)
+	if (analysis.visible.modules)
 	{
 		options.push(
 			{
@@ -95,12 +76,68 @@ export function BlueprintContentFilters({
 			},
 		);
 	}
-	if (structuralOptions.length > 1)
+	if (analysis.visible.entities)
 	{
-		options.push(...structuralOptions);
+		options.push(
+			{
+				included: entitiesIncluded,
+				label: 'Entities',
+				onIncludedChange: onEntitiesIncludedChange,
+			},
+		);
+	}
+	if (analysis.visible.tiles)
+	{
+		options.push(
+			{
+				included: tilesIncluded,
+				label: 'Tiles',
+				onIncludedChange: onTilesIncludedChange,
+			},
+		);
+	}
+	if (analysis.visible.stationNames)
+	{
+		options.push(
+			{
+				included: stationNamesIncluded,
+				label: 'Station names',
+				onIncludedChange: onStationNamesIncludedChange,
+			},
+		);
+	}
+	if (analysis.visible.trains)
+	{
+		options.push(
+			{
+				included: trainsIncluded,
+				label: 'Trains',
+				onIncludedChange: onTrainsIncludedChange,
+			},
+		);
+	}
+	if (analysis.visible.fuel)
+	{
+		options.push(
+			{
+				included: fuelIncluded,
+				label: 'Fuel',
+				onIncludedChange: onFuelIncludedChange,
+			},
+		);
+	}
+	if (analysis.visible.vehicles)
+	{
+		options.push(
+			{
+				included: vehiclesIncluded,
+				label: 'Vehicles',
+				onIncludedChange: onVehiclesIncludedChange,
+			},
+		);
 	}
 
-	if (options.length === 0) return null;
+	if (!analysis.showGroup) return null;
 
 	return (
 		<section className="transform-workflow__section blueprint-content-filters" aria-labelledby={headingId}>

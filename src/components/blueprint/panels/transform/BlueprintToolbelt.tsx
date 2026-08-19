@@ -1,7 +1,7 @@
-import {useEffect} from 'react';
+import {useEffect, useId, useRef} from 'react';
 
 import {FactorioIcon} from '../../../core/icons/FactorioIcon';
-import {FactorioButton} from '../../../ui/FactorioUi';
+import {FactorioButton, FactorioTooltip} from '../../../ui/FactorioUi';
 
 interface BlueprintToolbeltProps
 {
@@ -23,9 +23,12 @@ function isTextEditingTarget(target: EventTarget | null): boolean
 	);
 }
 
-function hasNestedPicker(): boolean
+function hasNestedModal(): boolean
 {
-	return document.querySelectorAll('[role="dialog"]').length > 1;
+	return (
+		document.querySelectorAll('[aria-modal="true"][role="dialog"], [aria-modal="true"][role="alertdialog"]')
+			.length > 1
+	);
 }
 
 export function BlueprintToolbelt({
@@ -36,6 +39,11 @@ export function BlueprintToolbelt({
 	upgradePlannerOpen,
 }: BlueprintToolbeltProps)
 {
+	const blueprintEditorButtonReference = useRef<HTMLButtonElement>(null);
+	const upgradePlannerButtonReference = useRef<HTMLButtonElement>(null);
+	const blueprintEditorTooltipId = useId();
+	const upgradePlannerTooltipId = useId();
+
 	useEffect(() =>
 	{
 		const openTool = (event: KeyboardEvent) =>
@@ -46,7 +54,7 @@ export function BlueprintToolbelt({
 				event.metaKey ||
 				event.shiftKey ||
 				isTextEditingTarget(event.target) ||
-				hasNestedPicker()
+				hasNestedModal()
 			)
 			{
 				return;
@@ -54,11 +62,13 @@ export function BlueprintToolbelt({
 			if (event.code === 'KeyB' && blueprintEditorAvailable)
 			{
 				event.preventDefault();
+				blueprintEditorButtonReference.current?.focus();
 				onOpenBlueprintEditor();
 			}
 			else if (event.code === 'KeyU')
 			{
 				event.preventDefault();
+				upgradePlannerButtonReference.current?.focus();
 				onOpenUpgradePlanner();
 			}
 		};
@@ -72,47 +82,63 @@ export function BlueprintToolbelt({
 	return (
 		<div className="transform-toolbelt" role="toolbar" aria-label="Blueprint tools">
 			{blueprintEditorAvailable ? (
+				<div className="factorio-toolbar-control transform-toolbelt__control">
+					<FactorioButton
+						ref={blueprintEditorButtonReference}
+						className="transform-toolbelt__button"
+						aria-label="Open Blueprint Editor"
+						aria-describedby={blueprintEditorTooltipId}
+						aria-keyshortcuts="B"
+						aria-expanded={blueprintEditorOpen}
+						onClick={(event) =>
+						{
+							event.currentTarget.focus();
+							onOpenBlueprintEditor();
+						}}
+					>
+						<FactorioIcon
+							decorative
+							icon={
+							{
+								type: 'item',
+								name: 'blueprint',
+							}}
+							size="large"
+						/>
+					</FactorioButton>
+					<FactorioTooltip id={blueprintEditorTooltipId} className="factorio-toolbar-tooltip">
+						Open the Blueprint Editor. (B)
+					</FactorioTooltip>
+				</div>
+			) : null}
+			<div className="factorio-toolbar-control transform-toolbelt__control">
 				<FactorioButton
+					ref={upgradePlannerButtonReference}
 					className="transform-toolbelt__button"
-					aria-label="Open Blueprint Editor"
-					aria-keyshortcuts="B"
-					aria-expanded={blueprintEditorOpen}
-					title="Blueprint Editor (B)"
-					onClick={() =>
+					aria-label="Open Upgrade Planner"
+					aria-describedby={upgradePlannerTooltipId}
+					aria-keyshortcuts="U"
+					aria-expanded={upgradePlannerOpen}
+					onClick={(event) =>
 					{
-						onOpenBlueprintEditor();
+						event.currentTarget.focus();
+						onOpenUpgradePlanner();
 					}}
 				>
 					<FactorioIcon
+						decorative
 						icon={
 						{
 							type: 'item',
-							name: 'blueprint',
+							name: 'upgrade-planner',
 						}}
 						size="large"
 					/>
 				</FactorioButton>
-			) : null}
-			<FactorioButton
-				className="transform-toolbelt__button"
-				aria-label="Open Upgrade Planner"
-				aria-keyshortcuts="U"
-				aria-expanded={upgradePlannerOpen}
-				title="Upgrade Planner (U)"
-				onClick={() =>
-				{
-					onOpenUpgradePlanner();
-				}}
-			>
-				<FactorioIcon
-					icon={
-					{
-						type: 'item',
-						name: 'upgrade-planner',
-					}}
-					size="large"
-				/>
-			</FactorioButton>
+				<FactorioTooltip id={upgradePlannerTooltipId} className="factorio-toolbar-tooltip">
+					Upgrade items and entities in the blueprint. (U)
+				</FactorioTooltip>
+			</div>
 		</div>
 	);
 }

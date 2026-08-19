@@ -5,7 +5,9 @@ import {createPortal} from 'react-dom';
 import {serializeBlueprint} from '../../../../parsing/blueprintParser';
 import type {BlueprintString, UpgradePlanner} from '../../../../parsing/types';
 import {findUpgradePlanners, parseUpgradePlanner, type UpgradeDirection} from '../../../../transform/upgradePlanner';
-import {db, type DatabaseBlueprint} from '../../../../storage/db';
+import {db, type LibraryRecord} from '../../../../storage/db';
+import {BlueprintRecordViews} from '../../../library/BlueprintRecordViews';
+import type {BlueprintRecordModel} from '../../../library/blueprintRecordModel';
 import {FactorioButton, FactorioButtonKind} from '../../../ui/FactorioUi';
 import {useDialogFocus} from './useDialogFocus';
 import {UpgradePlannerSelectorItem, type UpgradePlannerChoice} from './UpgradePlannerSelectorItem';
@@ -24,13 +26,31 @@ interface UpgradePlannerSelectorDialogProps
 }
 
 const serializedPlannerCache = new WeakMap<UpgradePlanner, string>();
-const historyPlannerCache = new WeakMap<
-	DatabaseBlueprint,
+const libraryPlannerCache = new WeakMap<LibraryRecord, UpgradePlanner>();
+
+interface UpgradePlannerSelectorRecord extends BlueprintRecordModel
+{
+	choice: UpgradePlannerChoice;
+}
+
+const DEFAULT_UPGRADE_CHOICE: UpgradePlannerChoice =
+{
+	label: 'Default Upgrade',
+	source: 'suggested',
+};
+const DEFAULT_UPGRADE_RECORD: UpgradePlannerSelectorRecord =
+{
+	id: DEFAULT_UPGRADE_CHOICE.source,
+	choice: DEFAULT_UPGRADE_CHOICE,
+	gameData:
 	{
-		planner: UpgradePlanner;
-		serialized: string;
-	}
->();
+		type: 'upgrade_planner',
+		label: DEFAULT_UPGRADE_CHOICE.label,
+		description: "Applies Factorio's automatic upgrade relationships.",
+		icons: [],
+	},
+};
+const DEFAULT_UPGRADE_RECORDS = [DEFAULT_UPGRADE_RECORD];
 
 function serializedPlanner(planner: UpgradePlanner): string
 {
@@ -55,41 +75,85 @@ function serializedPlanner(planner: UpgradePlanner): string
 	return serialized;
 }
 
-function historyPlanner(blueprint: DatabaseBlueprint)
+function libraryPlanner(record: LibraryRecord): UpgradePlanner
 {
-	const cachedPlanner = historyPlannerCache.get(blueprint);
+	const cachedPlanner = libraryPlannerCache.get(record);
 	if (cachedPlanner !== undefined)
 	{
 		return cachedPlanner;
 	}
-	const planner = parseUpgradePlanner(blueprint.metadata.data);
-	const parsedPlanner =
-	{
-		planner,
-		serialized: serializedPlanner(planner),
-	};
-	historyPlannerCache.set(blueprint, parsedPlanner);
-	return parsedPlanner;
+	const planner = parseUpgradePlanner(record.data);
+	libraryPlannerCache.set(record, planner);
+	return planner;
 }
 
-function historyPlannerLabel(blueprint: DatabaseBlueprint, planner: UpgradePlanner): string
+function libraryPlannerLabel(record: LibraryRecord, planner: UpgradePlanner): string
 {
-	return planner.label ?? blueprint.gameData.label ?? planner.settings.description ?? 'Recent upgrade planner';
+	return record.gameData.label ?? planner.label ?? 'Untitled upgrade planner';
+}
+
+function plannerIcons(planner: UpgradePlanner)
+{
+	return [...(planner.settings.icons ?? [])]
+		.sort((left, right) => left.index - right.index)
+		.map((icon) => icon.signal);
+}
+
+function applicationPlannerRecords(
+	libraryRecords: readonly LibraryRecord[],
+	sessionChoice: UpgradePlannerChoice | undefined,
+): UpgradePlannerSelectorRecord[]
+{
+	const records = libraryRecords.map<UpgradePlannerSelectorRecord>((record) =>
+	{
+		const planner = libraryPlanner(record);
+		const choice: UpgradePlannerChoice =
+		{
+			label: libraryPlannerLabel(record, planner),
+			planner,
+			source: `library:${record.id}`,
+		};
+		return {
+			id: choice.source,
+			choice,
+			gameData:
+			{
+				...record.gameData,
+				label: choice.label,
+				description: record.gameData.description ?? planner.settings.description,
+				icons: record.gameData.icons.length === 0 ? plannerIcons(planner) : record.gameData.icons,
+			},
+		};
+	});
+
+	if (sessionChoice !== undefined && !records.some((record) => record.choice.source === sessionChoice.source))
+	{
+		records.push(
+			{
+				id: sessionChoice.source,
+				choice: sessionChoice,
+				gameData:
+				{
+					type: 'upgrade_planner',
+					label: sessionChoice.label,
+					description: sessionChoice.planner?.settings.description,
+					icons: sessionChoice.planner === undefined ? [] : plannerIcons(sessionChoice.planner),
+				},
+			},
+		);
+	}
+
+	return records;
 }
 
 function createUpgradePlannerChoices(
 	rootBlueprint: BlueprintString,
-	historyBlueprints: readonly DatabaseBlueprint[],
+	libraryRecords: readonly LibraryRecord[],
 	includeEditingChoices: boolean,
 	sessionChoice: UpgradePlannerChoice | undefined,
 ): UpgradePlannerChoice[]
 {
-	const choices: UpgradePlannerChoice[] = [
-		{
-			label: 'Default Upgrade',
-			source: 'suggested',
-		},
-	];
+	const choices: UpgradePlannerChoice[] = [DEFAULT_UPGRADE_CHOICE];
 	const serializedPlanners = new Set<string>();
 
 	if (sessionChoice !== undefined)
@@ -113,27 +177,28 @@ function createUpgradePlannerChoices(
 		}
 	}
 
-	for (const blueprint of historyBlueprints)
+	for (const record of libraryRecords)
 	{
-		const {planner, serialized} = historyPlanner(blueprint);
-		if (!serializedPlanners.has(serialized))
+		if (sessionChoice?.source === `library:${record.id}`)
 		{
-			serializedPlanners.add(serialized);
-			choices.push(
-				{
-					label: historyPlannerLabel(blueprint, planner),
-					planner,
-					source: `history:${blueprint.metadata.sha}`,
-				},
-			);
+			continue;
 		}
+		const planner = libraryPlanner(record);
+		choices.push(
+			{
+				label: libraryPlannerLabel(record, planner),
+				libraryRecord: record,
+				planner,
+				source: `library:${record.id}`,
+			},
+		);
 	}
 
 	if (includeEditingChoices)
 	{
 		choices.push(
 			{
-				label: 'Empty planner',
+				label: 'Empty Planner',
 				source: 'custom',
 			},
 			{
@@ -154,14 +219,13 @@ function createUpgradePlannerChoices(
  *   and books, then every Upgrade Planner item found recursively in controller
  *   inventories. Search matches the stored label or description for both record
  *   and inventory sources.
- * - Browser book planners (`book:*`) and IndexedDB planners (`history:*`) are the
+ * - Browser book planners (`book:*`) and IndexedDB planners (`library:*`) are the
  *   nested and shelf-root records of one private library. A session/dropped
  *   planner is the inventory-like transient source. `Default Upgrade` is the
  *   built-in no-record choice. URL provenance must not define whether an
  *   otherwise saved planner belongs to the library.
  * - Equal serialized contents do not make two records the same: shelf/book
- *   location is record identity. The current content-based de-duplication and
- *   absence of search/view controls are transitional projections.
+ *   location is record identity.
  * - Application mode is BE-3: choosing Default Upgrade, a library planner, or an
  *   inventory planner dispatches upgrade/downgrade immediately and closes. It is
  *   not a save-confirmation dialog and must never make a saved planner wait for a
@@ -186,22 +250,21 @@ export function UpgradePlannerSelectorDialog({
 	const headingId = useId();
 	const instructionsId = useId();
 	const buttonReferences = useRef<Array<HTMLButtonElement | null>>([]);
-	const historyBlueprints = useLiveQuery(
-		async () =>
-			await db.blueprints
-				.orderBy('metadata.lastUpdatedOn')
-				.reverse()
-				.filter(
-					(blueprint) =>
-						blueprint.gameData.type === 'upgrade_planner' && blueprint.metadata.fetchMethod !== 'url',
-				)
-				.toArray(),
+	const libraryRecords = useLiveQuery(
+		async () => (await db.listLibraryTree()).filter((record) => record.gameData.type === 'upgrade_planner'),
 		[],
 		[],
 	);
 	const choices = useMemo(
-		() => createUpgradePlannerChoices(rootBlueprint, historyBlueprints, includeEditingChoices, sessionChoice),
-		[rootBlueprint, historyBlueprints, includeEditingChoices, sessionChoice],
+		() =>
+			includeEditingChoices
+				? createUpgradePlannerChoices(rootBlueprint, libraryRecords, includeEditingChoices, sessionChoice)
+				: [],
+		[rootBlueprint, libraryRecords, includeEditingChoices, sessionChoice],
+	);
+	const applicationRecords = useMemo(
+		() => applicationPlannerRecords(libraryRecords, sessionChoice),
+		[libraryRecords, sessionChoice],
 	);
 	const [activeIndex, setActiveIndex] = useState(() =>
 		Math.max(
@@ -211,7 +274,9 @@ export function UpgradePlannerSelectorDialog({
 	);
 	const dialogReference = useDialogFocus<HTMLElement>(
 		{
-			initialFocusSelector: '.upgrade-planner-selector__tile[tabindex="0"]',
+			initialFocusSelector: includeEditingChoices
+				? '.upgrade-planner-selector__tile[tabindex="0"]'
+				: '.blueprint-record-item[tabindex="0"]',
 			onClose,
 		},
 	);
@@ -246,6 +311,7 @@ export function UpgradePlannerSelectorDialog({
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby={headingId}
+				aria-describedby={instructionsId}
 			>
 				<header className="factorio-title-bar transform-dialog__header upgrade-planner-selector__header">
 					<h3 id={headingId}>
@@ -256,7 +322,10 @@ export function UpgradePlannerSelectorDialog({
 						className="transform-dialog__close"
 						aria-label="Close upgrade planner selector"
 						title="Close upgrade planner selector"
-						onClick={onClose}
+						onClick={() =>
+						{
+							onClose();
+						}}
 					/>
 				</header>
 				<p id={instructionsId} className="upgrade-planner-selector__hint">
@@ -269,33 +338,56 @@ export function UpgradePlannerSelectorDialog({
 						</>
 					)}
 				</p>
-				<div className="upgrade-planner-selector__grid" role="grid" aria-label="Upgrade planners">
-					{choices.map((choice, index) => (
-						<UpgradePlannerSelectorItem
-							key={choice.source}
-							active={index === activeIndex}
-							buttonRef={(button) =>
+				{includeEditingChoices ? (
+					<div className="upgrade-planner-selector__grid" role="grid" aria-label="Upgrade planners">
+						{choices.map((choice, index) => (
+							<UpgradePlannerSelectorItem
+								key={choice.source}
+								active={index === activeIndex}
+								buttonRef={(button) =>
+								{
+									buttonReferences.current[index] = button;
+								}}
+								choice={choice}
+								choiceCount={choices.length}
+								index={index}
+								instructionsId={instructionsId}
+								onChoose={() =>
+								{
+									onChoose(choice, 'upgrade');
+								}}
+								onFocus={() =>
+								{
+									setActiveIndex(index);
+								}}
+								onMoveFocus={moveFocus}
+								selected={choice.source === selectedSource}
+							/>
+						))}
+					</div>
+				) : (
+					<div className="upgrade-planner-selector__records">
+						<BlueprintRecordViews
+							aria-label="Upgrade planners"
+							initialActiveRecordId={selectedSource}
+							onActivate={(record) =>
 							{
-								buttonReferences.current[index] = button;
+								onChoose(record.choice, 'upgrade');
+								onClose();
 							}}
-							choice={choice}
-							choiceCount={choices.length}
-							directional={!includeEditingChoices}
-							index={index}
-							instructionsId={instructionsId}
-							onApply={(direction) =>
+							onAlternateActivate={(record) =>
 							{
-								onChoose(choice, direction);
+								onChoose(record.choice, 'downgrade');
+								onClose();
 							}}
-							onFocus={() =>
-							{
-								setActiveIndex(index);
-							}}
-							onMoveFocus={moveFocus}
-							selected={choice.source === selectedSource}
+							records={applicationRecords}
+							recordsWhenSearchEmpty={DEFAULT_UPGRADE_RECORDS}
+							recordInstructionsId={instructionsId}
+							searchLabel="Search upgrade planners"
+							searchResultNoun="upgrade planners"
 						/>
-					))}
-				</div>
+					</div>
+				)}
 			</section>
 		</div>,
 		document.body,

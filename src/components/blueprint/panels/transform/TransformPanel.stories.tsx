@@ -242,26 +242,26 @@ export const UpgradePlanner: Story =
 			canvas.getByRole(
 				'button',
 				{
-					name: 'Save planner',
+					name: 'Save Planner',
 				},
 			),
 		).toBeVisible();
 		await expect(
-			canvas.queryByRole(
+			canvas.getByRole(
 				'button',
 				{
-					name: 'Apply upgrades',
+					name: 'Apply Upgrade to Current Blueprint',
 				},
 			),
-		).not.toBeInTheDocument();
+		).toBeVisible();
 		await expect(
-			canvas.queryByRole(
+			canvas.getByRole(
 				'button',
 				{
-					name: 'Apply downgrades',
+					name: 'Apply Downgrade to Current Blueprint',
 				},
 			),
-		).not.toBeInTheDocument();
+		).toBeVisible();
 		await expect(
 			canvas.queryByRole(
 				'checkbox',
@@ -315,7 +315,7 @@ export const UpgradePlanner: Story =
 			canvas.getByRole(
 				'button',
 				{
-					name: 'Empty planner',
+					name: 'Empty Planner',
 				},
 			),
 		).toBeVisible();
@@ -541,15 +541,11 @@ export const BlueprintEditor: Story =
 			canvas.getByRole(
 				'button',
 				{
-					name: 'Save blueprint',
+					name: 'Save Blueprint',
 				},
 			),
 		).toBeDisabled();
-		await expect(
-			canvas.getByText(
-				'Saves changes to the loaded blueprint. Export and Open in Playground use the saved blueprint.',
-			),
-		).toBeVisible();
+		await expect(canvas.getByText('Commits changes to the existing blueprint record.')).toBeVisible();
 		await expect(
 			canvas.queryByRole(
 				'heading',

@@ -1,7 +1,5 @@
 import type React from 'react';
 
-import {FactorioButton} from './FactorioUi';
-
 export const Button = ({
 	onClick,
 	children,
@@ -11,7 +9,7 @@ export const Button = ({
 	children: React.ReactNode;
 	disabled?: boolean;
 }) => (
-	<FactorioButton onClick={onClick} disabled={disabled}>
+	<button type="button" onClick={onClick} disabled={disabled} className={`button ${disabled ? 'disabled' : ''}`}>
 		{children}
-	</FactorioButton>
+	</button>
 );

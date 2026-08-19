@@ -10,7 +10,7 @@ const meta =
 	component: UpgradeMappingGrid,
 	args:
 	{
-		candidates: [
+		mappings: [
 			{
 				count: 4,
 				from:
@@ -18,7 +18,7 @@ const meta =
 					type: 'entity',
 					name: 'transport-belt',
 				},
-				preserveQuality: true,
+				mappingId: 'mapping-belt',
 				slotIndex: 0,
 				to:
 				{
@@ -27,13 +27,13 @@ const meta =
 				},
 			},
 			{
-				count: 2,
+				count: 0,
 				from:
 				{
 					type: 'entity',
 					name: 'underground-belt',
 				},
-				preserveQuality: true,
+				mappingId: 'mapping-underground-belt',
 				slotIndex: 4,
 				to:
 				{
@@ -42,14 +42,9 @@ const meta =
 				},
 			},
 		],
-		excludedSources: new Set(),
-		manualRules: [],
-		onDraftRemove: fn(),
-		onDraftSourceChoose: fn(),
-		onDraftTargetChoose: fn(),
-		onRemove: fn(),
-		onSourceChoose: fn(),
-		onTargetChoose: fn(),
+		onChooseSource: fn(),
+		onChooseTarget: fn(),
+		onClearEndpoint: fn(),
 	},
 	parameters: transformStoryParameters,
 	tags: ['autodocs'],
@@ -71,6 +66,6 @@ export const OrderedMappings: Story =
 				},
 			),
 		);
-		await expect(args.onSourceChoose).toHaveBeenLastCalledWith(args.candidates[0]);
+		await expect(args.onChooseSource).toHaveBeenLastCalledWith('mapping-belt', 0);
 	},
 };
