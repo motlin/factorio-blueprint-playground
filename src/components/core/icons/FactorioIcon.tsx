@@ -12,6 +12,20 @@ function getUrlType(type: SignalType) {
 	return type;
 }
 
+const utilityIconUrls = new Map([['parametrise', '/assets/factorio/parametrise.png']]);
+
+function getIconUrl(type: SignalType, name: string) {
+	if (type === 'utility') {
+		const utilityIconUrl = utilityIconUrls.get(name);
+		if (utilityIconUrl === undefined) {
+			throw new Error(`Unknown Factorio 2.1.12 utility icon: ${name}`);
+		}
+		return utilityIconUrl;
+	}
+
+	return `https://factorio-icon-cdn.pages.dev/${getUrlType(type)}/${name}.webp`;
+}
+
 interface FactorioIconProps {
 	decorative?: boolean;
 	id?: string;
@@ -47,8 +61,6 @@ export const FactorioIcon = ({decorative = false, id, icon, size}: FactorioIconP
 
 	const type = icon.type ?? 'item';
 
-	const urlType = getUrlType(type);
-
 	const sizeClass = size === 'small' ? styles.smallSquare : styles.largeSquare;
 
 	const qualityNode = getQualityNode(icon);
@@ -72,7 +84,7 @@ export const FactorioIcon = ({decorative = false, id, icon, size}: FactorioIconP
 				data-testid="icon"
 				loading="lazy"
 				className={styles.artwork}
-				src={`https://factorio-icon-cdn.pages.dev/${urlType}/${icon.name}.webp`}
+				src={getIconUrl(type, icon.name)}
 				alt=""
 				title={decorative ? undefined : `${type}: ${icon.name}`}
 			/>

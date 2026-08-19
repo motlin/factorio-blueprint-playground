@@ -112,7 +112,7 @@ describe('BlueprintPlayground', () => {
 		await user.click(screen.getByRole('button', {name: 'Edit blueprint title'}));
 		await user.clear(screen.getByRole('textbox', {name: 'Blueprint title'}));
 		await user.type(screen.getByRole('textbox', {name: 'Blueprint title'}), 'Committed child{Enter}');
-		await user.click(screen.getByRole('button', {name: 'Save to Book'}));
+		await user.click(screen.getByRole('button', {name: 'Save blueprint'}));
 
 		expect({
 			dialog: screen.queryByRole('dialog', {name: 'Blueprint Editor'}),
