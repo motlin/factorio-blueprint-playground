@@ -1,4 +1,4 @@
-import {useEffect, useId, useState} from 'react';
+import {useEffect, useId, useState, type ChangeEvent, type KeyboardEvent} from 'react';
 
 import type {BlueprintSnapGrid} from '../../../../transform/blueprintEditor';
 
@@ -13,6 +13,16 @@ interface SnapGridDimensionInputProps {
 	value: number;
 }
 
+interface SnapGridPositionInputProps {
+	describedBy: string;
+	disabled: boolean;
+	inputId: string;
+	label: string;
+	onCommit: (value: number) => void;
+	prefix: string;
+	value: number;
+}
+
 function positiveInteger(draft: string): number | undefined {
 	if (!/^\d+$/.test(draft)) {
 		return undefined;
@@ -21,8 +31,25 @@ function positiveInteger(draft: string): number | undefined {
 	return Number.isSafeInteger(value) && value > 0 ? value : undefined;
 }
 
-function SnapGridDimensionInput({label, onCommit, value}: SnapGridDimensionInputProps) {
-	const inputId = useId();
+function gridOffset(draft: string): number | undefined {
+	if (!/^-?\d+$/.test(draft)) {
+		return undefined;
+	}
+	const value = Number(draft);
+	return Number.isSafeInteger(value) ? value : undefined;
+}
+
+/**
+ * Holds the raw text the player is typing so partial entries survive until they
+ * parse. A number input reports both an empty field and a lone minus sign as an
+ * empty value, and rendering the committed number instead would overwrite them
+ * mid-entry.
+ */
+function useNumberDraft(
+	value: number,
+	parse: (draft: string) => number | undefined,
+	onCommit: (value: number) => void,
+) {
 	const [draft, setDraft] = useState(String(value));
 
 	useEffect(() => {
@@ -30,13 +57,37 @@ function SnapGridDimensionInput({label, onCommit, value}: SnapGridDimensionInput
 	}, [value]);
 
 	const commit = () => {
-		const nextValue = positiveInteger(draft);
+		const nextValue = parse(draft);
 		if (nextValue === undefined) {
 			setDraft(String(value));
 		} else if (nextValue !== value) {
 			onCommit(nextValue);
 		}
 	};
+
+	return {
+		draft,
+		onBlur: commit,
+		onChange: (event: ChangeEvent<HTMLInputElement>) => {
+			const nextDraft = event.currentTarget.value;
+			setDraft(nextDraft);
+			const nextValue = parse(nextDraft);
+			if (nextValue !== undefined && nextValue !== value) {
+				onCommit(nextValue);
+			}
+		},
+		onKeyDown: (event: KeyboardEvent<HTMLInputElement>) => {
+			if (event.key === 'Enter') {
+				event.preventDefault();
+				commit();
+			}
+		},
+	};
+}
+
+function SnapGridDimensionInput({label, onCommit, value}: SnapGridDimensionInputProps) {
+	const inputId = useId();
+	const {draft, ...draftHandlers} = useNumberDraft(value, positiveInteger, onCommit);
 
 	return (
 		<>
@@ -50,21 +101,38 @@ function SnapGridDimensionInput({label, onCommit, value}: SnapGridDimensionInput
 				min="1"
 				step="1"
 				value={draft}
-				onBlur={commit}
-				onChange={(event) => {
-					const nextDraft = event.currentTarget.value;
-					setDraft(nextDraft);
-					const nextValue = positiveInteger(nextDraft);
-					if (nextValue !== undefined && nextValue !== value) {
-						onCommit(nextValue);
-					}
-				}}
-				onKeyDown={(event) => {
-					if (event.key === 'Enter') {
-						event.preventDefault();
-						commit();
-					}
-				}}
+				{...draftHandlers}
+			/>
+		</>
+	);
+}
+
+function SnapGridPositionInput({
+	describedBy,
+	disabled,
+	inputId,
+	label,
+	onCommit,
+	prefix,
+	value,
+}: SnapGridPositionInputProps) {
+	const {draft, ...draftHandlers} = useNumberDraft(value, gridOffset, onCommit);
+
+	return (
+		<>
+			<label htmlFor={inputId}>
+				<span aria-hidden="true">{prefix}</span>
+				<span className="transform-visually-hidden">{label}</span>
+			</label>
+			<input
+				id={inputId}
+				type="number"
+				aria-describedby={describedBy}
+				data-factorio-style="very_short_number_textfield"
+				step="1"
+				value={draft}
+				disabled={disabled}
+				{...draftHandlers}
 			/>
 		</>
 	);
@@ -150,40 +218,26 @@ export function BlueprintSnapGridEditor({onChange, settings}: BlueprintSnapGridE
 						</span>
 					</strong>
 					<span className="blueprint-snap-grid-editor__pusher" aria-hidden="true" />
-					<label htmlFor={positionXId}>
-						<span aria-hidden="true">X:</span>
-						<span className="transform-visually-hidden">Grid position X</span>
-					</label>
-					<input
-						id={positionXId}
-						type="number"
-						aria-describedby={`${gridPositionDescriptionId} ${absoluteDescriptionId}`}
-						data-factorio-style="very_short_number_textfield"
-						step="1"
-						value={settings.positionX}
+					<SnapGridPositionInput
+						describedBy={`${gridPositionDescriptionId} ${absoluteDescriptionId}`}
 						disabled={!settings.absolute}
-						onChange={(event) => {
-							if (Number.isSafeInteger(event.currentTarget.valueAsNumber)) {
-								update({positionX: event.currentTarget.valueAsNumber});
-							}
+						inputId={positionXId}
+						label="Grid position X"
+						prefix="X:"
+						value={settings.positionX}
+						onCommit={(positionX) => {
+							update({positionX});
 						}}
 					/>
-					<label htmlFor={positionYId}>
-						<span aria-hidden="true">Y:</span>
-						<span className="transform-visually-hidden">Grid position Y</span>
-					</label>
-					<input
-						id={positionYId}
-						type="number"
-						aria-describedby={`${gridPositionDescriptionId} ${absoluteDescriptionId}`}
-						data-factorio-style="very_short_number_textfield"
-						step="1"
-						value={settings.positionY}
+					<SnapGridPositionInput
+						describedBy={`${gridPositionDescriptionId} ${absoluteDescriptionId}`}
 						disabled={!settings.absolute}
-						onChange={(event) => {
-							if (Number.isSafeInteger(event.currentTarget.valueAsNumber)) {
-								update({positionY: event.currentTarget.valueAsNumber});
-							}
+						inputId={positionYId}
+						label="Grid position Y"
+						prefix="Y:"
+						value={settings.positionY}
+						onCommit={(positionY) => {
+							update({positionY});
 						}}
 					/>
 				</div>
