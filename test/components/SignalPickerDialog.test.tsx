@@ -1053,7 +1053,6 @@ test('keeps generated prototype order while search removes nonmatching prototype
 			title="Search ordered signals"
 			options={[
 				{type: 'entity', name: 'fast-splitter'},
-				{type: 'entity', name: 'transport-belt'},
 				{type: 'item', name: 'transport-belt'},
 				{type: 'entity', name: 'express-underground-belt'},
 				{type: 'entity', name: 'fast-transport-belt'},

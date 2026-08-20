@@ -168,17 +168,21 @@ function chatIconTypePriority(signal: SignalID): number {
 }
 
 /**
- * ChatIconIDIterator visits prototype streams in a fixed type order. A caller
- * can still contribute the same visible prototype more than once (most commonly
- * as both an item and its placed entity), so retain the earliest canonical
- * signal type before applying the generated subgroup and prototype order.
+ * A caller can contribute the same picker option more than once, so drop exact
+ * repeats before applying the generated subgroup and prototype order. The key
+ * is the whole picker identity -- type, prototype name, and quality -- matching
+ * every other endpoint comparison in this path. A bare name would instead fuse
+ * distinct prototypes: 272 of the dataset's 323 items are recipe name twins, so
+ * a blueprint holding both `item:iron-plate` and `recipe:iron-plate` would offer
+ * one cell and silently retype the other icon on click. Collapsing inherited
+ * icon sprites is the catalog's job in `chatIconPickerOptions`.
  */
 export function canonicalPickerOptions(options: readonly SignalID[]): SignalID[] {
 	const canonicalSignals = new Map<string, SignalID>();
 	for (const candidate of options) {
-		const existing = canonicalSignals.get(candidate.name);
-		if (existing === undefined || chatIconTypePriority(candidate) < chatIconTypePriority(existing)) {
-			canonicalSignals.set(candidate.name, candidate);
+		const identity = `${signalPrototypeIdentity(candidate)}:${candidate.quality ?? 'normal'}`;
+		if (!canonicalSignals.has(identity)) {
+			canonicalSignals.set(identity, candidate);
 		}
 	}
 	return [...canonicalSignals.values()].sort(comparePickerSignalOrder);
@@ -197,7 +201,14 @@ export function chatIconPickerOptions(additionalSignals: readonly SignalID[] = [
 		...gameUiSpec.qualities.map(({name}): SignalID => ({type: 'quality', name})),
 		...additionalSignals,
 	].filter((signal) => chatIconTypeOrder.has(chatIconType(signal)));
-	return canonicalPickerOptions(candidates);
+	const iconOwners = new Map<string, SignalID>();
+	for (const candidate of candidates) {
+		const owner = iconOwners.get(candidate.name);
+		if (owner === undefined || chatIconTypePriority(candidate) < chatIconTypePriority(owner)) {
+			iconOwners.set(candidate.name, candidate);
+		}
+	}
+	return canonicalPickerOptions([...iconOwners.values()]);
 }
 
 export function signalPickerGroup(signal: SignalID): string | undefined {
