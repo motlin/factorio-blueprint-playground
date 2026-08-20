@@ -692,3 +692,36 @@ test('arrow keys move focus through the dependency source list without crashing 
 		window.removeEventListener('error', recordUncaught);
 	}
 });
+
+test('blocks confirmation when a dependency sources a parameter that is switched off', () => {
+	render(
+		<BlueprintParameterizationDialog
+			dialogId="blueprint-parameterization"
+			onClose={vi.fn<() => void>()}
+			onConfirm={vi.fn<(nextParameters: Parameter[]) => void>()}
+			parameters={[
+				{type: 'id', id: 'iron-plate', name: 'Plate', parameter: false},
+				{type: 'id', id: 'iron-gear-wheel', name: 'Gear', 'ingredient-of': 'iron-plate'},
+			]}
+			signalOptions={[
+				{type: 'item', name: 'iron-plate'},
+				{type: 'item', name: 'iron-gear-wheel'},
+			]}
+		/>,
+	);
+
+	const dialog = screen.getByRole('dialog', {name: 'Blueprint parametrisation'});
+	const confirm = within(dialog).getByRole('button', {name: 'Confirm'});
+	const source = within(dialog).getByRole('button', {name: /^Parameter 2 dependency source:/});
+	expect({
+		confirmDisabled: confirm.hasAttribute('disabled'),
+		confirmTitle: confirm.title,
+		rowError: within(dialog).getByRole('alert').textContent,
+		rowInvalid: source.getAttribute('aria-invalid'),
+	}).toStrictEqual({
+		confirmDisabled: true,
+		confirmTitle: "Source of dependency isn't above.",
+		rowError: "Source of dependency isn't above.",
+		rowInvalid: 'true',
+	});
+});
