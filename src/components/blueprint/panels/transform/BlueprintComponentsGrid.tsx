@@ -60,6 +60,7 @@ export function BlueprintComponentsGrid({
 					{components.map((component, index) => {
 						const identity: BlueprintComponentIdentity = {
 							name: component.name,
+							quality: component.quality,
 							type: component.type,
 						};
 						const removed = removedComponents.has(blueprintComponentRemovalKey(identity));
