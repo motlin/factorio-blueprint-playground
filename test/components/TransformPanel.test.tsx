@@ -4372,4 +4372,66 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			},
 		});
 	});
+
+	test('applies an unnamed pasted planner while library saving stays disabled', async () => {
+		const user = userEvent.setup();
+		render(<TransformPanel blueprint={blueprint} />);
+
+		openUpgradePlanner();
+		await choosePlanner(user, 'Paste upgrade planner…');
+		fireEvent.change(screen.getByRole('textbox', {name: 'Planner string or JSON'}), {
+			target: {
+				value: JSON.stringify({
+					upgrade_planner: {
+						item: 'upgrade-planner',
+						label: '',
+						version: 0,
+						settings: {
+							mappers: [
+								{
+									index: 0,
+									from: {type: 'entity', name: 'transport-belt'},
+									to: {type: 'entity', name: 'fast-transport-belt'},
+								},
+							],
+						},
+					},
+				}),
+			},
+		});
+
+		expect(
+			Object.fromEntries(
+				['Save to Library', 'Apply Downgrade', 'Apply Upgrade'].map((name) => [
+					name,
+					screen.getByRole<HTMLButtonElement>('button', {name}).disabled,
+				]),
+			),
+		).toStrictEqual({
+			'Apply Downgrade': false,
+			'Apply Upgrade': false,
+			'Save to Library': true,
+		});
+
+		await applyPlanner(user);
+		await Promise.resolve();
+
+		expect(navigate.mock.calls).toStrictEqual([
+			[
+				{
+					to: '/',
+					search: {
+						pasted: serializeBlueprint({
+							blueprint: {
+								item: 'blueprint',
+								version: 0,
+								entities: [{entity_number: 1, name: 'fast-transport-belt', position: {x: 0, y: 0}}],
+							},
+						}),
+						selection: '',
+					},
+				},
+			],
+		]);
+	});
 });
