@@ -395,6 +395,7 @@ export function TransformPanel({
 							);
 						},
 					}}
+					applyDisabled={upgradeDraft.applyDisabled}
 					saveDisabled={upgradeDraft.saveDisabled}
 					savePrompt={
 					{

@@ -107,6 +107,7 @@ interface UpgradeMappingsEditorProps
 
 interface UpgradePlannerDialogProps
 {
+	applyDisabled: boolean;
 	breadcrumb: string;
 	canChooseRootScope: boolean;
 	mappings: UpgradePlannerMappings;
@@ -890,6 +891,7 @@ function UpgradeMappingsEditor({
 }
 
 export function UpgradePlannerDialog({
+	applyDisabled,
 	breadcrumb,
 	canChooseRootScope,
 	mappings,
@@ -1179,7 +1181,7 @@ export function UpgradePlannerDialog({
 						</FactorioButton>
 						<FactorioButton
 							className="transform-button"
-							disabled={saveDisabled}
+							disabled={applyDisabled}
 							onClick={() =>
 							{
 								onApply('downgrade');
@@ -1190,7 +1192,7 @@ export function UpgradePlannerDialog({
 						<FactorioButton
 							className="transform-button"
 							kind={FactorioButtonKind.Confirm}
-							disabled={saveDisabled}
+							disabled={applyDisabled}
 							onClick={() =>
 							{
 								onApply('upgrade');
