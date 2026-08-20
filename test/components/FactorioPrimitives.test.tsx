@@ -281,6 +281,22 @@ test('uses one accessible name for quality icons while keeping overlay images de
 	});
 });
 
+test('renders an unknown utility icon as blank artwork instead of throwing', () => {
+	render(<FactorioIcon id="unknown-utility" icon={{type: 'utility', name: 'clock'}} size="small" />);
+
+	const icon = screen.getByRole('img', {name: 'utility: clock'});
+	const artwork = icon.querySelector<HTMLElement>('[data-testid="icon"]');
+	expect({
+		artworkTag: artwork?.tagName,
+		imageCount: icon.querySelectorAll('img').length,
+		title: artwork?.getAttribute('title'),
+	}).toStrictEqual({
+		artworkTag: 'SPAN',
+		imageCount: 0,
+		title: 'utility: clock',
+	});
+});
+
 test('rejects qualities that are absent from the pinned game specification', () => {
 	expect(() => factorioQualityLabel('mythic')).toThrow('Unknown Factorio 2.1.12 quality: mythic');
 });

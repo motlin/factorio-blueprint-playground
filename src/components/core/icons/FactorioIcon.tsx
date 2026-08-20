@@ -14,13 +14,15 @@ function getUrlType(type: SignalType) {
 
 const utilityIconUrls = new Map([['parametrise', '/assets/factorio/parametrise.png']]);
 
-function getIconUrl(type: SignalType, name: string) {
+/**
+ * Utility sprites ship with the game rather than the icon CDN, so only the
+ * names bundled under `/assets/factorio` resolve. Blueprint descriptions can
+ * name any utility sprite through rich text, so an unknown name renders blank
+ * artwork instead of throwing out of render.
+ */
+function getIconUrl(type: SignalType, name: string): string | undefined {
 	if (type === 'utility') {
-		const utilityIconUrl = utilityIconUrls.get(name);
-		if (utilityIconUrl === undefined) {
-			throw new Error(`Unknown Factorio 2.1.12 utility icon: ${name}`);
-		}
-		return utilityIconUrl;
+		return utilityIconUrls.get(name);
 	}
 
 	return `https://factorio-icon-cdn.pages.dev/${getUrlType(type)}/${name}.webp`;
@@ -63,6 +65,7 @@ export const FactorioIcon = ({decorative = false, id, icon, size}: FactorioIconP
 
 	const sizeClass = size === 'small' ? styles.smallSquare : styles.largeSquare;
 	const parameterMatch = /^parameter-(\d+)$/.exec(icon.name);
+	const iconUrl = getIconUrl(type, icon.name);
 
 	const qualityNode = getQualityNode(icon);
 	const accessibleName =
@@ -80,13 +83,13 @@ export const FactorioIcon = ({decorative = false, id, icon, size}: FactorioIconP
 			aria-label={decorative ? undefined : accessibleName}
 			role={decorative ? undefined : 'img'}
 		>
-			{parameterMatch === null ? (
+			{parameterMatch === null && iconUrl !== undefined ? (
 				<img
 					aria-hidden="true"
 					data-testid="icon"
 					loading="lazy"
 					className={styles.artwork}
-					src={getIconUrl(type, icon.name)}
+					src={iconUrl}
 					alt=""
 					title={decorative ? undefined : `${type}: ${icon.name}`}
 				/>
@@ -94,10 +97,12 @@ export const FactorioIcon = ({decorative = false, id, icon, size}: FactorioIconP
 				<span
 					aria-hidden="true"
 					data-testid="icon"
-					className={`${styles.artwork} ${styles.parameterArtwork}`}
+					className={
+						parameterMatch === null ? styles.artwork : `${styles.artwork} ${styles.parameterArtwork}`
+					}
 					title={decorative ? undefined : `${type}: ${icon.name}`}
 				>
-					{parameterMatch[1]}
+					{parameterMatch?.[1]}
 				</span>
 			)}
 			{qualityNode}
