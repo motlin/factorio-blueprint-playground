@@ -152,6 +152,7 @@ interface BlueprintViewStorage
 }
 
 const viewModeListeners = new Set<() => void>();
+let fallbackViewMode = BlueprintRecordViewMode.List;
 
 function isBlueprintRecordViewMode(value: string | null): value is BlueprintRecordViewMode
 {
@@ -170,15 +171,27 @@ function isBlueprintViewStorage(value: unknown): value is BlueprintViewStorage
 	);
 }
 
+/**
+ * `useSyncExternalStore` reads this during render, and a browser that blocks
+ * site data throws a `SecurityError` from every `localStorage` touch, so the
+ * preference falls back to memory rather than taking down the render.
+ */
 function storedViewMode(): BlueprintRecordViewMode
 {
 	const localStorage = getLocalStorage();
 	if (localStorage === undefined)
 	{
-		return BlueprintRecordViewMode.List;
+		return fallbackViewMode;
 	}
-	const storedViewMode = localStorage.getItem(BLUEPRINT_RECORD_VIEW_STORAGE_KEY);
-	return isBlueprintRecordViewMode(storedViewMode) ? storedViewMode : BlueprintRecordViewMode.List;
+	try
+	{
+		const storedViewMode = localStorage.getItem(BLUEPRINT_RECORD_VIEW_STORAGE_KEY);
+		return isBlueprintRecordViewMode(storedViewMode) ? storedViewMode : BlueprintRecordViewMode.List;
+	}
+	catch
+	{
+		return fallbackViewMode;
+	}
 }
 
 function getLocalStorage(): BlueprintViewStorage | undefined
@@ -187,8 +200,15 @@ function getLocalStorage(): BlueprintViewStorage | undefined
 	{
 		return undefined;
 	}
-	const localStorage: unknown = Reflect.get(window, 'localStorage');
-	return isBlueprintViewStorage(localStorage) ? localStorage : undefined;
+	try
+	{
+		const localStorage: unknown = Reflect.get(window, 'localStorage');
+		return isBlueprintViewStorage(localStorage) ? localStorage : undefined;
+	}
+	catch
+	{
+		return undefined;
+	}
 }
 
 function subscribeToViewMode(listener: () => void): () => void
@@ -215,7 +235,15 @@ function persistViewMode(viewMode: BlueprintRecordViewMode): void
 	{
 		return;
 	}
-	getLocalStorage()?.setItem(BLUEPRINT_RECORD_VIEW_STORAGE_KEY, viewMode);
+	fallbackViewMode = viewMode;
+	try
+	{
+		getLocalStorage()?.setItem(BLUEPRINT_RECORD_VIEW_STORAGE_KEY, viewMode);
+	}
+	catch
+	{
+		// A blocked or full store keeps the preference for this session only.
+	}
 	for (const listener of viewModeListeners)
 	{
 		listener();
