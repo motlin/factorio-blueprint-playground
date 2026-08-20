@@ -48,12 +48,45 @@ const hiddenIconBlueprint: BlueprintString = {
 	},
 };
 
+const tileSignal: SignalID = {type: 'tile', name: 'landfill'};
+const entitySignal: SignalID = {type: 'entity', name: 'assembling-machine-2'};
+
+function singleIconBlueprint(signal: SignalID): BlueprintString {
+	return {blueprint: {item: 'blueprint', version: 0, icons: [{index: 1, signal}]}};
+}
+
 async function chooseSignal(user: ReturnType<typeof userEvent.setup>, label: string) {
 	await user.click(screen.getByRole('button', {name: `Choose ${label}`}));
 	const confirm = screen.queryByRole('button', {name: 'Confirm'});
 	if (confirm !== null) {
 		await user.click(confirm);
 	}
+}
+
+async function openTargetPicker(user: ReturnType<typeof userEvent.setup>, category?: string): Promise<HTMLElement> {
+	await user.click(screen.getByRole('button', {name: 'Choose target icon'}));
+	const picker = screen.getByRole('dialog', {name: 'Choose target icon'});
+	if (category !== undefined) {
+		await user.click(within(picker).getByRole('tab', {name: category}));
+	}
+	return picker;
+}
+
+async function stageSourceAndOpenTargetPicker(
+	user: ReturnType<typeof userEvent.setup>,
+	signal: SignalID,
+	sourceName: string,
+): Promise<HTMLElement> {
+	await user.click(screen.getByRole('button', {name: 'Choose source icon'}));
+	await user.click(
+		within(screen.getByRole('dialog', {name: 'Choose source icon used here'})).getByRole('button', {
+			name: `Choose ${sourceName}`,
+		}),
+	);
+	expect(screen.getByRole('button', {name: 'Choose source icon'}).getAttribute('title')).toBe(
+		`${sourceName}\n${signal.type ?? 'item'}:${signal.name}`,
+	);
+	return openTargetPicker(user);
 }
 
 test('uses root icons as sources and preserves mappings while incomplete choices are dismissed', async () => {
@@ -119,10 +152,10 @@ test('uses root icons as sources and preserves mappings while incomplete choices
 
 	await user.click(screen.getByRole('button', {name: 'Choose source icon'}));
 	await chooseSignal(user, 'Signal green');
-	await user.click(screen.getByRole('button', {name: 'Choose target icon'}));
+	const signalTargetPicker = await openTargetPicker(user, 'Signals');
 	expect({
-		blue: screen.getByRole('button', {name: 'Choose Signal blue'}).getAttribute('title'),
-		yellow: screen.getByRole('button', {name: 'Choose Signal yellow'}).getAttribute('title'),
+		blue: within(signalTargetPicker).getByRole('button', {name: 'Choose Signal blue'}).getAttribute('title'),
+		yellow: within(signalTargetPicker).getByRole('button', {name: 'Choose Signal yellow'}).getAttribute('title'),
 	}).toStrictEqual({
 		blue: 'Signal blue\nvirtual:signal-blue',
 		yellow: 'Signal yellow\nvirtual:signal-yellow',
@@ -152,7 +185,7 @@ test('uses root icons as sources and preserves mappings while incomplete choices
 
 	await user.click(screen.getByRole('button', {name: 'Choose source icon'}));
 	await chooseSignal(user, 'Signal green');
-	await user.click(screen.getByRole('button', {name: 'Choose target icon'}));
+	await openTargetPicker(user, 'Signals');
 	await chooseSignal(user, 'Signal yellow');
 
 	expect(onChange).toHaveBeenCalledExactlyOnceWith([
@@ -202,12 +235,7 @@ test('starts a new replacement from the target endpoint without silently committ
 		/>,
 	);
 
-	await user.click(screen.getByRole('button', {name: 'Choose target icon'}));
-	const targetPicker = screen.getByRole('dialog', {name: 'Choose target icon'});
-	const signalsTab = within(targetPicker).queryByRole('tab', {name: 'Signals'});
-	if (signalsTab !== null) {
-		await user.click(signalsTab);
-	}
+	const targetPicker = await openTargetPicker(user, 'Signals');
 	await user.click(within(targetPicker).getByRole('button', {name: 'Choose Signal yellow'}));
 	expect({
 		committed: onChange.mock.calls,
@@ -293,4 +321,54 @@ test('shows the current hidden source as selected while editing a mapping', asyn
 		options: ['Choose Space platform hub'],
 		selected: 'true',
 	});
+});
+
+test('offers replacement targets for a tile-typed source icon', async () => {
+	const user = userEvent.setup();
+	const onChange = vi.fn<IconReplacementDialogProps['onChange']>();
+	render(
+		<IconReplacementDialog
+			onChange={onChange}
+			onClose={vi.fn<IconReplacementDialogProps['onClose']>()}
+			replacements={[]}
+			rootBlueprint={singleIconBlueprint(tileSignal)}
+		/>,
+	);
+
+	const targetPicker = await stageSourceAndOpenTargetPicker(user, tileSignal, 'Landfill');
+	expect({
+		empty: within(targetPicker).queryByLabelText('Nothing found'),
+		landfill: within(targetPicker).getByRole('button', {name: 'Choose Landfill'}).getAttribute('title'),
+	}).toStrictEqual({
+		empty: null,
+		landfill: 'Landfill\nitem:landfill',
+	});
+
+	await user.click(within(targetPicker).getByRole('button', {name: 'Choose Landfill'}));
+	expect(onChange).toHaveBeenCalledExactlyOnceWith([{from: tileSignal, to: {type: 'item', name: 'landfill'}}]);
+});
+
+test('offers replacement targets for an entity-typed source icon', async () => {
+	const user = userEvent.setup();
+	const onChange = vi.fn<IconReplacementDialogProps['onChange']>();
+	render(
+		<IconReplacementDialog
+			onChange={onChange}
+			onClose={vi.fn<IconReplacementDialogProps['onClose']>()}
+			replacements={[]}
+			rootBlueprint={singleIconBlueprint(entitySignal)}
+		/>,
+	);
+
+	const targetPicker = await stageSourceAndOpenTargetPicker(user, entitySignal, 'Assembling machine 2');
+	expect({
+		empty: within(targetPicker).queryByLabelText('Nothing found'),
+		woodenChest: within(targetPicker).getByRole('button', {name: 'Choose Wooden chest'}).getAttribute('title'),
+	}).toStrictEqual({
+		empty: null,
+		woodenChest: 'Wooden chest\nitem:wooden-chest',
+	});
+
+	await user.click(within(targetPicker).getByRole('button', {name: 'Choose Wooden chest'}));
+	expect(onChange).toHaveBeenCalledExactlyOnceWith([{from: entitySignal, to: {type: 'item', name: 'wooden-chest'}}]);
 });
