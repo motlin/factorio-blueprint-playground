@@ -1,7 +1,7 @@
 import {describe, expect, test} from 'vite-plus/test';
 
 import {serializeBlueprint} from '../../src/parsing/blueprintParser';
-import type {BlueprintString, Entity, UpgradePlanner} from '../../src/parsing/types';
+import type {BlueprintString, Entity, UpgradeMapping, UpgradePlanner} from '../../src/parsing/types';
 import {
 	analyzeUpgradeRules,
 	applyUpgradeRules,
@@ -624,6 +624,41 @@ describe('upgrade planner transforms', () => {
 				rulesFromUpgradePlanner(ambiguous),
 			).blueprint?.entities?.[0]?.name,
 		).toBe('fast-transport-belt');
+	});
+
+	test('rejects mapper indexes and endpoints that no planner grid can position', () => {
+		const belt = {type: 'entity', name: 'transport-belt'} as const;
+		const fastBelt = {type: 'entity', name: 'fast-transport-belt'} as const;
+		const speedModule = {type: 'item', name: 'speed-module'} as const;
+		const pastedMappers = (mappers: readonly UpgradeMapping[]): string =>
+			JSON.stringify({upgrade_planner: {item: 'upgrade-planner', version: 0, settings: {mappers}}});
+
+		expect(() => parseUpgradePlanner(pastedMappers([{index: -1, from: belt, to: fastBelt}]))).toThrow(
+			new Error('Upgrade planner mapping index -1 must be 0 or greater.'),
+		);
+		expect(() =>
+			parseUpgradePlanner(
+				pastedMappers([
+					{index: 0, from: belt, to: fastBelt},
+					{index: 0, from: speedModule, to: {type: 'item', name: 'speed-module-2'}},
+				]),
+			),
+		).toThrow(new Error('Upgrade planner mapping index 0 is used more than once.'));
+		expect(() => parseUpgradePlanner(pastedMappers([{index: 0}]))).toThrow(
+			new Error('Upgrade planner mapping 0 must define from, to, or both.'),
+		);
+		expect(() =>
+			rulesFromUpgradePlanner({
+				item: 'upgrade-planner',
+				version: 0,
+				settings: {mappers: [{index: 0}, {index: 1, from: belt, to: fastBelt}]},
+			}),
+		).toThrow(new Error('Upgrade planner mapping 0 must define from, to, or both.'));
+		// Factorio numbers mapper slots from zero, so slot zero and a single
+		// endpoint are both ordinary planner content.
+		expect(parseUpgradePlanner(pastedMappers([{index: 0, from: belt}])).settings.mappers).toStrictEqual([
+			{index: 0, from: belt},
+		]);
 	});
 
 	test('finds labeled and nested upgrade planners with book-selection paths', () => {
