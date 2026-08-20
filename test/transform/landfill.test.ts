@@ -69,13 +69,13 @@ describe('addLandfillUnderlay', () => {
 	});
 
 	test('swaps rectangular footprint dimensions for east-facing entities', () => {
-		const input = blueprintWithEntity('boiler', {x: 4, y: 4.5}, 2);
+		const input = blueprintWithEntity('boiler', {x: 4, y: 4.5}, 4);
 
 		expect(addLandfillUnderlay(input)).toStrictEqual({
 			blueprint: {
 				item: 'blueprint',
 				version: 0,
-				entities: [{entity_number: 1, name: 'boiler', position: {x: 4, y: 4.5}, direction: 2}],
+				entities: [{entity_number: 1, name: 'boiler', position: {x: 4, y: 4.5}, direction: 4}],
 				tiles: [
 					{name: 'landfill', position: {x: 3, y: 3}},
 					{name: 'landfill', position: {x: 3, y: 4}},
@@ -83,6 +83,68 @@ describe('addLandfillUnderlay', () => {
 					{name: 'landfill', position: {x: 4, y: 3}},
 					{name: 'landfill', position: {x: 4, y: 4}},
 					{name: 'landfill', position: {x: 4, y: 5}},
+				],
+			},
+		});
+	});
+
+	test('swaps rectangular footprint dimensions for west-facing entities', () => {
+		const input = blueprintWithEntity('recycler', {x: 4, y: 5}, 12);
+
+		expect(addLandfillUnderlay(input)).toStrictEqual({
+			blueprint: {
+				item: 'blueprint',
+				version: 0,
+				entities: [{entity_number: 1, name: 'recycler', position: {x: 4, y: 5}, direction: 12}],
+				tiles: [
+					{name: 'landfill', position: {x: 3, y: 3}},
+					{name: 'landfill', position: {x: 3, y: 4}},
+					{name: 'landfill', position: {x: 3, y: 5}},
+					{name: 'landfill', position: {x: 3, y: 6}},
+					{name: 'landfill', position: {x: 4, y: 3}},
+					{name: 'landfill', position: {x: 4, y: 4}},
+					{name: 'landfill', position: {x: 4, y: 5}},
+					{name: 'landfill', position: {x: 4, y: 6}},
+				],
+			},
+		});
+	});
+
+	test('keeps rectangular footprint dimensions for south-facing entities', () => {
+		const input = blueprintWithEntity('boiler', {x: 4.5, y: 4}, 8);
+
+		expect(addLandfillUnderlay(input)).toStrictEqual({
+			blueprint: {
+				item: 'blueprint',
+				version: 0,
+				entities: [{entity_number: 1, name: 'boiler', position: {x: 4.5, y: 4}, direction: 8}],
+				tiles: [
+					{name: 'landfill', position: {x: 3, y: 3}},
+					{name: 'landfill', position: {x: 3, y: 4}},
+					{name: 'landfill', position: {x: 4, y: 3}},
+					{name: 'landfill', position: {x: 4, y: 4}},
+					{name: 'landfill', position: {x: 5, y: 3}},
+					{name: 'landfill', position: {x: 5, y: 4}},
+				],
+			},
+		});
+	});
+
+	test('keeps rectangular footprint dimensions for diagonal directions', () => {
+		const input = blueprintWithEntity('boiler', {x: 4.5, y: 4}, 2);
+
+		expect(addLandfillUnderlay(input)).toStrictEqual({
+			blueprint: {
+				item: 'blueprint',
+				version: 0,
+				entities: [{entity_number: 1, name: 'boiler', position: {x: 4.5, y: 4}, direction: 2}],
+				tiles: [
+					{name: 'landfill', position: {x: 3, y: 3}},
+					{name: 'landfill', position: {x: 3, y: 4}},
+					{name: 'landfill', position: {x: 4, y: 3}},
+					{name: 'landfill', position: {x: 4, y: 4}},
+					{name: 'landfill', position: {x: 5, y: 3}},
+					{name: 'landfill', position: {x: 5, y: 4}},
 				],
 			},
 		});
