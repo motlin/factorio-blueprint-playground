@@ -34,6 +34,20 @@ const rootBlueprint: BlueprintString = {
 
 const replacements: IconReplacement[] = [{from: redSignal, to: blueSignal}];
 
+const hiddenSignal: SignalID = {type: 'item', name: 'space-platform-hub'};
+const parameterSignal: SignalID = {type: 'item', name: 'parameter-0'};
+
+const hiddenIconBlueprint: BlueprintString = {
+	blueprint: {
+		item: 'blueprint',
+		version: 0,
+		icons: [
+			{index: 1, signal: hiddenSignal},
+			{index: 2, signal: parameterSignal},
+		],
+	},
+};
+
 async function chooseSignal(user: ReturnType<typeof userEvent.setup>, label: string) {
 	await user.click(screen.getByRole('button', {name: `Choose ${label}`}));
 	const confirm = screen.queryByRole('button', {name: 'Confirm'});
@@ -210,4 +224,73 @@ test('starts a new replacement from the target endpoint without silently committ
 		}),
 	);
 	expect(onChange).toHaveBeenCalledExactlyOnceWith([{from: redSignal, to: {type: 'virtual', name: 'signal-yellow'}}]);
+});
+
+function pickerOptionLabels(picker: HTMLElement): string[] {
+	return within(picker)
+		.getAllByRole('button')
+		.map((button) => button.getAttribute('aria-label'))
+		.filter((label): label is string => label?.startsWith('Choose ') === true);
+}
+
+test("offers the blueprint's own hidden and parameter icons as replacement sources", async () => {
+	const user = userEvent.setup();
+	const onChange = vi.fn<IconReplacementDialogProps['onChange']>();
+	render(
+		<IconReplacementDialog
+			onChange={onChange}
+			onClose={vi.fn<IconReplacementDialogProps['onClose']>()}
+			replacements={[]}
+			rootBlueprint={hiddenIconBlueprint}
+		/>,
+	);
+
+	await user.click(screen.getByRole('button', {name: 'Choose source icon'}));
+	const sourcePicker = screen.getByRole('dialog', {name: 'Choose source icon used here'});
+	expect({
+		hidden: pickerOptionLabels(sourcePicker),
+		tabs: within(sourcePicker)
+			.getAllByRole('tab')
+			.map((tab) => tab.getAttribute('aria-label')),
+	}).toStrictEqual({
+		hidden: ['Choose Space platform hub'],
+		tabs: ['Production', 'Unsorted'],
+	});
+
+	await user.click(within(sourcePicker).getByRole('tab', {name: 'Unsorted'}));
+	expect(pickerOptionLabels(sourcePicker)).toStrictEqual(['Choose Parameter 0']);
+
+	await user.click(within(sourcePicker).getByRole('tab', {name: 'Production'}));
+	await user.click(within(sourcePicker).getByRole('button', {name: 'Choose Space platform hub'}));
+	expect({
+		committed: onChange.mock.calls,
+		source: screen.getByRole('button', {name: 'Choose source icon'}).getAttribute('title'),
+	}).toStrictEqual({
+		committed: [],
+		source: 'Space platform hub\nitem:space-platform-hub',
+	});
+});
+
+test('shows the current hidden source as selected while editing a mapping', async () => {
+	const user = userEvent.setup();
+	render(
+		<IconReplacementDialog
+			onChange={vi.fn<IconReplacementDialogProps['onChange']>()}
+			onClose={vi.fn<IconReplacementDialogProps['onClose']>()}
+			replacements={[{from: hiddenSignal, to: {type: 'item', name: 'iron-chest'}}]}
+			rootBlueprint={hiddenIconBlueprint}
+		/>,
+	);
+
+	await user.click(screen.getByRole('button', {name: 'Edit source, currently Space platform hub'}));
+	const sourcePicker = screen.getByRole('dialog', {name: 'Choose source icon used here'});
+	expect({
+		options: pickerOptionLabels(sourcePicker),
+		selected: within(sourcePicker)
+			.getByRole('button', {name: 'Choose Space platform hub'})
+			.getAttribute('aria-pressed'),
+	}).toStrictEqual({
+		options: ['Choose Space platform hub'],
+		selected: 'true',
+	});
 });
