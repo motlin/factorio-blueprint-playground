@@ -534,6 +534,10 @@ function nextParameterId(parameters: readonly Parameter[]): string
 	return `parameter-${index.toString()}`;
 }
 
+/**
+ * Mirrors the per-row source options: a row can only depend on an enabled `id`
+ * parameter above it, so a switched-off parameter never becomes a source.
+ */
 function dependencyValidationMessage(parameters: readonly Parameter[]): string | undefined
 {
 	const available = new Set<string>();
@@ -549,7 +553,7 @@ function dependencyValidationMessage(parameters: readonly Parameter[]): string |
 		{
 			return "Source of dependency isn't above.";
 		}
-		if (parameter.id !== undefined && parameter.id !== '')
+		if (parameter.parameter !== false && parameter.id !== undefined && parameter.id !== '')
 		{
 			available.add(parameter.id);
 		}
