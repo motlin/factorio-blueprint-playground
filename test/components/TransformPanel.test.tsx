@@ -1192,6 +1192,82 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		});
 	});
 
+	test('surfaces a failed library save and leaves the save prompt open for a retry', async () => {
+		const user = userEvent.setup();
+		vi.mocked(db.saveLibraryCopy).mockRejectedValue(new Error('An upgrade planner supports at most 4 icons.'));
+		render(<TransformPanel blueprint={blueprint} />);
+
+		openUpgradePlanner();
+		await user.click(screen.getByRole('button', {name: 'Save to Library'}));
+		const savePrompt = screen.getByRole('dialog', {name: 'Save to Blueprint Library'});
+		await user.click(within(savePrompt).getByRole('button', {name: 'Save Planner'}));
+		const failure = await within(savePrompt).findByRole('alert');
+
+		expect({
+			failure: failure.textContent,
+			operations: within(savePrompt)
+				.getAllByRole('button')
+				.map((button) => ({disabled: (button as HTMLButtonElement).disabled, name: button.textContent})),
+			promptOpen: screen.queryByRole('dialog', {name: 'Save to Blueprint Library'}) !== null,
+		}).toStrictEqual({
+			failure: 'An upgrade planner supports at most 4 icons.',
+			operations: [
+				{disabled: false, name: 'Cancel Save'},
+				{disabled: false, name: 'Save Planner'},
+			],
+			promptOpen: true,
+		});
+	});
+
+	test('surfaces a failed library update and clears the failure once the retry succeeds', async () => {
+		const user = userEvent.setup();
+		const planner: UpgradePlanner = {
+			item: 'upgrade-planner',
+			label: 'Library belts',
+			version: 0,
+			settings: {
+				mappers: [
+					{
+						index: 0,
+						from: {type: 'entity', name: 'transport-belt'},
+						to: {type: 'entity', name: 'fast-transport-belt'},
+					},
+				],
+			},
+		};
+		libraryRecords.push(storedPlanner('library-belts', planner, 'Library belts', 4));
+		const updateLibraryRecord = vi.mocked(db.updateLibraryRecord);
+		const succeedingUpdate = updateLibraryRecord.getMockImplementation();
+		updateLibraryRecord.mockRejectedValueOnce(new Error('QuotaExceededError: the database is full.'));
+		render(<TransformPanel blueprint={blueprint} />);
+
+		openUpgradePlanner();
+		await choosePlanner(user, 'Library belts');
+		await user.click(screen.getByRole('button', {name: 'Save to Library'}));
+		const savePrompt = screen.getByRole('dialog', {name: 'Save to Blueprint Library'});
+		await user.click(within(savePrompt).getByRole('button', {name: 'Update Planner'}));
+		const failure = await within(savePrompt).findByRole('alert');
+
+		expect({
+			failure: failure.textContent,
+			promptOpen: screen.queryByRole('dialog', {name: 'Save to Blueprint Library'}) !== null,
+		}).toStrictEqual({
+			failure: 'QuotaExceededError: the database is full.',
+			promptOpen: true,
+		});
+
+		updateLibraryRecord.mockImplementation(succeedingUpdate!);
+		await user.click(within(savePrompt).getByRole('button', {name: 'Update Planner'}));
+
+		expect({
+			failure: screen.queryByRole('alert'),
+			promptOpen: screen.queryByRole('dialog', {name: 'Save to Blueprint Library'}) !== null,
+		}).toStrictEqual({
+			failure: null,
+			promptOpen: false,
+		});
+	});
+
 	test('keeps quality-preserving upgrade semantics after saving the suggested planner to the library', async () => {
 		const user = userEvent.setup();
 		const legendaryBelts: BlueprintString = {
