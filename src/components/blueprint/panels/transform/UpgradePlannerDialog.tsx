@@ -631,6 +631,26 @@ function editableModuleSlots(target: UpgradeTargetSignal | undefined): (SignalID
 	);
 }
 
+/**
+ * The slot editor always spans the staged destination's own module capacity, so
+ * a plan carried over from a roomier or tighter destination is trimmed or
+ * padded with cleared slots instead of hiding slots the destination has.
+ */
+function moduleSlotsForCapacity(
+	moduleSlots: (SignalID | null)[] | undefined,
+	slotCount: number,
+): (SignalID | null)[] | undefined
+{
+	return moduleSlots === undefined
+		? undefined
+		: Array.from(
+				{
+					length: slotCount,
+				},
+				(_, index) => moduleSlots[index] ?? null,
+			);
+}
+
 function UpgradeMappingsEditor({
 	mappings,
 	onClearEndpoint,
@@ -739,13 +759,15 @@ function UpgradeMappingsEditor({
 						{
 							return (
 								<UpgradeEntitySettingsExtras
-									moduleSlots={pendingModuleSlots?.slice(0, slotCount)}
+									moduleSlots={moduleSlotsForCapacity(pendingModuleSlots, slotCount)}
 									slotCount={slotCount}
 									onModuleSlotChoose={setChoosingModuleSlotIndex}
 									onModuleSlotClear={(index) =>
 									{
 										setPendingModuleSlots((slots) =>
-											slots?.map((slot, slotIndex) => (slotIndex === index ? null : slot)),
+											moduleSlotsForCapacity(slots, slotCount)?.map((slot, slotIndex) =>
+												slotIndex === index ? null : slot,
+											),
 										);
 									}}
 									onModuleSlotsChange={setPendingModuleSlots}
@@ -766,18 +788,8 @@ function UpgradeMappingsEditor({
 					{
 						const slotCount = entityModuleSlotCount(target);
 						const moduleSlots =
-							slotCount > 0 && pendingModuleSlots !== undefined
-								? pendingModuleSlots
-										.slice(0, slotCount)
-										.concat(
-											Array.from(
-												{
-													length: Math.max(0, slotCount - pendingModuleSlots.length),
-												},
-												() => null,
-											),
-										)
-										.map((slot) => slot ?? {})
+							slotCount > 0
+								? moduleSlotsForCapacity(pendingModuleSlots, slotCount)?.map((slot) => slot ?? {})
 								: undefined;
 						onTargetChange(
 							targetPicker.mappingId,
@@ -847,7 +859,10 @@ function UpgradeMappingsEditor({
 					onChoose={(module) =>
 					{
 						setPendingModuleSlots((slots) =>
-							slots?.map((slot, slotIndex) => (slotIndex === choosingModuleSlotIndex ? module : slot)),
+							moduleSlotsForCapacity(
+								slots,
+								Math.max(slots?.length ?? 0, choosingModuleSlotIndex + 1),
+							)?.map((slot, slotIndex) => (slotIndex === choosingModuleSlotIndex ? module : slot)),
 						);
 						setChoosingModuleSlotIndex(undefined);
 					}}
