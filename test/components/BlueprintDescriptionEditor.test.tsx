@@ -105,7 +105,7 @@ test('edits multiline rich text as an unchanged native textarea value', () =>
 	);
 });
 
-test('preserves the draft through parent updates and contains editor shortcut keys', async () =>
+test('contains typing shortcuts while leaving dialog Escape and Tab keys to the surrounding dialog', async () =>
 {
 	const user = userEvent.setup();
 	const onDescriptionChange = vi.fn<(description: string) => void>();
@@ -127,6 +127,7 @@ test('preserves the draft through parent updates and contains editor shortcut ke
 	await user.click(textarea);
 	await user.type(textarea, 'BUQ');
 	await user.keyboard('{Escape}');
+	await user.keyboard('{Tab}');
 	await user.click(
 		screen.getByRole(
 			'button',
@@ -152,7 +153,7 @@ test('preserves the draft through parent updates and contains editor shortcut ke
 		{
 			changeCalls: [['Draft: B'], ['Draft: BU'], ['Draft: BUQ']],
 			draft: 'Draft: BUQ',
-			shortcutCalls: [],
+			shortcutCalls: [['Escape'], ['Tab']],
 			sibling: 'Sibling content',
 		},
 	);
