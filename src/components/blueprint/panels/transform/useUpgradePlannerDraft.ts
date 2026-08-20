@@ -396,6 +396,7 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 		return undefined;
 	}, [mappingDrafts]);
 	const error = plannerError ?? mappingRuleError;
+	const applyDisabled = rootBlueprint === undefined || error !== undefined;
 	const effectiveRules = useMemo(
 		() => (error === undefined ? completeRules(mappingDrafts) : []),
 		[error, mappingDrafts],
@@ -869,7 +870,8 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 				}));
 			},
 		},
-		saveDisabled: rootBlueprint === undefined || error !== undefined || recordMetadataDraft.label.trim() === '',
+		applyDisabled,
+		saveDisabled: applyDisabled || recordMetadataDraft.label.trim() === '',
 		savedLibraryRecord,
 		savedPlannerChoice:
 			savedLibraryRecord === undefined

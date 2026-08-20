@@ -46,11 +46,13 @@ function renderDialog(
 		name: 'assembling-machine-3',
 		module_slots: modulePlan,
 	},
+	overrides: Partial<ComponentProps<typeof UpgradePlannerDialog>> = {},
 )
 {
 	const onTargetChange = vi.fn<ComponentProps<typeof UpgradePlannerDialog>['mappings']['onTargetChange']>();
 	const properties: ComponentProps<typeof UpgradePlannerDialog> =
 	{
+		applyDisabled: false,
 		breadcrumb: "Alice's blueprint",
 		canChooseRootScope: false,
 		mappings:
@@ -143,7 +145,7 @@ function renderDialog(
 		selectionScopeDisabled: false,
 		selectionScopeLabel: 'Selected blueprint',
 	};
-	render(<UpgradePlannerDialog {...properties} />);
+	render(<UpgradePlannerDialog {...properties} {...overrides} />);
 	return {
 		onTargetChange,
 	};
@@ -446,5 +448,61 @@ describe('UpgradePlannerDialog module-slot plans', () =>
 				},
 			],
 		]);
+	});
+});
+
+describe('UpgradePlannerDialog footer actions', () =>
+{
+	function footerDisabledState()
+	{
+		return Object.fromEntries(
+			['Save to Library', 'Apply Downgrade', 'Apply Upgrade'].map((name) => [
+				name,
+				screen.getByRole<HTMLButtonElement>(
+					'button',
+					{
+						name,
+					},
+				).disabled,
+			]),
+		);
+	}
+
+	test('leaves both Apply buttons usable when only library saving is blocked', () =>
+	{
+		renderDialog(
+			undefined,
+			{
+				applyDisabled: false,
+				saveDisabled: true,
+			},
+		);
+
+		expect(footerDisabledState()).toStrictEqual(
+			{
+				'Apply Downgrade': false,
+				'Apply Upgrade': false,
+				'Save to Library': true,
+			},
+		);
+	});
+
+	test('disables every footer action when the draft cannot be applied', () =>
+	{
+		renderDialog(
+			undefined,
+			{
+				applyDisabled: true,
+				saveDisabled: true,
+			},
+		);
+
+		expect(footerDisabledState()).toStrictEqual(
+			{
+				'Apply Downgrade': true,
+				'Apply Upgrade': true,
+				'Save to Library': true,
+			},
+		);
 	});
 });

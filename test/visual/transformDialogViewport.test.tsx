@@ -256,6 +256,7 @@ function renderPlannerHtml(): string
 				},
 				onExport: noop,
 			}}
+			applyDisabled={false}
 			saveDisabled={false}
 			savePrompt={
 			{
