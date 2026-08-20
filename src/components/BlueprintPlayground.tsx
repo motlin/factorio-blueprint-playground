@@ -105,11 +105,9 @@ export function BlueprintPlayground() {
 		<TransformPanel
 			key={selectedPath ?? ''}
 			blueprint={selectedBlueprint}
-			blueprintEditorSourceMode={
-				editorCommitMatchesSource
-					? BlueprintEditorSourceMode.ExistingRecord
-					: BlueprintEditorSourceMode.CapturedDraft
-			}
+			// Everything reaching the playground was imported, never captured in game, so
+			// the editor must preserve tiles and trains instead of applying capture defaults.
+			blueprintEditorSourceMode={BlueprintEditorSourceMode.ExistingRecord}
 			onBlueprintCommit={(committedRoot) => {
 				setEditorCommitState({committedRoot, sourceInput: pasted});
 			}}
