@@ -551,6 +551,15 @@ function UpgradePlannerLoader({
 	);
 }
 
+/**
+ * An entity destination's module-slot plan survives reopening its picker: the
+ * serialized fixed-length list maps back to editor slots, where an empty
+ * serialized entry is a cleared slot.
+ */
+function editableModuleSlots(target: UpgradeTargetSignal | undefined): (SignalID | null)[] | undefined {
+	return target?.module_slots?.map((slot) => (slot.name === undefined ? null : {...slot, name: slot.name}));
+}
+
 function UpgradeMappingsEditor({
 	mappings,
 	onClearEndpoint,
@@ -599,10 +608,10 @@ function UpgradeMappingsEditor({
 					setTargetPicker(undefined);
 				}}
 				onChooseTarget={(mappingId, slotIndex) => {
+					const target = mappings.find((mapping) => mapping.mappingId === mappingId)?.to;
 					setTargetPicker({mappingId, slotIndex});
-					setPendingModuleLimit(
-						mappings.find((mapping) => mapping.mappingId === mappingId)?.to?.module_limit,
-					);
+					setPendingModuleLimit(target?.module_limit);
+					setPendingModuleSlots(editableModuleSlots(target));
 					setSourcePicker(undefined);
 				}}
 				onClearEndpoint={onClearEndpoint}
