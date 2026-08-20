@@ -79,13 +79,17 @@ function preservesQuality(from: UpgradeSourceSignal, to: SignalID): boolean {
 	return from.comparator === undefined && from.quality === undefined && to.quality === undefined;
 }
 
-function completeRules(mappings: readonly UpgradeMappingDraft[], source: string): UpgradeRule[] {
-	const explicitRules = mappings.flatMap(({from, to}) =>
+/**
+ * The draft is the only rule source. The suggested planner materializes the
+ * built-in rules as real mapper records when it is loaded, so an empty draft
+ * means the user deleted them and must apply nothing.
+ */
+function completeRules(mappings: readonly UpgradeMappingDraft[]): UpgradeRule[] {
+	return mappings.flatMap(({from, to}) =>
 		from === undefined || to === undefined
 			? []
 			: [{from: {...from}, preserveQuality: preservesQuality(from, to), to: {...to}}],
 	);
-	return source === 'suggested' && mappings.length === 0 ? builtInUpgradeRules('upgrade') : explicitRules;
 }
 
 function reverseUpgradeRule(rule: UpgradeRule): UpgradeRule {
@@ -314,8 +318,8 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 	}, [mappingDrafts]);
 	const error = plannerError ?? mappingRuleError;
 	const effectiveRules = useMemo(
-		() => (error === undefined ? completeRules(mappingDrafts, source) : []),
-		[error, mappingDrafts, source],
+		() => (error === undefined ? completeRules(mappingDrafts) : []),
+		[error, mappingDrafts],
 	);
 	const reverseRules = useMemo(() => effectiveRules.map(reverseUpgradeRule), [effectiveRules]);
 	const ruleCounts = useMemo(() => {
