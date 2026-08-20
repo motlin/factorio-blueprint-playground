@@ -214,6 +214,8 @@ export function IconReplacementDialog({onChange, onClose, replacements, rootBlue
 			{choosingSource ? (
 				<SignalPickerDialog
 					confirmationMode="immediate"
+					includeHiddenSignals
+					includeParameterSignals
 					title="Choose source icon used here"
 					options={availableCandidates.map((candidate) => candidate.signal)}
 					onClose={() =>
@@ -262,6 +264,8 @@ export function IconReplacementDialog({onChange, onClose, replacements, rootBlue
 							return (
 								<SignalPickerDialog
 									confirmationMode="immediate"
+									includeHiddenSignals
+									includeParameterSignals
 									title="Choose source icon used here"
 									initialSignal={editingReplacement.from}
 									options={[
