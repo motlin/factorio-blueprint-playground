@@ -66,6 +66,10 @@ const RAIL_NAMES = new Set([
 ]);
 const ROLLING_STOCK_NAMES = new Set(['artillery-wagon', 'cargo-wagon', 'fluid-wagon', 'locomotive']);
 
+// Factorio 2.0 uses a 16-direction enum (north 0, east 4, south 8, west 12), not the 8-direction enum of 1.x.
+const DIRECTION_EAST = 4;
+const DIRECTION_WEST = 12;
+
 function positionKey(x: number, y: number): string {
 	return `${x},${y}`;
 }
@@ -76,7 +80,9 @@ function shouldSkip(entity: Entity): boolean {
 
 function footprint(entity: Entity): [number, number] {
 	const [width, height] = entityFootprints[entity.name] ?? [1, 1];
-	return entity.direction === 2 || entity.direction === 6 ? [height, width] : [width, height];
+	return entity.direction === DIRECTION_EAST || entity.direction === DIRECTION_WEST
+		? [height, width]
+		: [width, height];
 }
 
 function addLandfillToBlueprint(blueprint: Blueprint): Blueprint {
