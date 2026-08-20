@@ -1,23 +1,23 @@
-import type {Blueprint, BlueprintString, Entity, SignalType} from '../parsing/types';
+import type {Blueprint, BlueprintString, Entity, Quality, SignalType} from '../parsing/types';
 import {removeEntities} from './visit';
 
 export interface BlueprintComponentIdentity {
 	name: string;
+	quality?: Quality;
 	type: SignalType;
 }
 
 export type BlueprintComponentRemovalKey = string;
 
 export function blueprintComponentRemovalKey(component: BlueprintComponentIdentity): BlueprintComponentRemovalKey {
-	return JSON.stringify({name: component.name, type: component.type});
+	return JSON.stringify({name: component.name, quality: component.quality, type: component.type});
 }
 
 function isRemoved(
 	removedComponents: ReadonlySet<BlueprintComponentRemovalKey>,
-	type: SignalType,
-	name: string,
+	component: BlueprintComponentIdentity,
 ): boolean {
-	return removedComponents.has(blueprintComponentRemovalKey({name, type}));
+	return removedComponents.has(blueprintComponentRemovalKey(component));
 }
 
 function removeItemComponents(
@@ -30,7 +30,9 @@ function removeItemComponents(
 	}
 
 	const entities = sourceEntities.map((entity): Entity => {
-		const items = entity.items?.filter((item) => !isRemoved(removedComponents, 'item', item.id.name));
+		const items = entity.items?.filter(
+			(item) => !isRemoved(removedComponents, {name: item.id.name, quality: item.id.quality, type: 'item'}),
+		);
 		if (items?.length === entity.items?.length) {
 			return entity;
 		}
@@ -51,7 +53,7 @@ function removeTileComponents(
 	blueprint: Blueprint,
 	removedComponents: ReadonlySet<BlueprintComponentRemovalKey>,
 ): Blueprint {
-	const tiles = blueprint.tiles?.filter((tile) => !isRemoved(removedComponents, 'tile', tile.name));
+	const tiles = blueprint.tiles?.filter((tile) => !isRemoved(removedComponents, {name: tile.name, type: 'tile'}));
 	if (tiles?.length === blueprint.tiles?.length) {
 		return blueprint;
 	}
@@ -73,7 +75,9 @@ export function removeBlueprintComponents(
 		return source;
 	}
 
-	let blueprint = removeEntities(source.blueprint, (entity) => isRemoved(removedComponents, 'entity', entity.name));
+	let blueprint = removeEntities(source.blueprint, (entity) =>
+		isRemoved(removedComponents, {name: entity.name, quality: entity.quality, type: 'entity'}),
+	);
 	blueprint = removeItemComponents(blueprint, removedComponents);
 	blueprint = removeTileComponents(blueprint, removedComponents);
 	return blueprint === source.blueprint ? source : {...source, blueprint};

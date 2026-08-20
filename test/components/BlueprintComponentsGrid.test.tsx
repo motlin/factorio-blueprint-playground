@@ -202,11 +202,69 @@ test('suppresses context menus and supports pointer and keyboard removal restora
 		removedContextMenuAllowed,
 	}).toStrictEqual({
 		calls: [
-			[{name: 'transport-belt', type: 'entity'}, true],
-			[{name: 'transport-belt', type: 'entity'}, false],
-			[{name: 'transport-belt', type: 'entity'}, true],
-			[{name: 'transport-belt', type: 'entity'}, false],
+			[{name: 'transport-belt', quality: undefined, type: 'entity'}, true],
+			[{name: 'transport-belt', quality: undefined, type: 'entity'}, false],
+			[{name: 'transport-belt', quality: undefined, type: 'entity'}, true],
+			[{name: 'transport-belt', quality: undefined, type: 'entity'}, false],
 		],
 		removedContextMenuAllowed: false,
+	});
+});
+
+const blueprintWithQualities: BlueprintString = {
+	blueprint: {
+		item: 'blueprint',
+		version: 0,
+		entities: [
+			{entity_number: 1, name: 'assembling-machine-3', position: {x: 0, y: 0}},
+			{entity_number: 2, name: 'assembling-machine-3', position: {x: 1, y: 0}},
+			{entity_number: 3, name: 'assembling-machine-3', position: {x: 2, y: 0}, quality: 'legendary'},
+		],
+	},
+};
+
+test('reports and renders removal state per quality', () => {
+	const onComponentRemovedChange = vi.fn<(component: BlueprintComponentIdentity, removed: boolean) => void>();
+	const {rerender} = render(
+		<BlueprintComponentsGrid
+			blueprint={blueprintWithQualities}
+			onComponentRemovedChange={onComponentRemovedChange}
+			removedComponents={new Set()}
+		/>,
+	);
+
+	const initialCounts = screen
+		.getAllByRole('button')
+		.map((slot) => slot.querySelector('.blueprint-components__count')?.textContent);
+	fireEvent.contextMenu(screen.getAllByRole('button')[1]);
+	rerender(
+		<BlueprintComponentsGrid
+			blueprint={blueprintWithQualities}
+			onComponentRemovedChange={onComponentRemovedChange}
+			removedComponents={
+				new Set([
+					blueprintComponentRemovalKey({
+						name: 'assembling-machine-3',
+						quality: 'legendary',
+						type: 'entity',
+					}),
+				])
+			}
+		/>,
+	);
+	const [normalAfterRemoval, legendaryAfterRemoval] = screen.getAllByRole('button');
+
+	expect({
+		calls: onComponentRemovedChange.mock.calls,
+		initialCounts,
+		countsAfterRemoval: [normalAfterRemoval, legendaryAfterRemoval].map(
+			(slot) => slot.querySelector('.blueprint-components__count')?.textContent,
+		),
+		statesAfterRemoval: [normalAfterRemoval, legendaryAfterRemoval].map((slot) => slot.dataset.componentSlotState),
+	}).toStrictEqual({
+		calls: [[{name: 'assembling-machine-3', quality: 'legendary', type: 'entity'}, true]],
+		initialCounts: ['2', '1'],
+		countsAfterRemoval: ['2', '0'],
+		statesAfterRemoval: ['included', 'removed'],
 	});
 });

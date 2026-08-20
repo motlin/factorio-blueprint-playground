@@ -51,6 +51,7 @@ test('removes component categories without mutating the immutable source', () =>
 	const removedComponents = new Set([
 		blueprintComponentRemovalKey({name: 'transport-belt', type: 'entity'}),
 		blueprintComponentRemovalKey({name: 'speed-module', type: 'item'}),
+		blueprintComponentRemovalKey({name: 'speed-module', quality: 'rare', type: 'item'}),
 		blueprintComponentRemovalKey({name: 'refined-concrete', type: 'tile'}),
 	]);
 
@@ -94,4 +95,121 @@ test('restores components by deriving a new result from the immutable source', (
 	removedComponents.delete(blueprintComponentRemovalKey({name: 'transport-belt', type: 'entity'}));
 
 	expect(removeBlueprintComponents(sourceBlueprint, removedComponents)).toStrictEqual(sourceBlueprint);
+});
+
+const qualityBlueprint: BlueprintString = {
+	blueprint: {
+		item: 'blueprint',
+		version: 0,
+		entities: [
+			{entity_number: 100, name: 'assembling-machine-3', position: {x: 0, y: 0}, quality: 'legendary'},
+			{entity_number: 200, name: 'assembling-machine-3', position: {x: 1, y: 0}},
+			{
+				entity_number: 300,
+				name: 'assembling-machine-3',
+				position: {x: 2, y: 0},
+				quality: 'rare',
+				items: [
+					{
+						id: {name: 'speed-module', quality: 'legendary'},
+						items: {in_inventory: [{inventory: 4, stack: 0, count: 1}]},
+					},
+					{
+						id: {name: 'speed-module'},
+						items: {in_inventory: [{inventory: 4, stack: 1, count: 1}]},
+					},
+				],
+			},
+		],
+	},
+};
+
+test('removes only the entity quality that was selected', () => {
+	const removedComponents = new Set([
+		blueprintComponentRemovalKey({name: 'assembling-machine-3', quality: 'legendary', type: 'entity'}),
+	]);
+
+	expect(removeBlueprintComponents(qualityBlueprint, removedComponents)).toStrictEqual({
+		blueprint: {
+			item: 'blueprint',
+			version: 0,
+			entities: [
+				{entity_number: 200, name: 'assembling-machine-3', position: {x: 1, y: 0}},
+				{
+					entity_number: 300,
+					name: 'assembling-machine-3',
+					position: {x: 2, y: 0},
+					quality: 'rare',
+					items: [
+						{
+							id: {name: 'speed-module', quality: 'legendary'},
+							items: {in_inventory: [{inventory: 4, stack: 0, count: 1}]},
+						},
+						{
+							id: {name: 'speed-module'},
+							items: {in_inventory: [{inventory: 4, stack: 1, count: 1}]},
+						},
+					],
+				},
+			],
+		},
+	});
+});
+
+test('removes only the item quality that was selected', () => {
+	const removedComponents = new Set([
+		blueprintComponentRemovalKey({name: 'speed-module', quality: 'legendary', type: 'item'}),
+	]);
+
+	expect(removeBlueprintComponents(qualityBlueprint, removedComponents)).toStrictEqual({
+		blueprint: {
+			item: 'blueprint',
+			version: 0,
+			entities: [
+				{entity_number: 100, name: 'assembling-machine-3', position: {x: 0, y: 0}, quality: 'legendary'},
+				{entity_number: 200, name: 'assembling-machine-3', position: {x: 1, y: 0}},
+				{
+					entity_number: 300,
+					name: 'assembling-machine-3',
+					position: {x: 2, y: 0},
+					quality: 'rare',
+					items: [
+						{
+							id: {name: 'speed-module'},
+							items: {in_inventory: [{inventory: 4, stack: 1, count: 1}]},
+						},
+					],
+				},
+			],
+		},
+	});
+});
+
+test('removes the unqualified entity without touching qualified variants', () => {
+	const removedComponents = new Set([
+		blueprintComponentRemovalKey({name: 'assembling-machine-3', type: 'entity'}),
+		blueprintComponentRemovalKey({name: 'speed-module', type: 'item'}),
+	]);
+
+	expect(removeBlueprintComponents(qualityBlueprint, removedComponents)).toStrictEqual({
+		blueprint: {
+			item: 'blueprint',
+			version: 0,
+			entities: [
+				{entity_number: 100, name: 'assembling-machine-3', position: {x: 0, y: 0}, quality: 'legendary'},
+				{
+					entity_number: 300,
+					name: 'assembling-machine-3',
+					position: {x: 2, y: 0},
+					quality: 'rare',
+					items: [
+						{
+							id: {name: 'speed-module', quality: 'legendary'},
+							items: {in_inventory: [{inventory: 4, stack: 0, count: 1}]},
+						},
+					],
+				},
+			],
+		},
+	});
 });
