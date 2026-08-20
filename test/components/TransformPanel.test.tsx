@@ -205,6 +205,19 @@ function renderedMappingRows(): HTMLElement[] {
 	return [...document.querySelectorAll<HTMLElement>('[data-mapping-key]')];
 }
 
+function clearAllMappings() {
+	while (renderedMappingRows().length > 0) {
+		const [row] = renderedMappingRows();
+		const mappingId = row.dataset.mappingKey ?? '';
+		for (const slot of within(row).getAllByRole('button')) {
+			fireEvent.contextMenu(slot);
+		}
+		if (document.querySelector(`[data-mapping-key="${mappingId}"]`) !== null) {
+			throw new Error(`Upgrade mapping ${mappingId} survived clearing both endpoints.`);
+		}
+	}
+}
+
 function mappingSlotIndex(button: HTMLElement): number {
 	const row = button.closest('[data-mapping-key]');
 	const parent = row?.parentElement;
@@ -2644,6 +2657,32 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 				.getByRole('button', {name: 'Edit entity filter, currently Assembling machine 2'})
 				.getAttribute('aria-label'),
 		).toBe('Edit entity filter, currently Assembling machine 2');
+	});
+
+	test('applies nothing after every suggested mapping is cleared', async () => {
+		const user = userEvent.setup();
+		render(<TransformPanel blueprint={blueprint} />);
+
+		openUpgradePlanner();
+		clearAllMappings();
+
+		expect({
+			mappingRows: renderedMappingRows().length,
+			matchSummary: screen.getByLabelText('0 matches').textContent,
+		}).toStrictEqual({
+			mappingRows: 0,
+			matchSummary: '0 matches',
+		});
+
+		await applyPlanner(user);
+
+		expect(navigate).toHaveBeenCalledExactlyOnceWith({
+			to: '/',
+			search: {
+				pasted: serializeBlueprint(blueprint),
+				selection: '',
+			},
+		});
 	});
 
 	test('edits an entity destination module-slot plan through the Entity settings extras', async () => {
