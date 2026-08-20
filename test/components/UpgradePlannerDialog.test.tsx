@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import {describe, expect, test, vi} from 'vite-plus/test';
 
 import {UpgradePlannerDialog} from '../../src/components/blueprint/panels/transform/UpgradePlannerDialog';
-import type {BlueprintString} from '../../src/parsing/types';
+import type {BlueprintString, UpgradeTargetSignal} from '../../src/parsing/types';
 
 const rootBlueprint: BlueprintString = {
 	blueprint: {
@@ -21,7 +21,9 @@ const modulePlan = [
 	{},
 ];
 
-function renderDialog(overrides: Partial<ComponentProps<typeof UpgradePlannerDialog>> = {}) {
+function renderDialog(
+	target: UpgradeTargetSignal = {type: 'entity', name: 'assembling-machine-3', module_slots: modulePlan},
+) {
 	const onTargetChange = vi.fn<ComponentProps<typeof UpgradePlannerDialog>['mappings']['onTargetChange']>();
 	const properties: ComponentProps<typeof UpgradePlannerDialog> = {
 		breadcrumb: "Alice's blueprint",
@@ -34,7 +36,7 @@ function renderDialog(overrides: Partial<ComponentProps<typeof UpgradePlannerDia
 					from: {type: 'entity', name: 'assembling-machine-2'},
 					mappingId: 'mapping-assembler',
 					slotIndex: 0,
-					to: {type: 'entity', name: 'assembling-machine-3', module_slots: modulePlan},
+					to: target,
 				},
 			],
 			onClearEndpoint: vi.fn<() => void>(),
@@ -95,7 +97,6 @@ function renderDialog(overrides: Partial<ComponentProps<typeof UpgradePlannerDia
 		scope: 'selection',
 		selectionScopeDisabled: false,
 		selectionScopeLabel: 'Selected blueprint',
-		...overrides,
 	};
 	render(<UpgradePlannerDialog {...properties} />);
 	return {onTargetChange};
@@ -151,6 +152,87 @@ describe('UpgradePlannerDialog module-slot plans', () => {
 					quality: 'rare',
 					module_limit: undefined,
 					module_slots: modulePlan,
+				},
+			],
+		]);
+	});
+
+	test('does not leak one mapping’s pending module plan into another mapping’s target picker', async () => {
+		renderDialog();
+
+		const {picker, user} = await openTargetPicker();
+		const slotsCheckbox = within(picker).getByRole('checkbox', {name: 'Module slots'});
+		await user.click(slotsCheckbox);
+		await user.click(slotsCheckbox);
+		await user.click(within(picker).getByRole('button', {name: 'Close Select upgrade'}));
+		await user.click(screen.getAllByRole('button', {name: 'Choose target for new mapping'})[0]);
+		const emptyPicker = screen.getByRole('dialog', {name: 'Select upgrade'});
+		await user.click(within(emptyPicker).getByRole('button', {name: 'Choose Assembling machine 3'}));
+		const extras = within(emptyPicker).getByRole('region', {name: 'Entity settings'});
+
+		expect({
+			enabled: within(extras).getByRole<HTMLInputElement>('checkbox', {name: 'Module slots'}).checked,
+			slots: within(extras)
+				.queryAllByRole('button')
+				.map((slot) => slot.getAttribute('aria-label')),
+		}).toStrictEqual({
+			enabled: false,
+			slots: [],
+		});
+	});
+
+	test('grows the slot editor to the capacity of a roomier destination', async () => {
+		renderDialog({
+			type: 'entity',
+			name: 'assembling-machine-2',
+			module_slots: [{type: 'item', name: 'speed-module-3'}, {}],
+		});
+
+		const {picker, user} = await openTargetPicker();
+		await user.click(within(picker).getByRole('button', {name: 'Choose Assembling machine 3'}));
+		const extras = within(picker).getByRole('region', {name: 'Entity settings'});
+
+		expect(
+			within(extras)
+				.queryAllByRole('button')
+				.map((slot) => slot.getAttribute('aria-label')),
+		).toStrictEqual([
+			'Edit module slot 1, currently Speed module 3',
+			'Choose module for slot 2',
+			'Choose module for slot 3',
+			'Choose module for slot 4',
+		]);
+	});
+
+	test('keeps a module chosen for a slot the previous destination did not have', async () => {
+		const {onTargetChange} = renderDialog({
+			type: 'entity',
+			name: 'assembling-machine-2',
+			module_slots: [{type: 'item', name: 'speed-module-3'}, {}],
+		});
+
+		const {picker, user} = await openTargetPicker();
+		await user.click(within(picker).getByRole('button', {name: 'Choose Assembling machine 3'}));
+		await user.click(within(picker).getByRole('button', {name: 'Choose module for slot 4'}));
+		const modulePicker = screen.getByRole('dialog', {name: 'Choose module'});
+		await user.click(within(modulePicker).getByRole('button', {name: 'Choose Efficiency module 3'}));
+		await user.click(within(picker).getByRole('button', {name: 'Confirm'}));
+
+		expect(onTargetChange.mock.calls).toStrictEqual([
+			[
+				'mapping-assembler',
+				0,
+				{
+					type: 'entity',
+					name: 'assembling-machine-3',
+					quality: 'normal',
+					module_limit: undefined,
+					module_slots: [
+						{type: 'item', name: 'speed-module-3'},
+						{},
+						{},
+						{type: 'item', name: 'efficiency-module-3'},
+					],
 				},
 			],
 		]);
