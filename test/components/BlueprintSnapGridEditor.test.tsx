@@ -353,3 +353,42 @@ test('commits positive integer dimensions without emitting invalid intermediate 
 		values: ['48', '96'],
 	});
 });
+
+test('accepts a typed negative grid offset through its intermediate minus sign', async () => {
+	const user = userEvent.setup();
+	const onChange = vi.fn<(settings: BlueprintSnapGrid) => void>();
+	render(
+		<EditorHarness
+			initialSettings={{
+				absolute: true,
+				enabled: true,
+				height: 64,
+				positionX: 0,
+				positionY: 0,
+				width: 32,
+			}}
+			onChange={onChange}
+		/>,
+	);
+
+	const positionX = screen.getByRole<HTMLInputElement>('spinbutton', {name: 'Grid position X'});
+	await user.clear(positionX);
+	await user.type(positionX, '-16');
+
+	expect({
+		lastCall: onChange.mock.calls.at(-1),
+		value: positionX.value,
+	}).toStrictEqual({
+		lastCall: [
+			{
+				absolute: true,
+				enabled: true,
+				height: 64,
+				positionX: -16,
+				positionY: 0,
+				width: 32,
+			},
+		],
+		value: '-16',
+	});
+});
