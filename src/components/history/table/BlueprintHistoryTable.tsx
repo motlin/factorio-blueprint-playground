@@ -8,12 +8,22 @@ import {TableHeader} from './TableHeader';
 
 type SortColumn = 'label' | 'source' | 'type' | 'updated' | 'version';
 
+/**
+ * `gameVersion` holds Factorio's 64-bit packed version as decimal text, so
+ * comparing it as a string orders 0.x releases after 2.x ones on digit count
+ * alone.
+ */
+function packedGameVersion(gameVersion: string | undefined): number {
+	const packed = Number(gameVersion ?? '');
+	return Number.isFinite(packed) ? packed : 0;
+}
+
 const sortKeys: Record<SortColumn, (record: ImportHistoryRecord) => number | string> = {
 	label: (record) => record.gameData.label ?? '',
 	source: (record) => record.metadata.fetchMethod ?? '',
 	type: (record) => record.gameData.type,
 	updated: (record) => record.metadata.lastUpdatedOn,
-	version: (record) => record.gameData.gameVersion ?? '',
+	version: (record) => packedGameVersion(record.gameData.gameVersion),
 };
 
 function sortedBlueprints(
