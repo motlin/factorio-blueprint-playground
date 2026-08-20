@@ -107,6 +107,7 @@ const meta = {
 			}),
 			onExport: fn(),
 		},
+		applyDisabled: false,
 		saveDisabled: false,
 		savePrompt: {
 			label: 'Starter belt upgrades',
