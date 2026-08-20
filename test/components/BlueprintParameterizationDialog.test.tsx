@@ -626,3 +626,69 @@ test('presents source-order name and value controls with keyboard edit, clear, a
 	await user.keyboard('{Enter}');
 	expect(onConfirm.mock.calls).toStrictEqual([[[{type: 'id', name: 'Input'}]]]);
 });
+
+test('arrow keys move focus through the dependency source list without crashing when it is empty', async () => {
+	const uncaught: string[] = [];
+	const recordUncaught = (event: ErrorEvent) => {
+		uncaught.push(event.message);
+	};
+	window.addEventListener('error', recordUncaught);
+	try {
+		const user = userEvent.setup();
+		render(
+			<BlueprintParameterizationDialog
+				dialogId="blueprint-parameterization"
+				onClose={vi.fn<() => void>()}
+				onConfirm={vi.fn<(nextParameters: Parameter[]) => void>()}
+				parameters={[
+					{type: 'id', name: 'Plate', id: 'iron-plate'},
+					{type: 'id', name: 'Gear', id: 'iron-gear-wheel'},
+				]}
+				signalOptions={[
+					{type: 'item', name: 'iron-plate'},
+					{type: 'item', name: 'iron-gear-wheel'},
+				]}
+			/>,
+		);
+
+		const dialog = screen.getByRole('dialog', {name: 'Blueprint parametrisation'});
+		await user.click(within(dialog).getByRole('button', {name: 'Parameter 1 dependency mode: Independent'}));
+		await user.click(
+			within(within(dialog).getByRole('listbox', {name: 'Dependency mode for parameter 1'})).getByRole('option', {
+				name: 'Ingredient of',
+			}),
+		);
+
+		const emptySource = within(dialog).getByRole('button', {name: 'Parameter 1 dependency source: None'});
+		emptySource.focus();
+		await user.keyboard('{ArrowDown}');
+		await waitFor(() => {
+			expect(within(dialog).getByRole('listbox', {name: 'Dependency source for parameter 1'}).textContent).toBe(
+				'No parameters above',
+			);
+		});
+		expect({
+			activeElement: document.activeElement,
+			options: within(dialog).queryAllByRole('option'),
+		}).toStrictEqual({activeElement: emptySource, options: []});
+
+		await user.keyboard('{ArrowUp}');
+		expect(document.activeElement).toBe(emptySource);
+
+		await user.click(within(dialog).getByRole('button', {name: 'Parameter 2 dependency mode: Independent'}));
+		await user.click(
+			within(within(dialog).getByRole('listbox', {name: 'Dependency mode for parameter 2'})).getByRole('option', {
+				name: 'Ingredient of',
+			}),
+		);
+		const populatedSource = within(dialog).getByRole('button', {name: 'Parameter 2 dependency source: None'});
+		populatedSource.focus();
+		await user.keyboard('{ArrowDown}');
+		await waitFor(() => {
+			expect(document.activeElement?.getAttribute('aria-label')).toBe('Plate');
+		});
+		expect(uncaught).toStrictEqual([]);
+	} finally {
+		window.removeEventListener('error', recordUncaught);
+	}
+});
