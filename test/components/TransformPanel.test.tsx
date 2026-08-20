@@ -1179,6 +1179,46 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 		});
 	});
 
+	test('keeps quality-preserving upgrade semantics after saving the suggested planner to the library', async () => {
+		const user = userEvent.setup();
+		const legendaryBelts: BlueprintString = {
+			blueprint: {
+				item: 'blueprint',
+				version: 0,
+				entities: [{entity_number: 1, name: 'transport-belt', quality: 'legendary', position: {x: 0, y: 0}}],
+			},
+		};
+		render(<TransformPanel blueprint={legendaryBelts} />);
+
+		openUpgradePlanner();
+		await user.click(screen.getByRole('button', {name: 'Save to Library'}));
+		const savePrompt = screen.getByRole('dialog', {name: 'Save to Blueprint Library'});
+		await user.click(within(savePrompt).getByRole('button', {name: 'Save Planner'}));
+		await screen.findByRole('status');
+		await applyPlanner(user);
+
+		expect(navigate).toHaveBeenCalledExactlyOnceWith({
+			to: '/',
+			search: {
+				pasted: serializeBlueprint({
+					blueprint: {
+						item: 'blueprint',
+						version: 0,
+						entities: [
+							{
+								entity_number: 1,
+								name: 'fast-transport-belt',
+								quality: 'legendary',
+								position: {x: 0, y: 0},
+							},
+						],
+					},
+				}),
+				selection: '',
+			},
+		});
+	});
+
 	test('preserves a dirty saved-planner draft when save is canceled and updates that library record in place', async () => {
 		const user = userEvent.setup();
 		const planner: UpgradePlanner = {
