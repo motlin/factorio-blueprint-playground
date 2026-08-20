@@ -24,7 +24,7 @@ function optionNames(
 
 describe('upgradePlannerSignals', () =>
 {
-	test('canonicalizes repeated item, entity, and recipe prototypes before source-order sorting', () =>
+	test('dedupes caller options on type, name, and quality before source-order sorting', () =>
 	{
 		const options = canonicalPickerOptions([
 			{
@@ -41,11 +41,8 @@ describe('upgradePlannerSignals', () =>
 			},
 			{
 				type: 'item',
-				name: 'fast-transport-belt',
-			},
-			{
-				type: 'entity',
 				name: 'transport-belt',
+				quality: 'legendary',
 			},
 			{
 				type: 'item',
@@ -54,19 +51,62 @@ describe('upgradePlannerSignals', () =>
 		]);
 
 		expect(
-			options.map(({name, type}) => (
+			options.map(({name, quality, type}) => (
 			{
 				name,
+				quality,
 				type,
 			})),
 		).toStrictEqual([
 			{
 				type: 'item',
 				name: 'transport-belt',
+				quality: undefined,
 			},
 			{
 				type: 'item',
+				name: 'transport-belt',
+				quality: 'legendary',
+			},
+			{
+				type: 'entity',
 				name: 'fast-transport-belt',
+				quality: undefined,
+			},
+			{
+				type: 'recipe',
+				name: 'transport-belt',
+				quality: undefined,
+			},
+		]);
+	});
+
+	test('treats an omitted quality and an explicit normal quality as the same option', () =>
+	{
+		const options = canonicalPickerOptions([
+			{
+				type: 'item',
+				name: 'iron-plate',
+			},
+			{
+				type: 'item',
+				name: 'iron-plate',
+				quality: 'normal',
+			},
+		]);
+
+		expect(
+			options.map(({name, quality, type}) => (
+			{
+				name,
+				quality,
+				type,
+			})),
+		).toStrictEqual([
+			{
+				type: 'item',
+				name: 'iron-plate',
+				quality: undefined,
 			},
 		]);
 	});

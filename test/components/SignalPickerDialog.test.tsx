@@ -1992,10 +1992,6 @@ test('keeps generated prototype order while search removes nonmatching prototype
 					name: 'fast-splitter',
 				},
 				{
-					type: 'entity',
-					name: 'transport-belt',
-				},
-				{
 					type: 'item',
 					name: 'transport-belt',
 				},
