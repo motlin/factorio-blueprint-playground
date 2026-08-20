@@ -323,6 +323,62 @@ test('shows the current hidden source as selected while editing a mapping', asyn
 	});
 });
 
+const itemIronPlate: SignalID = {type: 'item', name: 'iron-plate'};
+const recipeIronPlate: SignalID = {type: 'recipe', name: 'iron-plate'};
+const copperPlate: SignalID = {type: 'item', name: 'copper-plate'};
+
+const nameTwinIconBlueprint: BlueprintString = {
+	blueprint: {
+		item: 'blueprint',
+		version: 0,
+		icons: [
+			{index: 1, signal: itemIronPlate},
+			{index: 2, signal: recipeIronPlate},
+		],
+	},
+};
+
+test('keeps an item and its recipe name twin separate while editing a mapping source', async () => {
+	const user = userEvent.setup();
+	const onChange = vi.fn<IconReplacementDialogProps['onChange']>();
+	render(
+		<IconReplacementDialog
+			onChange={onChange}
+			onClose={vi.fn<IconReplacementDialogProps['onClose']>()}
+			replacements={[{from: recipeIronPlate, to: copperPlate}]}
+			rootBlueprint={nameTwinIconBlueprint}
+		/>,
+	);
+
+	await user.click(screen.getByRole('button', {name: 'Edit source, currently Iron plate'}));
+	const sourcePicker = screen.getByRole('dialog', {name: 'Choose source icon used here'});
+	const recipeOption = within(sourcePicker).getByRole('button', {name: 'Choose Iron plate'});
+	expect({
+		pressed: recipeOption.getAttribute('aria-pressed'),
+		tabs: within(sourcePicker)
+			.getAllByRole('tab')
+			.map((tab) => tab.getAttribute('aria-label')),
+		title: recipeOption.getAttribute('title'),
+	}).toStrictEqual({
+		pressed: 'true',
+		tabs: ['Intermediate products', 'Unsorted'],
+		title: 'Iron plate\nrecipe:iron-plate',
+	});
+
+	await user.click(within(sourcePicker).getByRole('tab', {name: 'Intermediate products'}));
+	const itemOption = within(sourcePicker).getByRole('button', {name: 'Choose Iron plate'});
+	expect({
+		pressed: itemOption.getAttribute('aria-pressed'),
+		title: itemOption.getAttribute('title'),
+	}).toStrictEqual({
+		pressed: 'false',
+		title: 'Iron plate\nitem:iron-plate',
+	});
+
+	await user.click(itemOption);
+	expect(onChange).toHaveBeenCalledExactlyOnceWith([{from: itemIronPlate, to: copperPlate}]);
+});
+
 test('offers replacement targets for a tile-typed source icon', async () => {
 	const user = userEvent.setup();
 	const onChange = vi.fn<IconReplacementDialogProps['onChange']>();
