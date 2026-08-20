@@ -1420,7 +1420,7 @@ describe('TransformPanel golden source-contract interaction sequences', () =>
 				renderCommits:
 				{
 					firstMapping: 6,
-					iconChange: 7,
+					iconChange: 8,
 					initial: 1,
 					loadEmptyPlanner: 4,
 					openPlanner: 1,
