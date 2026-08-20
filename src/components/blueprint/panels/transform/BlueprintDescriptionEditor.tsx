@@ -44,7 +44,11 @@ export function BlueprintDescriptionEditor({
 						onDescriptionChange(event.currentTarget.value);
 					}}
 					onKeyDown={(event) => {
-						event.stopPropagation();
+						// Typing must not reach the surrounding shortcut handlers, but the
+						// dialog owns Escape and the Tab focus trap.
+						if (event.key !== 'Escape' && event.key !== 'Tab') {
+							event.stopPropagation();
+						}
 					}}
 				/>
 			</div>
