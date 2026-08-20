@@ -4,6 +4,7 @@ import {createPortal} from 'react-dom';
 
 import {BlueprintWrapper} from '../../../../parsing/BlueprintWrapper';
 import {serializeBlueprint} from '../../../../parsing/blueprintParser';
+import {getErrorMessage} from '../../../../parsing/errors';
 import type {BlueprintString, SignalID} from '../../../../parsing/types';
 import {db, LIBRARY_ROOT_ID} from '../../../../storage/db';
 import {updateNestedBlueprint} from '../../../../transform/applyAtPath';
@@ -95,6 +96,7 @@ export function TransformPanel({
 	const [plannerSavePromptOpen, setPlannerSavePromptOpen] = useState(false);
 	const [plannerSavePending, setPlannerSavePending] = useState(false);
 	const [plannerSaveMode, setPlannerSaveMode] = useState<'new' | 'updated'>();
+	const [plannerSaveError, setPlannerSaveError] = useState<string>();
 	const {
 		blueprintEditorOpen,
 		closeConfirmationOpen: blueprintCloseConfirmationOpen,
@@ -233,6 +235,7 @@ export function TransformPanel({
 	};
 	const savePlannerAsNewLibraryRecord = async () => {
 		setPlannerSavePending(true);
+		setPlannerSaveError(undefined);
 		try {
 			const siblings = await db.listLibraryChildren(LIBRARY_ROOT_ID);
 			const record = await db.saveLibraryCopy({
@@ -245,6 +248,8 @@ export function TransformPanel({
 			upgradeDraft.onLibraryRecordSaved(record);
 			setPlannerSaveMode('new');
 			setPlannerSavePromptOpen(false);
+		} catch (reason: unknown) {
+			setPlannerSaveError(getErrorMessage(reason));
 		} finally {
 			setPlannerSavePending(false);
 		}
@@ -254,6 +259,7 @@ export function TransformPanel({
 			throw new Error('No existing Blueprint Library planner is loaded.');
 		}
 		setPlannerSavePending(true);
+		setPlannerSaveError(undefined);
 		try {
 			const record = await db.updateLibraryRecord({
 				id: upgradeDraft.libraryRecordId,
@@ -262,6 +268,8 @@ export function TransformPanel({
 			upgradeDraft.onLibraryRecordSaved(record);
 			setPlannerSaveMode('updated');
 			setPlannerSavePromptOpen(false);
+		} catch (reason: unknown) {
+			setPlannerSaveError(getErrorMessage(reason));
 		} finally {
 			setPlannerSavePending(false);
 		}
@@ -333,15 +341,18 @@ export function TransformPanel({
 					applyDisabled={upgradeDraft.applyDisabled}
 					saveDisabled={upgradeDraft.saveDisabled}
 					savePrompt={{
+						error: plannerSaveError,
 						existingRecordName:
 							upgradeDraft.savedLibraryRecord === undefined
 								? undefined
 								: (upgradeDraft.savedLibraryRecord.gameData.label ?? upgradeDraft.mappings.sourceLabel),
 						label: upgradeDraft.recordMetadata.label.trim(),
 						onCancel: () => {
+							setPlannerSaveError(undefined);
 							setPlannerSavePromptOpen(false);
 						},
 						onOpen: () => {
+							setPlannerSaveError(undefined);
 							setPlannerSavePromptOpen(true);
 						},
 						onSaveAsNew: () => {

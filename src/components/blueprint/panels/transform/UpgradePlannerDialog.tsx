@@ -139,6 +139,7 @@ interface UpgradePlannerRecordToolsProps {
 }
 
 interface UpgradePlannerSavePromptProps {
+	error?: string;
 	existingRecordName?: string;
 	label: string;
 	onCancel: () => void;
@@ -360,6 +361,7 @@ function UpgradePlannerDeleteConfirmation({
 }
 
 function UpgradePlannerSavePrompt({
+	error,
 	existingRecordName,
 	label,
 	onCancel,
@@ -407,6 +409,11 @@ function UpgradePlannerSavePrompt({
 						</>
 					)}
 				</p>
+				{error === undefined ? null : (
+					<p className="alert alert-error" role="alert">
+						{error}
+					</p>
+				)}
 				<div className="transform-dialog__actions">
 					<FactorioButton className="transform-button" disabled={pending} onClick={onCancel}>
 						Cancel Save
