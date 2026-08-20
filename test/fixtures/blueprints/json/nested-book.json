@@ -1,0 +1,60 @@
+{
+	"blueprint_book": {
+		"item": "blueprint-book",
+		"label": "Nested test book",
+		"version": 0,
+		"active_index": 0,
+		"blueprints": [
+			{
+				"index": 0,
+				"blueprint": {
+					"item": "blueprint",
+					"label": "Alice's belts",
+					"version": 0,
+					"entities": [
+						{
+							"entity_number": 1,
+							"name": "transport-belt",
+							"position": {"x": 0, "y": 0}
+						}
+					]
+				}
+			},
+			{
+				"index": 1,
+				"blueprint_book": {
+					"item": "blueprint-book",
+					"label": "Inner test book",
+					"version": 0,
+					"active_index": 0,
+					"blueprints": [
+						{
+							"index": 0,
+							"blueprint": {
+								"item": "blueprint",
+								"label": "Bob's inserter",
+								"version": 0,
+								"entities": [
+									{
+										"entity_number": 1,
+										"name": "fast-inserter",
+										"position": {"x": 1, "y": 1}
+									}
+								]
+							}
+						},
+						{
+							"index": 1,
+							"upgrade_planner": {
+								"item": "upgrade-planner",
+								"label": "Unchanged planner",
+								"version": 0,
+								"settings": {"mappers": []}
+							}
+						}
+					]
+				}
+			}
+		]
+	}
+}

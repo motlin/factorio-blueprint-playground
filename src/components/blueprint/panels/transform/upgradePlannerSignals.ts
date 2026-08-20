@@ -1,0 +1,351 @@
+import gameData from '../../../../generated/game-data.json';
+import gameUiSpec from '../../../../generated/game-ui-spec.json';
+import type {SignalID, UpgradeSourceSignal} from '../../../../parsing/types';
+
+/**
+ * Factorio 2.1.12 mapper endpoint eligibility contract:
+ *
+ * Empty and quality rules
+ *
+ * - Clearing either endpoint is always allowed. A newly confirmed From must have
+ *   an eligible entity/item prototype; an empty prototype with only a quality
+ *   condition is invalid. From uses an optional quality condition (Any or a
+ *   comparator plus threshold), while To uses one exact quality.
+ * - With no opposite endpoint, show all eligible sources or destinations. With
+ *   one present, filter the other picker against it immediately. Unknown
+ *   prototypes are not user choices.
+ * - Source and destination must have the same entity-versus-item kind. An entity
+ *   pair must be replace-compatible: fast-replace group, build position,
+ *   collision geometry/mask, belt kind, and rolling-stock geometry all matter.
+ *   An item pair must be module-to-module, module-to-empty-module-slot in either
+ *   direction, or fuel-to-fuel.
+ * - The same entity prototype is selectable when quality changes are available
+ *   or when its module slots can be configured. This permits quality-only and
+ *   module-plan records; an exact self-map may remain a no-op when applied.
+ *
+ * Module options
+ *
+ * - A module From may add an optional entity filter, limited to entities that
+ *   support modules; no filter means all eligible entities.
+ * - A module-item To may add a limit from 1 through the game-wide module-slot
+ *   maximum. Zero/omitted means unlimited, and the last compatible limit survives
+ *   toggling or a compatible target change.
+ * - An entity To with module capacity may enable an explicit slot plan. Disabled
+ *   means leave modules unchanged; enabled means a vector sized to that entity
+ *   and quality, preserving empty positions. Module choices obey the target's
+ *   allowed effects, and the slot plan itself is reorderable. Compatible values
+ *   are retained and resized when the target changes.
+ *
+ * These predicates constrain both picker visibility and final confirmation.
+ * `UpgradePlannerDialog` must not approximate them with blueprint occurrence or
+ * a website-maintained next-upgrade list.
+ *
+ * Evidence: UpgradeItemGui, UpgradeFilterSelectListGui,
+ * UpgradeDestinationSelectListGui, UpgradeData, UpgradeFilter,
+ * UpgradeDestination, UpgradeIDBase, and UpgradeMapping at Factorio 2.1.12.
+ */
+const pickerSignals: readonly SignalID[] = gameData.pickerSignals.map(({name, type}) => {
+	switch (type) {
+		case 'achievement':
+		case 'fluid':
+		case 'item':
+		case 'item-group':
+		case 'planet':
+		case 'recipe':
+		case 'space-location':
+		case 'technology':
+		case 'tile':
+		case 'virtual':
+			return {type, name};
+		default:
+			throw new Error(`Unknown generated picker signal type: ${type}`);
+	}
+});
+
+const upgradeEntityItemNames = new Set(gameData.upgradeEntityItems);
+const upgradeModuleNames = new Set(gameData.upgradeModuleItems);
+const upgradeFuelNames = new Set(gameData.upgradeFuelItems);
+const pickerSignalLayouts = new Map(
+	gameData.pickerSignals.map(({group, hidden, name, subgroup, type}, index) => [
+		`${type}:${name}`,
+		{group, hidden, index, subgroup},
+	]),
+);
+for (const [qualityIndex, quality] of gameUiSpec.qualities.entries()) {
+	pickerSignalLayouts.set(`quality:${quality.name}`, {
+		group: 'effects',
+		hidden: quality.hidden,
+		index: gameData.pickerSignals.length + qualityIndex,
+		subgroup: 'quality',
+	});
+}
+const chatIconTypeOrder = new Map(gameUiSpec.signals.typeOrder.map((type, index) => [type, index]));
+const nextUpgradeOrder = new Map<string, number>();
+for (const {from, to} of gameUiSpec.upgrades.next) {
+	if (!nextUpgradeOrder.has(from)) {
+		nextUpgradeOrder.set(from, nextUpgradeOrder.size);
+	}
+	if (!nextUpgradeOrder.has(to)) {
+		nextUpgradeOrder.set(to, nextUpgradeOrder.size);
+	}
+}
+const upgradeEntityGroups = gameUiSpec.upgrades.groups.map((group) => ({
+	...group,
+	members: group.members.filter(({name}) => upgradeEntityItemNames.has(name)),
+}));
+const upgradeEntityNames = new Set(upgradeEntityGroups.flatMap(({members}) => members.map(({name}) => name)));
+const beltPrototypeTypes = new Set(['splitter', 'transport-belt', 'underground-belt']);
+
+function pickerSignalLayout(signal: SignalID) {
+	const type = normalizedSignalType(signal);
+	return (
+		pickerSignalLayouts.get(`${type}:${signal.name}`) ??
+		(type === 'entity' ? pickerSignalLayouts.get(`item:${signal.name}`) : undefined)
+	);
+}
+
+function comparePickerSignalOrder(left: SignalID, right: SignalID): number {
+	const leftLayout = pickerSignalLayout(left);
+	const rightLayout = pickerSignalLayout(right);
+	if (leftLayout === undefined && rightLayout === undefined) {
+		return 0;
+	}
+	return (
+		(leftLayout?.index ?? Number.MAX_SAFE_INTEGER) - (rightLayout?.index ?? Number.MAX_SAFE_INTEGER) ||
+		left.name.localeCompare(right.name)
+	);
+}
+
+function compareUpgradeTargetOrder(left: SignalID, right: SignalID): number {
+	return (
+		(nextUpgradeOrder.get(left.name) ?? Number.MAX_SAFE_INTEGER) -
+			(nextUpgradeOrder.get(right.name) ?? Number.MAX_SAFE_INTEGER) || comparePickerSignalOrder(left, right)
+	);
+}
+
+function appendCurrentOption(options: SignalID[], currentSource: SignalID | undefined): SignalID[] {
+	if (
+		currentSource === undefined ||
+		options.some((option) => signalPrototypeIdentity(option) === signalPrototypeIdentity(currentSource))
+	) {
+		return options;
+	}
+	return [...options, currentSource];
+}
+
+function normalizedSignalType(signal: SignalID): string {
+	if (signal.type === 'virtual-signal') {
+		return 'virtual';
+	}
+	return signal.type ?? 'item';
+}
+
+export function signalIdentity(signal: UpgradeSourceSignal): string {
+	return [normalizedSignalType(signal), signal.name, signal.quality ?? 'normal', signal.comparator ?? '='].join(':');
+}
+
+export function signalName(signal: SignalID): string {
+	const words = signal.name.replace(/^signal-/, 'signal ').replaceAll('-', ' ');
+	return words.slice(0, 1).toUpperCase() + words.slice(1);
+}
+
+export function signalTitle(signal: UpgradeSourceSignal): string {
+	const quality = signal.quality === undefined ? '' : `\nQuality: ${signal.comparator ?? '='} ${signal.quality}`;
+	return `${signalName(signal)}\n${normalizedSignalType(signal)}:${signal.name}${quality}`;
+}
+
+export function signalPrototypeIdentity(signal: SignalID): string {
+	return `${normalizedSignalType(signal)}:${signal.name}`;
+}
+
+function chatIconType(signal: SignalID): string {
+	const type = normalizedSignalType(signal);
+	return type === 'planet' ? 'space-location' : type;
+}
+
+function chatIconTypePriority(signal: SignalID): number {
+	return chatIconTypeOrder.get(chatIconType(signal)) ?? Number.MAX_SAFE_INTEGER;
+}
+
+/**
+ * A caller can contribute the same picker option more than once, so drop exact
+ * repeats before applying the generated subgroup and prototype order. The key
+ * is the whole picker identity -- type, prototype name, and quality -- matching
+ * every other endpoint comparison in this path. A bare name would instead fuse
+ * distinct prototypes: 272 of the dataset's 323 items are recipe name twins, so
+ * a blueprint holding both `item:iron-plate` and `recipe:iron-plate` would offer
+ * one cell and silently retype the other icon on click. Collapsing inherited
+ * icon sprites is the catalog's job in `chatIconPickerOptions`.
+ */
+export function canonicalPickerOptions(options: readonly SignalID[]): SignalID[] {
+	const canonicalSignals = new Map<string, SignalID>();
+	for (const candidate of options) {
+		const identity = `${signalPrototypeIdentity(candidate)}:${candidate.quality ?? 'normal'}`;
+		if (!canonicalSignals.has(identity)) {
+			canonicalSignals.set(identity, candidate);
+		}
+	}
+	return [...canonicalSignals.values()].sort(comparePickerSignalOrder);
+}
+
+/**
+ * Factorio's ChatIconIDIterator visits prototype types in source order and
+ * retains the first signal for each icon sprite. The static web catalog can
+ * prove the common inherited-icon case by prototype name: items own their
+ * corresponding entity and recipe icons because ItemPrototypeList is visited
+ * first. Caller-supplied unique entity icons remain available.
+ */
+export function chatIconPickerOptions(additionalSignals: readonly SignalID[] = []): SignalID[] {
+	const candidates: SignalID[] = [
+		...pickerSignals,
+		...gameUiSpec.qualities.map(({name}): SignalID => ({type: 'quality', name})),
+		...additionalSignals,
+	].filter((signal) => chatIconTypeOrder.has(chatIconType(signal)));
+	const iconOwners = new Map<string, SignalID>();
+	for (const candidate of candidates) {
+		const owner = iconOwners.get(candidate.name);
+		if (owner === undefined || chatIconTypePriority(candidate) < chatIconTypePriority(owner)) {
+			iconOwners.set(candidate.name, candidate);
+		}
+	}
+	return canonicalPickerOptions([...iconOwners.values()]);
+}
+
+export function signalPickerGroup(signal: SignalID): string | undefined {
+	return pickerSignalLayout(signal)?.group;
+}
+
+export function signalPickerHidden(signal: SignalID): boolean {
+	return pickerSignalLayout(signal)?.hidden ?? false;
+}
+
+export function signalPickerSubgroup(signal: SignalID): string {
+	return pickerSignalLayout(signal)?.subgroup ?? `unmapped-${normalizedSignalType(signal)}`;
+}
+
+/**
+ * UpgradeHelpers::getMaxModuleSlots caps the module-limit input at the largest
+ * module-slot count of any prototype; the web derives it from the generated
+ * per-entity counts.
+ */
+export const maxModuleSlots = Math.max(...Object.values(gameData.entityModuleSlots));
+
+/**
+ * UpgradeHelpers::shouldEnableEntityFilter: the From picker's entity-filter
+ * extras apply to module items and the empty module slot; candidates are
+ * limited to entities that use modules.
+ */
+export function entityFilterAllowed(signal: SignalID): boolean {
+	return normalizedSignalType(signal) === 'item' && upgradeModuleNames.has(signal.name);
+}
+
+export function moduleEntityFilterOptions(): SignalID[] {
+	return Object.keys(gameData.entityModuleSlots)
+		.map((name): SignalID => ({type: 'entity', name}))
+		.sort(comparePickerSignalOrder);
+}
+
+/**
+ * UpgradeHelpers::getAvailableModuleSlots: an entity destination exposes the
+ * Entity settings module-slot editor when its prototype has module slots. The
+ * generated counts use the base prototype value; quality slot bonuses are not
+ * modeled.
+ */
+export function entityModuleSlotCount(signal: SignalID): number {
+	if (normalizedSignalType(signal) !== 'entity') {
+		return 0;
+	}
+	const counts: Record<string, number> = gameData.entityModuleSlots;
+	return counts[signal.name] ?? 0;
+}
+
+/**
+ * Per-slot module candidates mirror the game's module-only ChooseButton filter;
+ * an empty position is a cleared slot, so the empty-module-slot item is not a
+ * candidate. Allowed-effects filtering is not modeled and every module is
+ * offered.
+ */
+export function moduleSlotOptions(): SignalID[] {
+	return gameData.upgradeModuleItems
+		.filter((name) => name !== 'empty-module-slot')
+		.map((name): SignalID => ({type: 'item', name}));
+}
+
+/**
+ * UpgradeHelpers::shouldEnableModuleLimit: the Module limit extras apply only
+ * to true module destinations, never to the empty module slot.
+ */
+export function moduleLimitAllowed(signal: SignalID): boolean {
+	return (
+		normalizedSignalType(signal) === 'item' &&
+		upgradeModuleNames.has(signal.name) &&
+		signal.name !== 'empty-module-slot'
+	);
+}
+
+export function isUpgradeSourceOption(signal: SignalID): boolean {
+	const type = normalizedSignalType(signal);
+	return (
+		(type === 'entity' && upgradeEntityNames.has(signal.name)) ||
+		(type === 'item' && (upgradeModuleNames.has(signal.name) || upgradeFuelNames.has(signal.name)))
+	);
+}
+
+export function upgradeSourceOptions(currentSource?: SignalID): SignalID[] {
+	const generatedOptions = [
+		...upgradeEntityGroups.flatMap(({members}) => members.map(({name}): SignalID => ({type: 'entity', name}))),
+		...gameData.upgradeModuleItems.map((name): SignalID => ({type: 'item', name})),
+		...gameData.upgradeFuelItems.map((name): SignalID => ({type: 'item', name})),
+	].sort(comparePickerSignalOrder);
+	return appendCurrentOption(generatedOptions, currentSource);
+}
+
+export function isUpgradeTargetSelectionAllowed(source: UpgradeSourceSignal, target: SignalID): boolean {
+	return upgradeTargetOptions(source).some(
+		(option) => normalizedSignalType(option) === normalizedSignalType(target) && option.name === target.name,
+	);
+}
+
+/**
+ * Unsupported endpoint fields from imported planners remain opaque. They are
+ * retained when compatibility is knowable without runtime prototype data:
+ * module limits survive module-to-module changes, and entity module-slot plans
+ * survive quality changes on the same prototype. A different entity prototype
+ * resets opaque fields because slot counts and allowed effects are dynamic.
+ */
+export function replaceUpgradeTarget(currentTarget: SignalID | undefined, nextTarget: SignalID): SignalID {
+	if (currentTarget === undefined) {
+		return {...nextTarget};
+	}
+	const samePrototype = signalPrototypeIdentity(currentTarget) === signalPrototypeIdentity(nextTarget);
+	const compatibleModules =
+		normalizedSignalType(currentTarget) === 'item' &&
+		normalizedSignalType(nextTarget) === 'item' &&
+		upgradeModuleNames.has(currentTarget.name) &&
+		upgradeModuleNames.has(nextTarget.name);
+	return samePrototype || compatibleModules ? {...currentTarget, ...nextTarget} : {...nextTarget};
+}
+
+export function upgradeTargetOptions(source: UpgradeSourceSignal): SignalID[] {
+	if (normalizedSignalType(source) === 'item' && upgradeModuleNames.has(source.name)) {
+		return gameData.upgradeModuleItems.map((name) => ({type: 'item', name}));
+	}
+	if (normalizedSignalType(source) === 'item' && upgradeFuelNames.has(source.name)) {
+		return gameData.upgradeFuelItems.map((name) => ({type: 'item', name}));
+	}
+	if (normalizedSignalType(source) !== 'entity') {
+		return [];
+	}
+	const sourceGroup = upgradeEntityGroups.find(({members}) => members.some(({name}) => name === source.name));
+	const sourceMember = sourceGroup?.members.find(({name}) => name === source.name);
+	if (sourceGroup === undefined || sourceMember === undefined) {
+		return [];
+	}
+	return sourceGroup.members
+		.filter(
+			({prototypeType}) =>
+				!beltPrototypeTypes.has(sourceMember.prototypeType) || prototypeType === sourceMember.prototypeType,
+		)
+		.map(({name}): SignalID => ({type: 'entity', name}))
+		.sort(compareUpgradeTargetOrder);
+}

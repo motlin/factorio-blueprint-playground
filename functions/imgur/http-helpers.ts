@@ -1,7 +1,6 @@
 export function setupCORSHeaders(headers: Headers, originHeader: string | null, isPreflightRequest: boolean): Headers {
 	const allowedOrigins = [
-		'http://localhost:3000',
-		'http://localhost:5173',
+		'http://localhost:5713',
 		'https://factorioprints.com',
 		'https://factorio.school',
 		'https://factorio-blueprint-playground.pages.dev',
