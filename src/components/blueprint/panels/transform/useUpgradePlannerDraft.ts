@@ -79,7 +79,7 @@ function defaultSerializedMappings(): UpgradeMapping[]
 	return builtInUpgradeRules('upgrade').map(({from, to}, index) => (
 	{
 		from,
-		index: index + 1,
+		index,
 		to,
 	}));
 }
@@ -147,7 +147,7 @@ function plannerFromMappings(
 					const mapping: UpgradeMapping =
 					{
 						...structuredClone(serializedMapping),
-						index: slotIndex + 1,
+						index: slotIndex,
 					};
 					delete mapping.from;
 					delete mapping.to;
@@ -319,7 +319,7 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 				{
 					mappingId: `upgrade-mapping-${nextMappingIdentity.current.toString()}`,
 					serializedMapping: structuredClone(serializedMapping),
-					slotIndex: Math.max(0, index - 1),
+					slotIndex: index,
 				};
 				if (from !== undefined)
 				{

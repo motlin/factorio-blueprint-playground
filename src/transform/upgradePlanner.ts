@@ -91,7 +91,7 @@ const upgradeMappingSchema = z
 		{
 			from: upgradeSourceSignalSchema.optional(),
 			to: signalSchema.optional(),
-			index: z.number().int().nonnegative(),
+			index: z.number().int(),
 		},
 	)
 	.loose();
@@ -234,6 +234,34 @@ function validateRules(rules: readonly UpgradeRule[]): UpgradeRule[]
 	return [...rules];
 }
 
+/**
+ * A mapper index is the zero-based slot the pair occupies in the planner grid,
+ * so a negative index, a slot claimed twice, or a mapper without either
+ * endpoint has no position to draw. Rejecting them here makes a malformed
+ * planner a reportable parse failure instead of a crash once the grid renders.
+ */
+function validateMappers(mappers: readonly UpgradeMapping[]): void
+{
+	const usedIndexes = new Set<number>();
+	for (const mapping of mappers)
+	{
+		const index = mapping.index.toString();
+		if (mapping.index < 0)
+		{
+			throw new Error(`Upgrade planner mapping index ${index} must be 0 or greater.`);
+		}
+		if (usedIndexes.has(mapping.index))
+		{
+			throw new Error(`Upgrade planner mapping index ${index} is used more than once.`);
+		}
+		usedIndexes.add(mapping.index);
+		if (mapping.from === undefined && mapping.to === undefined)
+		{
+			throw new Error(`Upgrade planner mapping ${index} must define from, to, or both.`);
+		}
+	}
+}
+
 export function builtInUpgradeRules(direction: UpgradeDirection): UpgradeRule[]
 {
 	const rules = NEXT_UPGRADE_RULES.map((rule) =>
@@ -255,6 +283,7 @@ export function rulesFromUpgradePlanner(
 ): UpgradeRule[]
 {
 	const planner = upgradePlannerSchema.parse(plannerInput);
+	validateMappers(planner.settings.mappers);
 	if (planner.settings.mappers.length === 0)
 	{
 		return builtInUpgradeRules(direction);
@@ -290,7 +319,9 @@ export function parseUpgradePlanner(input: string): UpgradePlanner
 	const parsed: unknown = trimmedInput.startsWith('0')
 		? deserializeBlueprint(trimmedInput)
 		: JSON5.parse(trimmedInput);
-	return upgradePlannerStringSchema.parse(parsed).upgrade_planner;
+	const planner = upgradePlannerStringSchema.parse(parsed).upgrade_planner;
+	validateMappers(planner.settings.mappers);
+	return planner;
 }
 
 function qualityMatches(signal: SignalID, source: UpgradeSourceSignal): boolean
