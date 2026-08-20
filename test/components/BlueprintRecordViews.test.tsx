@@ -56,35 +56,26 @@ const records: LibraryRecord[] = [
 
 const comparePosition = (left: LibraryRecord, right: LibraryRecord) => left.position - right.position;
 
-const gridRecords = Array.from(
-	{length: 8},
-	(_, index): LibraryRecord => ({
-		...records[1],
-		id: `grid-blueprint-${(index + 1).toString()}`,
-		createdOn: index,
-		updatedOn: index,
-		gameData: {
-			...records[1].gameData,
-			label: `Grid blueprint ${(index + 1).toString()}`,
-		},
-		position: index,
-	}),
-);
+function seriesRecords(prefix: string, count: number): LibraryRecord[] {
+	const series: LibraryRecord[] = [];
+	for (let index = 0; index < count; index += 1) {
+		series.push({
+			...records[1],
+			id: `${prefix.toLowerCase()}-blueprint-${(index + 1).toString()}`,
+			createdOn: index,
+			updatedOn: index,
+			gameData: {
+				...records[1].gameData,
+				label: `${prefix} blueprint ${(index + 1).toString()}`,
+			},
+			position: index,
+		});
+	}
+	return series;
+}
 
-const slotRecords = Array.from(
-	{length: 12},
-	(_, index): LibraryRecord => ({
-		...records[1],
-		id: `slot-blueprint-${(index + 1).toString()}`,
-		createdOn: index,
-		updatedOn: index,
-		gameData: {
-			...records[1].gameData,
-			label: `Slot blueprint ${(index + 1).toString()}`,
-		},
-		position: index,
-	}),
-);
+const gridRecords = seriesRecords('Grid', 8);
+const slotRecords = seriesRecords('Slot', 12);
 
 const storedPreferences = new Map<string, string>();
 const localStorage = {
@@ -832,5 +823,34 @@ describe('BlueprintRecordViews', () => {
 			activated: onActivate.mock.calls.map(([record]) => record.id),
 			escaped: onEscape.mock.calls.length,
 		}).toStrictEqual({activated: ['book'], escaped: 1});
+	});
+
+	test('falls back to the list view when the browser refuses local storage access', async () => {
+		const user = userEvent.setup();
+		Object.defineProperty(window, 'localStorage', {
+			configurable: true,
+			get: () => {
+				throw new DOMException('Access is denied for this document.', 'SecurityError');
+			},
+		});
+
+		render(
+			<BlueprintRecordViews
+				aria-label="Blueprint records"
+				records={records}
+				compareRecords={comparePosition}
+				onActivate={() => undefined}
+			/>,
+		);
+		const listClass = screen.getByRole('list').className;
+		await user.click(screen.getByRole('button', {name: 'Grid view'}));
+
+		expect({
+			gridClass: screen.getByRole('list').className,
+			listClass,
+		}).toStrictEqual({
+			gridClass: 'blueprint-record-views__items blueprint-record-views__items--grid',
+			listClass: 'blueprint-record-views__items blueprint-record-views__items--list',
+		});
 	});
 });
