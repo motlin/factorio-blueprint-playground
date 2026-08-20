@@ -258,7 +258,7 @@ function mapMetadataIcons(root: BlueprintString, mapper: (signal: SignalID) => S
 			blueprint_book:
 			{
 				...book,
-				blueprints: book.blueprints.map((child): BlueprintStringWithIndex => (
+				blueprints: book.blueprints.map((child) => (
 				{
 					...mapMetadataIcons(child, mapper),
 					index: child.index,
@@ -291,6 +291,11 @@ function mapMetadataIcons(root: BlueprintString, mapper: (signal: SignalID) => S
 	throw new Error('Cannot replace icons in an invalid blueprint string.');
 }
 
+/**
+ * A blueprint icon is an arbitrary signal, so a replacement may cross signal
+ * types; only the sources have to stay unique. Type-locked endpoints belong to
+ * upgrade planner mappings, which rewrite entity and item prototypes instead.
+ */
 function replacementLookup(replacements: readonly IconReplacement[]): ReadonlyMap<string, SignalID>
 {
 	const lookup = new Map<string, SignalID>();
@@ -300,10 +305,6 @@ function replacementLookup(replacements: readonly IconReplacement[]): ReadonlyMa
 		if (lookup.has(key))
 		{
 			throw new Error(`More than one icon replacement is defined for ${replacement.from.name}.`);
-		}
-		if (normalizedSignalType(replacement.from) !== normalizedSignalType(replacement.to))
-		{
-			throw new Error(`Icon replacement ${replacement.from.name} cannot change signal types.`);
 		}
 		lookup.set(key, replacement.to);
 	}
