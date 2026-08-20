@@ -1,5 +1,5 @@
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
-import {render, screen} from '@testing-library/react';
+import {render, screen, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {beforeEach, describe, expect, test, vi} from 'vite-plus/test';
 
@@ -140,6 +140,90 @@ describe('BlueprintPlayground', () => {
 								},
 							},
 						],
+					},
+				},
+				null,
+				2,
+			),
+		);
+	});
+
+	test('keeps tiles and trains when the editor opens on an imported blueprint', async () => {
+		const user = userEvent.setup();
+		const writeText = vi.fn<(text: string) => Promise<void>>().mockResolvedValue(undefined);
+		Object.defineProperty(navigator, 'clipboard', {
+			configurable: true,
+			value: {writeText},
+		});
+		mocks.existingBlueprint = storedBlueprint('');
+		mocks.search = {pasted: 'alice-blueprint', selection: ''};
+		mocks.loaderData = {
+			success: true,
+			blueprintString: {
+				blueprint: {
+					item: 'blueprint',
+					label: "Alice's blueprint",
+					version: 0,
+					entities: [
+						{entity_number: 100, name: 'assembling-machine-3', position: {x: 0, y: 0}},
+						{entity_number: 200, name: 'locomotive', position: {x: 1, y: 0}},
+					],
+					tiles: [{name: 'landfill', position: {x: 0, y: 1}}],
+				},
+			},
+			pasted: 'alice-blueprint',
+			fetchMethod: 'data',
+		};
+		const queryClient = new QueryClient({
+			defaultOptions: {queries: {retry: false}},
+		});
+		render(
+			<QueryClientProvider client={queryClient}>
+				<BlueprintPlayground />
+			</QueryClientProvider>,
+		);
+
+		await user.click(screen.getByRole('button', {name: 'Open Blueprint Editor'}));
+		const filtersSection = screen.getByRole('heading', {name: 'Filters'}).closest('section');
+		if (filtersSection === null) {
+			throw new Error('Expected the imported blueprint filters section.');
+		}
+
+		expect({
+			commitAction: screen.queryByRole('button', {name: 'Create blueprint'}) === null ? 'save' : 'create',
+			filters: within(filtersSection)
+				.getAllByRole<HTMLInputElement>('checkbox')
+				.map((checkbox) => ({
+					checked: checkbox.checked,
+					label: checkbox.labels?.[0]?.textContent,
+				})),
+		}).toStrictEqual({
+			commitAction: 'save',
+			filters: [
+				{checked: true, label: 'Entities'},
+				{checked: true, label: 'Tiles'},
+				{checked: true, label: 'Trains'},
+			],
+		});
+
+		await user.click(screen.getByRole('button', {name: 'Edit blueprint title'}));
+		await user.clear(screen.getByRole('textbox', {name: 'Blueprint title'}));
+		await user.type(screen.getByRole('textbox', {name: 'Blueprint title'}), 'Imported blueprint{Enter}');
+		await user.click(screen.getByRole('button', {name: 'Save blueprint'}));
+		await user.click(screen.getAllByRole('button', {name: 'Copy JSON'})[0]);
+
+		expect(writeText).toHaveBeenCalledExactlyOnceWith(
+			JSON.stringify(
+				{
+					blueprint: {
+						item: 'blueprint',
+						version: 0,
+						entities: [
+							{entity_number: 100, name: 'assembling-machine-3', position: {x: 0, y: 0}},
+							{entity_number: 200, name: 'locomotive', position: {x: 1, y: 0}},
+						],
+						tiles: [{name: 'landfill', position: {x: 0, y: 1}}],
+						label: 'Imported blueprint',
 					},
 				},
 				null,
