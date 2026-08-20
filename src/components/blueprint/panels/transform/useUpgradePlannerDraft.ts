@@ -53,7 +53,6 @@ interface UpgradeMappingDraft
 {
 	from?: UpgradeSourceSignal;
 	mappingId: string;
-	preserveQuality: boolean;
 	serializedMapping?: UpgradeMapping;
 	slotIndex: number;
 	to?: SignalID;
@@ -75,9 +74,29 @@ interface UpgradePlannerDraftApplication
 	textReplacementEnabled: boolean;
 }
 
+function defaultSerializedMappings(): UpgradeMapping[]
+{
+	return builtInUpgradeRules('upgrade').map(({from, to}, index) => (
+	{
+		from,
+		index: index + 1,
+		to,
+	}));
+}
+
+/**
+ * Deriving quality agnosticism from the endpoints instead of storing it keeps a
+ * mapping's meaning stable across the serialize and re-parse round trip that
+ * saving to the Blueprint Library performs.
+ */
+function preservesQuality(from: UpgradeSourceSignal, to: SignalID): boolean
+{
+	return from.comparator === undefined && from.quality === undefined && to.quality === undefined;
+}
+
 function completeRules(mappings: readonly UpgradeMappingDraft[], source: string): UpgradeRule[]
 {
-	const explicitRules = mappings.flatMap(({from, preserveQuality, to}) =>
+	const explicitRules = mappings.flatMap(({from, to}) =>
 		from === undefined || to === undefined
 			? []
 			: [
@@ -86,7 +105,7 @@ function completeRules(mappings: readonly UpgradeMappingDraft[], source: string)
 						{
 							...from,
 						},
-						preserveQuality,
+						preserveQuality: preservesQuality(from, to),
 						to:
 						{
 							...to,
@@ -259,6 +278,9 @@ function applySession(
  *   internal holes, source quality conditions and module filters, destination
  *   exact quality, module limits, and module-slot plans. Derived candidates,
  *   exclusions, overrides, match counts, and visible rows are projections only.
+ * - A mapping that names no quality on either endpoint is quality agnostic: it
+ *   matches every quality of its source and leaves that quality on the target.
+ *   Saving, reloading, or pasting such a mapping never changes that meaning.
  * - A confirmed picker value replaces its endpoint in the draft immediately.
  *   Clearing replaces only that endpoint; swapping replaces the two complete
  *   indexed records. Loading or pasting a planner installs its indexed mapper
@@ -285,12 +307,7 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 	{
 		const serializedMappings =
 			planner === undefined && includeDefaultMappings
-				? builtInUpgradeRules('upgrade').map(({from, to}, index): UpgradeMapping => (
-					{
-						from,
-						index: index + 1,
-						to,
-					}))
+				? defaultSerializedMappings()
 				: (planner?.settings.mappers ?? []);
 		return [...serializedMappings]
 			.sort((left, right) => left.index - right.index)
@@ -301,7 +318,6 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 				const mapping: UpgradeMappingDraft =
 				{
 					mappingId: `upgrade-mapping-${nextMappingIdentity.current.toString()}`,
-					preserveQuality: includeDefaultMappings,
 					serializedMapping: structuredClone(serializedMapping),
 					slotIndex: Math.max(0, index - 1),
 				};
@@ -676,7 +692,6 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 									...nextSource,
 								},
 								mappingId: `upgrade-mapping-${nextMappingIdentity.current.toString()}`,
-								preserveQuality: false,
 								slotIndex,
 							},
 						];
@@ -694,7 +709,6 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 							{
 								...nextSource,
 							},
-							preserveQuality: false,
 						};
 						if (
 							nextMapping.to !== undefined &&
@@ -719,7 +733,6 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 							...current,
 							{
 								mappingId: `upgrade-mapping-${nextMappingIdentity.current.toString()}`,
-								preserveQuality: false,
 								slotIndex,
 								to:
 								{
@@ -733,7 +746,6 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 							?
 								{
 									...mapping,
-									preserveQuality: false,
 									to: replaceUpgradeTarget(mapping.to, nextTarget),
 								}
 							: mapping,
