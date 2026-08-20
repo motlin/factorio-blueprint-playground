@@ -133,7 +133,7 @@ function appendCurrentOption(options: SignalID[], currentSource: SignalID | unde
 	return [...options, currentSource];
 }
 
-export function normalizedSignalType(signal: SignalID): string {
+function normalizedSignalType(signal: SignalID): string {
 	if (signal.type === 'virtual-signal') {
 		return 'virtual';
 	}

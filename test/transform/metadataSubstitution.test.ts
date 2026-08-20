@@ -259,3 +259,40 @@ test('replaces virtual signal icons throughout nested blueprint books', () => {
 		},
 	});
 });
+
+test('replaces an icon with a signal of a different type', () => {
+	const input: BlueprintString = {
+		blueprint: {
+			item: 'blueprint',
+			version: 0,
+			icons: [
+				{index: 1, signal: {type: 'tile', name: 'landfill'}},
+				{index: 2, signal: {type: 'entity', name: 'assembling-machine-2'}},
+			],
+		},
+	};
+	const replacements = [
+		{from: {type: 'tile' as const, name: 'landfill'}, to: {type: 'item' as const, name: 'landfill'}},
+		{
+			from: {type: 'entity' as const, name: 'assembling-machine-2'},
+			to: {type: 'virtual' as const, name: 'signal-blue'},
+		},
+	];
+
+	expect({
+		count: analyzeIconReplacements(input, replacements),
+		result: applyIconReplacements(input, replacements),
+	}).toStrictEqual({
+		count: 2,
+		result: {
+			blueprint: {
+				item: 'blueprint',
+				version: 0,
+				icons: [
+					{index: 1, signal: {type: 'item', name: 'landfill'}},
+					{index: 2, signal: {type: 'virtual', name: 'signal-blue'}},
+				],
+			},
+		},
+	});
+});

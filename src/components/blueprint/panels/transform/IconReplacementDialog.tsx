@@ -10,7 +10,7 @@ import {
 import {FactorioButton, FactorioButtonKind} from '../../../ui/FactorioUi';
 import {SignalPickerDialog} from './SignalPickerDialog';
 import {SignalSlot} from './UpgradeMappingRow';
-import {chatIconPickerOptions, normalizedSignalType, signalIdentity, signalName} from './upgradePlannerSignals';
+import {chatIconPickerOptions, signalIdentity, signalName} from './upgradePlannerSignals';
 import {useDialogFocus} from './useDialogFocus';
 
 export interface IconReplacementDialogProps {
@@ -55,12 +55,15 @@ function replacementCount(candidates: readonly MetadataIconCandidate[], signal: 
 	return candidates.find((candidate) => signalIdentity(candidate.signal) === signalIdentity(signal))?.count ?? 0;
 }
 
+/**
+ * A blueprint icon accepts any signal the chat-icon catalog offers, so targets
+ * are not narrowed to the source's own type: the catalog resolves tile- and
+ * entity-typed sprites to their item prototypes, so a same-type filter leaves
+ * those sources with no target at all. The source itself is the only exclusion
+ * because replacing an icon with itself is a no-op.
+ */
 function targetOptions(source: SignalID): SignalID[] {
-	return chatIconPickerOptions().filter(
-		(signal) =>
-			normalizedSignalType(signal) === normalizedSignalType(source) &&
-			signalIdentity(signal) !== signalIdentity(source),
-	);
+	return chatIconPickerOptions().filter((signal) => signalIdentity(signal) !== signalIdentity(source));
 }
 
 export function IconReplacementDialog({onChange, onClose, replacements, rootBlueprint}: IconReplacementDialogProps) {
