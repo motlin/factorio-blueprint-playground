@@ -251,11 +251,15 @@ function ParameterDependencySource({
 						event.preventDefault();
 						onChange('');
 					} else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+						const focusFirst = event.key === 'ArrowDown';
 						event.preventDefault();
 						setOpen(true);
 						requestAnimationFrame(() => {
 							const available = rootReference.current?.querySelectorAll<HTMLElement>('[role="option"]');
-							available?.item(event.key === 'ArrowDown' ? 0 : Math.max(0, available.length - 1)).focus();
+							if (available === undefined || available.length === 0) {
+								return;
+							}
+							available[focusFirst ? 0 : available.length - 1]?.focus();
 						});
 					}
 				}}
