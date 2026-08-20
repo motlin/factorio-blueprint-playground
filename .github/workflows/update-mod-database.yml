@@ -52,18 +52,21 @@ jobs:
 
       - run: just install
 
-      - name: Refresh pinned sources and generated database
+      - name: Refresh pinned mod database sources
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          vp run update:mod-db-sources
-          vp run generate:mod-db
+        run: vp run update:mod-db-sources
 
+      # generate:mod-db reads src/generated/game-ui-spec.json, so the
+      # specification is regenerated first or the database lands a cycle stale.
       - name: Refresh generated game UI specification
         if: env.FACTORIO_SOURCE_TOKEN != ''
         env:
           FACTORIO_SOURCE_REPOSITORY: .factorio-source
         run: vp run generate:game-ui-spec
+
+      - name: Refresh generated mod database
+        run: vp run generate:mod-db
 
       - name: Verify generated update
         run: just verify
