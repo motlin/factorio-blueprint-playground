@@ -6,7 +6,7 @@ import {beforeEach, describe, expect, test, vi} from 'vite-plus/test';
 import {TransformPanel} from '../../src/components/blueprint/panels/transform/TransformPanel';
 import {BlueprintEditorSourceMode} from '../../src/components/blueprint/panels/transform/useBlueprintEditorDraft';
 import {deserializeBlueprint, serializeBlueprint} from '../../src/parsing/blueprintParser';
-import type {BlueprintString, BlueprintStringWithIndex, UpgradePlanner} from '../../src/parsing/types';
+import type {BlueprintString, BlueprintStringWithIndex, UpgradeMapping, UpgradePlanner} from '../../src/parsing/types';
 import {db, LIBRARY_ROOT_ID, type LibraryRecord} from '../../src/storage/db';
 import {stripTiles, stripTrains} from '../../src/transform/strip';
 import {parseUpgradePlanner} from '../../src/transform/upgradePlanner';
@@ -62,72 +62,72 @@ const rareBeltUpgradesPlanner: UpgradePlanner = {
 		icons: [{index: 1, signal: {type: 'virtual', name: 'signal-red'}}],
 		mappers: [
 			{
-				index: 1,
+				index: 0,
 				from: {type: 'entity', name: 'assembling-machine-1'},
 				to: {type: 'entity', name: 'assembling-machine-2'},
 			},
 			{
-				index: 2,
+				index: 1,
 				from: {type: 'entity', name: 'assembling-machine-2'},
 				to: {type: 'entity', name: 'assembling-machine-3'},
 			},
 			{
-				index: 3,
+				index: 2,
 				from: {type: 'entity', name: 'inserter'},
 				to: {type: 'entity', name: 'fast-inserter'},
 			},
 			{
-				index: 4,
+				index: 3,
 				from: {type: 'entity', name: 'fast-inserter'},
 				to: {type: 'entity', name: 'bulk-inserter'},
 			},
 			{
-				index: 5,
+				index: 4,
 				from: {type: 'entity', name: 'splitter'},
 				to: {type: 'entity', name: 'fast-splitter'},
 			},
 			{
-				index: 6,
+				index: 5,
 				from: {type: 'entity', name: 'fast-splitter'},
 				to: {type: 'entity', name: 'express-splitter'},
 			},
 			{
-				index: 7,
+				index: 6,
 				from: {type: 'entity', name: 'express-splitter'},
 				to: {type: 'entity', name: 'turbo-splitter'},
 			},
 			{
-				index: 8,
+				index: 7,
 				from: {type: 'entity', name: 'stone-furnace'},
 				to: {type: 'entity', name: 'steel-furnace'},
 			},
 			{
-				index: 9,
+				index: 8,
 				from: {type: 'entity', name: 'transport-belt'},
 				to: {type: 'entity', name: 'fast-transport-belt', quality: 'rare'},
 			},
 			{
-				index: 10,
+				index: 9,
 				from: {type: 'entity', name: 'fast-transport-belt'},
 				to: {type: 'entity', name: 'express-transport-belt'},
 			},
 			{
-				index: 11,
+				index: 10,
 				from: {type: 'entity', name: 'express-transport-belt'},
 				to: {type: 'entity', name: 'turbo-transport-belt'},
 			},
 			{
-				index: 12,
+				index: 11,
 				from: {type: 'entity', name: 'underground-belt'},
 				to: {type: 'entity', name: 'fast-underground-belt'},
 			},
 			{
-				index: 13,
+				index: 12,
 				from: {type: 'entity', name: 'fast-underground-belt'},
 				to: {type: 'entity', name: 'express-underground-belt'},
 			},
 			{
-				index: 14,
+				index: 13,
 				from: {type: 'entity', name: 'express-underground-belt'},
 				to: {type: 'entity', name: 'turbo-underground-belt'},
 			},
@@ -2859,12 +2859,12 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 						settings: {
 							mappers: [
 								{
-									index: 1,
+									index: 0,
 									from: {type: 'entity', name: 'transport-belt'},
 									to: {type: 'entity', name: 'fast-transport-belt'},
 								},
 								{
-									index: 2,
+									index: 1,
 									from: {type: 'item', name: 'speed-module'},
 									to: {type: 'item', name: 'speed-module-2'},
 								},
@@ -3002,12 +3002,12 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			{
 				label: 'Mapping from Transport belt to Fast transport belt',
 				matchSummary: `1 match. ${mappingInstructions}`,
-				slot: 99,
+				slot: 100,
 			},
 			{
 				label: 'Mapping from Speed module to Speed module 2',
 				matchSummary: `0 matches. ${mappingInstructions}`,
-				slot: 199,
+				slot: 200,
 			},
 		]);
 	});
@@ -3862,13 +3862,13 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 				{
 					from: 'Transport belt\nentity:transport-belt',
 					matchSummary: `1 match. ${mappingInstructions}`,
-					slot: 99,
+					slot: 100,
 					to: 'Fast transport belt\nentity:fast-transport-belt',
 				},
 				{
 					from: 'Speed module\nitem:speed-module',
 					matchSummary: `0 matches. ${mappingInstructions}`,
-					slot: 199,
+					slot: 200,
 					to: 'Speed module 2\nitem:speed-module-2',
 				},
 			],
@@ -3897,13 +3897,13 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			{
 				from: 'Transport belt\nentity:transport-belt',
 				matchSummary: `1 match. ${mappingInstructions}`,
-				slot: 99,
+				slot: 100,
 				to: 'Express transport belt\nentity:express-transport-belt',
 			},
 			{
 				from: 'Inserter\nentity:inserter',
 				matchSummary: `0 matches. ${mappingInstructions}`,
-				slot: 199,
+				slot: 200,
 				to: 'Fast inserter\nentity:fast-inserter',
 			},
 		]);
@@ -4058,6 +4058,74 @@ describe('TransformPanel golden source-contract interaction sequences', () => {
 			pastePanel: screen.queryByRole('region', {name: 'Paste planner definition'}),
 			pasteTextbox: screen.queryByRole('textbox', {name: 'Planner string or JSON'}),
 		}).toStrictEqual({alert: null, pastePanel: null, pasteTextbox: null});
+	});
+
+	test('positions zero-based mapper indexes and reports mappers no grid can position', async () => {
+		const user = userEvent.setup();
+		render(<TransformPanel blueprint={blueprint} />);
+
+		openUpgradePlanner();
+		const mappingRegion = screen.getByRole('region', {name: 'Upgrade mappings'});
+		await choosePlanner(user, 'Paste upgrade planner…');
+		const pastePanel = screen.getByRole('region', {name: 'Paste planner definition'});
+		const pasteTextbox = screen.getByRole<HTMLTextAreaElement>('textbox', {name: 'Planner string or JSON'});
+		const pastedMappers = (mappers: readonly UpgradeMapping[]): string =>
+			JSON.stringify({upgrade_planner: {item: 'upgrade-planner', version: 0, settings: {mappers}}});
+		const belt = {type: 'entity', name: 'transport-belt'} as const;
+		const fastBelt = {type: 'entity', name: 'fast-transport-belt'} as const;
+		const speedModule = {type: 'item', name: 'speed-module'} as const;
+		const speedModule2 = {type: 'item', name: 'speed-module-2'} as const;
+
+		fireEvent.change(pasteTextbox, {
+			target: {
+				value: pastedMappers([
+					{index: 0, from: belt, to: fastBelt},
+					{index: 1, from: speedModule, to: speedModule2},
+				]),
+			},
+		});
+		expect({
+			alert: within(pastePanel).queryByRole('alert'),
+			beltSlot: mappingSlotIndex(screen.getByRole('button', {name: 'Choose source, currently Transport belt'})),
+			mappingCount: mappingRegion.querySelectorAll('[data-mapping-key]').length,
+			moduleSlot: mappingSlotIndex(screen.getByRole('button', {name: 'Choose source, currently Speed module'})),
+			state: pastePanel.dataset.validationState,
+		}).toStrictEqual({alert: null, beltSlot: 0, mappingCount: 2, moduleSlot: 1, state: 'valid'});
+
+		fireEvent.change(pasteTextbox, {
+			target: {
+				value: pastedMappers([
+					{index: 0, from: belt, to: fastBelt},
+					{index: 0, from: speedModule, to: speedModule2},
+				]),
+			},
+		});
+		expect({
+			alert: within(pastePanel).getByRole('alert').textContent,
+			invalid: pasteTextbox.getAttribute('aria-invalid'),
+			mappingCount: mappingRegion.querySelectorAll('[data-mapping-key]').length,
+			mappingRegionPreserved: screen.getByRole('region', {name: 'Upgrade mappings'}),
+			state: pastePanel.dataset.validationState,
+		}).toStrictEqual({
+			alert: 'Upgrade planner mapping index 0 is used more than once.',
+			invalid: 'true',
+			mappingCount: 0,
+			mappingRegionPreserved: mappingRegion,
+			state: 'invalid',
+		});
+
+		fireEvent.change(pasteTextbox, {target: {value: pastedMappers([{index: 0}])}});
+		expect({
+			alert: within(pastePanel).getByRole('alert').textContent,
+			mappingCount: mappingRegion.querySelectorAll('[data-mapping-key]').length,
+			mappingRegionPreserved: screen.getByRole('region', {name: 'Upgrade mappings'}),
+			state: pastePanel.dataset.validationState,
+		}).toStrictEqual({
+			alert: 'Upgrade planner mapping 0 must define from, to, or both.',
+			mappingCount: 0,
+			mappingRegionPreserved: mappingRegion,
+			state: 'invalid',
+		});
 	});
 
 	test('saves a pasted planner with a zero-match mapping and applies its matching rule', async () => {
