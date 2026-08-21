@@ -185,7 +185,21 @@ export function canonicalPickerOptions(options: readonly SignalID[]): SignalID[]
 			canonicalSignals.set(identity, candidate);
 		}
 	}
-	return [...canonicalSignals.values()].sort(comparePickerSignalOrder);
+	/*
+	 * Resolve each layout once instead of twice per comparison. Sorting the full
+	 * catalog otherwise costs tens of thousands of `pickerSignalLayout` lookups,
+	 * each building a template-string key.
+	 */
+	const ordered = [...canonicalSignals.values()].map((signal) => {
+		const layout = pickerSignalLayout(signal);
+		return {index: layout?.index ?? Number.MAX_SAFE_INTEGER, layered: layout !== undefined, signal};
+	});
+	ordered.sort((left, right) =>
+		!left.layered && !right.layered
+			? 0
+			: left.index - right.index || left.signal.name.localeCompare(right.signal.name),
+	);
+	return ordered.map(({signal}) => signal);
 }
 
 /**
@@ -195,20 +209,36 @@ export function canonicalPickerOptions(options: readonly SignalID[]): SignalID[]
  * corresponding entity and recipe icons because ItemPrototypeList is visited
  * first. Caller-supplied unique entity icons remain available.
  */
-export function chatIconPickerOptions(additionalSignals: readonly SignalID[] = []): SignalID[] {
-	const candidates: SignalID[] = [
-		...pickerSignals,
-		...gameUiSpec.qualities.map(({name}): SignalID => ({type: 'quality', name})),
-		...additionalSignals,
-	].filter((signal) => chatIconTypeOrder.has(chatIconType(signal)));
-	const iconOwners = new Map<string, SignalID>();
+function claimIconOwners(owners: Map<string, SignalID>, candidates: readonly SignalID[]): Map<string, SignalID> {
 	for (const candidate of candidates) {
-		const owner = iconOwners.get(candidate.name);
+		if (!chatIconTypeOrder.has(chatIconType(candidate))) {
+			continue;
+		}
+		const owner = owners.get(candidate.name);
 		if (owner === undefined || chatIconTypePriority(candidate) < chatIconTypePriority(owner)) {
-			iconOwners.set(candidate.name, candidate);
+			owners.set(candidate.name, candidate);
 		}
 	}
-	return canonicalPickerOptions([...iconOwners.values()]);
+	return owners;
+}
+
+/*
+ * The catalog's own signals never change, so its owner map and the options it
+ * yields on their own are built once. Callers pass a handful of blueprint icons
+ * on top; only that merge is per-call work.
+ */
+const baseIconOwners = claimIconOwners(new Map<string, SignalID>(), [
+	...pickerSignals,
+	...gameUiSpec.qualities.map(({name}): SignalID => ({type: 'quality', name})),
+]);
+const baseChatIconOptions = canonicalPickerOptions([...baseIconOwners.values()]);
+
+export function chatIconPickerOptions(additionalSignals: readonly SignalID[] = []): SignalID[] {
+	if (additionalSignals.length === 0) {
+		return [...baseChatIconOptions];
+	}
+	const owners = claimIconOwners(new Map(baseIconOwners), additionalSignals);
+	return canonicalPickerOptions([...owners.values()]);
 }
 
 export function signalPickerGroup(signal: SignalID): string | undefined {
