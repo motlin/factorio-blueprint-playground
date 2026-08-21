@@ -346,7 +346,7 @@ export default defineConfig({
 	root: '.',
 	build: {
 		outDir: 'dist',
-		rollupOptions: {
+		rolldownOptions: {
 			input: {
 				main: resolve(import.meta.dirname, 'index.html'),
 			},
