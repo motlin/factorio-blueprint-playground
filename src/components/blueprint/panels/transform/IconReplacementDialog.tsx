@@ -74,6 +74,14 @@ export function IconReplacementDialog({onChange, onClose, replacements, rootBlue
 	const [choosingSource, setChoosingSource] = useState(false);
 	const [choosingTarget, setChoosingTarget] = useState(false);
 	const [editing, setEditing] = useState<{endpoint: 'from' | 'to'; identity: string}>();
+	/*
+	 * Rebuilding this list per render would defeat the picker's option memo and
+	 * re-sort the whole catalog on every keystroke.
+	 */
+	const targetPickerOptions = useMemo(
+		() => (draftFrom === undefined ? chatIconPickerOptions() : targetOptions(draftFrom)),
+		[draftFrom],
+	);
 	const availableCandidates = candidates.filter(
 		(candidate) =>
 			!replacements.some((replacement) => signalIdentity(replacement.from) === signalIdentity(candidate.signal)),
@@ -281,7 +289,7 @@ export function IconReplacementDialog({onChange, onClose, replacements, rootBlue
 				<SignalPickerDialog
 					confirmationMode="immediate"
 					title="Choose target icon"
-					options={draftFrom === undefined ? chatIconPickerOptions() : targetOptions(draftFrom)}
+					options={targetPickerOptions}
 					onClose={() => {
 						setChoosingTarget(false);
 					}}
