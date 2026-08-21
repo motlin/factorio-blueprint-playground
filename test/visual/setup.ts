@@ -36,6 +36,13 @@ afterAll(async () => {
 	if (browser) {
 		await browser.close();
 	}
+	/*
+	 * Workers can run several visual files against one module instance, so the
+	 * handles have to be dropped as well as closed. Leaving them set hands the
+	 * next file a closed browser that it believes is still live.
+	 */
+	browser = null;
+	page = null;
 }, 30_000);
 
 async function renderToHtmlFile(html: string, testName: string): Promise<string> {
