@@ -11,6 +11,10 @@ overrides:
   # vite-plus-test hard-pins an older core; force one core version graph-wide,
   # otherwise vitest startup fails with InvalidArg (mixed core JS/native).
   '@voidzero-dev/vite-plus-core': '0.2.9'
+  # vite-plus-core pulls postcss 8.5.15, which reads arbitrary .map files from an
+  # attacker-controlled sourceMappingURL (GHSA-6g55-p6wh-862q and its incomplete
+  # fix). Build-time only, but nothing here needs the vulnerable range.
+  postcss: '>=8.5.23'
 peerDependencyRules:
   allowAny:
     - vite
