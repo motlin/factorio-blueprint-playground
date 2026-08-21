@@ -1,5 +1,5 @@
 import {Copy, ExternalLink} from 'lucide-react';
-import {useId, useState} from 'react';
+import {useId, useMemo, useState} from 'react';
 
 import type {BlueprintString, SignalID, UpgradeSourceSignal, UpgradeTargetSignal} from '../../../../parsing/types';
 import type {UpgradeDirection} from '../../../../transform/upgradePlanner';
@@ -174,10 +174,14 @@ function UpgradePlannerMetadataEditor({
 	const [draftIcons, setDraftIcons] = useState<Array<SignalID | undefined>>(() => [...icons]);
 	const [draftLabel, setDraftLabel] = useState(label);
 	const [pickerIndex, setPickerIndex] = useState<number>();
-	const pickerOptions = chatIconPickerOptions([
-		...signalOptions,
-		...draftIcons.filter((icon): icon is SignalID => icon !== undefined),
-	]);
+	/*
+	 * A fresh array here would defeat the picker's own option memo, so the
+	 * catalog merge is cached against the icons it actually depends on.
+	 */
+	const pickerOptions = useMemo(
+		() => chatIconPickerOptions([...signalOptions, ...draftIcons.filter((icon) => icon !== undefined)]),
+		[draftIcons, signalOptions],
+	);
 	const dialogReference = useDialogFocus<HTMLElement>({
 		initialFocusSelector: '.upgrade-planner-metadata__name',
 		onClose,
