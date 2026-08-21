@@ -1,5 +1,9 @@
 [tools]
 just = "1.56.0"
 node = "26.5.0"
-"npm:vite-plus" = "0.2.5"
+# Keep in step with the `vite-plus` catalog entry in pnpm-workspace.yaml. When
+# the global CLI and the workspace install disagree, `vp staged` in the commit
+# hook and `vp check` in CI format the same code differently and undo each
+# other's output.
+"npm:vite-plus" = "0.2.9"
 pre-commit = "4.6.0"
