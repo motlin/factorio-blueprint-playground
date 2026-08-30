@@ -1,11 +1,13 @@
-import {ClipboardCopy, Download, FileJson, type LucideIcon} from 'lucide-react';
-import {memo} from 'react';
+import {ClipboardCopy, Download, FileJson, type LucideIcon, SquarePen} from 'lucide-react';
+import {memo, useMemo} from 'react';
 
+import {buildEditorUrl} from '../../../lib/factorioBlueprintEditor';
 import {BlueprintWrapper} from '../../../parsing/BlueprintWrapper';
 import {serializeBlueprint} from '../../../parsing/blueprintParser';
 import type {BlueprintString} from '../../../parsing/types';
 import {ButtonGreen} from '../../ui/ButtonGreen';
 import {InsetLight} from '../../ui/InsetLight';
+import {LinkGreen} from '../../ui/LinkGreen';
 import {Panel} from '../../ui/Panel';
 
 const IOS_DEVICE_REGEX = /ipad|ipod|iphone/i;
@@ -14,6 +16,10 @@ interface ExportActionsProps {
 	blueprint?: BlueprintString;
 	path?: string;
 	title: string;
+	/** Factorio Prints API url addressing this exact blueprint, when it has one. */
+	apiSourceUrl?: string;
+	/** Where the blueprint was fetched from, used when it is too big to put in a url. */
+	sourceUrl?: string;
 }
 
 async function copyToClipboard(text: string): Promise<boolean> {
@@ -137,7 +143,21 @@ const ButtonWithIcon = ({icon: Icon, text, onClick}: ButtonWithIconProps) => (
 	</ButtonGreen>
 );
 
-const ExportActionsComponent = ({blueprint, path, title}: ExportActionsProps) => {
+const ExportActionsComponent = ({blueprint, path, title, apiSourceUrl, sourceUrl}: ExportActionsProps) => {
+	const editorUrl = useMemo(() => {
+		if (blueprint == null) {
+			return undefined;
+		}
+
+		// Serializing is the expensive part, so skip it when the api already
+		// addresses this blueprint.
+		if (apiSourceUrl != null && apiSourceUrl !== '') {
+			return buildEditorUrl({apiSourceUrl});
+		}
+
+		return buildEditorUrl({blueprintString: serializeBlueprint(blueprint), sourceUrl});
+	}, [blueprint, apiSourceUrl, sourceUrl]);
+
 	if (!blueprint) return null;
 
 	const handleCopyString = () => {
@@ -160,10 +180,17 @@ const ExportActionsComponent = ({blueprint, path, title}: ExportActionsProps) =>
 		<Panel title={`Export ${title}`}>
 			<InsetLight>
 				<h3>{title}</h3>
-				<div className="flex-space-between">
+				{/* Wraps because a fourth action does not fit on one line in a side-by-side panel. */}
+				<div className="flex-space-between flex-wrap export-actions">
 					<ButtonWithIcon icon={ClipboardCopy} text="Copy String" onClick={handleCopyString} />
 					<ButtonWithIcon icon={FileJson} text="Copy JSON" onClick={handleCopyJSON} />
 					<ButtonWithIcon icon={Download} text="Download String" onClick={handleDownloadString} />
+					{editorUrl == null ? null : (
+						<LinkGreen href={editorUrl}>
+							<SquarePen size={18} className="mr8" />
+							Open in Editor
+						</LinkGreen>
+					)}
 				</div>
 			</InsetLight>
 		</Panel>

@@ -4,6 +4,7 @@ import React, {useEffect} from 'react';
 import {ErrorBoundary} from 'react-error-boundary';
 
 import type {BlueprintFetchResult} from '../fetching/blueprintFetcher';
+import {buildApiSourceUrl} from '../lib/factorioBlueprintEditor';
 import {logger} from '../lib/sentry';
 import {extractBlueprint} from '../parsing/blueprintParser';
 import type {BlueprintString} from '../parsing/types';
@@ -40,6 +41,9 @@ export function BlueprintPlayground() {
 	const rootBlueprint: BlueprintString | undefined = isSuccess ? loaderData.blueprintString : undefined;
 	const error: Error | undefined = loaderData != null && !loaderData.success ? loaderData.error : undefined;
 	const disqusId: string | undefined = isSuccess ? loaderData.id : undefined;
+	// Only a fetched url can be handed to another site; a pasted string cannot.
+	const sourceUrl: string | undefined = loaderData?.fetchMethod === 'url' ? loaderData.pasted : undefined;
+	const blueprintSha: string | undefined = isSuccess ? loaderData.blueprintSha : undefined;
 
 	React.useEffect(() => {
 		if (error != null) {
@@ -116,7 +120,13 @@ export function BlueprintPlayground() {
 				<div className="panels2">
 					{/* Left side */}
 					<div>
-						<ExportActions blueprint={rootBlueprint} path={undefined} title="Root Blueprint" />
+						<ExportActions
+							blueprint={rootBlueprint}
+							path={undefined}
+							title="Root Blueprint"
+							apiSourceUrl={buildApiSourceUrl(blueprintSha)}
+							sourceUrl={sourceUrl}
+						/>
 
 						<BlueprintTree
 							rootBlueprint={rootBlueprint}
@@ -127,7 +137,15 @@ export function BlueprintPlayground() {
 
 					{/* Right side */}
 					<div>
-						<ExportActions blueprint={selectedBlueprint} path={selectedPath} title="Selected Blueprint" />
+						<ExportActions
+							blueprint={selectedBlueprint}
+							path={selectedPath}
+							title="Selected Blueprint"
+							apiSourceUrl={buildApiSourceUrl(blueprintSha, selectedPath)}
+							// The source url holds the whole book, so it only stands in
+							// for the selection while the selection is the root.
+							sourceUrl={selectedPath == null || selectedPath === '' ? sourceUrl : undefined}
+						/>
 						<BasicInfoPanel blueprint={selectedBlueprint} />
 						<BlueprintInfoPanels blueprint={selectedBlueprint} />
 					</div>

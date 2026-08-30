@@ -1,4 +1,5 @@
 import JSON5 from 'json5';
+import {blueprintSha1} from '../lib/factorioBlueprintEditor';
 import {logger} from '../lib/sentry';
 import {deserializeBlueprint} from '../parsing/blueprintParser';
 import type {BlueprintString} from '../parsing/types';
@@ -35,6 +36,11 @@ export interface BlueprintFetchSuccess extends BlueprintFetchBase {
 	blueprintString: BlueprintString;
 	// TODO 2024-12-03: rename to disqusId
 	id?: string;
+	/**
+	 * SHA-1 of the fetched blueprint string, set only for sources the Factorio
+	 * Prints API holds, so it can be addressed there by sha and position.
+	 */
+	blueprintSha?: string;
 }
 
 export interface BlueprintFetchFailure extends BlueprintFetchBase {
@@ -277,6 +283,18 @@ const factorioBinDirectSourceConfig: BlueprintFetchSource = {
 	},
 };
 
+/**
+ * Hosts whose blueprints the Factorio Prints API holds. `factorioprints.xyz` is
+ * the same API as `www.factorio.school` under a Factorio Prints domain, so one
+ * corpus covers both sites.
+ */
+const FACTORIOPRINTS_API_HOSTS = new Set([
+	'factorio.school',
+	'www.factorio.school',
+	'factorioprints.com',
+	'www.factorioprints.com',
+]);
+
 const SOURCE_CONFIGS: Record<string, BlueprintFetchSource | undefined> = {
 	'factorio.school': factorioSchoolSourceConfig,
 	'www.factorio.school': factorioSchoolSourceConfig,
@@ -320,6 +338,9 @@ async function fetchUrlImpl(pasted: string): Promise<BlueprintFetchSuccess | Blu
 			pasted,
 			blueprintString: blueprint,
 			id: result.id,
+			blueprintSha: FACTORIOPRINTS_API_HOSTS.has(domain)
+				? await blueprintSha1(result.blueprintString)
+				: undefined,
 		};
 	} catch (error) {
 		return {
