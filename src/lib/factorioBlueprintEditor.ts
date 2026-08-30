@@ -36,14 +36,33 @@ interface EditorUrlOptions {
 	sourceUrl?: string;
 }
 
-/** SHA-1 hex digest, the sha the Factorio Prints API keys blueprints by. */
-export async function blueprintSha1(blueprintString: string): Promise<string> {
-	const bytes = new TextEncoder().encode(blueprintString);
-	const digest = await crypto.subtle.digest('SHA-1', bytes);
+/**
+ * SHA-1 hex digest, the sha the Factorio Prints API keys blueprints by.
+ *
+ * Returns undefined rather than throwing when the digest is unavailable.
+ * `crypto.subtle` exists only in a secure context, so any page served over
+ * plain http from something other than localhost — a LAN or tailnet preview —
+ * has none, and the editor link falls back to the blueprint string there.
+ */
+export async function blueprintSha1(blueprintString: string): Promise<string | undefined> {
+	// The DOM types declare `crypto.subtle` as always present, which is what made
+	// this a runtime error rather than a compile error, so the cast is the point:
+	// it restores the `undefined` the browser actually hands back.
+	const subtle = globalThis.crypto.subtle as SubtleCrypto | undefined;
+	if (subtle == null) {
+		return undefined;
+	}
 
-	return Array.from(new Uint8Array(digest))
-		.map((byte) => byte.toString(16).padStart(2, '0'))
-		.join('');
+	try {
+		const bytes = new TextEncoder().encode(blueprintString);
+		const digest = await subtle.digest('SHA-1', bytes);
+
+		return Array.from(new Uint8Array(digest))
+			.map((byte) => byte.toString(16).padStart(2, '0'))
+			.join('');
+	} catch {
+		return undefined;
+	}
 }
 
 /**

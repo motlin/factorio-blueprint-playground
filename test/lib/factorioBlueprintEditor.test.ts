@@ -1,4 +1,4 @@
-import {describe, expect, it} from 'vite-plus/test';
+import {afterEach, describe, expect, it, vi} from 'vite-plus/test';
 
 import {
 	blueprintSha1,
@@ -145,5 +145,29 @@ describe('blueprintSha1', () => {
 	it('matches the sha the factorioprints api keys blueprints by', async () => {
 		// The api reports this digest as blueprintString.sha.
 		expect(await blueprintSha1('0eNq')).toBe('24bd7dd969a8c26bfbd82fa02118a8b3d0f27dc0');
+	});
+});
+
+describe('blueprintSha1 outside a secure context', () => {
+	afterEach(() => {
+		vi.unstubAllGlobals();
+	});
+
+	it('gives up instead of throwing when SubtleCrypto is missing', async () => {
+		// Served over plain http on a LAN or tailnet address, `crypto.subtle` is
+		// undefined: it is secure-context only.
+		vi.stubGlobal('crypto', {});
+
+		await expect(blueprintSha1('0eNq')).resolves.toBeUndefined();
+	});
+
+	it('gives up when the digest itself fails', async () => {
+		vi.stubGlobal('crypto', {
+			subtle: {
+				digest: async () => Promise.reject(new Error('not allowed')),
+			},
+		});
+
+		await expect(blueprintSha1('0eNq')).resolves.toBeUndefined();
 	});
 });
