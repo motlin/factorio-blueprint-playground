@@ -444,3 +444,7 @@ body {
 		margin-left: auto;
 	}
 }
+
+.export-actions {
+	gap: 8px;
+}
