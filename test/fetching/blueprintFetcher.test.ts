@@ -59,3 +59,19 @@ describe('fetchBlueprint blueprintSha', () => {
 		expect(result?.success === true ? result.blueprintSha : undefined).toBeUndefined();
 	});
 });
+
+describe('fetchBlueprint outside a secure context', () => {
+	it('still fetches the blueprint when SubtleCrypto is missing', async () => {
+		// Regression: computing the sha threw here, and the whole fetch failed
+		// with "Cannot read properties of undefined (reading 'digest')".
+		vi.stubGlobal('crypto', {});
+
+		const result = await fetchBlueprint(
+			{pasted: 'https://factorioprints.com/view/-KnQ865j-qQ21WoUPbd3'},
+			queryClient,
+		);
+
+		expect(result?.success).toBe(true);
+		expect(result?.success === true ? result.blueprintSha : 'unset').toBeUndefined();
+	});
+});
