@@ -446,11 +446,9 @@ body {
 }
 
 /*
- * Two even columns so both export panels break their actions identically. A
- * wrapping flex row did not: the panels differ by ~14px in width, which is
- * enough to move the third button onto the second line in one panel only.
- * `justify-items: start` keeps each button at its natural width instead of
- * stretching it across the column.
+ * Two even columns, so the actions break the same way in both export panels and
+ * at any panel width. `justify-items: start` keeps each button at its natural
+ * width instead of stretching it across the column.
  */
 .export-actions {
 	display: grid;
@@ -468,4 +466,33 @@ body {
  */
 .button-green-right {
 	font-family: Arial, Helvetica, sans-serif;
+}
+
+/*
+ * Even out the two side-by-side panel columns.
+ *
+ * The vendored rule gives each child `width: 50%` and puts a 14px left margin
+ * on the second, which overflows the row by exactly 14px. Flex resolves that by
+ * shrinking, but the left column will not shrink below the min-content width of
+ * the blueprint tree's labels, so the right column absorbed the whole overflow
+ * and came out 14px narrower than the left. `flex: 1 1 0` plus `min-width: 0`
+ * makes both columns share the space evenly; the tree labels already truncate
+ * with an ellipsis, so letting that column shrink costs nothing.
+ *
+ * Scoped above the breakpoint where the vendored stylesheet stacks the panels.
+ */
+@media (min-width: 901px) {
+	.panels2 {
+		gap: 14px;
+	}
+
+	.panels2 > div {
+		width: auto;
+		min-width: 0;
+		flex: 1 1 0;
+	}
+
+	.panels2 > div + div {
+		margin-left: 0;
+	}
 }
