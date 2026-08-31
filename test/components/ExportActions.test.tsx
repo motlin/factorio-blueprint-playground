@@ -105,3 +105,13 @@ describe('ExportActions api source', () => {
 		expect(new URL(link?.href ?? '').searchParams.get('source')).toBe(apiSourceUrl);
 	});
 });
+
+describe('ExportActions labelling', () => {
+	it('names the blueprint once, in the panel heading', () => {
+		const {getAllByText, queryByText} = render(<ExportActions blueprint={blueprint} title="Root Blueprint" />);
+
+		expect(getAllByText('Root Blueprint')).toHaveLength(1);
+		// "Export Root Blueprint" over a repeated "Root Blueprint" said it twice.
+		expect(queryByText(/Export/)).not.toBeInTheDocument();
+	});
+});
