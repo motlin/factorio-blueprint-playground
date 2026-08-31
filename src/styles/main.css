@@ -445,8 +445,19 @@ body {
 	}
 }
 
+/*
+ * Two even columns so both export panels break their actions identically. A
+ * wrapping flex row did not: the panels differ by ~14px in width, which is
+ * enough to move the third button onto the second line in one panel only.
+ * `justify-items: start` keeps each button at its natural width instead of
+ * stretching it across the column.
+ */
 .export-actions {
-	gap: 8px;
+	display: grid;
+	grid-template-columns: repeat(2, auto);
+	justify-content: start;
+	justify-items: start;
+	gap: 8px 16px;
 }
 
 /*

@@ -177,11 +177,14 @@ const ExportActionsComponent = ({blueprint, path, title, apiSourceUrl, sourceUrl
 	};
 
 	return (
-		<Panel title={`Export ${title}`}>
+		<Panel title={title}>
 			<InsetLight>
-				<h3>{title}</h3>
-				{/* Wraps because a fourth action does not fit on one line in a side-by-side panel. */}
-				<div className="flex-space-between flex-wrap export-actions">
+				{/*
+					A fixed two-column grid, not a wrapping flex row: the two panels are
+					not exactly the same width, so `space-between` wrapping broke the
+					actions across lines differently in each one.
+				*/}
+				<div className="export-actions">
 					<ButtonWithIcon icon={ClipboardCopy} text="Copy String" onClick={handleCopyString} />
 					<ButtonWithIcon icon={FileJson} text="Copy JSON" onClick={handleCopyJSON} />
 					<ButtonWithIcon icon={Download} text="Download String" onClick={handleDownloadString} />
