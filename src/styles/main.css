@@ -448,3 +448,13 @@ body {
 .export-actions {
 	gap: 8px;
 }
+
+/*
+ * Buttons do not inherit the page font — the UA stylesheet gives them Arial —
+ * so an <a> styled as a button picked up Titillium Web and read heavier than
+ * the buttons beside it. Declare the family the buttons already resolve to, so
+ * ButtonGreen and LinkGreen match.
+ */
+.button-green-right {
+	font-family: Arial, Helvetica, sans-serif;
+}
