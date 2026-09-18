@@ -36,11 +36,11 @@ importers:
         specifier: ^4.4.0
         version: 4.4.0
       dexie:
-        specifier: ^4.4.5
-        version: 4.4.5
+        specifier: ^4.4.6
+        version: 4.4.6
       dexie-react-hooks:
         specifier: ^4.4.0
-        version: 4.4.0(dexie@4.4.5)(react@19.3.0)
+        version: 4.4.0(dexie@4.4.6)(react@19.3.0)
       fflate:
         specifier: ^0.8.3
         version: 0.8.3
@@ -2763,8 +2763,8 @@ packages:
       dexie: '>=4.2.0-alpha.1 <5.0.0'
       react: '>=16'
 
-  dexie@4.4.5:
-    resolution: {integrity: sha512-wWCHdihT3dmlUSuNhn5mMZDWSpG0suxjAni7YjjiZdzabZcKmy3uNZGZ7AeYYXBoLbpSXX35fikPLkPC44Osiw==}
+  dexie@4.4.6:
+    resolution: {integrity: sha512-hJP/BO6mjB+tX6hToIO1kmxYLNmun90wYbfcoAoLpKEyDYal/k33dg0TAfoUe2TDsbbLoVIzljJ3BN2UbR5EOg==}
 
   diff@8.0.4:
     resolution: {integrity: sha512-DPi0FmjiSU5EvQV0++GFDOJ9ASQUVFh5kD+OzOnYdi7n3Wpm9hWWGfB/O2blfHcMVTL5WkQXSnRiK9makhrcnw==}
@@ -6054,12 +6054,12 @@ snapshots:
     dependencies:
       dequal: 2.0.3
 
-  dexie-react-hooks@4.4.0(dexie@4.4.5)(react@19.3.0):
+  dexie-react-hooks@4.4.0(dexie@4.4.6)(react@19.3.0):
     dependencies:
-      dexie: 4.4.5
+      dexie: 4.4.6
       react: 19.3.0
 
-  dexie@4.4.5: {}
+  dexie@4.4.6: {}
 
   diff@8.0.4: {}
 
