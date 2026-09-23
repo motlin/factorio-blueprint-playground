@@ -7,12 +7,12 @@ setup-github-refspec REMOTE:
     #!/usr/bin/env bash
     set -Eeuo pipefail
 
-    if git remote get-url {{REMOTE}} &> /dev/null && git remote get-url {{REMOTE}} | grep -q 'github\.'; then
-        git config --add remote.{{REMOTE}}.fetch '+refs/pull/*/head:refs/remotes/{{REMOTE}}/pr/*'
-        git config --add remote.{{REMOTE}}.fetch '+refs/pull/*/merge:refs/remotes/{{REMOTE}}/pr/merge/*'
-        echo "Added refspec to fetch GitHub PR refs for {{REMOTE}}"
+    if git remote get-url {{ REMOTE }} &> /dev/null && git remote get-url {{ REMOTE }} | grep -q 'github\.'; then
+        git config --add remote.{{ REMOTE }}.fetch '+refs/pull/*/head:refs/remotes/{{ REMOTE }}/pr/*'
+        git config --add remote.{{ REMOTE }}.fetch '+refs/pull/*/merge:refs/remotes/{{ REMOTE }}/pr/merge/*'
+        echo "Added refspec to fetch GitHub PR refs for {{ REMOTE }}"
     else
-        echo "Remote {{REMOTE}} is not a GitHub remote"
+        echo "Remote {{ REMOTE }} is not a GitHub remote"
     fi
 
 # Add git refspec to fetch GitHub PR refs from origin and upstream
@@ -30,14 +30,14 @@ _check-local-modifications:
     git diff --quiet
     EXIT_CODE=$?
     if [ $EXIT_CODE -ne 0 ]; then
-        {{echo_command}} "Locally modified files"
+        {{ echo_command }} "Locally modified files"
         exit $EXIT_CODE
     fi
 
     git status --porcelain | (! grep -q '^??')
     EXIT_CODE=$?
     if [ $EXIT_CODE -ne 0 ]; then
-        {{echo_command}} "Untracked files"
+        {{ echo_command }} "Untracked files"
         exit $EXIT_CODE
     fi
 
@@ -45,8 +45,8 @@ _check-local-modifications:
 fetch:
     #!/usr/bin/env bash
     set -Eeuo pipefail
-    if [ "{{offline}}" != "true" ]; then
-        git fetch {{upstream_remote}} --tags --prune
+    if [ "{{ offline }}" != "true" ]; then
+        git fetch {{ upstream_remote }} --tags --prune
     fi
 
 # Create a branch if HEAD is detached
@@ -66,4 +66,4 @@ recover-detached-head:
 
 # Generate a markdown list of commit messages
 pull-request-description:
-    git log {{upstream_remote}}/{{upstream_branch}}..HEAD --reverse --format='- %s'
+    git log {{ upstream_remote }}/{{ upstream_branch }}..HEAD --reverse --format='- %s'
