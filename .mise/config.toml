@@ -1,5 +1,5 @@
 [tools]
-just = "1.56.0"
+just = "1.58.0"
 node = "26.5.0"
 # Keep in step with the `vite-plus` catalog entry in pnpm-workspace.yaml. When
 # the global CLI and the workspace install disagree, `vp staged` in the commit

@@ -6,24 +6,24 @@ fail_fast := env('FAIL_FAST', "false")
 
 # git-test on the range of commits between a configurable upstream/main and {{BRANCH}}
 test-branch BRANCH="HEAD" TEST="default" *FLAGS="--retest":
-    echo "Testing branch: {{BRANCH}}"
-    echo "{{BRANCH}}" > JUSTFILE_BRANCH
-    git test run --test {{TEST}} {{FLAGS}} {{upstream_remote}}/{{upstream_branch}}..{{BRANCH}}
+    echo "Testing branch: {{ BRANCH }}"
+    echo "{{ BRANCH }}" > JUSTFILE_BRANCH
+    git test run --test {{ TEST }} {{ FLAGS }} {{ upstream_remote }}/{{ upstream_branch }}..{{ BRANCH }}
 
 # `just test` all commits with configurable upstream/main as ancestor
 test-all TEST="default" *FLAGS="--retest":
     #!/usr/bin/env bash
     set -uo pipefail
 
-    if [ "{{fail_fast}}" ]; then
+    if [ "{{ fail_fast }}" ]; then
         set -Ee
     fi
 
-    branches=($(git for-each-ref --format='%(refname:short)' refs/heads/ --sort -committerdate --contains {{upstream_remote}}/{{upstream_branch}}))
+    branches=($(git for-each-ref --format='%(refname:short)' refs/heads/ --sort -committerdate --contains {{ upstream_remote }}/{{ upstream_branch }}))
 
     for branch in "${branches[@]}"
     do
-        just test-branch "${branch}" "{{TEST}}" {{FLAGS}}
+        just test-branch "${branch}" "{{ TEST }}" {{ FLAGS }}
     done
 
 alias ta := test-all
@@ -33,12 +33,12 @@ test-results:
     #!/usr/bin/env bash
     set -uo pipefail
 
-    branches=($(git for-each-ref --format='%(refname:short)' refs/heads/ --sort -committerdate --contains {{upstream_remote}}/{{upstream_branch}}))
+    branches=($(git for-each-ref --format='%(refname:short)' refs/heads/ --sort -committerdate --contains {{ upstream_remote }}/{{ upstream_branch }}))
 
     for branch in "${branches[@]}"
     do
         echo "Branch: $branch"
-        git test results --color {{upstream_remote}}/{{upstream_branch}}..${branch}
+        git test results --color {{ upstream_remote }}/{{ upstream_branch }}..${branch}
     done
 
 # Fix the current commit and rebase
