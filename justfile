@@ -56,7 +56,7 @@ storybook *args: install
 
 # Build an isolated Storybook review bundle
 build-storybook output="storybook-static": install
-    vp run build-storybook --output-dir {{output}}
+    vp run build-storybook --output-dir {{ output }}
 
 # Run tagged Storybook play functions and accessibility annotations
 storybook-test: install
@@ -73,7 +73,7 @@ visual-conformance *args: install
     vp run build-storybook --output-dir storybook-static
     vp run visual-conformance:references
     vp run test:storybook
-    vp run visual-conformance {{args}}
+    vp run visual-conformance {{ args }}
 
 # Run pre-commit hooks on all files (same as CI's pre-commit job)
 pre-commit: install
