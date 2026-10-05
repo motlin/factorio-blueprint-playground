@@ -1,0 +1,41 @@
+{
+	"schemaVersion": 1,
+	"stories": [
+		{
+			"id": "visual-conformance-state-contract--stable-states",
+			"requiredStates": ["rest", "hover", "focus", "pressed", "selected", "disabled", "empty", "filled", "error"]
+		},
+		{
+			"id": "blueprint-panels-transform-blueprintcomponentsgrid--removed-component",
+			"requiredStates": ["selected", "filled"]
+		},
+		{
+			"id": "blueprint-panels-transform-blueprintcomponentsgrid--inventory-grid",
+			"requiredStates": ["rest", "filled"]
+		},
+		{
+			"id": "blueprint-panels-transform-blueprinttitleeditor--untitled",
+			"requiredStates": ["empty"]
+		},
+		{
+			"id": "blueprint-panels-transform-blueprinttitleeditor--titled",
+			"requiredStates": ["rest", "filled"]
+		},
+		{
+			"id": "ui-factorio-primitives--dialog-chrome",
+			"requiredStates": ["rest", "focus"]
+		},
+		{
+			"id": "ui-factorio-primitives--nested-dialog-chrome",
+			"requiredStates": ["rest", "focus"]
+		},
+		{
+			"id": "ui-factorio-primitives--scroll-frame-states",
+			"requiredStates": ["rest", "focus", "filled"]
+		},
+		{
+			"id": "ui-factorio-primitives--tooltip-states",
+			"requiredStates": ["hover", "focus", "filled"]
+		}
+	]
+}
