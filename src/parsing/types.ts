@@ -25,7 +25,8 @@ export type Quality = 'normal' | 'uncommon' | 'rare' | 'epic' | 'legendary' | un
 export interface SignalID {
 	// Defaults to "item" if not specified
 	type?: SignalType;
-	name: string;
+	// Omitted when the game exports a signal it no longer recognizes.
+	name?: string;
 	quality?: Quality;
 }
 
@@ -75,17 +76,14 @@ interface ArithmeticCondition {
 }
 
 interface DisplayPanelParameter {
-	condition?: {
-		first_signal?: SignalID;
-		constant: number;
-		comparator: '=' | '>' | '<' | '≥' | '≤' | '≠';
-	};
+	condition?: CircuitCondition;
 	icon?: SignalID;
 }
 
 export interface Filter {
 	index: number;
-	name: string;
+	// Omitted by quality-only filters.
+	name?: string;
 	type?: string;
 	quality?: Quality;
 	// '=' | '≠' | '>' | '<' | '≥' | '≤'
@@ -148,6 +146,14 @@ interface ControlBehavior {
 	sections?: {
 		sections: SectionFilters[];
 	};
+	// Factorio 1.1 constant combinator signals
+	filters?: LegacyConstantCombinatorFilter[];
+}
+
+interface LegacyConstantCombinatorFilter {
+	signal: SignalID;
+	count: number;
+	index: number;
 }
 
 export interface ItemStack {
@@ -156,34 +162,59 @@ export interface ItemStack {
 		quality?: Quality;
 	};
 	items: {
-		in_inventory: {
+		in_inventory?: {
 			inventory: number;
 			stack: number;
 			count?: number;
 		}[];
+		// Equipment placed in an entity's equipment grid
+		grid_count?: number;
 	};
+}
+
+// Factorio 0.x item stack
+export interface LegacyItemStack {
+	item: string;
+	count: number;
+}
+
+// Factorio 1.1 logistic request
+export interface LegacyRequestFilter {
+	index: number;
+	name: string;
+	count?: number;
 }
 
 export interface Entity {
 	entity_number: number;
 	name: string;
 	position: Position;
-	// 0, 2, 4, 6 = North, East, South, West
+	// Factorio 1.1 uses 0, 2, 4, 6 for cardinals; Factorio 2.0 uses 0, 4, 8, 12.
 	direction?: number;
+	// Factorio 1.1 circuit wires, keyed by connection point
+	connections?: Record<string, unknown>;
 	control_behavior?: ControlBehavior;
 	recipe?: string;
 	recipe_quality?: Quality;
-	request_filters?: {
-		sections: SectionFilters[];
-		request_from_buffers?: boolean;
-		trash_not_requested?: boolean;
-	};
+	request_filters?:
+		| {
+				sections: SectionFilters[];
+				request_from_buffers?: boolean;
+				trash_not_requested?: boolean;
+		  }
+		| LegacyRequestFilter[];
 	filter_mode?: 'whitelist' | 'blacklist';
 	use_filters?: boolean;
 	override_stack_size?: number;
 	bar?: number;
 	filters?: Filter[];
-	items?: ItemStack[];
+	// Factorio 1.1 maps item names to counts.
+	items?: (ItemStack | LegacyItemStack)[] | Record<string, number>;
+	// Factorio 1.1 cargo wagon filters and limit
+	inventory?: {
+		filters?: Filter[];
+		bar?: number;
+	};
 	transitional_request_index?: number;
 	icon?: SignalID;
 	always_show?: boolean;
@@ -204,20 +235,31 @@ export interface Entity {
 	quality?: Quality;
 }
 
+interface WaitCondition {
+	compare_type: 'and' | 'or';
+	type: string;
+	condition?: CircuitCondition;
+	ticks?: number;
+}
+
 interface ScheduleRecord {
 	station: string;
-	wait_conditions: {
-		compare_type: 'and' | 'or';
-		type: string;
-		condition?: CircuitCondition;
-		ticks?: number;
-	}[];
+	wait_conditions?: WaitCondition[];
+}
+
+interface ScheduleInterrupt {
+	name: string;
+	conditions?: WaitCondition[];
+	targets?: ScheduleRecord[];
+	inside_interrupt?: boolean;
 }
 
 interface Schedule {
 	locomotives: number[];
 	schedule: {
-		records: ScheduleRecord[];
+		group?: string;
+		records?: ScheduleRecord[];
+		interrupts?: ScheduleInterrupt[];
 	};
 }
 
@@ -257,6 +299,8 @@ export interface Blueprint extends CommonFields {
 	tiles?: Tile[];
 	schedules?: Schedule[];
 	parameters?: Parameter[];
+	// Factorio 2.0 circuit and copper wires: [entity, connector, entity, connector]
+	wires?: [number, number, number, number][];
 	snap_to_grid?: {
 		x: number;
 		y: number;
@@ -279,7 +323,7 @@ interface DeconstructionSettings {
 
 export interface DeconstructionPlanner extends CommonFields {
 	item: 'deconstruction-planner';
-	settings: DeconstructionSettings;
+	settings?: DeconstructionSettings;
 }
 
 interface UpgradeMapping {
@@ -291,12 +335,12 @@ interface UpgradeMapping {
 interface UpgradeSettings {
 	description?: string;
 	icons?: Icon[];
-	mappers: UpgradeMapping[];
+	mappers?: UpgradeMapping[];
 }
 
 export interface UpgradePlanner extends CommonFields {
 	item: 'upgrade-planner';
-	settings: UpgradeSettings;
+	settings?: UpgradeSettings;
 }
 
 export interface BlueprintStringWithIndex extends BlueprintString {
@@ -309,7 +353,8 @@ export interface BlueprintBook extends CommonFields {
 	label?: string;
 	description?: string;
 	icons?: Icon[];
-	blueprints: BlueprintStringWithIndex[];
+	// Omitted when the book is empty.
+	blueprints?: BlueprintStringWithIndex[];
 	active_index?: number;
 }
 

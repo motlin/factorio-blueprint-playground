@@ -50,6 +50,29 @@ describe('BlueprintTree Component', () => {
 		expect(treeRows[2].textContent).toContain('Second Blueprint');
 	});
 
+	it('renders an empty nested book, which the game exports without a blueprints list', () => {
+		const withEmptyBook: BlueprintString = {
+			blueprint_book: {
+				item: 'blueprint-book',
+				version: 1,
+				blueprints: [
+					{index: 0, blueprint_book: {item: 'blueprint-book', label: 'Empty Book', version: 1}},
+					{index: 1, blueprint: {item: 'blueprint', label: 'After', version: 1}},
+				],
+			},
+		};
+
+		const {container} = render(
+			<BlueprintTree rootBlueprint={withEmptyBook} selectedPath="" onSelect={vi.fn<(path: string) => void>()} />,
+		);
+
+		expect([...container.querySelectorAll('.tree-row')].map((row) => row.textContent)).toStrictEqual([
+			'',
+			'Empty Book',
+			'After',
+		]);
+	});
+
 	it('calls onSelect when clicking blueprints', async () => {
 		const user = userEvent.setup();
 		const onSelect = vi.fn<(path: string) => void>();

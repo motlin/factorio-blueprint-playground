@@ -18,6 +18,13 @@ export class BlueprintError extends Error {
  * Takes a blueprint string and returns the parsed JSON data
  */
 export function deserializeBlueprint(blueprintData: string): BlueprintString {
+	// Base64 of a gzip header: the Blueprint String format, which stores Lua tables rather than JSON.
+	if (blueprintData.startsWith('H4sI')) {
+		throw new BlueprintError(
+			'This blueprint string uses the format from Factorio 0.14 and earlier, which the playground cannot read.',
+		);
+	}
+
 	// Validate prefix
 	if (!blueprintData.startsWith('0')) {
 		throw new BlueprintError(

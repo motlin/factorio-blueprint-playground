@@ -41,14 +41,30 @@ function versionMajor(version: string | undefined): number | undefined {
 	return Number.parseInt(version.split('.')[0] ?? '', 10);
 }
 
+function isBaseSource(source: ModSource | undefined): boolean {
+	return source?.id === 'base' || source?.id === 'base-1.1';
+}
+
+// The other release's base game only explains a name when nothing else does,
+// because names like stack-inserter mean different prototypes in 1.1 and 2.0.
+// A pre-2.0 blueprint cannot contain 2.0-only names, so its base names count as 1.1 evidence
+// even when only the 2.0 data lists them, as with virtual signals.
 function selectBaseSource(indexes: number[], sources: ModSource[], version: string | undefined): number | undefined {
-	const baseIndexes = indexes.filter((index) => sources[index]?.id === 'base' || sources[index]?.id === 'base-1.1');
+	const baseIndexes = indexes.filter((index) => isBaseSource(sources[index]));
 	if (baseIndexes.length === 0) {
 		return undefined;
 	}
 
 	const preferredId = (versionMajor(version) ?? 2) < 2 ? 'base-1.1' : 'base';
-	return baseIndexes.find((index) => sources[index]?.id === preferredId) ?? baseIndexes[0];
+	const preferredIndex = baseIndexes.find((index) => sources[index]?.id === preferredId);
+	if (preferredIndex !== undefined) {
+		return preferredIndex;
+	}
+	if (baseIndexes.length !== indexes.length) {
+		return undefined;
+	}
+	const legacyIndex = sources.findIndex((source) => source.id === 'base-1.1');
+	return preferredId === 'base-1.1' && legacyIndex >= 0 ? legacyIndex : baseIndexes[0];
 }
 
 function assignAmbiguousNames(ambiguousNames: AmbiguousName[], evidence: Map<number, SourceEvidence>): void {
@@ -171,14 +187,15 @@ export function classify(extractedNames: ExtractedNames, database: ModDatabase):
 			continue;
 		}
 
-		const indexes = sourceIndexes(mask, database.sources.length);
-		const baseSourceIndex = selectBaseSource(indexes, database.sources, extractedNames.version);
+		const allIndexes = sourceIndexes(mask, database.sources.length);
+		const baseSourceIndex = selectBaseSource(allIndexes, database.sources, extractedNames.version);
 		if (baseSourceIndex !== undefined) {
 			const baseEvidence = evidenceFor(evidence, baseSourceIndex);
 			baseEvidence.names.add(name);
 			baseEvidence.definitive = true;
 			continue;
 		}
+		const indexes = allIndexes.filter((index) => !isBaseSource(database.sources[index]));
 
 		if (indexes.length === 1) {
 			const sourceEvidence = evidenceFor(evidence, indexes[0]);
