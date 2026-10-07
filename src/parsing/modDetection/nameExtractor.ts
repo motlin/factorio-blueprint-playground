@@ -104,7 +104,7 @@ function walkControlBehavior(state: ExtractionState, behavior: NonNullable<Entit
 	addSignal(state, behavior.blue_signal);
 
 	for (const parameter of behavior.parameters ?? []) {
-		addSignal(state, parameter.condition.first_signal);
+		addSignal(state, parameter.condition?.first_signal);
 		addSignal(state, parameter.icon);
 	}
 

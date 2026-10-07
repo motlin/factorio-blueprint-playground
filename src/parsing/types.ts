@@ -75,8 +75,8 @@ interface ArithmeticCondition {
 }
 
 interface DisplayPanelParameter {
-	condition: {
-		first_signal: SignalID;
+	condition?: {
+		first_signal?: SignalID;
 		constant: number;
 		comparator: '=' | '>' | '<' | '≥' | '≤' | '≠';
 	};

@@ -244,6 +244,38 @@ describe('extractNames', () => {
 		});
 	});
 
+	it('extracts display panel messages that have no condition', () => {
+		const blueprint: BlueprintString = {
+			blueprint: {
+				item: 'blueprint',
+				version: FACTORIO_2_VERSION,
+				entities: [
+					{
+						entity_number: 1,
+						name: 'display-panel',
+						position: {x: 0, y: 0},
+						control_behavior: {
+							parameters: [{icon: {type: 'virtual', name: 'display-icon'}}],
+						},
+					},
+				],
+			},
+		};
+
+		expect(extractNames(blueprint)).toStrictEqual({
+			names: names([
+				['display-panel', 'entity'],
+				['display-icon', 'signal'],
+			]),
+			flags: {
+				hasNonNormalQuality: false,
+				hasPlanetSignals: false,
+				hasSpaceLocationSignals: false,
+			},
+			version: '2.0.0.0',
+		});
+	});
+
 	it('recurses through books and extracts schedule conditions without leaking free text', () => {
 		const book: BlueprintString = {
 			blueprint_book: {
