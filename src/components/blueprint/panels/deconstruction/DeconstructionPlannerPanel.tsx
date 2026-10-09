@@ -17,7 +17,7 @@ const DeconstructionPlannerPanelComponent = ({blueprint}: {blueprint: BlueprintS
 	const planner: DeconstructionPlanner | undefined = blueprint.deconstruction_planner;
 	if (!planner) return null;
 
-	const {settings} = planner;
+	const settings = planner.settings ?? {};
 
 	const getTileSelectionText = (mode?: 1 | 2 | 3): string => {
 		if (mode === 2) return 'Never deconstruct tiles';

@@ -3,10 +3,22 @@
 	"aai-": "AAI Industry",
 	"angels-": "Angel's Mods",
 	"bob-": "Bob's Mods",
+	"creative-mod": "Creative Mod",
+	"cybersyn-": "Project Cybersyn",
 	"deadlock-": "Deadlock's Stacking Beltboxes",
+	"ee-": "Editor Extensions",
 	"ei_": "Exotic Industries",
+	"factory-": "Factorissimo",
+	"inv-sensor-": "Inventory Sensor",
 	"ir3-": "Industrial Revolution 3",
+	"k-": "Krastorio",
 	"kr-": "Krastorio 2",
+	"logistic-train-stop": "Logistic Train Network",
+	"LTN-": "Logistic Train Network",
+	"ltn-": "Logistic Train Network",
+	"mdrn-": "Loaders Modernized",
+	"nixie-tube": "Nixie Tubes",
 	"py-": "Pyanodons",
-	"se-": "Space Exploration"
+	"se-": "Space Exploration",
+	"WideChests_": "Wide Chests"
 }

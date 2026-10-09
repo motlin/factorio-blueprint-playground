@@ -22,6 +22,8 @@ const database: ModDatabase = {
 	],
 	names: {
 		'transport-belt': 1,
+		'display-panel': 1,
+		'automation-science-pack': 1,
 		foundry: 2,
 		'quality-module-3': 4,
 		'infinity-chest': 8,
@@ -66,10 +68,46 @@ function loadingClient(): QueryClient {
 }
 
 describe('ModDetectionPanel', () => {
+	it('renders display panels with unconditional icons', () => {
+		const blueprint: BlueprintString = {
+			blueprint: {
+				item: 'blueprint',
+				version: 562949953421312,
+				entities: [
+					{
+						entity_number: 1,
+						name: 'display-panel',
+						position: {x: 0, y: 0},
+						control_behavior: {parameters: [{icon: {name: 'automation-science-pack'}}]},
+					},
+				],
+			},
+		};
+		const {container} = renderWithClient(<ModDetectionPanel blueprint={blueprint} />, resolvedClient());
+
+		expect(container.textContent).toBe(
+			'Mod DetectionBlueprint requirementsVanilla 2.0Factorio 2.0high confidence2 matching namesautomation-science-packdisplay-panel',
+		);
+	});
+
 	it('shows a loading row while the database chunk is pending', () => {
 		const {container} = renderWithClient(<ModDetectionPanel blueprint={vanillaBlueprint} />, loadingClient());
 
 		expect(container.textContent).toBe('Mod DetectionChecking mod requirements…');
+	});
+
+	it('renders a blueprint with a schedule stop that omits wait conditions', () => {
+		const blueprint: BlueprintString = {
+			blueprint: {
+				...vanillaBlueprint.blueprint!,
+				schedules: [{locomotives: [1], schedule: {records: [{station: 'Example station'}]}}],
+			},
+		};
+		const {container} = renderWithClient(<ModDetectionPanel blueprint={blueprint} />, resolvedClient());
+
+		expect(container.textContent).toBe(
+			'Mod DetectionBlueprint requirementsVanilla 2.0Factorio 2.0high confidence1 matching nametransport-belt',
+		);
 	});
 
 	it('summarizes the verdict and lists source evidence', () => {

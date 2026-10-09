@@ -1,5 +1,7 @@
 import {XCircle} from 'lucide-react';
 
+import {BlueprintError} from '../../parsing/blueprintParser';
+
 type ErrorType = Error | string | undefined;
 
 const formatError = (error: ErrorType): {message: string; stack?: string} => {
@@ -8,7 +10,8 @@ const formatError = (error: ErrorType): {message: string; stack?: string} => {
 	if (error instanceof Error) {
 		return {
 			message: error.message,
-			stack: error.stack,
+			// Blueprint errors describe bad input, so a stack trace would only add noise.
+			stack: error instanceof BlueprintError ? undefined : error.stack,
 		};
 	}
 

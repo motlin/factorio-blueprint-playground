@@ -9,6 +9,7 @@ import unknownModFixture from '../../fixtures/blueprints/json/unknown-mod.json';
 import vanillaFixture from '../../fixtures/blueprints/json/vanilla-2.0.json';
 
 const FACTORIO_2_VERSION = 562949953421312;
+const FACTORIO_1_1_VERSION = 281479275675648;
 const FIXTURES = {
 	krastorio: krastorioFixture as BlueprintString,
 	'space-age': spaceAgeFixture as BlueprintString,
@@ -33,6 +34,48 @@ function fixture(name: keyof typeof FIXTURES): BlueprintString {
 }
 
 describe('extractNames', () => {
+	it('extracts display icons when display panel conditions are omitted or empty', () => {
+		const blueprint: BlueprintString = {
+			blueprint: {
+				item: 'blueprint',
+				version: FACTORIO_2_VERSION,
+				entities: [
+					{
+						entity_number: 1,
+						name: 'display-panel',
+						position: {x: 0, y: 0},
+						control_behavior: {
+							parameters: [
+								{icon: {name: 'automation-science-pack'}},
+								{condition: {}, icon: {name: 'logistic-science-pack'}},
+								{
+									condition: {
+										first_signal: {type: 'virtual', name: 'signal-A'},
+										constant: 1,
+										comparator: '=',
+									},
+									icon: {name: 'chemical-science-pack'},
+								},
+							],
+						},
+					},
+				],
+			},
+		};
+
+		expect(extractNames(blueprint)).toStrictEqual({
+			names: names([
+				['display-panel', 'entity'],
+				['automation-science-pack', 'signal'],
+				['logistic-science-pack', 'signal'],
+				['signal-A', 'signal'],
+				['chemical-science-pack', 'signal'],
+			]),
+			flags: {hasNonNormalQuality: false, hasPlanetSignals: false, hasSpaceLocationSignals: false},
+			version: '2.0.0.0',
+		});
+	});
+
 	it('extracts nothing from an empty wrapper', () => {
 		expect(extractNames({})).toStrictEqual({
 			names: new Map(),
@@ -350,6 +393,109 @@ describe('extractNames', () => {
 		});
 	});
 
+	it('extracts schedule signals when other stops omit wait conditions or have none', () => {
+		const blueprint: BlueprintString = {
+			blueprint: {
+				item: 'blueprint',
+				version: FACTORIO_2_VERSION,
+				entities: [{entity_number: 1, name: 'locomotive', position: {x: 0, y: 0}}],
+				schedules: [
+					{
+						locomotives: [1],
+						schedule: {
+							records: [
+								{station: 'Example station without conditions'},
+								{station: 'Example station with empty conditions', wait_conditions: []},
+								{
+									station: 'Example station with signal conditions',
+									wait_conditions: [
+										{
+											compare_type: 'and',
+											type: 'circuit',
+											condition: {first_signal: {type: 'virtual', name: 'signal-A'}},
+										},
+									],
+								},
+							],
+						},
+					},
+				],
+			},
+		};
+
+		expect(extractNames(blueprint)).toStrictEqual({
+			names: names([
+				['locomotive', 'entity'],
+				['signal-A', 'signal'],
+			]),
+			flags: {
+				hasNonNormalQuality: false,
+				hasPlanetSignals: false,
+				hasSpaceLocationSignals: false,
+			},
+			version: '2.0.0.0',
+		});
+	});
+
+	it('extracts interrupt signals from group schedules that have no records', () => {
+		const blueprint: BlueprintString = {
+			blueprint: {
+				item: 'blueprint',
+				version: FACTORIO_2_VERSION,
+				entities: [{entity_number: 1, name: 'locomotive', position: {x: 0, y: 0}}],
+				schedules: [
+					{
+						locomotives: [1],
+						schedule: {
+							group: 'Example group',
+							interrupts: [
+								{
+									name: 'Example interrupt',
+									conditions: [
+										{compare_type: 'and', type: 'empty'},
+										{
+											compare_type: 'and',
+											type: 'circuit',
+											condition: {first_signal: {type: 'virtual', name: 'interrupt-condition'}},
+										},
+									],
+									targets: [
+										{station: 'Example target without conditions'},
+										{
+											station: 'Example target',
+											wait_conditions: [
+												{
+													compare_type: 'and',
+													type: 'circuit',
+													condition: {first_signal: {type: 'item', name: 'interrupt-target'}},
+												},
+											],
+										},
+									],
+								},
+								{name: 'Example interrupt without conditions or targets'},
+							],
+						},
+					},
+				],
+			},
+		};
+
+		expect(extractNames(blueprint)).toStrictEqual({
+			names: names([
+				['locomotive', 'entity'],
+				['interrupt-condition', 'signal'],
+				['interrupt-target', 'signal'],
+			]),
+			flags: {
+				hasNonNormalQuality: false,
+				hasPlanetSignals: false,
+				hasSpaceLocationSignals: false,
+			},
+			version: '2.0.0.0',
+		});
+	});
+
 	it('extracts upgrade planner mappers and icons', () => {
 		const planner: BlueprintString = {
 			upgrade_planner: {
@@ -500,6 +646,167 @@ describe('extractNames', () => {
 			flags: {
 				hasNonNormalQuality,
 				hasPlanetSignals,
+				hasSpaceLocationSignals: false,
+			},
+			version: '2.0.0.0',
+		});
+	});
+
+	it('extracts item stacks, request filters, combinator filters, and wagon filters in Factorio 1.1 and 0.x formats', () => {
+		const blueprint: BlueprintString = {
+			blueprint: {
+				item: 'blueprint',
+				version: FACTORIO_1_1_VERSION,
+				entities: [
+					{
+						entity_number: 1,
+						name: 'assembling-machine-3',
+						position: {x: 0, y: 0},
+						items: {'speed-module-3': 2, 'productivity-module-3': 2},
+					},
+					{
+						entity_number: 2,
+						name: 'beacon',
+						position: {x: 3, y: 0},
+						items: [{item: 'effectivity-module', count: 2}],
+					},
+					{
+						entity_number: 3,
+						name: 'logistic-chest-requester',
+						position: {x: 6, y: 0},
+						request_filters: [{index: 1, name: 'iron-plate', count: 100}],
+					},
+					{
+						entity_number: 4,
+						name: 'constant-combinator',
+						position: {x: 7, y: 0},
+						control_behavior: {
+							filters: [{signal: {type: 'item', name: 'copper-plate'}, count: 1, index: 1}],
+						},
+					},
+					{
+						entity_number: 5,
+						name: 'cargo-wagon',
+						position: {x: 10, y: 0},
+						inventory: {filters: [{index: 1, name: 'iron-ore'}], bar: 20},
+					},
+				],
+			},
+		};
+
+		expect(extractNames(blueprint)).toStrictEqual({
+			names: names([
+				['assembling-machine-3', 'entity'],
+				['speed-module-3', 'item'],
+				['productivity-module-3', 'item'],
+				['beacon', 'entity'],
+				['effectivity-module', 'item'],
+				['logistic-chest-requester', 'entity'],
+				['iron-plate', 'item'],
+				['constant-combinator', 'entity'],
+				['copper-plate', 'signal'],
+				['cargo-wagon', 'entity'],
+				['iron-ore', 'item'],
+			]),
+			flags: {
+				hasNonNormalQuality: false,
+				hasPlanetSignals: false,
+				hasSpaceLocationSignals: false,
+			},
+			version: '1.1.61.0',
+		});
+	});
+
+	it('records quality from filters that have no name', () => {
+		const blueprint: BlueprintString = {
+			blueprint: {
+				item: 'blueprint',
+				version: FACTORIO_2_VERSION,
+				entities: [
+					{
+						entity_number: 1,
+						name: 'filter-inserter',
+						position: {x: 0, y: 0},
+						filters: [{index: 1, quality: 'rare', comparator: '<'}],
+					},
+				],
+			},
+		};
+
+		expect(extractNames(blueprint)).toStrictEqual({
+			names: names([['filter-inserter', 'entity']]),
+			flags: {
+				hasNonNormalQuality: true,
+				hasPlanetSignals: false,
+				hasSpaceLocationSignals: false,
+			},
+			version: '2.0.0.0',
+		});
+	});
+
+	it('extracts nothing from a deconstruction planner without settings', () => {
+		const planner: BlueprintString = {
+			deconstruction_planner: {
+				item: 'deconstruction-planner',
+				label: 'All Entities',
+				version: FACTORIO_2_VERSION,
+			},
+		};
+
+		expect(extractNames(planner)).toStrictEqual({
+			names: new Map(),
+			flags: {
+				hasNonNormalQuality: false,
+				hasPlanetSignals: false,
+				hasSpaceLocationSignals: false,
+			},
+			version: '2.0.0.0',
+		});
+	});
+
+	it('ignores icon signals that have no name', () => {
+		const blueprint = {
+			blueprint: {
+				item: 'blueprint',
+				version: FACTORIO_1_1_VERSION,
+				icons: [{signal: {type: 'item', backup: 'science-pack-1'}, index: 1}],
+			},
+		} as unknown as BlueprintString;
+
+		expect(extractNames(blueprint)).toStrictEqual({
+			names: new Map(),
+			flags: {
+				hasNonNormalQuality: false,
+				hasPlanetSignals: false,
+				hasSpaceLocationSignals: false,
+			},
+			version: '1.1.61.0',
+		});
+	});
+
+	it('extracts book icons from an empty nested book without a blueprints list', () => {
+		const book: BlueprintString = {
+			blueprint_book: {
+				item: 'blueprint-book',
+				version: FACTORIO_2_VERSION,
+				blueprints: [
+					{
+						index: 0,
+						blueprint_book: {
+							item: 'blueprint-book',
+							version: FACTORIO_2_VERSION,
+							icons: [{signal: {type: 'item', name: 'empty-book-icon'}, index: 1}],
+						},
+					},
+				],
+			},
+		};
+
+		expect(extractNames(book)).toStrictEqual({
+			names: names([['empty-book-icon', 'signal']]),
+			flags: {
+				hasNonNormalQuality: false,
+				hasPlanetSignals: false,
 				hasSpaceLocationSignals: false,
 			},
 			version: '2.0.0.0',

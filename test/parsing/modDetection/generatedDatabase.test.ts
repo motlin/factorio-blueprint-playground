@@ -26,6 +26,12 @@ const editorBlueprint: BlueprintString = {
 	},
 };
 
+function sourceIds(name: string): string[] {
+	return database.sources
+		.filter((_source, index) => ((database.names[name] ?? 0) & (1 << index)) !== 0)
+		.map(({id}) => id);
+}
+
 function detect(fixture: unknown) {
 	return classify(extractNames(fixture as BlueprintString), database);
 }
@@ -170,30 +176,110 @@ describe('generated mod database', () => {
 					'top-up-valve',
 					'space-platform-hub',
 					'turbo-loader',
-				].map((name) => [name, database.names[name]]),
+				].map((name) => [name, sourceIds(name)]),
 			),
 		).toStrictEqual({
-			'bottomless-chest': 65_536,
-			'burner-generator': 65_536,
-			'electric-energy-interface': 65_536,
-			'express-loader': 65_536,
-			'fast-loader': 65_536,
-			'heat-interface': 65_536,
-			'infinity-cargo-wagon': 65_536,
-			'infinity-chest': 65_536,
-			'infinity-pipe': 65_536,
-			'lane-splitter': 65_536,
-			'linked-belt': 65_536,
-			'linked-chest': 65_536,
-			loader: 65_536,
-			'one-way-valve': 65_536,
-			'overflow-valve': 65_536,
-			'proxy-container': 65_536,
-			'simple-entity-with-force': 65_536,
-			'simple-entity-with-owner': 65_536,
-			'space-platform-hub': 131_072,
-			'top-up-valve': 65_536,
-			'turbo-loader': 131_072,
+			'bottomless-chest': ['map-editor'],
+			'burner-generator': ['map-editor'],
+			'electric-energy-interface': ['map-editor'],
+			'express-loader': ['map-editor'],
+			'fast-loader': ['map-editor'],
+			'heat-interface': ['map-editor'],
+			'infinity-cargo-wagon': ['map-editor'],
+			'infinity-chest': ['map-editor'],
+			'infinity-pipe': ['map-editor'],
+			'lane-splitter': ['map-editor'],
+			'linked-belt': ['map-editor'],
+			'linked-chest': ['map-editor'],
+			loader: ['map-editor'],
+			'one-way-valve': ['map-editor'],
+			'overflow-valve': ['map-editor'],
+			'proxy-container': ['map-editor'],
+			'simple-entity-with-force': ['map-editor'],
+			'simple-entity-with-owner': ['map-editor'],
+			'space-platform-hub': ['space-age-map-editor'],
+			'top-up-valve': ['map-editor'],
+			'turbo-loader': ['space-age-map-editor'],
+		});
+	});
+
+	it('classifies vanilla Factorio 1.1 and 0.16 names as base game evidence, not mods', () => {
+		const blueprint: BlueprintString = {
+			blueprint: {
+				item: 'blueprint',
+				version: 281_479_275_675_648,
+				icons: [{signal: {type: 'item', name: 'science-pack-1'}, index: 1}],
+				entities: [
+					{entity_number: 1, name: 'filter-inserter', position: {x: 0, y: 0}},
+					{entity_number: 2, name: 'logistic-chest-requester', position: {x: 1, y: 0}},
+					{
+						entity_number: 3,
+						name: 'assembling-machine-3',
+						position: {x: 3, y: 0},
+						recipe: 'rocket-control-unit',
+					},
+				],
+			},
+		};
+
+		expect(detect(blueprint)).toStrictEqual({
+			verdicts: [
+				{
+					source: 'base-1.1',
+					label: 'Factorio 1.1 and earlier',
+					confidence: 'high',
+					matchCount: 5,
+					exampleNames: [
+						'assembling-machine-3',
+						'filter-inserter',
+						'logistic-chest-requester',
+						'rocket-control-unit',
+						'science-pack-1',
+					],
+				},
+			],
+			unknownNames: [],
+			warnings: [],
+		});
+	});
+
+	it('attributes hidden and generated vanilla prototypes to the game, not mods', () => {
+		expect(
+			Object.fromEntries(
+				[
+					'blueprint',
+					'cliff',
+					'deconstruction-planner',
+					'deepwater',
+					'entity-ghost',
+					'entity-unknown',
+					'fulgoran-ruin-colossal',
+					'fusion-plasma',
+					'huge-promethium-asteroid',
+					'iron-ore-melting',
+					'medium-demolisher',
+					'parameter-0',
+					'signal-any-quality',
+					'tile-ghost',
+					'tree-01',
+				].map((name) => [name, sourceIds(name)]),
+			),
+		).toStrictEqual({
+			blueprint: ['base', 'base-1.1'],
+			cliff: ['base'],
+			'deconstruction-planner': ['base', 'base-1.1'],
+			deepwater: ['base'],
+			'entity-ghost': ['base'],
+			'entity-unknown': ['base'],
+			'fulgoran-ruin-colossal': ['space-age'],
+			'fusion-plasma': ['space-age'],
+			'huge-promethium-asteroid': ['space-age'],
+			'iron-ore-melting': ['space-age'],
+			'medium-demolisher': ['space-age'],
+			'parameter-0': ['base'],
+			'signal-any-quality': ['quality'],
+			'tile-ghost': ['base'],
+			'tree-01': ['base'],
 		});
 	});
 });

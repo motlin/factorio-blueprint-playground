@@ -1,6 +1,6 @@
 {
 	"version": {"base": "2.0.0", "Krastorio2": "2.0.0", "flib": "1.0.0"},
-	"items": [{"id": "transport-belt"}, {"id": "kr-test-machine"}],
+	"items": [{"id": "transport-belt"}, {"id": "kr-test-machine"}, {"id": "filter-inserter"}],
 	"recipes": [{"id": "foundry"}, {"id": "kr-test-recipe"}],
 	"locations": null,
 	"qualities": null
