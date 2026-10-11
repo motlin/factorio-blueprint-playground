@@ -50,10 +50,9 @@ export const Route = createFileRoute('/')({
 					label: info.label,
 					description: info.description,
 					gameVersion: info.version.toString(),
-					icons: (info.icons ?? []).map((icon) => ({
-						type: icon.signal.type,
-						name: icon.signal.name,
-					})),
+					icons: (info.icons ?? []).flatMap(({signal}) =>
+						signal.name === undefined ? [] : [{type: signal.type, name: signal.name}],
+					),
 				};
 
 				let validSelection: string | undefined;

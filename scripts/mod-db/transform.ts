@@ -24,6 +24,7 @@ const baseSupplementSchema = z.object({
 	spaceAge: z.array(z.string().min(1)),
 	quality: z.array(z.string().min(1)),
 	elevatedRails: z.array(z.string().min(1)),
+	legacy: z.array(z.string().min(1)),
 });
 
 const prefixesSchema = z.record(z.string().min(1), z.string().min(1));
@@ -35,11 +36,13 @@ export interface BaseSupplement {
 	spaceAge: string[];
 	quality: string[];
 	elevatedRails: string[];
+	legacy: string[];
 }
 
 interface TransformInput {
 	baseDatasets: FactorioLabDataset[];
-	spaceAgeDataset: FactorioLabDataset;
+	spaceAgeDatasets: FactorioLabDataset[];
+	legacyDatasets: FactorioLabDataset[];
 	modDatasets: {
 		id: string;
 		label: string;
@@ -48,6 +51,11 @@ interface TransformInput {
 	supplement: BaseSupplement;
 	mapEditorNames: string[];
 	spaceAgeMapEditorNames: string[];
+	prototypeNames: {
+		base: string[];
+		spaceAge: string[];
+		quality: string[];
+	};
 	prefixes: Record<string, string>;
 	generatedAt: string;
 	factoriolabCommit: string;
@@ -60,11 +68,18 @@ enum LuaTokenKind {
 	OpeningBrace,
 	ClosingBrace,
 	Equals,
+	Concatenation,
 }
 
 interface LuaToken {
 	kind: LuaTokenKind;
 	value: string;
+}
+
+interface PrototypeFrame {
+	prototypeType: string | undefined;
+	name: string | undefined;
+	nestedNames: string[];
 }
 
 interface LuaTableFrame {
@@ -157,6 +172,9 @@ function tokenizeLua(source: string): LuaToken[] {
 			tokens.push({kind: LuaTokenKind.ClosingBrace, value: character});
 		} else if (character === '=') {
 			tokens.push({kind: LuaTokenKind.Equals, value: character});
+		} else if (character === '.' && source[cursor + 1] === '.') {
+			tokens.push({kind: LuaTokenKind.Concatenation, value: '..'});
+			cursor += 1;
 		}
 		cursor += 1;
 	}
@@ -207,6 +225,58 @@ export function extractHiddenPlaceResults(source: string): string[] {
 		throw new Error('Unclosed table in Lua source.');
 	}
 	return [...placeResults].sort();
+}
+
+export function extractPrototypeNames(source: string): string[] {
+	const frames: PrototypeFrame[] = [];
+	const names = new Set<string>();
+	const tokens = tokenizeLua(source);
+
+	for (let index = 0; index < tokens.length; index += 1) {
+		const token = tokens[index];
+		if (token.kind === LuaTokenKind.OpeningBrace) {
+			frames.push({prototypeType: undefined, name: undefined, nestedNames: []});
+			continue;
+		}
+		if (token.kind === LuaTokenKind.ClosingBrace) {
+			const frame = frames.pop();
+			if (frame === undefined) {
+				throw new Error('Unexpected closing brace in Lua source.');
+			}
+			const frameNames =
+				frame.prototypeType !== undefined && frame.name !== undefined ? [frame.name] : frame.nestedNames;
+			const parent = frames.at(-1);
+			if (parent === undefined) {
+				for (const name of frameNames) {
+					names.add(name);
+				}
+			} else {
+				parent.nestedNames.push(...frameNames);
+			}
+			continue;
+		}
+		if (token.kind !== LuaTokenKind.Identifier || tokens[index + 1]?.kind !== LuaTokenKind.Equals) {
+			continue;
+		}
+		const frame = frames.at(-1);
+		const value = tokens.at(index + 2);
+		if (frame === undefined || value?.kind !== LuaTokenKind.String) {
+			continue;
+		}
+		if (tokens[index + 3]?.kind === LuaTokenKind.Concatenation) {
+			continue;
+		}
+		if (token.value === 'type') {
+			frame.prototypeType = value.value;
+		} else if (token.value === 'name') {
+			frame.name = value.value;
+		}
+	}
+
+	if (frames.length > 0) {
+		throw new Error('Unclosed table in Lua source.');
+	}
+	return [...names].sort();
 }
 
 export function parseFactorioLabDataset(value: unknown): FactorioLabDataset {
@@ -265,19 +335,25 @@ export function transformDatasets(input: TransformInput): ModDatabase {
 	const spaceAgeMapEditorNames = new Set(input.spaceAgeMapEditorNames);
 	const allMapEditorNames = new Set([...mapEditorNames, ...spaceAgeMapEditorNames]);
 	const baseNames = new Set(input.supplement.base);
-	for (const dataset of input.baseDatasets) {
-		for (const name of collectNames(dataset)) {
-			if (!allMapEditorNames.has(name)) {
-				baseNames.add(name);
-			}
+	for (const name of [
+		...input.baseDatasets.flatMap((dataset) => [...collectNames(dataset)]),
+		...input.prototypeNames.base,
+	]) {
+		if (!allMapEditorNames.has(name)) {
+			baseNames.add(name);
 		}
 	}
 
-	const spaceAgeNames = collectNames(input.spaceAgeDataset);
+	const spaceAgeNames = new Set([
+		...input.spaceAgeDatasets.flatMap((dataset) => [...collectNames(dataset)]),
+		...input.prototypeNames.spaceAge,
+	]);
 	for (const name of allMapEditorNames) {
 		spaceAgeNames.delete(name);
 	}
-	const qualityNames = new Set(input.spaceAgeDataset.qualities.map((quality) => quality.id));
+	const qualityNames = new Set(
+		input.spaceAgeDatasets.flatMap((dataset) => dataset.qualities.map((quality) => quality.id)),
+	);
 	const names = new Map<string, number>();
 	addNames(names, baseNames, sourceMask(sources, 'base'));
 
@@ -297,6 +373,17 @@ export function transformDatasets(input: TransformInput): ModDatabase {
 	addNames(names, input.supplement.spaceAge, sourceMask(sources, 'space-age'));
 	addNames(names, input.supplement.quality, sourceMask(sources, 'quality'));
 	addNames(names, input.supplement.elevatedRails, sourceMask(sources, 'elevated-rails'));
+	addNames(names, input.prototypeNames.quality, sourceMask(sources, 'quality'));
+
+	const legacyNames = new Set(input.supplement.legacy);
+	for (const dataset of input.legacyDatasets) {
+		for (const name of collectNames(dataset)) {
+			if (!allMapEditorNames.has(name)) {
+				legacyNames.add(name);
+			}
+		}
+	}
+	addNames(names, legacyNames, sourceMask(sources, 'base-1.1'));
 	addNames(names, mapEditorNames, sourceMask(sources, 'map-editor'));
 	addNames(names, spaceAgeMapEditorNames, sourceMask(sources, 'space-age-map-editor'));
 
@@ -306,6 +393,8 @@ export function transformDatasets(input: TransformInput): ModDatabase {
 		...input.supplement.spaceAge,
 		...input.supplement.quality,
 		...input.supplement.elevatedRails,
+		...input.prototypeNames.quality,
+		...legacyNames,
 		...mapEditorNames,
 		...spaceAgeMapEditorNames,
 	]);

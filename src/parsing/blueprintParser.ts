@@ -1,5 +1,6 @@
 import {type DeflateOptions, unzlibSync, zlibSync} from 'fflate';
 import {logger} from '../lib/sentry';
+import {rememberBlueprintSource} from './blueprintSource';
 import {DEFAULT_COMPRESSION_SETTINGS} from './compressionSettings';
 import {getErrorMessage} from './errors';
 import type {BlueprintString} from './types';
@@ -18,6 +19,13 @@ export class BlueprintError extends Error {
  * Takes a blueprint string and returns the parsed JSON data
  */
 export function deserializeBlueprint(blueprintData: string): BlueprintString {
+	// Base64 of a gzip header: the Blueprint String format, which stores Lua tables rather than JSON.
+	if (blueprintData.startsWith('H4sI')) {
+		throw new BlueprintError(
+			'This blueprint string uses the format from Factorio 0.14 and earlier, which the playground cannot read.',
+		);
+	}
+
 	// Validate prefix
 	if (!blueprintData.startsWith('0')) {
 		throw new BlueprintError(
@@ -34,7 +42,9 @@ export function deserializeBlueprint(blueprintData: string): BlueprintString {
 	const decompressedStr = new TextDecoder().decode(decompressedBytes);
 
 	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- JSON.parse returns untyped data; the blueprint shape is validated downstream by consumers (BlueprintWrapper.getType throws on unrecognized shapes)
-	return JSON.parse(decompressedStr.trim()) as BlueprintString;
+	const blueprint = JSON.parse(decompressedStr.trim()) as BlueprintString;
+	rememberBlueprintSource(blueprint, blueprintData);
+	return blueprint;
 }
 
 export function deserializeBlueprintNoThrow(data: string): BlueprintString | null {
