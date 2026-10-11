@@ -28,7 +28,7 @@
 		"test:coverage": "node node_modules/vitest/dist/cli.js run --coverage",
 		"storybook": "storybook dev -p 6006",
 		"build-storybook": "storybook build",
-		"prepare": "vp config"
+		"prepare": "VITE_GIT_HOOKS=0 vp config"
 	},
 	"dependencies": {
 		"@sentry/react": "^11.2.0",
