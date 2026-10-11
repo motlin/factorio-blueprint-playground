@@ -11,13 +11,13 @@ const UpgradePlannerPanelComponent = ({blueprint}: {blueprint: BlueprintString})
 	const planner: UpgradePlanner | undefined = blueprint.upgrade_planner;
 	if (!planner) return null;
 
-	const {settings} = planner;
-	if (settings.mappers.length === 0) return null;
+	const mappers = planner.settings?.mappers ?? [];
+	if (mappers.length === 0) return null;
 
 	return (
 		<Panel title="Upgrade Mappings">
 			<Spreadsheet>
-				{settings.mappers
+				{mappers
 					.sort((a, b) => a.index - b.index)
 					.map((mapping) => (
 						<Row key={mapping.index}>

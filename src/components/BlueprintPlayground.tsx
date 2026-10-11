@@ -129,7 +129,11 @@ export function BlueprintPlayground() {
 					<div>
 						<ExportActions blueprint={selectedBlueprint} path={selectedPath} title="Selected Blueprint" />
 						<BasicInfoPanel blueprint={selectedBlueprint} />
-						<BlueprintInfoPanels blueprint={selectedBlueprint} />
+						<BlueprintInfoPanels
+							blueprint={selectedBlueprint}
+							selectedPath={selectedPath}
+							onSelect={onSelect}
+						/>
 					</div>
 				</div>
 
