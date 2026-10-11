@@ -195,4 +195,55 @@ describe('classify', () => {
 			warnings: ['Blueprint version 1.1.110.0 predates Factorio 2.0, but Space Age evidence is present.'],
 		});
 	});
+
+	it('uses Factorio 1.1 evidence only for pre-2.0 blueprints or names nothing newer explains', () => {
+		const versionedDatabase: ModDatabase = {
+			...database,
+			sources: [
+				{id: 'base', label: 'Factorio 2.0'},
+				{id: 'space-age', label: 'Space Age', dlc: true},
+				{id: 'base-1.1', label: 'Factorio 1.1 and earlier'},
+			],
+			// stack-inserter is a Space Age entity in 2.0 but was the vanilla bulk inserter in 1.1.
+			// signal-A existed in 1.1 too, but only the 2.0 data lists it.
+			names: {'stack-inserter': 6, 'signal-A': 1, 'filter-inserter': 4},
+		};
+
+		expect({
+			spaceAgeBlueprint: classify(extracted(['stack-inserter']), versionedDatabase).verdicts,
+			legacyBlueprint: classify(
+				extracted(['stack-inserter', 'signal-A'], {version: '1.1.110.0'}),
+				versionedDatabase,
+			).verdicts,
+			removedNameInNewBlueprint: classify(extracted(['filter-inserter']), versionedDatabase).verdicts,
+		}).toStrictEqual({
+			spaceAgeBlueprint: [
+				{
+					source: 'space-age',
+					label: 'Space Age',
+					confidence: 'medium',
+					matchCount: 1,
+					exampleNames: ['stack-inserter'],
+				},
+			],
+			legacyBlueprint: [
+				{
+					source: 'base-1.1',
+					label: 'Factorio 1.1 and earlier',
+					confidence: 'high',
+					matchCount: 2,
+					exampleNames: ['signal-A', 'stack-inserter'],
+				},
+			],
+			removedNameInNewBlueprint: [
+				{
+					source: 'base-1.1',
+					label: 'Factorio 1.1 and earlier',
+					confidence: 'high',
+					matchCount: 1,
+					exampleNames: ['filter-inserter'],
+				},
+			],
+		});
+	});
 });
