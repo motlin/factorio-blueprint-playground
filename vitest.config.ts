@@ -10,7 +10,7 @@ export default mergeConfig(
 					test: {
 						name: 'unit',
 						globals: true,
-						environment: 'jsdom',
+						environment: 'happy-dom',
 						setupFiles: ['./test/setup.ts'],
 						exclude: ['.llm/**', 'node_modules/**'],
 					},

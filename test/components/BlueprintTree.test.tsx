@@ -74,7 +74,7 @@ describe('BlueprintTree Component', () => {
 	});
 
 	it('calls onSelect when clicking blueprints', async () => {
-		const user = userEvent.setup();
+		const user = userEvent.setup({delay: null});
 		const onSelect = vi.fn<(path: string) => void>();
 
 		const {container} = render(

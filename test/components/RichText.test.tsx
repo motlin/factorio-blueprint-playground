@@ -142,28 +142,28 @@ describe('RichText', () => {
 		it('handles named colors', () => {
 			const renderedResult = render(<RichText text="[color=red]Red text[/color]" iconSize="large" />);
 			const span = renderedResult.getByText('Red text');
-			expect(span.style.color).toBe('rgb(235, 92, 95)');
+			expect(span).toHaveStyle({color: '#eb5c5f'});
 			expect(span.textContent).toBe('Red text');
 		});
 
 		it('handles RGB values 0-1', () => {
 			const renderedResult = render(<RichText text="[color=1,0,0]Red text[/color]" iconSize="large" />);
 			const span = renderedResult.getByText('Red text');
-			expect(span.style.color).toBe('rgb(255, 0, 0)');
+			expect(span).toHaveStyle({color: 'rgb(255, 0, 0)'});
 			expect(span.textContent).toBe('Red text');
 		});
 
 		it('handles RGB values 0-255', () => {
 			const renderedResult = render(<RichText text="[color=255,0,0]Red text[/color]" iconSize="large" />);
 			const span = renderedResult.getByText('Red text');
-			expect(span.style.color).toBe('rgb(255, 0, 0)');
+			expect(span).toHaveStyle({color: 'rgb(255, 0, 0)'});
 			expect(span.textContent).toBe('Red text');
 		});
 
 		it('handles hex colors', () => {
 			const renderedResult = render(<RichText text="[color=#ff0000]Red text[/color]" iconSize="large" />);
 			const span = renderedResult.getByText('Red text');
-			expect(span.style.color).toBe('rgb(255, 0, 0)');
+			expect(span).toHaveStyle({color: '#ff0000'});
 			expect(span.textContent).toBe('Red text');
 		});
 	});
@@ -180,7 +180,7 @@ describe('RichText', () => {
 			<RichText text="[color=red][font=default-bold]Bold red text[/font][/color]" iconSize="large" />,
 		);
 		const span = getByTestId('formatted-text');
-		expect(span.style.color).toBe('rgb(235, 92, 95)');
+		expect(span).toHaveStyle({color: '#eb5c5f'});
 		expect(span.style.fontWeight).toBe('bold');
 		expect(span.textContent).toBe('Bold red text');
 	});
@@ -218,7 +218,7 @@ describe('RichText', () => {
 		expect(formattedSpans[0].textContent).toBe(' Iron plate with ');
 
 		expect(formattedSpans[1]).toHaveStyle({
-			color: 'rgb(235, 92, 95)',
+			color: '#eb5c5f',
 			fontWeight: 'normal',
 		});
 		expect(formattedSpans[1].textContent).toBe('red');
@@ -243,7 +243,7 @@ describe('RichText', () => {
 	it('handles unclosed tags gracefully', () => {
 		const renderedResult = render(<RichText text="[color=red]text without closing tag" iconSize="large" />);
 		const span = renderedResult.getByText('text without closing tag');
-		expect(span.style.color).toBe('rgb(235, 92, 95)');
+		expect(span).toHaveStyle({color: '#eb5c5f'});
 		expect(span.textContent).toBe('text without closing tag');
 	});
 });
