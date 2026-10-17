@@ -1,22 +1,13 @@
-import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import {render, screen} from '@testing-library/react';
-import type {ReactElement, ReactNode} from 'react';
+import type {ReactElement} from 'react';
 import {describe, expect, test} from 'vite-plus/test';
 
 import {BlueprintInfoPanels} from '../../src/components/blueprint/panels/BlueprintInfoPanels';
-import databaseJson from '../../src/generated/mod-db.json';
-import type {ModDatabase} from '../../src/parsing/modDetection/types';
 import type {BlueprintString} from '../../src/parsing/types';
 import '../../test/setup';
 
 function renderPanels(element: ReactElement) {
-	const queryClient = new QueryClient({defaultOptions: {queries: {retry: false}}});
-	queryClient.setQueryData(['mod-db'], {default: databaseJson as ModDatabase});
-	return render(element, {
-		wrapper: ({children}: {children: ReactNode}) => (
-			<QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-		),
-	});
+	return render(element);
 }
 
 describe('BlueprintInfoPanels', () => {

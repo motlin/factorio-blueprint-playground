@@ -1,3 +1,4 @@
+import {normalizeItemStacks} from '../../../../parsing/itemStacks';
 import type {Entity, ItemStack, Quality, Tile} from '../../../../parsing/types';
 
 export function countItems<T>(
@@ -54,8 +55,8 @@ export const getItemKey = (item: ItemStack) => {
 };
 
 export const getItemCount = (item: ItemStack): number => {
-	let total = 0;
-	for (const location of item.items.in_inventory) {
+	let total = item.items.grid_count ?? 0;
+	for (const location of item.items.in_inventory ?? []) {
 		// A zero or missing count represents a single placed item, so fall back to 1.
 		const count = location.count;
 		total += count != null && count !== 0 ? count : 1;
@@ -73,17 +74,15 @@ export const processEntitiesItems = (entities?: Entity[]): {moduleItems: ItemSta
 	const inventoryItems: ItemStack[] = [];
 
 	for (const entity of entities) {
-		if (entity.items && entity.items.length > 0) {
-			for (const item of entity.items) {
-				// Check if the item is in a module slot (inventory type 4 is typically modules)
-				// Other slots: fuel, ammo, etc. are considered inventory items
-				const isModuleItem = item.items.in_inventory.some((loc) => loc.inventory === 4);
+		for (const item of normalizeItemStacks(entity.items)) {
+			// Check if the item is in a module slot (inventory type 4 is typically modules)
+			// Other slots: fuel, ammo, etc. are considered inventory items
+			const isModuleItem = (item.items.in_inventory ?? []).some((loc) => loc.inventory === 4);
 
-				if (isModuleItem) {
-					moduleItems.push(item);
-				} else {
-					inventoryItems.push(item);
-				}
+			if (isModuleItem) {
+				moduleItems.push(item);
+			} else {
+				inventoryItems.push(item);
 			}
 		}
 	}
