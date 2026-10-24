@@ -2077,7 +2077,7 @@ describe('TransformPanel Blueprint Editor drafts', () =>
 				],
 			},
 		};
-		const selectedBlueprint = rootBlueprint.blueprint_book?.blueprints[0];
+		const selectedBlueprint = rootBlueprint.blueprint_book?.blueprints?.[0];
 		const savedRoot: BlueprintString =
 		{
 			blueprint_book:
@@ -2269,7 +2269,7 @@ describe('TransformPanel Blueprint Editor drafts', () =>
 			},
 		);
 
-		const savedBlueprint = savedRoot.blueprint_book?.blueprints[0];
+		const savedBlueprint = savedRoot.blueprint_book?.blueprints?.[0];
 		rerender(<TransformPanel blueprint={savedBlueprint} rootBlueprint={savedRoot} selectedPath="1" />);
 		openBlueprintEditor();
 		expect(

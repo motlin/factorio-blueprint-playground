@@ -1339,7 +1339,7 @@ describe('upgrade planner transforms', () =>
 						from: belt,
 					},
 				]),
-			).settings.mappers,
+			).settings?.mappers,
 		).toStrictEqual([
 			{
 				index: 0,

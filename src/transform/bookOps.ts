@@ -45,7 +45,7 @@ function collectLeaves(root: BlueprintString): BlueprintString[]
 		return [root];
 	}
 
-	return root.blueprint_book.blueprints.flatMap((child) => collectLeaves(child));
+	return (root.blueprint_book.blueprints ?? []).flatMap((child) => collectLeaves(child));
 }
 
 function compareLabels(first: BlueprintString, second: BlueprintString): number
@@ -133,8 +133,8 @@ export function sortBookByLabel(root: BlueprintString, recursive = false): Bluep
 	}
 
 	const children = recursive
-		? root.blueprint_book.blueprints.map((child) => sortBookByLabel(child, true))
-		: root.blueprint_book.blueprints;
+		? (root.blueprint_book.blueprints ?? []).map((child) => sortBookByLabel(child, true))
+		: (root.blueprint_book.blueprints ?? []);
 
 	return {
 		...root,
@@ -154,7 +154,7 @@ export function splitBook(root: BlueprintString): BlueprintString[]
 		return [root];
 	}
 
-	return root.blueprint_book.blueprints.map(({index: _index, ...child}) => child);
+	return (root.blueprint_book.blueprints ?? []).map(({index: _index, ...child}) => child);
 }
 
 export function makeBook(blueprints: BlueprintString[], label: string): BlueprintString

@@ -136,7 +136,7 @@ function plannerFromMappings(
 	template: UpgradePlanner | undefined,
 ): UpgradePlanner
 {
-	const planner: UpgradePlanner =
+	const planner =
 	{
 		...structuredClone(template),
 		item: 'upgrade-planner',
@@ -172,7 +172,7 @@ function plannerFromMappings(
 					return mapping;
 				}),
 		},
-	};
+	} satisfies UpgradePlanner;
 	delete planner.label;
 	delete planner.settings.description;
 	delete planner.settings.icons;
@@ -201,8 +201,8 @@ function plannerFromMappings(
 function recordMetadata(planner: UpgradePlanner | undefined, fallbackLabel: string): UpgradePlannerRecordMetadata
 {
 	return {
-		description: planner?.settings.description ?? '',
-		icons: [...(planner?.settings.icons ?? [])]
+		description: planner?.settings?.description ?? '',
+		icons: [...(planner?.settings?.icons ?? [])]
 			.sort((left, right) => left.index - right.index)
 			.map((icon) => structuredClone(icon)),
 		label: planner?.label ?? fallbackLabel,
@@ -312,7 +312,7 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 		const serializedMappings =
 			planner === undefined && includeDefaultMappings
 				? defaultSerializedMappings()
-				: (planner?.settings.mappers ?? []);
+				: (planner?.settings?.mappers ?? []);
 		return [...serializedMappings]
 			.sort((left, right) => left.index - right.index)
 			.map((serializedMapping) =>
@@ -527,9 +527,9 @@ export function useUpgradePlannerDraft({blueprint, rootBlueprint, selectedPath}:
 			{
 				type: 'upgrade_planner',
 				label: planner.label,
-				description: planner.settings.description,
+				description: planner.settings?.description,
 				gameVersion: planner.version.toString(),
-				icons: (planner.settings.icons ?? []).map(({signal}) => (
+				icons: (planner.settings?.icons ?? []).map(({signal}) => (
 				{
 					...signal,
 				})),
