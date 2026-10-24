@@ -1,3 +1,4 @@
+import {normalizeItemStacks} from '../parsing/itemStacks';
 import type {Blueprint, BlueprintString, Entity, Quality, SignalType} from '../parsing/types';
 import {removeEntities} from './visit';
 
@@ -30,15 +31,16 @@ function removeItemComponents(
 	}
 
 	const entities = sourceEntities.map((entity): Entity => {
-		const items = entity.items?.filter(
+		const sourceItems = normalizeItemStacks(entity.items);
+		const items = sourceItems.filter(
 			(item) => !isRemoved(removedComponents, {name: item.id.name, quality: item.id.quality, type: 'item'}),
 		);
-		if (items?.length === entity.items?.length) {
+		if (items.length === sourceItems.length) {
 			return entity;
 		}
 
 		const result = {...entity};
-		if (items === undefined || items.length === 0) {
+		if (items.length === 0) {
 			delete result.items;
 		} else {
 			result.items = items;

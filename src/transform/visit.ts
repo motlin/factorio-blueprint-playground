@@ -49,7 +49,7 @@ export function mapBlueprints(root: BlueprintString, transform: (blueprint: Blue
 			...root,
 			blueprint_book: {
 				...root.blueprint_book,
-				blueprints: root.blueprint_book.blueprints.map((child): BlueprintStringWithIndex => {
+				blueprints: (root.blueprint_book.blueprints ?? []).map((child): BlueprintStringWithIndex => {
 					const transformedChild = mapBlueprints(child, transform);
 					return {...transformedChild, index: child.index};
 				}),

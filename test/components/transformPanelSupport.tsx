@@ -257,8 +257,8 @@ export function storedPlanner(id: string, planner: UpgradePlanner, label: string
 export function largeNestedBookFixture() {
 	const rootBlueprint = deserializeBlueprint(readFixtureFile('txt/nested-book.txt'));
 	const book = rootBlueprint.blueprint_book;
-	const selectedBlueprint = book?.blueprints[0];
-	const nestedBook = book?.blueprints[1];
+	const selectedBlueprint = book?.blueprints?.[0];
+	const nestedBook = book?.blueprints?.[1];
 	if (book === undefined || selectedBlueprint?.blueprint === undefined || nestedBook === undefined) {
 		throw new Error('Expected the nested-book fixture to contain a blueprint followed by a nested book.');
 	}

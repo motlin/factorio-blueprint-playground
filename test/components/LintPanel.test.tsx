@@ -30,7 +30,7 @@ describe('LintPanel', () => {
 			title: screen.getByRole('heading', {name: 'Lint'}).textContent,
 			badges: screen.getAllByTestId('lint-count').map((element) => element.textContent),
 			rows: screen.getAllByRole('listitem').map((element) => element.textContent),
-			icons: screen.getAllByRole('img').map((element) => element.getAttribute('alt')),
+			icons: screen.getAllByRole('img').map((element) => element.getAttribute('aria-label')),
 		}).toStrictEqual({
 			title: 'Lint',
 			badges: ['2 warnings'],
@@ -38,7 +38,7 @@ describe('LintPanel', () => {
 				'●Inserter "fast-inserter" at (0.5, 0.5) has no pickup or drop target.(0.5, 0.5)',
 				'●Inserter "inserter" at (10.5, 0.5) has no pickup or drop target.(10.5, 0.5)',
 			],
-			icons: ['fast-inserter', 'inserter'],
+			icons: ['entity: fast-inserter', 'entity: inserter'],
 		});
 	});
 

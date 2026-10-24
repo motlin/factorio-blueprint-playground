@@ -1,3 +1,4 @@
+import {normalizeItemStacks} from '../parsing/itemStacks';
 import type {Blueprint, BlueprintString, Entity} from '../parsing/types';
 import {BlueprintEditorSourceMode} from './blueprintEditor';
 import {mapBlueprints, removeEntities} from './visit';
@@ -101,15 +102,13 @@ function isVehicle(entity: Entity): boolean {
 }
 
 function hasItem(entity: Entity, names: ReadonlySet<string>): boolean {
-	return entity.items?.some((item) => names.has(item.id.name)) ?? false;
+	return normalizeItemStacks(entity.items).some((item) => names.has(item.id.name));
 }
 
 function withoutItems(entity: Entity, names: ReadonlySet<string>): Entity {
-	if (entity.items === undefined) {
-		return entity;
-	}
-	const items = entity.items.filter((item) => !names.has(item.id.name));
-	if (items.length === entity.items.length) {
+	const sourceItems = normalizeItemStacks(entity.items);
+	const items = sourceItems.filter((item) => !names.has(item.id.name));
+	if (items.length === sourceItems.length) {
 		return entity;
 	}
 	const result = {...entity};
