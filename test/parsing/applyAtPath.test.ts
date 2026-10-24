@@ -53,11 +53,11 @@ describe('updateNestedBlueprint', () => {
 				active_index: 20,
 				blueprints: [
 					{index: 10, blueprint: {item: 'blueprint', label: 'Alice', version: 10}},
-					book.blueprint_book?.blueprints[1],
+					book.blueprint_book?.blueprints?.[1],
 				],
 			},
 		});
-		expect(book.blueprint_book?.blueprints[0]).toStrictEqual({
+		expect(book.blueprint_book?.blueprints?.[0]).toStrictEqual({
 			index: 10,
 			blueprint: {item: 'blueprint', label: 'Bob', version: 10},
 		});
@@ -71,7 +71,7 @@ describe('updateNestedBlueprint', () => {
 				version: 100,
 				active_index: 20,
 				blueprints: [
-					book.blueprint_book?.blueprints[0],
+					book.blueprint_book?.blueprints?.[0],
 					{
 						index: 20,
 						blueprint_book: {

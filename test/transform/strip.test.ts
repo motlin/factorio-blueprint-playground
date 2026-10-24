@@ -1,6 +1,7 @@
 import {describe, expect, test} from 'vite-plus/test';
 
 import {deserializeBlueprint, serializeBlueprint} from '../../src/parsing/blueprintParser';
+import {normalizeItemStacks} from '../../src/parsing/itemStacks';
 import type {Blueprint, BlueprintString} from '../../src/parsing/types';
 import {
 	blueprintFilterCategories,
@@ -182,6 +183,7 @@ describe('strip transforms', () => {
 			},
 		};
 		deepFreeze(input);
+		const inputItems = normalizeItemStacks(input.blueprint?.entities?.[1]?.items);
 
 		expect({
 			categories: blueprintFilterCategories(input),
@@ -206,10 +208,7 @@ describe('strip transforms', () => {
 						input.blueprint?.entities?.[0],
 						{
 							...input.blueprint?.entities?.[1],
-							items: [
-								input.blueprint?.entities?.[1]?.items?.[0],
-								input.blueprint?.entities?.[1]?.items?.[2],
-							],
+							items: [inputItems[0], inputItems[2]],
 						},
 						input.blueprint?.entities?.[2],
 					],
@@ -222,10 +221,7 @@ describe('strip transforms', () => {
 						input.blueprint?.entities?.[0],
 						{
 							...input.blueprint?.entities?.[1],
-							items: [
-								input.blueprint?.entities?.[1]?.items?.[1],
-								input.blueprint?.entities?.[1]?.items?.[2],
-							],
+							items: [inputItems[1], inputItems[2]],
 						},
 						input.blueprint?.entities?.[2],
 					],

@@ -793,7 +793,7 @@ describe('TransformPanel planner library records', () => {
 		await user.click(within(toolbar).getByRole('button', {name: 'Copy planner string'}));
 		await screen.findByText('Planner string copied.');
 		const copiedPlanner = parseUpgradePlanner(writeText.mock.calls[0][0]);
-		expect({label: copiedPlanner.label, mappings: copiedPlanner.settings.mappers.length}).toStrictEqual({
+		expect({label: copiedPlanner.label, mappings: copiedPlanner.settings?.mappers?.length}).toStrictEqual({
 			label: 'Default Upgrade',
 			mappings: 14,
 		});

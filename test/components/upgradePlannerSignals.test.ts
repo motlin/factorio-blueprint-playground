@@ -11,7 +11,7 @@ import {
 	upgradeTargetOptions,
 } from '../../src/components/blueprint/panels/transform/upgradePlannerSignals';
 
-function optionNames(options: readonly {name: string}[]): string[] {
+function optionNames(options: readonly {name?: string}[]): (string | undefined)[] {
 	return options.map(({name}) => name);
 }
 
@@ -63,7 +63,7 @@ describe('upgradePlannerSignals', () => {
 						'rare',
 						'epic',
 						'legendary',
-					].includes(name),
+					].includes(name ?? ''),
 				)
 				.map(({name, type}) => ({name, type})),
 		).toStrictEqual([

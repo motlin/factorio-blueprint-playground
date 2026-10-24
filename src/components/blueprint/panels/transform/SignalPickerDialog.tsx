@@ -151,7 +151,7 @@ function signalPrototypeIdentity(signal: SignalID): string {
 }
 
 function signalName(signal: SignalID): string {
-	const words = signal.name.replace(/^signal-/, 'signal ').replaceAll('-', ' ');
+	const words = (signal.name ?? '').replace(/^signal-/, 'signal ').replaceAll('-', ' ');
 	return words.slice(0, 1).toUpperCase() + words.slice(1);
 }
 
@@ -190,7 +190,7 @@ function categoryForSignal(signal: SignalID): PickerCategory {
  * planner pickers admit hidden prototypes while excluding parameters.
  */
 function isParameterSignal(signal: SignalID): boolean {
-	return signal.name === 'parameter-' || /^parameter-\d+$/.test(signal.name);
+	return signal.name === 'parameter-' || /^parameter-\d+$/.test(signal.name ?? '');
 }
 
 function signalWithCurrentQuality(

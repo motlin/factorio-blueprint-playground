@@ -67,7 +67,7 @@ describe('TransformPanel application scope and planner parsing', () => {
 				],
 			},
 		};
-		const selectedBlueprint = rootBlueprint.blueprint_book?.blueprints[0];
+		const selectedBlueprint = rootBlueprint.blueprint_book?.blueprints?.[0];
 		render(<TransformPanel blueprint={selectedBlueprint} rootBlueprint={rootBlueprint} selectedPath="1" />);
 
 		openUpgradePlanner();
@@ -152,7 +152,7 @@ describe('TransformPanel application scope and planner parsing', () => {
 				],
 			},
 		};
-		const selectedBlueprint = rootBlueprint.blueprint_book?.blueprints[0];
+		const selectedBlueprint = rootBlueprint.blueprint_book?.blueprints?.[0];
 		render(<TransformPanel blueprint={selectedBlueprint} rootBlueprint={rootBlueprint} selectedPath="1" />);
 
 		openUpgradePlanner();

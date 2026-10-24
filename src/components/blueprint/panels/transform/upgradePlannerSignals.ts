@@ -112,14 +112,14 @@ function comparePickerSignalOrder(left: SignalID, right: SignalID): number {
 	}
 	return (
 		(leftLayout?.index ?? Number.MAX_SAFE_INTEGER) - (rightLayout?.index ?? Number.MAX_SAFE_INTEGER) ||
-		left.name.localeCompare(right.name)
+		(left.name ?? '').localeCompare(right.name ?? '')
 	);
 }
 
 function compareUpgradeTargetOrder(left: SignalID, right: SignalID): number {
 	return (
-		(nextUpgradeOrder.get(left.name) ?? Number.MAX_SAFE_INTEGER) -
-			(nextUpgradeOrder.get(right.name) ?? Number.MAX_SAFE_INTEGER) || comparePickerSignalOrder(left, right)
+		(nextUpgradeOrder.get(left.name ?? '') ?? Number.MAX_SAFE_INTEGER) -
+			(nextUpgradeOrder.get(right.name ?? '') ?? Number.MAX_SAFE_INTEGER) || comparePickerSignalOrder(left, right)
 	);
 }
 
@@ -145,7 +145,7 @@ export function signalIdentity(signal: UpgradeSourceSignal): string {
 }
 
 export function signalName(signal: SignalID): string {
-	const words = signal.name.replace(/^signal-/, 'signal ').replaceAll('-', ' ');
+	const words = (signal.name ?? '').replace(/^signal-/, 'signal ').replaceAll('-', ' ');
 	return words.slice(0, 1).toUpperCase() + words.slice(1);
 }
 
@@ -197,7 +197,7 @@ export function canonicalPickerOptions(options: readonly SignalID[]): SignalID[]
 	ordered.sort((left, right) =>
 		!left.layered && !right.layered
 			? 0
-			: left.index - right.index || left.signal.name.localeCompare(right.signal.name),
+			: left.index - right.index || (left.signal.name ?? '').localeCompare(right.signal.name ?? ''),
 	);
 	return ordered.map(({signal}) => signal);
 }
@@ -211,7 +211,7 @@ export function canonicalPickerOptions(options: readonly SignalID[]): SignalID[]
  */
 function claimIconOwners(owners: Map<string, SignalID>, candidates: readonly SignalID[]): Map<string, SignalID> {
 	for (const candidate of candidates) {
-		if (!chatIconTypeOrder.has(chatIconType(candidate))) {
+		if (candidate.name === undefined || !chatIconTypeOrder.has(chatIconType(candidate))) {
 			continue;
 		}
 		const owner = owners.get(candidate.name);
@@ -266,7 +266,7 @@ export const maxModuleSlots = Math.max(...Object.values(gameData.entityModuleSlo
  * limited to entities that use modules.
  */
 export function entityFilterAllowed(signal: SignalID): boolean {
-	return normalizedSignalType(signal) === 'item' && upgradeModuleNames.has(signal.name);
+	return normalizedSignalType(signal) === 'item' && upgradeModuleNames.has(signal.name ?? '');
 }
 
 export function moduleEntityFilterOptions(): SignalID[] {
@@ -286,7 +286,7 @@ export function entityModuleSlotCount(signal: SignalID): number {
 		return 0;
 	}
 	const counts: Record<string, number> = gameData.entityModuleSlots;
-	return counts[signal.name] ?? 0;
+	return signal.name === undefined ? 0 : (counts[signal.name] ?? 0);
 }
 
 /**
@@ -308,7 +308,7 @@ export function moduleSlotOptions(): SignalID[] {
 export function moduleLimitAllowed(signal: SignalID): boolean {
 	return (
 		normalizedSignalType(signal) === 'item' &&
-		upgradeModuleNames.has(signal.name) &&
+		upgradeModuleNames.has(signal.name ?? '') &&
 		signal.name !== 'empty-module-slot'
 	);
 }
@@ -316,8 +316,8 @@ export function moduleLimitAllowed(signal: SignalID): boolean {
 export function isUpgradeSourceOption(signal: SignalID): boolean {
 	const type = normalizedSignalType(signal);
 	return (
-		(type === 'entity' && upgradeEntityNames.has(signal.name)) ||
-		(type === 'item' && (upgradeModuleNames.has(signal.name) || upgradeFuelNames.has(signal.name)))
+		(type === 'entity' && upgradeEntityNames.has(signal.name ?? '')) ||
+		(type === 'item' && (upgradeModuleNames.has(signal.name ?? '') || upgradeFuelNames.has(signal.name ?? '')))
 	);
 }
 
@@ -351,16 +351,16 @@ export function replaceUpgradeTarget(currentTarget: SignalID | undefined, nextTa
 	const compatibleModules =
 		normalizedSignalType(currentTarget) === 'item' &&
 		normalizedSignalType(nextTarget) === 'item' &&
-		upgradeModuleNames.has(currentTarget.name) &&
-		upgradeModuleNames.has(nextTarget.name);
+		upgradeModuleNames.has(currentTarget.name ?? '') &&
+		upgradeModuleNames.has(nextTarget.name ?? '');
 	return samePrototype || compatibleModules ? {...currentTarget, ...nextTarget} : {...nextTarget};
 }
 
 export function upgradeTargetOptions(source: UpgradeSourceSignal): SignalID[] {
-	if (normalizedSignalType(source) === 'item' && upgradeModuleNames.has(source.name)) {
+	if (normalizedSignalType(source) === 'item' && upgradeModuleNames.has(source.name ?? '')) {
 		return gameData.upgradeModuleItems.map((name) => ({type: 'item', name}));
 	}
-	if (normalizedSignalType(source) === 'item' && upgradeFuelNames.has(source.name)) {
+	if (normalizedSignalType(source) === 'item' && upgradeFuelNames.has(source.name ?? '')) {
 		return gameData.upgradeFuelItems.map((name) => ({type: 'item', name}));
 	}
 	if (normalizedSignalType(source) !== 'entity') {
