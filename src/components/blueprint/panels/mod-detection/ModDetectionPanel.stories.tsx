@@ -1,7 +1,8 @@
-import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
-import type {Decorator, Meta, StoryObj} from '@storybook/react-vite';
+import type {Meta, StoryObj} from '@storybook/react-vite';
 
-import type {ModDatabase} from '../../../../parsing/modDetection/types';
+import {detectMods} from '../../../../parsing/modDetection/modDetectionProtocol';
+import type {DetectionResult, ModDatabase} from '../../../../parsing/modDetection/types';
+import {type BlueprintJobRunner, inlineRunner} from '../../../../workers/blueprintJobRunner';
 import {ModDetectionPanel} from './ModDetectionPanel';
 
 const database: ModDatabase = {
@@ -33,33 +34,12 @@ const database: ModDatabase = {
 	},
 };
 
-function withDatabase(state: ModDatabase | 'loading'): Decorator {
-	return (StoryComponent) => {
-		const queryClient = new QueryClient({
-			defaultOptions: {queries: {retry: false}},
-		});
-		if (state === 'loading') {
-			const query = queryClient.getQueryCache().build(queryClient, {
-				queryKey: ['mod-db'],
-				queryFn: async () => {
-					await new Promise<void>((resolve) => {
-						void resolve;
-					});
-					return {default: database};
-				},
-			});
-			void query.fetch();
-		} else {
-			queryClient.setQueryData(['mod-db'], {default: state});
-		}
+const detect = inlineRunner((blueprint) => detectMods(blueprint, database));
 
-		return (
-			<QueryClientProvider client={queryClient}>
-				<StoryComponent />
-			</QueryClientProvider>
-		);
-	};
-}
+const neverDetects: BlueprintJobRunner<DetectionResult> = async () =>
+	new Promise<DetectionResult>((resolve) => {
+		void resolve;
+	});
 
 const meta: Meta<typeof ModDetectionPanel> = {
 	title: 'Blueprint/Panels/Mod Detection/ModDetectionPanel',
@@ -68,6 +48,7 @@ const meta: Meta<typeof ModDetectionPanel> = {
 		layout: 'centered',
 	},
 	tags: ['autodocs'],
+	args: {detect},
 	decorators: [
 		(StoryComponent) => (
 			<div style={{minWidth: '500px'}}>
@@ -88,8 +69,8 @@ export const Loading: Story = {
 				version: 562949954076673,
 			},
 		},
+		detect: neverDetects,
 	},
-	decorators: [withDatabase('loading')],
 };
 
 export const Vanilla: Story = {
@@ -102,7 +83,6 @@ export const Vanilla: Story = {
 			},
 		},
 	},
-	decorators: [withDatabase(database)],
 };
 
 export const SpaceAge: Story = {
@@ -123,7 +103,6 @@ export const SpaceAge: Story = {
 			},
 		},
 	},
-	decorators: [withDatabase(database)],
 };
 
 export const Modded: Story = {
@@ -140,7 +119,6 @@ export const Modded: Story = {
 			},
 		},
 	},
-	decorators: [withDatabase(database)],
 };
 
 export const MapEditor: Story = {
@@ -156,7 +134,6 @@ export const MapEditor: Story = {
 			},
 		},
 	},
-	decorators: [withDatabase(database)],
 };
 
 export const Unknowns: Story = {
@@ -172,5 +149,4 @@ export const Unknowns: Story = {
 			},
 		},
 	},
-	decorators: [withDatabase(database)],
 };

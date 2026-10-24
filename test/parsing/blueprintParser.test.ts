@@ -28,6 +28,18 @@ describe('blueprintParser', () => {
 			expect(() => deserializeBlueprint('abc123')).toThrow(UNKNOWN_FORMAT_REGEX);
 		});
 
+		it('explains that gzipped strings from Factorio 0.14 and earlier are unsupported', () => {
+			expect(() =>
+				deserializeBlueprint(
+					'H4sIAAAAAAAA/+1dS2/jOBL+K4bP0UCkZFlBw3OZ26IPi92+LRaGx1YnwjiSV5a7pxHkv68syYkkvqo+',
+				),
+			).toThrow(
+				new BlueprintError(
+					'This blueprint string uses the format from Factorio 0.14 and earlier, which the playground cannot read.',
+				),
+			);
+		});
+
 		it('throws error on invalid base64', () => {
 			expect(() => deserializeBlueprint('0!@#$')).toThrow(INVALID_CHARACTER_REGEX);
 		});

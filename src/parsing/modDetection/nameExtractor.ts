@@ -1,4 +1,5 @@
 import {parseVersion4} from '../blueprintParser';
+import {normalizeItemStacks} from '../itemStacks';
 import type {
 	Blueprint,
 	BlueprintString,
@@ -41,7 +42,7 @@ function recordQuality(state: ExtractionState, quality: Quality): void {
 }
 
 function addSignal(state: ExtractionState, signal: SignalID | undefined): void {
-	if (!signal) {
+	if (signal?.name === undefined) {
 		return;
 	}
 
@@ -66,7 +67,9 @@ function addIcons(state: ExtractionState, icons: Icon[] | undefined): void {
 
 function addFilters(state: ExtractionState, filters: Filter[] | undefined, kind: NameKind): void {
 	for (const filter of filters ?? []) {
-		addName(state, filter.name, kind);
+		if (filter.name !== undefined) {
+			addName(state, filter.name, kind);
+		}
 		recordQuality(state, filter.quality);
 	}
 }
@@ -104,12 +107,15 @@ function walkControlBehavior(state: ExtractionState, behavior: NonNullable<Entit
 	addSignal(state, behavior.blue_signal);
 
 	for (const parameter of behavior.parameters ?? []) {
-		addSignal(state, parameter.condition?.first_signal);
+		addCondition(state, parameter.condition);
 		addSignal(state, parameter.icon);
 	}
 
 	for (const section of behavior.sections?.sections ?? []) {
 		addFilters(state, section.filters, 'item');
+	}
+	for (const filter of behavior.filters ?? []) {
+		addSignal(state, filter.signal);
 	}
 }
 
@@ -123,11 +129,16 @@ function walkEntity(state: ExtractionState, entity: Entity): void {
 	recordQuality(state, entity.recipe_quality);
 	addFilters(state, entity.filters, 'item');
 
-	for (const section of entity.request_filters?.sections ?? []) {
-		addFilters(state, section.filters, 'item');
+	if (Array.isArray(entity.request_filters)) {
+		addFilters(state, entity.request_filters, 'item');
+	} else {
+		for (const section of entity.request_filters?.sections ?? []) {
+			addFilters(state, section.filters, 'item');
+		}
 	}
+	addFilters(state, entity.inventory?.filters, 'item');
 
-	for (const itemStack of entity.items ?? []) {
+	for (const itemStack of normalizeItemStacks(entity.items)) {
 		addName(state, itemStack.id.name, 'item');
 		recordQuality(state, itemStack.id.quality);
 	}
@@ -159,27 +170,31 @@ function walkBlueprint(state: ExtractionState, blueprint: Blueprint): void {
 		addName(state, tile.name, 'tile');
 	}
 	for (const schedule of blueprint.schedules ?? []) {
-		for (const record of schedule.schedule.records) {
-			for (const waitCondition of record.wait_conditions) {
-				addCondition(state, waitCondition.condition);
-			}
+		const {records = [], interrupts = []} = schedule.schedule;
+		const targets = interrupts.flatMap((interrupt) => interrupt.targets ?? []);
+		const waitConditions = [
+			...[...records, ...targets].flatMap((record) => record.wait_conditions ?? []),
+			...interrupts.flatMap((interrupt) => interrupt.conditions ?? []),
+		];
+		for (const waitCondition of waitConditions) {
+			addCondition(state, waitCondition.condition);
 		}
 	}
 	walkParameters(state, blueprint.parameters);
 }
 
 function walkUpgradePlanner(state: ExtractionState, planner: UpgradePlanner): void {
-	addIcons(state, planner.settings.icons);
-	for (const mapper of planner.settings.mappers) {
+	addIcons(state, planner.settings?.icons);
+	for (const mapper of planner.settings?.mappers ?? []) {
 		addSignal(state, mapper.from);
 		addSignal(state, mapper.to);
 	}
 }
 
 function walkDeconstructionPlanner(state: ExtractionState, planner: DeconstructionPlanner): void {
-	addIcons(state, planner.settings.icons);
-	addFilters(state, planner.settings.entity_filters, 'entity');
-	addFilters(state, planner.settings.tile_filters, 'tile');
+	addIcons(state, planner.settings?.icons);
+	addFilters(state, planner.settings?.entity_filters, 'entity');
+	addFilters(state, planner.settings?.tile_filters, 'tile');
 }
 
 function walkBlueprintString(state: ExtractionState, blueprintString: BlueprintString): void {
@@ -189,7 +204,7 @@ function walkBlueprintString(state: ExtractionState, blueprintString: BlueprintS
 
 	if (blueprintString.blueprint_book) {
 		addIcons(state, blueprintString.blueprint_book.icons);
-		for (const child of blueprintString.blueprint_book.blueprints) {
+		for (const child of blueprintString.blueprint_book.blueprints ?? []) {
 			walkBlueprintString(state, child);
 		}
 	}

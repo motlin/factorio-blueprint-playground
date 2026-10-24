@@ -35,7 +35,7 @@ function getQualityNode(icon: SignalID) {
 }
 
 export const FactorioIcon = ({id, icon, size}: FactorioIconProps) => {
-	if (!icon) {
+	if (icon?.name === undefined) {
 		return null;
 	}
 

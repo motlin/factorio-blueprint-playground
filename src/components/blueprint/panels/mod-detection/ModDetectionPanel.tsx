@@ -1,10 +1,10 @@
-import {useQuery} from '@tanstack/react-query';
 import {memo} from 'react';
 
-import {classify} from '../../../../parsing/modDetection/classify';
-import {extractNames} from '../../../../parsing/modDetection/nameExtractor';
-import type {Confidence, DetectionResult, ModDatabase, Verdict} from '../../../../parsing/modDetection/types';
+import {runModDetection} from '../../../../parsing/modDetection/modDetectionClient';
+import type {Confidence, DetectionResult, Verdict} from '../../../../parsing/modDetection/types';
 import type {BlueprintString} from '../../../../parsing/types';
+import type {BlueprintJobRunner} from '../../../../workers/blueprintJobRunner';
+import {useBlueprintJob} from '../../../../workers/useBlueprintJob';
 import {Panel} from '../../../ui/Panel';
 
 const DLC_SOURCE_IDS = new Set(['space-age', 'quality', 'elevated-rails']);
@@ -12,6 +12,8 @@ const EDITOR_SOURCE_IDS = new Set(['map-editor', 'space-age-map-editor']);
 
 interface ModDetectionPanelProps {
 	blueprint?: BlueprintString;
+	// Tests and stories swap in a runner with their own database.
+	detect?: BlueprintJobRunner<DetectionResult>;
 }
 
 function pluralized(count: number, singular: string, plural = `${singular}s`): string {
@@ -152,18 +154,13 @@ function DetectionDetails({result}: {result: DetectionResult}) {
 	);
 }
 
-const ModDetectionPanelComponent = ({blueprint}: ModDetectionPanelProps) => {
-	const databaseQuery = useQuery({
-		queryKey: ['mod-db'],
-		staleTime: Infinity,
-		enabled: blueprint !== undefined,
-		queryFn: async () => import('../../../../generated/mod-db.json'),
-	});
+const ModDetectionPanelComponent = ({blueprint, detect = runModDetection}: ModDetectionPanelProps) => {
+	const detection = useBlueprintJob(blueprint, detect);
 
-	if (blueprint === undefined || databaseQuery.isError) {
+	if (blueprint === undefined || (detection !== undefined && 'error' in detection)) {
 		return null;
 	}
-	if (databaseQuery.isPending) {
+	if (detection === undefined) {
 		return (
 			<Panel title="Mod Detection">
 				<div className="panel-hole mod-detection">
@@ -173,12 +170,9 @@ const ModDetectionPanelComponent = ({blueprint}: ModDetectionPanelProps) => {
 		);
 	}
 
-	const database: ModDatabase = databaseQuery.data.default;
-	const result = classify(extractNames(blueprint), database);
-
 	return (
 		<Panel title="Mod Detection">
-			<DetectionDetails result={result} />
+			<DetectionDetails result={detection.result} />
 		</Panel>
 	);
 };

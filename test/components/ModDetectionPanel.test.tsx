@@ -1,11 +1,11 @@
-import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
-import {render, screen, within} from '@testing-library/react';
-import type {ReactElement} from 'react';
+import {render, screen, waitFor, within} from '@testing-library/react';
 import {describe, expect, it} from 'vite-plus/test';
 
 import {ModDetectionPanel} from '../../src/components/blueprint/panels/mod-detection/ModDetectionPanel';
-import type {ModDatabase} from '../../src/parsing/modDetection/types';
+import {detectMods} from '../../src/parsing/modDetection/modDetectionProtocol';
+import type {DetectionResult, ModDatabase} from '../../src/parsing/modDetection/types';
 import type {BlueprintString} from '../../src/parsing/types';
+import {type BlueprintJobRunner, inlineRunner} from '../../src/workers/blueprintJobRunner';
 import '../../test/setup';
 
 const database: ModDatabase = {
@@ -22,6 +22,8 @@ const database: ModDatabase = {
 	],
 	names: {
 		'transport-belt': 1,
+		'display-panel': 1,
+		'automation-science-pack': 1,
 		foundry: 2,
 		'quality-module-3': 4,
 		'infinity-chest': 8,
@@ -40,39 +42,84 @@ const vanillaBlueprint: BlueprintString = {
 	},
 };
 
-function renderWithClient(element: ReactElement, queryClient: QueryClient) {
-	return render(<QueryClientProvider client={queryClient}>{element}</QueryClientProvider>);
-}
+const detect = inlineRunner((blueprint) => detectMods(blueprint, database));
 
-function resolvedClient(): QueryClient {
-	const queryClient = new QueryClient({defaultOptions: {queries: {retry: false}}});
-	queryClient.setQueryData(['mod-db'], {default: database});
-	return queryClient;
-}
-
-function loadingClient(): QueryClient {
-	const queryClient = new QueryClient({defaultOptions: {queries: {retry: false}}});
-	const query = queryClient.getQueryCache().build(queryClient, {
-		queryKey: ['mod-db'],
-		queryFn: async () => {
-			await new Promise<void>((resolve) => {
-				void resolve;
-			});
-			return {default: database};
-		},
+const neverDetects: BlueprintJobRunner<DetectionResult> = async () =>
+	new Promise<DetectionResult>((resolve) => {
+		void resolve;
 	});
-	void query.fetch();
-	return queryClient;
+
+async function renderDetected(blueprint: BlueprintString) {
+	const rendered = render(<ModDetectionPanel blueprint={blueprint} detect={detect} />);
+	await screen.findByText('Blueprint requirements');
+	return rendered;
 }
 
 describe('ModDetectionPanel', () => {
-	it('shows a loading row while the database chunk is pending', () => {
-		const {container} = renderWithClient(<ModDetectionPanel blueprint={vanillaBlueprint} />, loadingClient());
+	it('renders display panels with unconditional icons', async () => {
+		const blueprint: BlueprintString = {
+			blueprint: {
+				item: 'blueprint',
+				version: 562949953421312,
+				entities: [
+					{
+						entity_number: 1,
+						name: 'display-panel',
+						position: {x: 0, y: 0},
+						control_behavior: {parameters: [{icon: {name: 'automation-science-pack'}}]},
+					},
+				],
+			},
+		};
+		const {container} = await renderDetected(blueprint);
+
+		expect(container.textContent).toBe(
+			'Mod DetectionBlueprint requirementsVanilla 2.0Factorio 2.0high confidence2 matching namesautomation-science-packdisplay-panel',
+		);
+	});
+
+	it('shows a loading row while detection is running', () => {
+		const {container} = render(<ModDetectionPanel blueprint={vanillaBlueprint} detect={neverDetects} />);
 
 		expect(container.textContent).toBe('Mod DetectionChecking mod requirements…');
 	});
 
-	it('summarizes the verdict and lists source evidence', () => {
+	it('shows the loading row instead of a stale result when the blueprint changes', async () => {
+		const {container, rerender} = await renderDetected(vanillaBlueprint);
+		const before = container.textContent;
+
+		rerender(<ModDetectionPanel blueprint={{...vanillaBlueprint}} detect={neverDetects} />);
+
+		expect({before, after: container.textContent}).toStrictEqual({
+			before: 'Mod DetectionBlueprint requirementsVanilla 2.0Factorio 2.0high confidence1 matching nametransport-belt',
+			after: 'Mod DetectionChecking mod requirements…',
+		});
+	});
+
+	it('renders nothing when detection fails', async () => {
+		const failing: BlueprintJobRunner<DetectionResult> = async () => Promise.reject(new Error('boom'));
+		const {container} = render(<ModDetectionPanel blueprint={vanillaBlueprint} detect={failing} />);
+
+		await waitFor(() => {
+			expect(container.textContent).toBe('');
+		});
+	});
+
+	it('renders a blueprint with a schedule stop that omits wait conditions', async () => {
+		const blueprint: BlueprintString = {
+			blueprint: {
+				...vanillaBlueprint.blueprint!,
+				schedules: [{locomotives: [1], schedule: {records: [{station: 'Example station'}]}}],
+			},
+		};
+		const {container} = await renderDetected(blueprint);
+
+		expect(container.textContent).toBe(
+			'Mod DetectionBlueprint requirementsVanilla 2.0Factorio 2.0high confidence1 matching nametransport-belt',
+		);
+	});
+
+	it('summarizes the verdict and lists source evidence', async () => {
 		const blueprint: BlueprintString = {
 			blueprint: {
 				item: 'blueprint',
@@ -88,7 +135,7 @@ describe('ModDetectionPanel', () => {
 				],
 			},
 		};
-		renderWithClient(<ModDetectionPanel blueprint={blueprint} />, resolvedClient());
+		await renderDetected(blueprint);
 
 		expect(screen.getByText('Requires Space Age + Quality')).toBeInTheDocument();
 		expect(
@@ -104,7 +151,7 @@ describe('ModDetectionPanel', () => {
 		]);
 	});
 
-	it('identifies base and Space Age map editor entities separately from vanilla', () => {
+	it('identifies base and Space Age map editor entities separately from vanilla', async () => {
 		const blueprint: BlueprintString = {
 			blueprint: {
 				item: 'blueprint',
@@ -115,7 +162,7 @@ describe('ModDetectionPanel', () => {
 				],
 			},
 		};
-		renderWithClient(<ModDetectionPanel blueprint={blueprint} />, resolvedClient());
+		await renderDetected(blueprint);
 
 		expect({
 			headline: screen.getByText('Contains base + Space Age map editor entities').textContent,
@@ -134,7 +181,7 @@ describe('ModDetectionPanel', () => {
 		});
 	});
 
-	it('lists unknown names and their prefix hints', () => {
+	it('lists unknown names and their prefix hints', async () => {
 		const blueprint: BlueprintString = {
 			blueprint: {
 				item: 'blueprint',
@@ -145,7 +192,7 @@ describe('ModDetectionPanel', () => {
 				],
 			},
 		};
-		renderWithClient(<ModDetectionPanel blueprint={blueprint} />, resolvedClient());
+		await renderDetected(blueprint);
 
 		expect(
 			screen.getByText(
