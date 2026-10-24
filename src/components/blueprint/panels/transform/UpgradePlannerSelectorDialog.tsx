@@ -104,7 +104,7 @@ function libraryPlannerLabel(record: LibraryRecord, planner: UpgradePlanner): st
 }
 
 function plannerIcons(planner: UpgradePlanner) {
-	return [...(planner.settings.icons ?? [])]
+	return [...(planner.settings?.icons ?? [])]
 		.sort((left, right) => left.index - right.index)
 		.map((icon) => icon.signal);
 }
@@ -126,7 +126,7 @@ function applicationPlannerRecords(
 			gameData: {
 				...record.gameData,
 				label: choice.label,
-				description: record.gameData.description ?? planner.settings.description,
+				description: record.gameData.description ?? planner.settings?.description,
 				icons: record.gameData.icons.length === 0 ? plannerIcons(planner) : record.gameData.icons,
 			},
 		};
@@ -139,7 +139,7 @@ function applicationPlannerRecords(
 			gameData: {
 				type: 'upgrade_planner',
 				label: sessionChoice.label,
-				description: sessionChoice.planner?.settings.description,
+				description: sessionChoice.planner?.settings?.description,
 				icons: sessionChoice.planner === undefined ? [] : plannerIcons(sessionChoice.planner),
 			},
 		});

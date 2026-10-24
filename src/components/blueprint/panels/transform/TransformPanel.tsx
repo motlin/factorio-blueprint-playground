@@ -285,7 +285,7 @@ export function TransformPanel({
 			const planner = parseUpgradePlanner(serializedPlanner);
 			setEditorPlacedPlanner({
 				choice: {
-					label: planner.label ?? planner.settings.description ?? 'Dropped upgrade planner',
+					label: planner.label ?? planner.settings?.description ?? 'Dropped upgrade planner',
 					planner,
 					source: 'dropped',
 				},

@@ -49,7 +49,7 @@ function plannerPreviewIcons(choice: UpgradePlannerChoice): SignalID[] {
 	if (libraryIcons.length > 0) {
 		return libraryIcons.slice(0, 4);
 	}
-	return [...(choice.planner?.settings.icons ?? [])]
+	return [...(choice.planner?.settings?.icons ?? [])]
 		.sort((left, right) => left.index - right.index)
 		.slice(0, 4)
 		.map((icon) => icon.signal);

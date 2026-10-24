@@ -656,7 +656,7 @@ describe('upgrade planner transforms', () => {
 		).toThrow(new Error('Upgrade planner mapping 0 must define from, to, or both.'));
 		// Factorio numbers mapper slots from zero, so slot zero and a single
 		// endpoint are both ordinary planner content.
-		expect(parseUpgradePlanner(pastedMappers([{index: 0, from: belt}])).settings.mappers).toStrictEqual([
+		expect(parseUpgradePlanner(pastedMappers([{index: 0, from: belt}])).settings?.mappers).toStrictEqual([
 			{index: 0, from: belt},
 		]);
 	});
