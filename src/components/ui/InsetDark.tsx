@@ -1,3 +1,9 @@
 import type React from 'react';
 
-export const InsetDark = ({children}: {children: React.ReactNode}) => <div className="panel-inset">{children}</div>;
+import {FactorioFrame, FactorioFrameDepth} from './FactorioUi';
+
+export const InsetDark = ({children}: {children: React.ReactNode}) => (
+	<FactorioFrame className="panel-inset" depth={FactorioFrameDepth.Deep}>
+		{children}
+	</FactorioFrame>
+);

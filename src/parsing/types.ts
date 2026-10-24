@@ -21,12 +21,32 @@ export type SignalType =
 	| 'space-location';
 
 export type Quality = 'normal' | 'uncommon' | 'rare' | 'epic' | 'legendary' | undefined;
+export type QualityComparator = '=' | '!=' | '<' | '<=' | '>' | '>=' | '≠' | '≤' | '≥';
 
 export interface SignalID {
 	// Defaults to "item" if not specified
 	type?: SignalType;
 	name: string;
 	quality?: Quality;
+}
+
+export interface UpgradeSourceSignal extends SignalID {
+	comparator?: QualityComparator;
+	/**
+	 * UpgradeFilter::entityFilterKey: a module source may scope replacement to
+	 * one module-using entity, serialized as `module_filter`.
+	 */
+	module_filter?: SignalID & {comparator?: QualityComparator};
+}
+
+/**
+ * Upgrade planner mapper destinations serialize `module_limit` (omitted when
+ * zero) and `module_slots` (fixed-length list whose empty entries are empty
+ * objects), mirroring UpgradeDestination::save at Factorio 2.1.12.
+ */
+export interface UpgradeTargetSignal extends SignalID {
+	module_limit?: number;
+	module_slots?: Partial<SignalID>[];
 }
 
 export interface Icon {
@@ -228,18 +248,24 @@ export interface Tile {
 
 export interface Parameter {
 	type: 'id' | 'number';
-	name: string;
+	name?: string;
 	id?: string;
 	number?: string;
 	variable?: string;
 	formula?: string;
 	dependent?: boolean;
 	'not-parametrised'?: boolean;
+	parameter?: boolean;
 	'quality-condition'?: {
 		quality: Quality;
-		comparator: string;
+		comparator: QualityComparator;
 	};
 	'ingredient-of'?: string;
+	'product-of'?: string;
+	'item-ingredient-of'?: string;
+	'fluid-ingredient-of'?: string;
+	'item-product-of'?: string;
+	'fluid-product-of'?: string;
 }
 
 // Common fields across all blueprint types
@@ -254,14 +280,19 @@ export interface Blueprint extends CommonFields {
 	description?: string;
 	icons?: Icon[];
 	entities?: Entity[];
+	wires?: [number, number, number, number][];
 	tiles?: Tile[];
 	schedules?: Schedule[];
 	parameters?: Parameter[];
-	snap_to_grid?: {
+	'snap-to-grid'?: {
 		x: number;
 		y: number;
 	};
-	absolute_snapping?: boolean;
+	'absolute-snapping'?: boolean;
+	'position-relative-to-grid'?: {
+		x: number;
+		y: number;
+	};
 }
 
 interface DeconstructionSettings {
@@ -282,9 +313,9 @@ export interface DeconstructionPlanner extends CommonFields {
 	settings: DeconstructionSettings;
 }
 
-interface UpgradeMapping {
-	from?: SignalID;
-	to?: SignalID;
+export interface UpgradeMapping {
+	from?: UpgradeSourceSignal;
+	to?: UpgradeTargetSignal;
 	index: number;
 }
 

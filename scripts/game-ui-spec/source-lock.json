@@ -1,0 +1,205 @@
+{
+	"schemaVersion": 1,
+	"repository": "wube/Factorio",
+	"sourceVersion": "2.1.12",
+	"tag": "2.1.12",
+	"commit": "4f08bb3d5d556d152784853c61f0996b7f11ffc9",
+	"sources": [
+		{
+			"path": "data/base/locale/en/base.cfg",
+			"blob": "310ec1ace9a001a67178a65f12719c48103e4d22"
+		},
+		{
+			"path": "data/base/prototypes/categories/quality.lua",
+			"blob": "f7b2b8923ebcdc6d88677de2cecd60d3ae66a437"
+		},
+		{
+			"path": "data/base/prototypes/entity/circuit-network.lua",
+			"blob": "389eb8fea4ecb9b82dcb23583112f76e1bfed0b8"
+		},
+		{
+			"path": "data/base/prototypes/entity/crash-site.lua",
+			"blob": "24b3e6db75ae068985dc98272480905db055230a"
+		},
+		{
+			"path": "data/base/prototypes/entity/entities.lua",
+			"blob": "1f51421be5d3eedb296ae2f3bbb5fd1ba1933f6b"
+		},
+		{
+			"path": "data/base/prototypes/entity/fire.lua",
+			"blob": "2b03e69e3133d3b0493595642adaaaee2c631398"
+		},
+		{
+			"path": "data/base/prototypes/entity/mining-drill.lua",
+			"blob": "21f7f21c73b8bfd32249ff214395ff5c25cdf497"
+		},
+		{
+			"path": "data/base/prototypes/entity/trains.lua",
+			"blob": "8ca4c05de9d5cf66c5f09a9fb23e14fca951f795"
+		},
+		{
+			"path": "data/base/prototypes/entity/transport-belts.lua",
+			"blob": "3d48baf95fd1acdabffaaf223ffb680af3cca1ae"
+		},
+		{
+			"path": "data/base/prototypes/entity/turrets.lua",
+			"blob": "721b2cba012c1d7ef25333f3ca9ed960b80b1f1a"
+		},
+		{
+			"path": "data/base/prototypes/item-groups.lua",
+			"blob": "7f0496f8a5cbf4e56c46e670081dacc0af3ef9b1"
+		},
+		{
+			"path": "data/core/locale/en/core.cfg",
+			"blob": "6264e4d1cf9598dbf1b641c6246261ff8c088abd"
+		},
+		{
+			"path": "data/core/prototypes/fonts.lua",
+			"blob": "98a24e6e754df95cdd8637e083414fb39099e9e3"
+		},
+		{
+			"path": "data/core/prototypes/style.lua",
+			"blob": "39ffe2a319963ddf0b192086fb1f90500a42c18e"
+		},
+		{
+			"path": "data/core/prototypes/utility-constants.lua",
+			"blob": "a51092b3a13638387b4fde8b6b12028e87f0929e"
+		},
+		{
+			"path": "data/quality/data.lua",
+			"blob": "2e18e9741144be9cffe8d1aab3b3c45ec9be5a1c"
+		},
+		{
+			"path": "data/quality/locale/en/quality.cfg",
+			"blob": "ad9e0453539facb1374c9f374fbda7eec4e90db7"
+		},
+		{
+			"path": "data/quality/prototypes/base-data-updates.lua",
+			"blob": "872e2dd34d8b81154cfa421c56be27c75d66aa06"
+		},
+		{
+			"path": "data/quality/prototypes/quality.lua",
+			"blob": "c254bae859acbdc7b7a5145b0d84aeee787a8ebb"
+		},
+		{
+			"path": "data/space-age/locale/en/space-age.cfg",
+			"blob": "92252eaae8e889a074264af5955e3808026b99bb"
+		},
+		{
+			"path": "data/space-age/prototypes/entity/big-mining-drill.lua",
+			"blob": "cd844bc2e3c8ffc4298718cb7d47c00fcab7d003"
+		},
+		{
+			"path": "data/space-age/prototypes/entity/entities.lua",
+			"blob": "726e21436ce804c236ece207bb49ae00d211b7a9"
+		},
+		{
+			"path": "data/space-age/prototypes/entity/transport-belts.lua",
+			"blob": "f50def8ed11fbb64788112d77fb88dcec5ba6e8f"
+		},
+		{
+			"path": "data/space-age/prototypes/entity/turrets.lua",
+			"blob": "fc573d7ce3f9051a26a643e4d0e420ce3789a23e"
+		},
+		{
+			"path": "data/space-age/prototypes/item-groups.lua",
+			"blob": "9c619f650157b017b75f0cd94f4827d8a34cc7c3"
+		},
+		{
+			"path": "libraries/CommonUtil/StringUtil.hpp",
+			"blob": "a7cb9ec6a9b71c03bfa4b6936b099d6d3e44e6a6"
+		},
+		{
+			"path": "src/Blueprint/UpgradeRecord.cpp",
+			"blob": "0d223364fba3c7e89e5932484be64a094634bac4"
+		},
+		{
+			"path": "src/Blueprint/UpgradeRecord.hpp",
+			"blob": "51e6372850d82d02cd64d48ef904cc6fe89628ed"
+		},
+		{
+			"path": "src/Comparison.cpp",
+			"blob": "6be65eb23429258261beef0132b26929a6aec2e9"
+		},
+		{
+			"path": "src/Gui/BlueprintSettingsGui.cpp",
+			"blob": "a6c5c2107e09f91d2365fe1c8a678407738a610f"
+		},
+		{
+			"path": "src/Gui/BlueprintsList.cpp",
+			"blob": "8c268c557fb7675673198c19e7ca8bd5ddea8220"
+		},
+		{
+			"path": "src/Gui/ChatIconIDIterator.cpp",
+			"blob": "4e8d5e529057a25175c7449a386938b958bf3b2f"
+		},
+		{
+			"path": "src/Gui/GuiStyle.cpp",
+			"blob": "cf9ba8d4b1fa0d2bf532b703aa4d82f9155ed09b"
+		},
+		{
+			"path": "src/Gui/GuiStyle.hpp",
+			"blob": "2e6a5ed1703e9fe20b9b74b907b53fcc294e28db"
+		},
+		{
+			"path": "src/Gui/QualityConditionGui.cpp",
+			"blob": "1812cce69d6ff2db254873f86e40a066bfb821ff"
+		},
+		{
+			"path": "src/Gui/QualitySelector.cpp",
+			"blob": "4b17f091bd1c96e3a443bb442f4d6cb0a4e67656"
+		},
+		{
+			"path": "src/Gui/SelectListGui.cpp",
+			"blob": "8a89d84c7c07afb28fbb5b82b110501929177c70"
+		},
+		{
+			"path": "src/Gui/SignalsTable.cpp",
+			"blob": "e1cc4bfb957ea09c4f232fb1685d5f449a741fe8"
+		},
+		{
+			"path": "src/Gui/UpgradeItemGui.cpp",
+			"blob": "d3b4ca0f66f2bfe398b4d0a7494e3f6f1891889a"
+		},
+		{
+			"path": "src/Gui/UpgradeItemGui.hpp",
+			"blob": "ce72bcfe7c639c8b0046cba58ac4ba8dc5a81c1e"
+		}
+	],
+	"priorArt": {
+		"repository": "teoxoy/factorio-blueprint-editor",
+		"commit": "2bfc95e662cad19e2de89e72016181ca96fdbea6",
+		"license": "MIT",
+		"copyright": "Copyright (c) 2020 Tanasoaia Teodor Andrei",
+		"sources": [
+			{
+				"path": "packages/editor/src/UI/InventoryDialog.ts",
+				"blob": "a723eccca0ec00f07576d68cf4a4f3d30895e9af"
+			},
+			{
+				"path": "packages/editor/src/UI/controls/Button.ts",
+				"blob": "d4c4d06bcb29f6a5dc0e2941986d961563d6816d"
+			},
+			{
+				"path": "packages/editor/src/UI/controls/Dialog.ts",
+				"blob": "d9b4a6f8f5819f45dedac80ed7569c452db24820"
+			},
+			{
+				"path": "packages/editor/src/UI/controls/Panel.ts",
+				"blob": "b61a3482f13def5a24987cfd7f3f92000284c2ed"
+			},
+			{
+				"path": "packages/editor/src/UI/controls/functions.ts",
+				"blob": "f90851e00c6cd674a013fb357e932218e29fb3fd"
+			},
+			{
+				"path": "packages/editor/src/UI/style.ts",
+				"blob": "e64f65935b3dec845524bd995d1778955bc8a452"
+			},
+			{
+				"path": "packages/exporter/src/export-data/data-final-fixes.lua",
+				"blob": "48ee748a865b3c2113986a1a97134cbf63b3f540"
+			}
+		]
+	}
+}
