@@ -120,6 +120,10 @@ function substitutePlannerMetadata<T extends UpgradePlanner | DeconstructionPlan
 ): SubstitutionResult<T>
 {
 	const direct = substituteDirectMetadata(planner, substitution);
+	if (planner.settings === undefined)
+	{
+		return direct;
+	}
 	const settings = substituteDirectMetadata(planner.settings, substitution);
 	return {
 		count: direct.count + settings.count,
@@ -152,7 +156,7 @@ function substituteMetadata(
 	{
 		const book = substituteDirectMetadata(root.blueprint_book, substitution);
 		let count = book.count;
-		const blueprints = book.value.blueprints.map((child): BlueprintStringWithIndex =>
+		const blueprints = (book.value.blueprints ?? []).map((child): BlueprintStringWithIndex =>
 		{
 			const transformed = substituteMetadata(child, substitution);
 			count += transformed.count;
@@ -258,7 +262,7 @@ function mapMetadataIcons(root: BlueprintString, mapper: (signal: SignalID) => S
 			blueprint_book:
 			{
 				...book,
-				blueprints: book.blueprints.map((child) => (
+				blueprints: (book.blueprints ?? []).map((child) => (
 				{
 					...mapMetadataIcons(child, mapper),
 					index: child.index,
@@ -273,7 +277,12 @@ function mapMetadataIcons(root: BlueprintString, mapper: (signal: SignalID) => S
 			upgrade_planner:
 			{
 				...mapDirectIcons(root.upgrade_planner, mapper),
-				settings: mapDirectIcons(root.upgrade_planner.settings, mapper),
+				...(root.upgrade_planner.settings === undefined
+					? {}
+					:
+						{
+							settings: mapDirectIcons(root.upgrade_planner.settings, mapper),
+						}),
 			},
 		};
 	}
@@ -284,7 +293,12 @@ function mapMetadataIcons(root: BlueprintString, mapper: (signal: SignalID) => S
 			deconstruction_planner:
 			{
 				...mapDirectIcons(root.deconstruction_planner, mapper),
-				settings: mapDirectIcons(root.deconstruction_planner.settings, mapper),
+				...(root.deconstruction_planner.settings === undefined
+					? {}
+					:
+						{
+							settings: mapDirectIcons(root.deconstruction_planner.settings, mapper),
+						}),
 			},
 		};
 	}
@@ -335,7 +349,7 @@ export function analyzeMetadataIcons(root: BlueprintString): MetadataIconCandida
 		return signal;
 	});
 	return [...signals.values()].sort(
-		(left, right) => right.count - left.count || left.signal.name.localeCompare(right.signal.name),
+		(left, right) => right.count - left.count || (left.signal.name ?? '').localeCompare(right.signal.name ?? ''),
 	);
 }
 

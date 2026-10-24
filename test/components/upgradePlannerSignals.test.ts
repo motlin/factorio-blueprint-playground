@@ -15,9 +15,9 @@ import
 function optionNames(
 	options: readonly
 	{
-		name: string;
+		name?: string;
 	}[],
-): string[]
+): (string | undefined)[]
 {
 	return options.map(({name}) => name);
 }
@@ -140,7 +140,7 @@ describe('upgradePlannerSignals', () =>
 						'rare',
 						'epic',
 						'legendary',
-					].includes(name),
+					].includes(name ?? ''),
 				)
 				.map(({name, type}) => (
 				{

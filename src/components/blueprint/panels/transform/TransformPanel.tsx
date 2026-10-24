@@ -337,7 +337,7 @@ export function TransformPanel({
 				{
 					choice:
 					{
-						label: planner.label ?? planner.settings.description ?? 'Dropped upgrade planner',
+						label: planner.label ?? planner.settings?.description ?? 'Dropped upgrade planner',
 						planner,
 						source: 'dropped',
 					},

@@ -3,6 +3,7 @@ import {z} from 'zod';
 
 import gameUiSpec from '../generated/game-ui-spec.json';
 import {deserializeBlueprint} from '../parsing/blueprintParser';
+import {normalizeItemStacks} from '../parsing/itemStacks';
 import type
 {
 	Blueprint,
@@ -443,7 +444,7 @@ function applyItemRules(items: ItemStack[] | undefined, rules: UpgradeRuleLookup
 		);
 		const id =
 		{
-			name: mappedItem.name,
+			name: mappedItem.name ?? item.id.name,
 			quality: mappedItem.quality,
 		};
 		if (id.quality === undefined)
@@ -472,9 +473,9 @@ function applyRulesToBlueprint(blueprint: Blueprint, rules: UpgradeRuleLookup): 
 		const result =
 		{
 			...entity,
-			name: mappedEntity.name,
+			name: mappedEntity.name ?? entity.name,
 			quality: mappedEntity.quality,
-			items: applyItemRules(entity.items, rules),
+			items: applyItemRules(entity.items === undefined ? undefined : normalizeItemStacks(entity.items), rules),
 		};
 		if (result.quality === undefined)
 		{
@@ -545,7 +546,7 @@ export function applyUpgradeRules(root: BlueprintString, rules: readonly Upgrade
 
 function itemCount(item: ItemStack): number
 {
-	return item.items.in_inventory.reduce((total, inventoryItem) => total + (inventoryItem.count ?? 1), 0);
+	return (item.items.in_inventory ?? []).reduce((total, inventoryItem) => total + (inventoryItem.count ?? 1), 0);
 }
 
 export function analyzeUpgradeRules(root: BlueprintString, rules: readonly UpgradeRule[]): UpgradeCandidate[]
@@ -575,7 +576,7 @@ export function analyzeUpgradeRules(root: BlueprintString, rules: readonly Upgra
 				},
 				1,
 			);
-			for (const item of entity.items ?? [])
+			for (const item of normalizeItemStacks(entity.items))
 			{
 				addCount(
 					{
@@ -619,7 +620,7 @@ export function findUpgradePlanners(root: BlueprintString): UpgradePlannerSource
 				},
 			);
 		}
-		current.blueprint_book?.blueprints.forEach((child, index) =>
+		current.blueprint_book?.blueprints?.forEach((child, index) =>
 		{
 			visit(child, path === '' ? (index + 1).toString() : `${path}.${(index + 1).toString()}`);
 		});

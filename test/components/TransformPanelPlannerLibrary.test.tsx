@@ -1604,7 +1604,7 @@ describe('TransformPanel planner library records', () =>
 		expect(
 			{
 				label: copiedPlanner.label,
-				mappings: copiedPlanner.settings.mappers.length,
+				mappings: copiedPlanner.settings?.mappers?.length,
 			},
 		).toStrictEqual(
 			{
