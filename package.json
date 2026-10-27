@@ -72,7 +72,7 @@
 		"@vitest/browser-playwright": "^5.0.5",
 		"@vitest/coverage-v8": "^5.0.5",
 		"eslint": "^10.13.0",
-		"eslint-plugin-storybook": "^10.6.2",
+		"eslint-plugin-storybook": "^10.6.3",
 		"fallow": "^3.31.0",
 		"jsdom": "^30.0.1",
 		"markdownlint-cli2": "^0.23.3",
