@@ -1,10 +1,20 @@
 import {gzipSync} from 'node:zlib';
 import {mkdir, readFile, writeFile} from 'node:fs/promises';
+import {z} from 'zod';
 
+import gameUiSpecJson from '../../src/generated/game-ui-spec.json';
+import {parseGameUiSpec} from '../game-ui-spec/schema';
 import {FACTORIO_DATA_PROTOTYPE_FILES, FACTORIOLAB_DATASETS, parseSourceLock} from './sources';
 import {
 	extractHiddenPlaceResults,
+	extractPickerSignals,
 	extractPrototypeNames,
+	extractEntityModuleSlots,
+	extractPrototypeUpgrades,
+	extractTopLevelPrototypeNames,
+	extractUpgradeFuelItems,
+	extractUpgradeModuleItems,
+	extractVisiblePlaceResults,
 	parseBaseSupplement,
 	parseFactorioLabDataset,
 	parsePrefixes,
@@ -13,7 +23,12 @@ import {
 } from './transform';
 
 const OUTPUT_URL = new URL('../../src/generated/mod-db.json', import.meta.url);
+const GAME_DATA_OUTPUT_URL = new URL('../../src/generated/game-data.json', import.meta.url);
 const SOURCE_LOCK_URL = new URL('source-lock.json', import.meta.url);
+const factorioDataTreeSchema = z.object({
+	truncated: z.literal(false),
+	tree: z.array(z.object({path: z.string(), type: z.string()})),
+});
 
 async function fetchDataset(id: string, commit: string): Promise<FactorioLabDataset> {
 	const url = `https://raw.githubusercontent.com/factoriolab/factoriolab/${commit}/public/data/${id}/data.json`;
@@ -33,9 +48,51 @@ async function fetchText(url: string, label: string): Promise<string> {
 	return response.text();
 }
 
-async function fetchPrototypeNames(root: string, files: readonly string[]): Promise<string[]> {
-	const sources = await Promise.all(files.map(async (file) => fetchText(`${root}/${file}`, `Factorio ${file}`)));
-	return [...new Set(sources.flatMap((source) => extractPrototypeNames(source)))].sort();
+async function fetchFactorioDataSources(commit: string): Promise<Map<string, string>> {
+	const headers: Record<string, string> = {
+		Accept: 'application/vnd.github+json',
+		'User-Agent': 'factorio-blueprint-playground',
+	};
+	const token = process.env.GITHUB_TOKEN;
+	if (token !== undefined && token !== '') {
+		headers.Authorization = `Bearer ${token}`;
+	}
+	const treeResponse = await fetch(
+		`https://api.github.com/repos/wube/factorio-data/git/trees/${commit}?recursive=1`,
+		{headers},
+	);
+	if (!treeResponse.ok) {
+		throw new Error(`Factorio data tree returned ${treeResponse.status.toString()} ${treeResponse.statusText}.`);
+	}
+	const tree = factorioDataTreeSchema.parse(await treeResponse.json());
+	const paths = tree.tree
+		.filter((entry) => entry.type === 'blob' && entry.path.includes('/prototypes/') && entry.path.endsWith('.lua'))
+		.map((entry) => entry.path)
+		.sort();
+	const sources = new Map<string, string>();
+	const factorioDataRoot = `https://raw.githubusercontent.com/wube/factorio-data/${commit}`;
+	const batchSize = 20;
+	for (let start = 0; start < paths.length; start += batchSize) {
+		const batch = paths.slice(start, start + batchSize);
+		const fetched = await Promise.all(
+			batch.map(async (path) => [path, await fetchText(`${factorioDataRoot}/${path}`, path)] as const),
+		);
+		for (const [path, source] of fetched) {
+			sources.set(path, source);
+		}
+	}
+	return sources;
+}
+
+function prototypeNamesFrom(sources: ReadonlyMap<string, string>, files: readonly string[]): string[] {
+	const names = files.flatMap((file) => {
+		const source = sources.get(file);
+		if (source === undefined) {
+			throw new Error(`Factorio ${file} is missing from the fetched prototype sources.`);
+		}
+		return extractTopLevelPrototypeNames(source);
+	});
+	return [...new Set(names)].sort();
 }
 
 async function readJson(url: URL): Promise<unknown> {
@@ -43,24 +100,21 @@ async function readJson(url: URL): Promise<unknown> {
 }
 
 const sourceLock = parseSourceLock(await readJson(SOURCE_LOCK_URL));
-const factorioDataRoot = `https://raw.githubusercontent.com/wube/factorio-data/${sourceLock.factorioData.commit}`;
-const [
-	datasetEntries,
-	baseItemSource,
-	spaceAgeItemSource,
-	basePrototypeNames,
-	spaceAgePrototypeNames,
-	qualityPrototypeNames,
-] = await Promise.all([
+const gameUiSpec = parseGameUiSpec(gameUiSpecJson);
+const [datasetEntries, factorioDataSources] = await Promise.all([
 	Promise.all(
 		FACTORIOLAB_DATASETS.map(async ({id}) => [id, await fetchDataset(id, sourceLock.factorioLab.commit)] as const),
 	),
-	fetchText(`${factorioDataRoot}/base/prototypes/item.lua`, 'Factorio base item prototypes'),
-	fetchText(`${factorioDataRoot}/space-age/prototypes/item.lua`, 'Factorio Space Age item prototypes'),
-	fetchPrototypeNames(factorioDataRoot, FACTORIO_DATA_PROTOTYPE_FILES.base),
-	fetchPrototypeNames(factorioDataRoot, FACTORIO_DATA_PROTOTYPE_FILES.spaceAge),
-	fetchPrototypeNames(factorioDataRoot, FACTORIO_DATA_PROTOTYPE_FILES.quality),
+	fetchFactorioDataSources(sourceLock.factorioData.commit),
 ]);
+const baseItemSource = factorioDataSources.get('base/prototypes/item.lua');
+const spaceAgeItemSource = factorioDataSources.get('space-age/prototypes/item.lua');
+if (baseItemSource === undefined || spaceAgeItemSource === undefined) {
+	throw new Error('Factorio item prototype sources are missing.');
+}
+const basePrototypeNames = prototypeNamesFrom(factorioDataSources, FACTORIO_DATA_PROTOTYPE_FILES.base);
+const spaceAgePrototypeNames = prototypeNamesFrom(factorioDataSources, FACTORIO_DATA_PROTOTYPE_FILES.spaceAge);
+const qualityPrototypeNames = prototypeNamesFrom(factorioDataSources, FACTORIO_DATA_PROTOTYPE_FILES.quality);
 const datasets = new Map(datasetEntries);
 for (const [id, dataset] of datasets) {
 	const source = FACTORIOLAB_DATASETS.find((candidate) => candidate.id === id);
@@ -115,9 +169,37 @@ const database = transformDatasets({
 	factorioDataVersion: sourceLock.factorioData.version,
 });
 const output = `${JSON.stringify(database, undefined, '\t')}\n`;
+const nextUpgrades = extractPrototypeUpgrades([...factorioDataSources.values()]);
+const virtualSignals = extractPrototypeNames([...factorioDataSources.values()], 'virtual-signal');
+const pickerSignals = extractPickerSignals([...factorioDataSources.values()], gameUiSpec.signals.typeOrder);
+const upgradeEntityItems = [
+	...new Set([...extractVisiblePlaceResults(baseItemSource), ...extractVisiblePlaceResults(spaceAgeItemSource)]),
+].sort();
+const upgradeModuleItems = extractUpgradeModuleItems([...factorioDataSources.values()]);
+const upgradeFuelItems = extractUpgradeFuelItems([...factorioDataSources.values()]);
+const upgradeEntityNames = new Set(upgradeEntityItems);
+const entityModuleSlots = Object.fromEntries(
+	Object.entries(extractEntityModuleSlots([...factorioDataSources.values()])).filter(([name]) =>
+		upgradeEntityNames.has(name),
+	),
+);
+const gameDataOutput = `${JSON.stringify(
+	{
+		entityModuleSlots,
+		factorioDataVersion: sourceLock.factorioData.version,
+		nextUpgrades,
+		pickerSignals,
+		upgradeEntityItems,
+		upgradeFuelItems,
+		upgradeModuleItems,
+		virtualSignals,
+	},
+	undefined,
+	'\t',
+)}\n`;
 
 await mkdir(new URL('.', OUTPUT_URL), {recursive: true});
-await writeFile(OUTPUT_URL, output, 'utf8');
+await Promise.all([writeFile(OUTPUT_URL, output, 'utf8'), writeFile(GAME_DATA_OUTPUT_URL, gameDataOutput, 'utf8')]);
 
 console.log(
 	`Generated ${Object.keys(database.names).length.toString()} names from FactorioLab ${sourceLock.factorioLab.commit} and Factorio ${sourceLock.factorioData.version}.`,
@@ -125,3 +207,14 @@ console.log(
 console.log(
 	`${Buffer.byteLength(output).toLocaleString()} bytes raw; ${gzipSync(output).byteLength.toLocaleString()} bytes gzip.`,
 );
+console.log(
+	`Generated ${nextUpgrades.length.toString()} native next-upgrade mappings from Factorio ${sourceLock.factorioData.version}.`,
+);
+console.log(`Generated ${pickerSignals.length.toString()} categorized signals for the signal picker.`);
+console.log(`Generated ${upgradeEntityItems.length.toString()} placeable Upgrade Planner entities.`);
+console.log(`Generated ${upgradeModuleItems.length.toString()} Upgrade Planner module items.`);
+console.log(`Generated ${upgradeFuelItems.length.toString()} Upgrade Planner fuel items.`);
+console.log(
+	`Generated module-slot counts for ${Object.keys(entityModuleSlots).length.toString()} Upgrade Planner entities.`,
+);
+console.log(`Generated ${virtualSignals.length.toString()} virtual signals for the replacement picker.`);

@@ -2,7 +2,8 @@ import {Link} from '@tanstack/react-router';
 
 import {getSourceLabel} from '../fetching/blueprintFetcher';
 import type {SignalType} from '../parsing/types';
-import type {DatabaseBlueprint} from '../storage/db';
+import type {ImportHistoryRecord} from '../storage/db';
+import {BLUEPRINT_RECORD_TYPE_LABELS} from './library/blueprintRecordModel';
 
 const SIGNAL_TYPES = new Set<string>([
 	'item',
@@ -38,42 +39,48 @@ import {formatDate} from './history/utils/dateUtils';
 import {ButtonGreen} from './ui/ButtonGreen';
 
 interface HistoryBlueprintRowProps {
-	blueprint: DatabaseBlueprint;
+	blueprint: ImportHistoryRecord;
 	isSelected: boolean;
-	onToggleSelection: (sha: string) => void;
+	onToggleSelection: (id: string) => void;
 }
 
+/**
+ * One row is one chronological import event. Type, label, description, and icons
+ * preview the imported bytes; source, selection, and timestamps describe how the
+ * browser obtained and reopened them. Saving to the Blueprint Library is a
+ * separate explicit operation.
+ */
 export function HistoryBlueprintRow({blueprint, isSelected, onToggleSelection}: HistoryBlueprintRowProps) {
-	const handleKeyDown = (event: React.KeyboardEvent) => {
-		if (event.key === 'Enter' || event.key === ' ') {
-			event.preventDefault();
-			onToggleSelection(blueprint.metadata.sha);
-		}
-	};
+	const label = blueprint.gameData.label?.trim();
+	const typeLabel = BLUEPRINT_RECORD_TYPE_LABELS[blueprint.gameData.type];
+	const rowName = label === undefined || label === '' ? `Untitled ${typeLabel.toLowerCase()}` : label;
 
 	return (
-		<button
-			type="button"
-			key={blueprint.metadata.sha}
+		<div
+			key={blueprint.id}
 			className={`history-blueprint-item ${isSelected ? 'selected' : ''}`}
 			onClick={() => {
-				onToggleSelection(blueprint.metadata.sha);
+				onToggleSelection(blueprint.id);
 			}}
-			onKeyDown={handleKeyDown}
-			aria-pressed={isSelected}
 			data-testid="blueprint-item"
 		>
-			{/* Checkbox column */}
+			{/* Checkbox column owns the row's accessible selection control */}
 			<BlueprintTableCheckbox
 				isSelected={isSelected}
+				label={`Select ${rowName}`}
 				onToggle={() => {
-					onToggleSelection(blueprint.metadata.sha);
+					onToggleSelection(blueprint.id);
 				}}
 			/>
 
 			{/* Type column */}
 			<div className="history-type-container">
-				<FactorioIcon icon={{type: 'item', name: blueprint.gameData.type.replace(/_/g, '-')}} size="small" />
+				<FactorioIcon
+					decorative
+					icon={{type: 'item', name: blueprint.gameData.type.replace(/_/g, '-')}}
+					size="small"
+				/>
+				<span>{typeLabel}</span>
 			</div>
 
 			{/* Version column */}
@@ -137,6 +144,6 @@ Updated: ${new Date(blueprint.metadata.lastUpdatedOn).toLocaleString()}`}
 					<ButtonGreen onClick={() => undefined}>Open</ButtonGreen>
 				</Link>
 			</div>
-		</button>
+		</div>
 	);
 }
