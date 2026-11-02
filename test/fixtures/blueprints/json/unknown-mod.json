@@ -1,5 +1,6 @@
 {
-	"blueprint": {
+	"blueprint":
+	{
 		"item": "blueprint",
 		"version": 562949953421312,
 		"icons": [{"signal": {"type": "item", "name": "made-up-crystal"}, "index": 1}],

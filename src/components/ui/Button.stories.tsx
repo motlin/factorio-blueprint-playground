@@ -3,52 +3,75 @@ import {expect, fn, userEvent, within} from 'storybook/test';
 
 import {Button} from './Button';
 
-const meta: Meta<typeof Button> = {
+const meta: Meta<typeof Button> =
+{
 	title: 'UI/Button',
 	component: Button,
-	parameters: {
+	parameters:
+	{
 		layout: 'centered',
 	},
 	tags: ['autodocs'],
-	argTypes: {
-		onClick: {action: 'clicked'},
-		disabled: {control: 'boolean'},
+	argTypes:
+	{
+		onClick:
+		{
+			action: 'clicked',
+		},
+		disabled:
+		{
+			control: 'boolean',
+		},
 	},
 };
 
 export default meta;
 type Story = StoryObj<typeof Button>;
 
-export const Default: Story = {
-	args: {
+export const Default: Story =
+{
+	args:
+	{
 		children: 'Click me',
 		disabled: false,
 	},
 };
 
-export const Disabled: Story = {
-	args: {
+export const Disabled: Story =
+{
+	args:
+	{
 		children: 'Disabled Button',
 		disabled: true,
 	},
 };
 
-export const WithLongText: Story = {
-	args: {
+export const WithLongText: Story =
+{
+	args:
+	{
 		children: 'This is a button with longer text',
 		disabled: false,
 	},
 };
 
-export const ClickInteraction: Story = {
-	args: {
+export const ClickInteraction: Story =
+{
+	args:
+	{
 		children: 'Click to test',
 		disabled: false,
 		onClick: fn(),
 	},
-	play: async ({canvasElement, args}) => {
+	play: async ({canvasElement, args}) =>
+	{
 		const canvas = within(canvasElement);
-		const button = canvas.getByRole('button', {name: 'Click to test'});
+		const button = canvas.getByRole(
+			'button',
+			{
+				name: 'Click to test',
+			},
+		);
 
 		await expect(button).toBeInTheDocument();
 		await expect(button).not.toBeDisabled();
@@ -58,15 +81,23 @@ export const ClickInteraction: Story = {
 	},
 };
 
-export const DisabledButtonDoesNotTriggerClick: Story = {
-	args: {
+export const DisabledButtonDoesNotTriggerClick: Story =
+{
+	args:
+	{
 		children: 'Disabled - cannot click',
 		disabled: true,
 		onClick: fn(),
 	},
-	play: async ({canvasElement, args}) => {
+	play: async ({canvasElement, args}) =>
+	{
 		const canvas = within(canvasElement);
-		const button = canvas.getByRole('button', {name: 'Disabled - cannot click'});
+		const button = canvas.getByRole(
+			'button',
+			{
+				name: 'Disabled - cannot click',
+			},
+		);
 
 		await expect(button).toBeInTheDocument();
 		await expect(button).toBeDisabled();

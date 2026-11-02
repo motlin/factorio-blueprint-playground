@@ -8,7 +8,8 @@ import {db} from '../storage/db';
 
 import type {RootSearch} from './index';
 
-interface RouterContext {
+interface RouterContext
+{
 	queryClient: QueryClient;
 }
 
@@ -16,13 +17,16 @@ interface RouterContext {
 const TanStackRouterDevtools = import.meta.env.PROD
 	? () => null
 	: lazy(async () =>
-			import('@tanstack/react-router-devtools').then((res) => ({
+			import('@tanstack/react-router-devtools').then((res) => (
+			{
 				default: res.TanStackRouterDevtools,
 			})),
 		);
 
-const DevTools = () => {
-	if (import.meta.env.PROD) {
+const DevTools = () =>
+{
+	if (import.meta.env.PROD)
+	{
 		return null;
 	}
 
@@ -30,42 +34,56 @@ const DevTools = () => {
 	return <DevToolsComponent />;
 };
 
-export const Route = createRootRouteWithContext<RouterContext>()({
-	errorComponent: ErrorComponent,
-	component: () => <DynamicNavigation />,
-});
+export const Route = createRootRouteWithContext<RouterContext>()(
+	{
+		errorComponent: ErrorComponent,
+		component: () => <DynamicNavigation />,
+	},
+);
 
-const DynamicNavigation = () => {
+const DynamicNavigation = () =>
+{
 	const [mostRecentData, setMostRecentData] = useState<RootSearch>({});
 	const router = useRouter();
 
 	// Listen for navigation events to update most recent blueprint data
-	useEffect(() => {
-		const unsubscribe = router.history.subscribe(() => {
+	useEffect(() =>
+	{
+		const unsubscribe = router.history.subscribe(() =>
+		{
 			// Check if we're navigating to the root route from history and the search params contain a pasted parameter
 			const location = router.state.location;
 			const searchParams = location.search;
-			if (location.pathname === '/' && searchParams.pasted != null && searchParams.pasted !== '') {
-				setMostRecentData({
-					pasted: searchParams.pasted,
-					selection: searchParams.selection,
-				});
+			if (location.pathname === '/' && searchParams.pasted != null && searchParams.pasted !== '')
+			{
+				setMostRecentData(
+					{
+						pasted: searchParams.pasted,
+						selection: searchParams.selection,
+					},
+				);
 			}
 		});
 
-		return () => {
+		return () =>
+		{
 			unsubscribe();
 		};
 	}, [router]);
 
-	useEffect(() => {
-		const loadMostRecent = async () => {
+	useEffect(() =>
+	{
+		const loadMostRecent = async () =>
+		{
 			const recentBlueprint = await db.getMostRecent();
-			if (recentBlueprint) {
-				setMostRecentData({
-					pasted: recentBlueprint.metadata.data,
-					selection: recentBlueprint.metadata.selection,
-				});
+			if (recentBlueprint)
+			{
+				setMostRecentData(
+					{
+						pasted: recentBlueprint.metadata.data,
+						selection: recentBlueprint.metadata.selection,
+					},
+				);
 			}
 		};
 
@@ -79,13 +97,15 @@ const DynamicNavigation = () => {
 					<nav>
 						<Link
 							to="/"
-							search={{
+							search={
+							{
 								pasted: mostRecentData.pasted,
 								selection: mostRecentData.selection,
 								focusTextarea: true,
 							}}
 							className="blue nowrap"
-							activeProps={{
+							activeProps={
+							{
 								className: 'yellow bold',
 							}}
 						>
@@ -95,7 +115,8 @@ const DynamicNavigation = () => {
 						<Link
 							to="/history"
 							className="blue nowrap"
-							activeProps={{
+							activeProps={
+							{
 								className: 'yellow bold',
 							}}
 						>

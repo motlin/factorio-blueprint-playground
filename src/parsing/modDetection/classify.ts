@@ -2,46 +2,61 @@ import type {Confidence, DetectionResult, ExtractedNames, ModDatabase, ModSource
 
 const MAXIMUM_EXAMPLE_NAMES = 5;
 
-interface SourceEvidence {
+interface SourceEvidence
+{
 	names: Set<string>;
 	exclusiveCount: number;
 	definitive: boolean;
 }
 
-interface AmbiguousName {
+interface AmbiguousName
+{
 	name: string;
 	candidates: number[];
 }
 
-function sourceIndexes(mask: number, sourceCount: number): number[] {
+function sourceIndexes(mask: number, sourceCount: number): number[]
+{
 	const indexes: number[] = [];
-	for (let index = 0; index < sourceCount; index += 1) {
-		if ((mask & (1 << index)) !== 0) {
+	for (let index = 0; index < sourceCount; index += 1)
+	{
+		if ((mask & (1 << index)) !== 0)
+		{
 			indexes.push(index);
 		}
 	}
 	return indexes;
 }
 
-function evidenceFor(evidence: Map<number, SourceEvidence>, sourceIndex: number): SourceEvidence {
+function evidenceFor(evidence: Map<number, SourceEvidence>, sourceIndex: number): SourceEvidence
+{
 	const existing = evidence.get(sourceIndex);
-	if (existing) {
+	if (existing)
+	{
 		return existing;
 	}
 
-	const created: SourceEvidence = {names: new Set(), exclusiveCount: 0, definitive: false};
+	const created: SourceEvidence =
+	{
+		names: new Set(),
+		exclusiveCount: 0,
+		definitive: false,
+	};
 	evidence.set(sourceIndex, created);
 	return created;
 }
 
-function versionMajor(version: string | undefined): number | undefined {
-	if (version === undefined) {
+function versionMajor(version: string | undefined): number | undefined
+{
+	if (version === undefined)
+	{
 		return undefined;
 	}
 	return Number.parseInt(version.split('.')[0] ?? '', 10);
 }
 
-function isBaseSource(source: ModSource | undefined): boolean {
+function isBaseSource(source: ModSource | undefined): boolean
+{
 	return source?.id === 'base' || source?.id === 'base-1.1';
 }
 
@@ -49,43 +64,52 @@ function isBaseSource(source: ModSource | undefined): boolean {
 // because names like stack-inserter mean different prototypes in 1.1 and 2.0.
 // A pre-2.0 blueprint cannot contain 2.0-only names, so its base names count as 1.1 evidence
 // even when only the 2.0 data lists them, as with virtual signals.
-function selectBaseSource(indexes: number[], sources: ModSource[], version: string | undefined): number | undefined {
+function selectBaseSource(indexes: number[], sources: ModSource[], version: string | undefined): number | undefined
+{
 	const baseIndexes = indexes.filter((index) => isBaseSource(sources[index]));
-	if (baseIndexes.length === 0) {
+	if (baseIndexes.length === 0)
+	{
 		return undefined;
 	}
 
 	const preferredId = (versionMajor(version) ?? 2) < 2 ? 'base-1.1' : 'base';
 	const preferredIndex = baseIndexes.find((index) => sources[index]?.id === preferredId);
-	if (preferredIndex !== undefined) {
+	if (preferredIndex !== undefined)
+	{
 		return preferredIndex;
 	}
-	if (baseIndexes.length !== indexes.length) {
+	if (baseIndexes.length !== indexes.length)
+	{
 		return undefined;
 	}
 	const legacyIndex = sources.findIndex((source) => source.id === 'base-1.1');
 	return preferredId === 'base-1.1' && legacyIndex >= 0 ? legacyIndex : baseIndexes[0];
 }
 
-function assignAmbiguousNames(ambiguousNames: AmbiguousName[], evidence: Map<number, SourceEvidence>): void {
+function assignAmbiguousNames(ambiguousNames: AmbiguousName[], evidence: Map<number, SourceEvidence>): void
+{
 	const chosenSources = new Set(evidence.keys());
 	const remaining = [...ambiguousNames];
 
-	while (remaining.length > 0) {
+	while (remaining.length > 0)
+	{
 		const explainedIndex = remaining.findIndex((entry) =>
 			entry.candidates.some((candidate) => chosenSources.has(candidate)),
 		);
-		if (explainedIndex >= 0) {
+		if (explainedIndex >= 0)
+		{
 			const [entry] = remaining.splice(explainedIndex, 1);
 			const sourceIndex = entry.candidates
 				.filter((candidate) => chosenSources.has(candidate))
-				.sort((left, right) => {
+				.sort((left, right) =>
+				{
 					const exclusiveDifference =
 						(evidence.get(right)?.exclusiveCount ?? 0) - (evidence.get(left)?.exclusiveCount ?? 0);
 					return exclusiveDifference || left - right;
 				})
 				.at(0);
-			if (sourceIndex === undefined) {
+			if (sourceIndex === undefined)
+			{
 				throw new Error(`No selected source can explain ambiguous name: ${entry.name}`);
 			}
 			evidenceFor(evidence, sourceIndex).names.add(entry.name);
@@ -93,20 +117,24 @@ function assignAmbiguousNames(ambiguousNames: AmbiguousName[], evidence: Map<num
 		}
 
 		const coverage = new Map<number, number>();
-		for (const entry of remaining) {
-			for (const candidate of entry.candidates) {
+		for (const entry of remaining)
+		{
+			for (const candidate of entry.candidates)
+			{
 				coverage.set(candidate, (coverage.get(candidate) ?? 0) + 1);
 			}
 		}
 		const sourceIndex = [...coverage.keys()]
-			.sort((left, right) => {
+			.sort((left, right) =>
+			{
 				const coverageDifference = (coverage.get(right) ?? 0) - (coverage.get(left) ?? 0);
 				const exclusiveDifference =
 					(evidence.get(right)?.exclusiveCount ?? 0) - (evidence.get(left)?.exclusiveCount ?? 0);
 				return coverageDifference || exclusiveDifference || left - right;
 			})
 			.at(0);
-		if (sourceIndex === undefined) {
+		if (sourceIndex === undefined)
+		{
 			throw new Error('No source can explain the remaining ambiguous names.');
 		}
 		chosenSources.add(sourceIndex);
@@ -114,14 +142,17 @@ function assignAmbiguousNames(ambiguousNames: AmbiguousName[], evidence: Map<num
 	}
 }
 
-function confidenceFor(evidence: SourceEvidence): Confidence {
-	if (evidence.definitive || evidence.exclusiveCount >= 3) {
+function confidenceFor(evidence: SourceEvidence): Confidence
+{
+	if (evidence.definitive || evidence.exclusiveCount >= 3)
+	{
 		return 'high';
 	}
 	return 'medium';
 }
 
-function verdictFor(source: ModSource, evidence: SourceEvidence): Verdict {
+function verdictFor(source: ModSource, evidence: SourceEvidence): Verdict
+{
 	const sortedNames = [...evidence.names].sort();
 	return {
 		source: source.id,
@@ -132,7 +163,8 @@ function verdictFor(source: ModSource, evidence: SourceEvidence): Verdict {
 	};
 }
 
-function prefixHint(name: string, prefixes: ModDatabase['prefixes']): string | undefined {
+function prefixHint(name: string, prefixes: ModDatabase['prefixes']): string | undefined
+{
 	return Object.entries(prefixes)
 		.filter(([prefix]) => name.startsWith(prefix))
 		.sort(([left], [right]) => right.length - left.length || left.localeCompare(right))[0]?.[1];
@@ -142,8 +174,10 @@ function warningForVersion(
 	version: string | undefined,
 	selectedSourceIndexes: Set<number>,
 	sources: ModSource[],
-): string[] {
-	if ((versionMajor(version) ?? 2) >= 2 || version === undefined) {
+): string[]
+{
+	if ((versionMajor(version) ?? 2) >= 2 || version === undefined)
+	{
 		return [];
 	}
 
@@ -160,36 +194,50 @@ function addDefinitiveEvidence(
 	extractedNames: ExtractedNames,
 	database: ModDatabase,
 	evidence: Map<number, SourceEvidence>,
-) {
+)
+{
 	const definitiveSourceIds = new Set<string>();
-	if (extractedNames.flags.hasNonNormalQuality) {
+	if (extractedNames.flags.hasNonNormalQuality)
+	{
 		definitiveSourceIds.add('quality');
 	}
-	if (extractedNames.flags.hasPlanetSignals || extractedNames.flags.hasSpaceLocationSignals) {
+	if (extractedNames.flags.hasPlanetSignals || extractedNames.flags.hasSpaceLocationSignals)
+	{
 		definitiveSourceIds.add('space-age');
 	}
-	for (let sourceIndex = 0; sourceIndex < database.sources.length; sourceIndex += 1) {
-		if (definitiveSourceIds.has(database.sources[sourceIndex]?.id ?? '')) {
+	for (let sourceIndex = 0; sourceIndex < database.sources.length; sourceIndex += 1)
+	{
+		if (definitiveSourceIds.has(database.sources[sourceIndex]?.id ?? ''))
+		{
 			evidenceFor(evidence, sourceIndex).definitive = true;
 		}
 	}
 }
 
-export function classify(extractedNames: ExtractedNames, database: ModDatabase): DetectionResult {
+export function classify(extractedNames: ExtractedNames, database: ModDatabase): DetectionResult
+{
 	const evidence = new Map<number, SourceEvidence>();
 	const ambiguousNames: AmbiguousName[] = [];
 	const unknownNames: UnknownName[] = [];
 
-	for (const name of [...extractedNames.names.keys()].sort()) {
+	for (const name of [...extractedNames.names.keys()].sort())
+	{
 		const mask = database.names[name];
-		if (mask === undefined) {
-			unknownNames.push({name, prefixHint: prefixHint(name, database.prefixes)});
+		if (mask === undefined)
+		{
+			unknownNames.push(
+				{
+					name,
+					prefixHint: prefixHint(name, database.prefixes),
+				},
+			);
 			continue;
 		}
 
 		const allIndexes = sourceIndexes(mask, database.sources.length);
 		const baseSourceIndex = selectBaseSource(allIndexes, database.sources, extractedNames.version);
-		if (baseSourceIndex !== undefined) {
+		if (baseSourceIndex !== undefined)
+		{
 			const baseEvidence = evidenceFor(evidence, baseSourceIndex);
 			baseEvidence.names.add(name);
 			baseEvidence.definitive = true;
@@ -197,7 +245,8 @@ export function classify(extractedNames: ExtractedNames, database: ModDatabase):
 		}
 		const indexes = allIndexes.filter((index) => !isBaseSource(database.sources[index]));
 
-		if (indexes.length === 1) {
+		if (indexes.length === 1)
+		{
 			const sourceEvidence = evidenceFor(evidence, indexes[0]);
 			sourceEvidence.names.add(name);
 			sourceEvidence.exclusiveCount += 1;
@@ -205,10 +254,23 @@ export function classify(extractedNames: ExtractedNames, database: ModDatabase):
 			continue;
 		}
 
-		if (indexes.length > 1) {
-			ambiguousNames.push({name, candidates: indexes});
-		} else {
-			unknownNames.push({name, prefixHint: prefixHint(name, database.prefixes)});
+		if (indexes.length > 1)
+		{
+			ambiguousNames.push(
+				{
+					name,
+					candidates: indexes,
+				},
+			);
+		}
+		else
+		{
+			unknownNames.push(
+				{
+					name,
+					prefixHint: prefixHint(name, database.prefixes),
+				},
+			);
 		}
 	}
 
@@ -220,25 +282,31 @@ export function classify(extractedNames: ExtractedNames, database: ModDatabase):
 		.map(([sourceIndex, sourceEvidence]) => verdictFor(database.sources[sourceIndex], sourceEvidence));
 
 	const prefixGroups = new Map<string, string[]>();
-	for (const unknownName of unknownNames) {
-		if (unknownName.prefixHint !== undefined) {
+	for (const unknownName of unknownNames)
+	{
+		if (unknownName.prefixHint !== undefined)
+		{
 			const group = prefixGroups.get(unknownName.prefixHint) ?? [];
 			group.push(unknownName.name);
 			prefixGroups.set(unknownName.prefixHint, group);
 		}
 	}
-	for (const [label, matchedNames] of prefixGroups) {
-		if (verdicts.some((verdict) => verdict.label === label)) {
+	for (const [label, matchedNames] of prefixGroups)
+	{
+		if (verdicts.some((verdict) => verdict.label === label))
+		{
 			continue;
 		}
 		const source = database.sources.find((candidate) => candidate.label === label);
-		verdicts.push({
-			source: source?.id ?? label,
-			label,
-			confidence: 'low',
-			matchCount: matchedNames.length,
-			exampleNames: matchedNames.sort().slice(0, MAXIMUM_EXAMPLE_NAMES),
-		});
+		verdicts.push(
+			{
+				source: source?.id ?? label,
+				label,
+				confidence: 'low',
+				matchCount: matchedNames.length,
+				exampleNames: matchedNames.sort().slice(0, MAXIMUM_EXAMPLE_NAMES),
+			},
+		);
 	}
 
 	return {

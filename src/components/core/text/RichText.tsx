@@ -25,17 +25,20 @@ const SIGNAL_TYPES = new Set<string>([
 
 const QUALITY_VALUES = new Set<string>(['normal', 'uncommon', 'rare', 'epic', 'legendary']);
 
-function parseSignalType(value: string): SignalType | undefined {
+function parseSignalType(value: string): SignalType | undefined
+{
 	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- value is validated against the SignalType set before asserting
 	return SIGNAL_TYPES.has(value) ? (value as SignalType) : undefined;
 }
 
-function parseQuality(value?: string): Quality {
+function parseQuality(value?: string): Quality
+{
 	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- value is validated against the Quality set before asserting
 	return value != null && QUALITY_VALUES.has(value) ? (value as Quality) : undefined;
 }
 
-const COLOR_MAP: Record<string, string> = {
+const COLOR_MAP: Record<string, string> =
+{
 	red: '#eb5c5f',
 	green: '#5eb663',
 	blue: '#7dcaed',
@@ -49,7 +52,8 @@ const COLOR_MAP: Record<string, string> = {
 	acid: '#80ff00',
 };
 
-function parseColor(color?: string): string | undefined {
+function parseColor(color?: string): string | undefined
+{
 	// Handle empty/undefined
 	if (color == null || color === '') return undefined;
 
@@ -62,16 +66,19 @@ function parseColor(color?: string): string | undefined {
 
 	// Handle rgb values
 	const parts = color.split(',').map((part) => part.trim());
-	if (parts.length === 3) {
+	if (parts.length === 3)
+	{
 		// Try parsing as 0-1 range first
 		const rgb01 = parts.map((n) => parseFloat(n));
-		if (rgb01.every((n) => !Number.isNaN(n) && n >= 0 && n <= 1)) {
+		if (rgb01.every((n) => !Number.isNaN(n) && n >= 0 && n <= 1))
+		{
 			return `rgb(${rgb01.map((n) => Math.round(n * 255)).join(',')})`;
 		}
 
 		// Try parsing as 0-255 range
 		const rgb255 = parts.map((n) => parseInt(n, 10));
-		if (rgb255.every((n) => !Number.isNaN(n) && n >= 0 && n <= 255)) {
+		if (rgb255.every((n) => !Number.isNaN(n) && n >= 0 && n <= 255))
+		{
 			return `rgb(${rgb255.join(',')})`;
 		}
 	}
@@ -80,7 +87,8 @@ function parseColor(color?: string): string | undefined {
 	return color;
 }
 
-interface StyledTextProps {
+interface StyledTextProps
+{
 	text: string;
 	color?: string;
 	bold?: boolean;
@@ -89,7 +97,8 @@ interface StyledTextProps {
 const StyledText = ({text, color, bold}: StyledTextProps) => (
 	<span
 		data-testid="formatted-text"
-		style={{
+		style={
+		{
 			color: parseColor(color),
 			fontWeight: bold === true ? 'bold' : 'normal',
 		}}
@@ -98,18 +107,21 @@ const StyledText = ({text, color, bold}: StyledTextProps) => (
 	</span>
 );
 
-interface RichTextProps {
+interface RichTextProps
+{
 	text?: string;
 	iconSize: 'small' | 'large';
 }
 
-interface RichTextLineProps {
+interface RichTextLineProps
+{
 	text: string;
 	iconSize: 'small' | 'large';
 }
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Rich text parser requires handling many tag types
-const processRichTextLine = ({text, iconSize}: RichTextLineProps): React.ReactNode[] => {
+const processRichTextLine = ({text, iconSize}: RichTextLineProps): React.ReactNode[] =>
+{
 	const parts: React.ReactNode[] = [];
 	let currentIndex = 0;
 	let currentColor: string | undefined;
@@ -119,9 +131,11 @@ const processRichTextLine = ({text, iconSize}: RichTextLineProps): React.ReactNo
 	const tagRegex =
 		/\[((?:color|font)=([^\]]+)|(?:\/?(?:color|font))|(?:img|item|fluid|virtual-signal|entity|technology|recipe|item-group|tile|achievement|quality|gps|special-item|armor|train|train-stop|tooltip|planet|space-location)=([^,\]]+)(?:,quality=([^,\]]+))?)\]/g;
 
-	for (let match = tagRegex.exec(text); match !== null; match = tagRegex.exec(text)) {
+	for (let match = tagRegex.exec(text); match !== null; match = tagRegex.exec(text))
+	{
 		// Add text before the tag
-		if (match.index > currentIndex) {
+		if (match.index > currentIndex)
+		{
 			parts.push(
 				<StyledText
 					key={parts.length}
@@ -132,29 +146,40 @@ const processRichTextLine = ({text, iconSize}: RichTextLineProps): React.ReactNo
 			);
 		}
 
-		if (match[2]) {
+		if (match[2])
+		{
 			// Color/font start tag
-			if (match[1].startsWith('color=')) {
+			if (match[1].startsWith('color='))
+			{
 				currentColor = match[2];
-			} else if (match[1].startsWith('font=')) {
+			}
+			else if (match[1].startsWith('font='))
+			{
 				isBold = match[2].includes('bold');
 			}
-		} else if (match[1] === '/color' || match[1] === '/font') {
+		}
+		else if (match[1] === '/color' || match[1] === '/font')
+		{
 			// End tags
 			if (match[1] === '/color') currentColor = undefined;
 			if (match[1] === '/font') isBold = false;
-		} else if (match[3]) {
+		}
+		else if (match[3])
+		{
 			// Game icon or special tag
 			const type = match[1].split('=')[0];
 			const value = match[3];
 			const quality = match[4];
 
-			switch (type) {
-				case 'img': {
+			switch (type)
+			{
+				case 'img':
+				{
 					// Handle both period and slash separators for img tags specifically
 					const [imgType, imgName] = value.includes('/') ? value.split('/') : value.split('.');
 
-					const icon: SignalID = {
+					const icon: SignalID =
+					{
 						type: parseSignalType(imgType),
 						// If no separator, use full value as name
 						// oxlint-disable-next-line typescript/prefer-nullish-coalescing -- fall back to full value when split yields an empty name
@@ -176,8 +201,10 @@ const processRichTextLine = ({text, iconSize}: RichTextLineProps): React.ReactNo
 				case 'achievement':
 				case 'quality':
 				case 'planet':
-				case 'space-location': {
-					const icon: SignalID = {
+				case 'space-location':
+				{
+					const icon: SignalID =
+					{
 						type: type,
 						name: value,
 						quality: parseQuality(quality),
@@ -197,7 +224,8 @@ const processRichTextLine = ({text, iconSize}: RichTextLineProps): React.ReactNo
 	}
 
 	// Add remaining text
-	if (currentIndex < text.length) {
+	if (currentIndex < text.length)
+	{
 		parts.push(
 			<StyledText key={parts.length} text={text.slice(currentIndex)} color={currentColor} bold={isBold} />,
 		);
@@ -206,7 +234,8 @@ const processRichTextLine = ({text, iconSize}: RichTextLineProps): React.ReactNo
 	return parts;
 };
 
-export const RichText = ({text, iconSize}: RichTextProps) => {
+export const RichText = ({text, iconSize}: RichTextProps) =>
+{
 	if (text == null || text === '') return null;
 
 	const lines = text.split(LINE_BREAK_REGEX);
@@ -215,7 +244,14 @@ export const RichText = ({text, iconSize}: RichTextProps) => {
 		// biome-ignore lint/suspicious/noArrayIndexKey: lines are split from static text, order is stable
 		<React.Fragment key={index}>
 			{index > 0 && <br />}
-			<div className="richtext-line">{processRichTextLine({text: line, iconSize})}</div>
+			<div className="richtext-line">
+				{processRichTextLine(
+					{
+						text: line,
+						iconSize,
+					},
+				)}
+			</div>
 		</React.Fragment>
 	));
 

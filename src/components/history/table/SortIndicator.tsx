@@ -1,12 +1,15 @@
 export type SortDirection = 'asc' | 'desc' | null;
 
-interface SortIndicatorProps {
+interface SortIndicatorProps
+{
 	direction: SortDirection;
 	className?: string;
 }
 
-export function SortIndicator({direction, className = ''}: SortIndicatorProps) {
-	if (direction === null) {
+export function SortIndicator({direction, className = ''}: SortIndicatorProps)
+{
+	if (direction === null)
+	{
 		return null;
 	}
 

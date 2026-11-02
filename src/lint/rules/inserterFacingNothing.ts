@@ -5,11 +5,13 @@ import {isCardinal, unitVector} from '../direction';
 import type {LintContext, LintFinding, LintRule} from '../types';
 import {CoverageIndex} from './coverage';
 
-function isKnownInserter(name: string): name is keyof typeof INSERTER_REACH {
+function isKnownInserter(name: string): name is keyof typeof INSERTER_REACH
+{
 	return Object.hasOwn(INSERTER_REACH, name);
 }
 
-function isKnownTarget(name: string): boolean {
+function isKnownTarget(name: string): boolean
+{
 	return Object.hasOwn(INSERTER_TARGET_NAMES, name);
 }
 
@@ -30,11 +32,13 @@ const UNKNOWN_ENTITY_REACH = 3;
 
 type Side = 'pickup' | 'drop';
 
-function tileKey(x: number, y: number): string {
+function tileKey(x: number, y: number): string
+{
 	return `${x},${y}`;
 }
 
-interface Surroundings {
+interface Surroundings
+{
 	// Tiles with space platform foundation, or undefined when the blueprint is not a platform.
 	platformFoundation: Set<string> | undefined;
 	nearCurvedRail: CoverageIndex;
@@ -46,10 +50,16 @@ interface Surroundings {
 const STOP_TO_TRACK = 2;
 const TRAIN_AHEAD_OF_STOP = 3;
 
-function isOnStationTrack(context: LintContext, trainStops: Entity[], position: TilePosition): boolean {
-	return trainStops.some((stop) => {
+function isOnStationTrack(context: LintContext, trainStops: Entity[], position: TilePosition): boolean
+{
+	return trainStops.some((stop) =>
+	{
 		const travel = unitVector(context.direction(stop));
-		const right = {dx: -travel.dy, dy: travel.dx};
+		const right =
+		{
+			dx: -travel.dy,
+			dy: travel.dx,
+		};
 		const offsetX = position.x - stop.position.x;
 		const offsetY = position.y - stop.position.y;
 		const across = offsetX * right.dx + offsetY * right.dy;
@@ -58,7 +68,8 @@ function isOnStationTrack(context: LintContext, trainStops: Entity[], position: 
 	});
 }
 
-function surroundings(context: LintContext): Surroundings {
+function surroundings(context: LintContext): Surroundings
+{
 	const curvedRails = context.entities.filter((entity) => CURVED_RAIL_NAMES.has(entity.name));
 	const unknownEntities = context.entities.filter(
 		(entity) => !isKnownEntityName(entity.name) && !isVanillaTrackEntity(entity.name),
@@ -72,15 +83,26 @@ function surroundings(context: LintContext): Surroundings {
 		trainStops: context.entities.filter(
 			(entity) => entity.name === 'train-stop' && isCardinal(context.direction(entity)),
 		),
-		nearCurvedRail: new CoverageIndex(curvedRails.map((entity) => ({entity, halfWidth: CURVED_RAIL_REACH}))),
+		nearCurvedRail: new CoverageIndex(
+			curvedRails.map((entity) => (
+			{
+				entity,
+				halfWidth: CURVED_RAIL_REACH,
+			})),
+		),
 		nearUnknownEntity: new CoverageIndex(
-			unknownEntities.map((entity) => ({entity, halfWidth: UNKNOWN_ENTITY_REACH})),
+			unknownEntities.map((entity) => (
+			{
+				entity,
+				halfWidth: UNKNOWN_ENTITY_REACH,
+			})),
 		),
 	};
 }
 
 // A wagon stopped on a straight rail fills the rail's 2x2 footprint, so train stations load and unload there.
-function isOnStraightRail(context: LintContext, position: TilePosition): boolean {
+function isOnStraightRail(context: LintContext, position: TilePosition): boolean
+{
 	return [-0.5, 0.5].some((dx) =>
 		[-0.5, 0.5].some((dy) =>
 			context.index
@@ -91,20 +113,23 @@ function isOnStraightRail(context: LintContext, position: TilePosition): boolean
 }
 
 // Add-ons such as a rocket silo extension reach for machines placed alongside the blueprint.
-function isOutsideBlueprint(context: LintContext, position: TilePosition): boolean {
+function isOutsideBlueprint(context: LintContext, position: TilePosition): boolean
+{
 	const {minX, maxX, minY, maxY} = context.bounds;
 	return position.x < minX || position.x > maxX || position.y < minY || position.y > maxY;
 }
 
 // Items dropped off a space platform's foundation are destroyed, which players use to void excess.
-function isIntoVoid(nearby: Surroundings, position: TilePosition): boolean {
+function isIntoVoid(nearby: Surroundings, position: TilePosition): boolean
+{
 	return (
 		nearby.platformFoundation !== undefined &&
 		!nearby.platformFoundation.has(tileKey(Math.floor(position.x), Math.floor(position.y)))
 	);
 }
 
-function hasTarget(context: LintContext, nearby: Surroundings, side: Side, position: TilePosition): boolean {
+function hasTarget(context: LintContext, nearby: Surroundings, side: Side, position: TilePosition): boolean
+{
 	return (
 		isOutsideBlueprint(context, position) ||
 		(side === 'drop' && isIntoVoid(nearby, position)) ||
@@ -116,7 +141,8 @@ function hasTarget(context: LintContext, nearby: Surroundings, side: Side, posit
 	);
 }
 
-function finding(rule: LintRule, entity: Entity, missingTargets: string[]): LintFinding {
+function finding(rule: LintRule, entity: Entity, missingTargets: string[]): LintFinding
+{
 	return {
 		ruleId: rule.id,
 		severity: rule.severity,
@@ -125,37 +151,66 @@ function finding(rule: LintRule, entity: Entity, missingTargets: string[]): Lint
 	};
 }
 
-interface Miss {
+interface Miss
+{
 	entity: Entity;
 	side: Side;
 	target: TilePosition;
 	// Unit step along the row of inserters, across the inserter's own axis.
-	across: {dx: number; dy: number};
+	across:
+	{
+		dx: number;
+		dy: number;
+	};
 }
 
-export const inserterFacingNothingRule: LintRule = {
+export const inserterFacingNothingRule: LintRule =
+{
 	id: 'inserter-facing-nothing',
 	severity: 'warning',
-	run(context) {
+	run(context)
+	{
 		const nearby = surroundings(context);
-		const misses = context.entities.flatMap((entity): Miss[] => {
+		const misses = context.entities.flatMap((entity): Miss[] =>
+		{
 			if (!isKnownInserter(entity.name)) return [];
 			const direction = context.direction(entity);
 			if (!isCardinal(direction)) return [];
 			const vector = unitVector(direction);
 			const reach = INSERTER_REACH[entity.name];
-			const across = {dx: vector.dy === 0 ? 0 : 1, dy: vector.dx === 0 ? 0 : 1};
+			const across =
+			{
+				dx: vector.dy === 0 ? 0 : 1,
+				dy: vector.dx === 0 ? 0 : 1,
+			};
 			// An inserter's direction points at its pickup side; boilers and turrets in real blueprints sit behind it.
 			const sides = [
-				{side: 'pickup' as const, sign: 1},
-				{side: 'drop' as const, sign: -1},
+				{
+					side: 'pickup' as const,
+					sign: 1,
+				},
+				{
+					side: 'drop' as const,
+					sign: -1,
+				},
 			];
-			return sides.flatMap(({side, sign}) => {
-				const target = {
+			return sides.flatMap(({side, sign}) =>
+			{
+				const target =
+				{
 					x: entity.position.x + sign * vector.dx * reach,
 					y: entity.position.y + sign * vector.dy * reach,
 				};
-				return hasTarget(context, nearby, side, target) ? [] : [{entity, side, target, across}];
+				return hasTarget(context, nearby, side, target)
+					? []
+					: [
+							{
+								entity,
+								side,
+								target,
+								across,
+							},
+						];
 			});
 		});
 
@@ -166,7 +221,8 @@ export const inserterFacingNothingRule: LintRule = {
 			missedTiles.has(tileKey(target.x - across.dx, target.y - across.dy));
 
 		const sidesByEntity = new Map<Entity, string[]>();
-		for (const miss of misses) {
+		for (const miss of misses)
+		{
 			if (isRowInterface(miss)) continue;
 			sidesByEntity.set(miss.entity, [...(sidesByEntity.get(miss.entity) ?? []), miss.side]);
 		}

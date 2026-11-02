@@ -1,4 +1,5 @@
-interface Position {
+interface Position
+{
 	x: number;
 	y: number;
 }
@@ -22,7 +23,8 @@ export type SignalType =
 
 export type Quality = 'normal' | 'uncommon' | 'rare' | 'epic' | 'legendary' | undefined;
 
-export interface SignalID {
+export interface SignalID
+{
 	// Defaults to "item" if not specified
 	type?: SignalType;
 	// Omitted when the game exports a signal it no longer recognizes.
@@ -30,18 +32,21 @@ export interface SignalID {
 	quality?: Quality;
 }
 
-export interface Icon {
+export interface Icon
+{
 	signal: SignalID;
 	// 1-based index, max 4 icons
 	index: number;
 }
 
-interface NetworkPorts {
+interface NetworkPorts
+{
 	red: boolean;
 	green: boolean;
 }
 
-interface CircuitCondition {
+interface CircuitCondition
+{
 	first_signal?: SignalID;
 	second_signal?: SignalID;
 	constant?: number;
@@ -50,22 +55,26 @@ interface CircuitCondition {
 	second_signal_networks?: NetworkPorts;
 }
 
-interface DeciderCondition extends CircuitCondition {
+interface DeciderCondition extends CircuitCondition
+{
 	compare_type?: 'and' | 'or';
 }
 
-interface ConditionOutput {
+interface ConditionOutput
+{
 	signal: SignalID;
 	copy_count_from_input?: boolean;
 	networks?: NetworkPorts;
 }
 
-interface DeciderCombinatorConditions {
+interface DeciderCombinatorConditions
+{
 	conditions: DeciderCondition[];
 	outputs: ConditionOutput[];
 }
 
-interface ArithmeticCondition {
+interface ArithmeticCondition
+{
 	first_signal: SignalID;
 	second_signal?: SignalID;
 	second_constant?: number;
@@ -75,12 +84,14 @@ interface ArithmeticCondition {
 	second_signal_networks?: NetworkPorts;
 }
 
-interface DisplayPanelParameter {
+interface DisplayPanelParameter
+{
 	condition?: CircuitCondition;
 	icon?: SignalID;
 }
 
-export interface Filter {
+export interface Filter
+{
 	index: number;
 	// Omitted by quality-only filters.
 	name?: string;
@@ -92,14 +103,16 @@ export interface Filter {
 	max_count?: number;
 }
 
-interface SectionFilters {
+interface SectionFilters
+{
 	index: number;
 	filters?: Filter[];
 	group?: string;
 	active?: boolean;
 }
 
-interface ControlBehavior {
+interface ControlBehavior
+{
 	// Circuit network conditions
 	circuit_enabled?: boolean;
 	circuit_condition?: CircuitCondition;
@@ -143,26 +156,32 @@ interface ControlBehavior {
 	random_update_interval?: number;
 
 	// Sections (for combinators)
-	sections?: {
+	sections?:
+	{
 		sections: SectionFilters[];
 	};
 	// Factorio 1.1 constant combinator signals
 	filters?: LegacyConstantCombinatorFilter[];
 }
 
-interface LegacyConstantCombinatorFilter {
+interface LegacyConstantCombinatorFilter
+{
 	signal: SignalID;
 	count: number;
 	index: number;
 }
 
-export interface ItemStack {
-	id: {
+export interface ItemStack
+{
+	id:
+	{
 		name: string;
 		quality?: Quality;
 	};
-	items: {
-		in_inventory?: {
+	items:
+	{
+		in_inventory?:
+		{
 			inventory: number;
 			stack: number;
 			count?: number;
@@ -173,19 +192,22 @@ export interface ItemStack {
 }
 
 // Factorio 0.x item stack
-export interface LegacyItemStack {
+export interface LegacyItemStack
+{
 	item: string;
 	count: number;
 }
 
 // Factorio 1.1 logistic request
-export interface LegacyRequestFilter {
+export interface LegacyRequestFilter
+{
 	index: number;
 	name: string;
 	count?: number;
 }
 
-export interface Entity {
+export interface Entity
+{
 	entity_number: number;
 	name: string;
 	position: Position;
@@ -197,7 +219,8 @@ export interface Entity {
 	recipe?: string;
 	recipe_quality?: Quality;
 	request_filters?:
-		| {
+		|
+		  {
 				sections: SectionFilters[];
 				request_from_buffers?: boolean;
 				trash_not_requested?: boolean;
@@ -211,14 +234,16 @@ export interface Entity {
 	// Factorio 1.1 maps item names to counts.
 	items?: (ItemStack | LegacyItemStack)[] | Record<string, number>;
 	// Factorio 1.1 cargo wagon filters and limit
-	inventory?: {
+	inventory?:
+	{
 		filters?: Filter[];
 		bar?: number;
 	};
 	transitional_request_index?: number;
 	icon?: SignalID;
 	always_show?: boolean;
-	color?: {
+	color?:
+	{
 		r: number;
 		g: number;
 		b: number;
@@ -235,40 +260,47 @@ export interface Entity {
 	quality?: Quality;
 }
 
-interface WaitCondition {
+interface WaitCondition
+{
 	compare_type: 'and' | 'or';
 	type: string;
 	condition?: CircuitCondition;
 	ticks?: number;
 }
 
-interface ScheduleRecord {
+interface ScheduleRecord
+{
 	station: string;
 	wait_conditions?: WaitCondition[];
 }
 
-interface ScheduleInterrupt {
+interface ScheduleInterrupt
+{
 	name: string;
 	conditions?: WaitCondition[];
 	targets?: ScheduleRecord[];
 	inside_interrupt?: boolean;
 }
 
-interface Schedule {
+interface Schedule
+{
 	locomotives: number[];
-	schedule: {
+	schedule:
+	{
 		group?: string;
 		records?: ScheduleRecord[];
 		interrupts?: ScheduleInterrupt[];
 	};
 }
 
-export interface Tile {
+export interface Tile
+{
 	position: Position;
 	name: string;
 }
 
-export interface Parameter {
+export interface Parameter
+{
 	type: 'id' | 'number';
 	name: string;
 	id?: string;
@@ -277,7 +309,8 @@ export interface Parameter {
 	formula?: string;
 	dependent?: boolean;
 	'not-parametrised'?: boolean;
-	'quality-condition'?: {
+	'quality-condition'?:
+	{
 		quality: Quality;
 		comparator: string;
 	};
@@ -285,13 +318,15 @@ export interface Parameter {
 }
 
 // Common fields across all blueprint types
-interface CommonFields {
+interface CommonFields
+{
 	item: string;
 	label?: string;
 	version: number;
 }
 
-export interface Blueprint extends CommonFields {
+export interface Blueprint extends CommonFields
+{
 	item: 'blueprint';
 	description?: string;
 	icons?: Icon[];
@@ -301,14 +336,16 @@ export interface Blueprint extends CommonFields {
 	parameters?: Parameter[];
 	// Factorio 2.0 circuit and copper wires: [entity, connector, entity, connector]
 	wires?: [number, number, number, number][];
-	snap_to_grid?: {
+	snap_to_grid?:
+	{
 		x: number;
 		y: number;
 	};
 	absolute_snapping?: boolean;
 }
 
-interface DeconstructionSettings {
+interface DeconstructionSettings
+{
 	// Added these metadata fields that can appear
 	description?: string;
 	icons?: Icon[];
@@ -321,34 +358,40 @@ interface DeconstructionSettings {
 	trees_and_rocks_only?: boolean;
 }
 
-export interface DeconstructionPlanner extends CommonFields {
+export interface DeconstructionPlanner extends CommonFields
+{
 	item: 'deconstruction-planner';
 	settings?: DeconstructionSettings;
 }
 
-interface UpgradeMapping {
+interface UpgradeMapping
+{
 	from?: SignalID;
 	to?: SignalID;
 	index: number;
 }
 
-interface UpgradeSettings {
+interface UpgradeSettings
+{
 	description?: string;
 	icons?: Icon[];
 	mappers?: UpgradeMapping[];
 }
 
-export interface UpgradePlanner extends CommonFields {
+export interface UpgradePlanner extends CommonFields
+{
 	item: 'upgrade-planner';
 	settings?: UpgradeSettings;
 }
 
-export interface BlueprintStringWithIndex extends BlueprintString {
+export interface BlueprintStringWithIndex extends BlueprintString
+{
 	index: number;
 }
 
 // Referenced interfaces for context
-export interface BlueprintBook extends CommonFields {
+export interface BlueprintBook extends CommonFields
+{
 	item: 'blueprint-book';
 	label?: string;
 	description?: string;
@@ -358,7 +401,8 @@ export interface BlueprintBook extends CommonFields {
 	active_index?: number;
 }
 
-export interface BlueprintString {
+export interface BlueprintString
+{
 	blueprint?: Blueprint;
 	blueprint_book?: BlueprintBook;
 	upgrade_planner?: UpgradePlanner;

@@ -1,7 +1,8 @@
 import {memo} from 'react';
 
 import type {BlueprintString} from '../../../../parsing/types';
-import {
+import
+{
 	countItems,
 	getEntityKey,
 	getItemCount,
@@ -12,11 +13,13 @@ import {
 } from './countUtils';
 import {ItemPanel} from './ItemPanel';
 
-interface PanelProps {
+interface PanelProps
+{
 	blueprint: BlueprintString;
 }
 
-const ContentsPanelComponent = ({blueprint}: PanelProps) => {
+const ContentsPanelComponent = ({blueprint}: PanelProps) =>
+{
 	const blueprintContent = blueprint.blueprint;
 
 	if (!blueprintContent) return null;

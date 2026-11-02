@@ -2,16 +2,23 @@ import type {Meta, StoryObj} from '@storybook/react-vite';
 
 import {ParametersPanel} from './ParametersPanel';
 
-const meta: Meta<typeof ParametersPanel> = {
+const meta: Meta<typeof ParametersPanel> =
+{
 	title: 'Blueprint/Panels/Parameters/ParametersPanel',
 	component: ParametersPanel,
-	parameters: {
+	parameters:
+	{
 		layout: 'centered',
 	},
 	tags: ['autodocs'],
 	decorators: [
 		(StoryComponent) => (
-			<div style={{minWidth: '800px'}}>
+			<div
+				style={
+				{
+					minWidth: '800px',
+				}}
+			>
 				<StoryComponent />
 			</div>
 		),
@@ -21,10 +28,14 @@ const meta: Meta<typeof ParametersPanel> = {
 export default meta;
 type Story = StoryObj<typeof ParametersPanel>;
 
-export const WithParameters: Story = {
-	args: {
-		blueprintString: {
-			blueprint: {
+export const WithParameters: Story =
+{
+	args:
+	{
+		blueprintString:
+		{
+			blueprint:
+			{
 				item: 'blueprint',
 				version: 562949954076673,
 				parameters: [
@@ -44,10 +55,14 @@ export const WithParameters: Story = {
 	},
 };
 
-export const WithComplexParameters: Story = {
-	args: {
-		blueprintString: {
-			blueprint: {
+export const WithComplexParameters: Story =
+{
+	args:
+	{
+		blueprintString:
+		{
+			blueprint:
+			{
 				item: 'blueprint',
 				version: 562949954076673,
 				parameters: [
@@ -74,10 +89,14 @@ export const WithComplexParameters: Story = {
 	},
 };
 
-export const EmptyParameters: Story = {
-	args: {
-		blueprintString: {
-			blueprint: {
+export const EmptyParameters: Story =
+{
+	args:
+	{
+		blueprintString:
+		{
+			blueprint:
+			{
 				item: 'blueprint',
 				version: 562949954076673,
 				parameters: [],
@@ -86,16 +105,22 @@ export const EmptyParameters: Story = {
 	},
 };
 
-export const NoBlueprint: Story = {
-	args: {
+export const NoBlueprint: Story =
+{
+	args:
+	{
 		blueprintString: undefined,
 	},
 };
 
-export const NonBlueprintType: Story = {
-	args: {
-		blueprintString: {
-			deconstruction_planner: {
+export const NonBlueprintType: Story =
+{
+	args:
+	{
+		blueprintString:
+		{
+			deconstruction_planner:
+			{
 				item: 'deconstruction-planner',
 				version: 562949954076673,
 				label: 'Test',

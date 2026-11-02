@@ -7,7 +7,8 @@ import {Cell} from '../../spreadsheet/Cell';
 import {Row} from '../../spreadsheet/Row';
 import {Spreadsheet} from '../../spreadsheet/Spreadsheet';
 
-const UpgradePlannerPanelComponent = ({blueprint}: {blueprint: BlueprintString}) => {
+const UpgradePlannerPanelComponent = ({blueprint}: {blueprint: BlueprintString}) =>
+{
 	const planner: UpgradePlanner | undefined = blueprint.upgrade_planner;
 	if (!planner) return null;
 
@@ -22,7 +23,12 @@ const UpgradePlannerPanelComponent = ({blueprint}: {blueprint: BlueprintString})
 					.map((mapping) => (
 						<Row key={mapping.index}>
 							<Cell grow>
-								<div style={{margin: 'auto'}}>
+								<div
+									style={
+									{
+										margin: 'auto',
+									}}
+								>
 									<FactorioIcon icon={mapping.from} size={'large'} />
 								</div>
 							</Cell>
@@ -30,7 +36,12 @@ const UpgradePlannerPanelComponent = ({blueprint}: {blueprint: BlueprintString})
 								→
 							</Cell>
 							<Cell grow>
-								<div style={{margin: 'auto'}}>
+								<div
+									style={
+									{
+										margin: 'auto',
+									}}
+								>
 									<FactorioIcon icon={mapping.to} size={'large'} />
 								</div>
 							</Cell>

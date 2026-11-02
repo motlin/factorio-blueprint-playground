@@ -10,10 +10,12 @@
 		"@storybook/addon-onboarding",
 		"@storybook/addon-vitest"
 	],
-	"duplicates": {
+	"duplicates":
+	{
 		"minOccurrences": 3
 	},
-	"rules": {
+	"rules":
+	{
 		"unused-dependencies": "warn"
 	}
 }

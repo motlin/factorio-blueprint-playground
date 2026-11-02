@@ -2,22 +2,27 @@ import {useEffect, useId, useRef} from 'react';
 
 import {Panel} from '../../ui/Panel';
 
-interface DisqusConfig {
-	page: {
+interface DisqusConfig
+{
+	page:
+	{
 		identifier: string;
 		url: string;
 		title?: string;
 	};
 }
 
-interface DisqusWindow extends Window {
-	DISQUS?: {
+interface DisqusWindow extends Window
+{
+	DISQUS?:
+	{
 		reset: (config: {reload: boolean; config: () => void}) => void;
 	};
 	disqus_config?: () => void;
 }
 
-interface DisqusCommentsProps {
+interface DisqusCommentsProps
+{
 	identifier?: string;
 	url?: string;
 	title?: string;
@@ -27,50 +32,62 @@ declare const window: DisqusWindow;
 
 let isDisqusLoading = false;
 
-const DisqusComments = ({identifier, url, title}: DisqusCommentsProps) => {
+const DisqusComments = ({identifier, url, title}: DisqusCommentsProps) =>
+{
 	const containerId = useId();
 	const containerRef = useRef<HTMLDivElement>(null);
 	const prevIdentifierRef = useRef<string | undefined>(undefined);
 
-	useEffect(() => {
+	useEffect(() =>
+	{
 		const hasIdentifierAndUrl = identifier != null && identifier !== '' && url != null && url !== '';
-		if (!hasIdentifierAndUrl || (prevIdentifierRef.current === identifier && window.DISQUS != null)) {
+		if (!hasIdentifierAndUrl || (prevIdentifierRef.current === identifier && window.DISQUS != null))
+		{
 			return undefined;
 		}
 
 		prevIdentifierRef.current = identifier;
 
 		// Temporarily set the container ID to what Disqus expects
-		if (containerRef.current) {
+		if (containerRef.current)
+		{
 			containerRef.current.id = 'disqus_thread';
 		}
 
 		// If Disqus is already loaded, reset it instead of reloading
-		if (window.DISQUS != null) {
-			window.DISQUS.reset({
-				reload: true,
-				config: function (this: DisqusConfig) {
-					this.page.identifier = identifier;
-					this.page.url = url;
-					if (title != null && title !== '') this.page.title = title;
+		if (window.DISQUS != null)
+		{
+			window.DISQUS.reset(
+				{
+					reload: true,
+					config: function (this: DisqusConfig)
+					{
+						this.page.identifier = identifier;
+						this.page.url = url;
+						if (title != null && title !== '') this.page.title = title;
+					},
 				},
-			});
+			);
 			// Restore unique ID after Disqus processes
-			setTimeout(() => {
-				if (containerRef.current) {
+			setTimeout(() =>
+			{
+				if (containerRef.current)
+				{
 					containerRef.current.id = containerId;
 				}
 			}, 100);
 			return undefined;
 		}
 
-		if (isDisqusLoading) {
+		if (isDisqusLoading)
+		{
 			return undefined;
 		}
 
 		isDisqusLoading = true;
 
-		window.disqus_config = function (this: DisqusConfig) {
+		window.disqus_config = function (this: DisqusConfig)
+		{
 			this.page.url = url;
 			this.page.identifier = identifier;
 			if (title != null && title !== '') this.page.title = title;
@@ -81,11 +98,14 @@ const DisqusComments = ({identifier, url, title}: DisqusCommentsProps) => {
 		script.setAttribute('data-timestamp', Date.now().toString());
 		script.async = true;
 
-		script.onload = () => {
+		script.onload = () =>
+		{
 			isDisqusLoading = false;
 			// Restore unique ID after Disqus loads
-			setTimeout(() => {
-				if (containerRef.current) {
+			setTimeout(() =>
+			{
+				if (containerRef.current)
+				{
 					containerRef.current.id = containerId;
 				}
 			}, 100);
@@ -93,9 +113,12 @@ const DisqusComments = ({identifier, url, title}: DisqusCommentsProps) => {
 
 		document.body.appendChild(script);
 
-		return () => {
-			if (prevIdentifierRef.current !== identifier) {
-				if (document.body.contains(script)) {
+		return () =>
+		{
+			if (prevIdentifierRef.current !== identifier)
+			{
+				if (document.body.contains(script))
+				{
 					document.body.removeChild(script);
 				}
 				delete window.disqus_config;
@@ -104,7 +127,8 @@ const DisqusComments = ({identifier, url, title}: DisqusCommentsProps) => {
 		};
 	}, [url, identifier, title, containerId]);
 
-	if (identifier == null || identifier === '' || url == null || url === '') {
+	if (identifier == null || identifier === '' || url == null || url === '')
+	{
 		return null;
 	}
 

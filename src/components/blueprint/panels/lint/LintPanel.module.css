@@ -1,16 +1,19 @@
-.summary {
+.summary
+{
 	display: flex;
 	gap: 8px;
 	margin-bottom: 8px;
 }
 
-.count {
+.count
+{
 	padding: 2px 6px;
 	border-radius: 3px;
 	background: #242324;
 }
 
-.findings {
+.findings
+{
 	display: flex;
 	flex-direction: column;
 	gap: 4px;
@@ -19,7 +22,8 @@
 	list-style: none;
 }
 
-.finding {
+.finding
+{
 	display: grid;
 	grid-template-columns: 12px 24px minmax(0, 1fr) auto;
 	align-items: center;
@@ -28,48 +32,58 @@
 	background: #414040;
 }
 
-.severity {
+.severity
+{
 	font-size: 18px;
 	line-height: 1;
 }
 
-.icon {
+.icon
+{
 	display: block;
 	width: 24px;
 	height: 24px;
 }
 
-.error {
+.error
+{
 	color: #ff6b6b;
 }
 
-.warning {
+.warning
+{
 	color: #ffcf40;
 }
 
-.info {
+.info
+{
 	color: #7dcaed;
 }
 
-.good {
+.good
+{
 	color: #7ee787;
 }
 
-.position {
+.position
+{
 	color: #aaa;
 	white-space: nowrap;
 }
 
-.note {
+.note
+{
 	margin: 8px 0 0;
 	color: #aaa;
 }
 
-.group {
+.group
+{
 	margin-bottom: 8px;
 }
 
-.path {
+.path
+{
 	display: block;
 	margin: 8px 0 4px;
 	padding: 0;
@@ -81,6 +95,7 @@
 	cursor: pointer;
 }
 
-.path:hover {
+.path:hover
+{
 	text-decoration: underline;
 }

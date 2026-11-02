@@ -2,10 +2,12 @@ import type {Meta, StoryObj} from '@storybook/react-vite';
 
 import {InsetLight} from './InsetLight';
 
-const meta: Meta<typeof InsetLight> = {
+const meta: Meta<typeof InsetLight> =
+{
 	title: 'UI/InsetLight',
 	component: InsetLight,
-	parameters: {
+	parameters:
+	{
 		layout: 'centered',
 	},
 	tags: ['autodocs'],
@@ -14,16 +16,35 @@ const meta: Meta<typeof InsetLight> = {
 export default meta;
 type Story = StoryObj<typeof InsetLight>;
 
-export const Default: Story = {
-	args: {
-		children: <p style={{padding: '8px'}}>Light inset content</p>,
+export const Default: Story =
+{
+	args:
+	{
+		children: (
+			<p
+				style={
+				{
+					padding: '8px',
+				}}
+			>
+				Light inset content
+			</p>
+		),
 	},
 };
 
-export const WithTable: Story = {
-	args: {
+export const WithTable: Story =
+{
+	args:
+	{
 		children: (
-			<table style={{width: '100%', padding: '8px'}}>
+			<table
+				style={
+				{
+					width: '100%',
+					padding: '8px',
+				}}
+			>
 				<tbody>
 					<tr>
 						<td>Item 1</td>

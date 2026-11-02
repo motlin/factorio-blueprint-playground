@@ -2,15 +2,19 @@ import type {Meta, StoryObj} from '@storybook/react-vite';
 
 import {FactorioIcon, Placeholder} from './FactorioIcon';
 
-const meta: Meta<typeof FactorioIcon> = {
+const meta: Meta<typeof FactorioIcon> =
+{
 	title: 'Core/FactorioIcon',
 	component: FactorioIcon,
-	parameters: {
+	parameters:
+	{
 		layout: 'centered',
 	},
 	tags: ['autodocs'],
-	argTypes: {
-		size: {
+	argTypes:
+	{
+		size:
+		{
 			control: 'radio',
 			options: ['small', 'large'],
 		},
@@ -20,9 +24,12 @@ const meta: Meta<typeof FactorioIcon> = {
 export default meta;
 type Story = StoryObj<typeof FactorioIcon>;
 
-export const ItemSmall: Story = {
-	args: {
-		icon: {
+export const ItemSmall: Story =
+{
+	args:
+	{
+		icon:
+		{
 			type: 'item',
 			name: 'iron-plate',
 		},
@@ -30,9 +37,12 @@ export const ItemSmall: Story = {
 	},
 };
 
-export const ItemLarge: Story = {
-	args: {
-		icon: {
+export const ItemLarge: Story =
+{
+	args:
+	{
+		icon:
+		{
 			type: 'item',
 			name: 'iron-plate',
 		},
@@ -40,9 +50,12 @@ export const ItemLarge: Story = {
 	},
 };
 
-export const Fluid: Story = {
-	args: {
-		icon: {
+export const Fluid: Story =
+{
+	args:
+	{
+		icon:
+		{
 			type: 'fluid',
 			name: 'water',
 		},
@@ -50,9 +63,12 @@ export const Fluid: Story = {
 	},
 };
 
-export const VirtualSignal: Story = {
-	args: {
-		icon: {
+export const VirtualSignal: Story =
+{
+	args:
+	{
+		icon:
+		{
 			type: 'virtual-signal',
 			name: 'signal-A',
 		},
@@ -60,9 +76,12 @@ export const VirtualSignal: Story = {
 	},
 };
 
-export const Entity: Story = {
-	args: {
-		icon: {
+export const Entity: Story =
+{
+	args:
+	{
+		icon:
+		{
 			type: 'entity',
 			name: 'assembling-machine-3',
 		},
@@ -70,9 +89,12 @@ export const Entity: Story = {
 	},
 };
 
-export const WithQuality: Story = {
-	args: {
-		icon: {
+export const WithQuality: Story =
+{
+	args:
+	{
+		icon:
+		{
 			type: 'item',
 			name: 'iron-plate',
 			quality: 'legendary',
@@ -81,9 +103,12 @@ export const WithQuality: Story = {
 	},
 };
 
-export const WithUncommonQuality: Story = {
-	args: {
-		icon: {
+export const WithUncommonQuality: Story =
+{
+	args:
+	{
+		icon:
+		{
 			type: 'item',
 			name: 'copper-plate',
 			quality: 'uncommon',
@@ -92,9 +117,12 @@ export const WithUncommonQuality: Story = {
 	},
 };
 
-export const WithRareQuality: Story = {
-	args: {
-		icon: {
+export const WithRareQuality: Story =
+{
+	args:
+	{
+		icon:
+		{
 			type: 'item',
 			name: 'steel-plate',
 			quality: 'rare',
@@ -103,9 +131,12 @@ export const WithRareQuality: Story = {
 	},
 };
 
-export const WithEpicQuality: Story = {
-	args: {
-		icon: {
+export const WithEpicQuality: Story =
+{
+	args:
+	{
+		icon:
+		{
 			type: 'entity',
 			name: 'electric-furnace',
 			quality: 'epic',
@@ -114,13 +145,16 @@ export const WithEpicQuality: Story = {
 	},
 };
 
-export const NoIcon: Story = {
-	args: {
+export const NoIcon: Story =
+{
+	args:
+	{
 		icon: undefined,
 		size: 'large',
 	},
 };
 
-export const IconPlaceholder: StoryObj<typeof Placeholder> = {
+export const IconPlaceholder: StoryObj<typeof Placeholder> =
+{
 	render: () => <Placeholder size="large" />,
 };

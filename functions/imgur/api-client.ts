@@ -2,7 +2,8 @@ import type {ParsedImgurUrl} from './url-parser';
 
 const FILE_EXTENSION_REGEX = /\.([a-zA-Z0-9]{3,4})$/;
 
-export interface ResolvedImgurImage {
+export interface ResolvedImgurImage
+{
 	id: string;
 	type: string; // MIME type
 	extension: string;
@@ -13,13 +14,15 @@ export interface ResolvedImgurImage {
 	warnings: string[];
 }
 
-export interface ImgurApiResponse {
+export interface ImgurApiResponse
+{
 	success: boolean;
 	data?: ResolvedImgurImage;
 	error?: string;
 }
 
-interface ImgurImageData {
+interface ImgurImageData
+{
 	id: string;
 	link?: string;
 	type?: string;
@@ -28,45 +31,55 @@ interface ImgurImageData {
 	title?: string;
 }
 
-interface ImgurAlbumData {
+interface ImgurAlbumData
+{
 	title?: string;
 	images?: ImgurImageData[];
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+function isRecord(value: unknown): value is Record<string, unknown>
+{
 	return typeof value === 'object' && value !== null;
 }
 
-function isImgurImageData(value: unknown): value is ImgurImageData {
+function isImgurImageData(value: unknown): value is ImgurImageData
+{
 	return isRecord(value) && typeof value.id === 'string';
 }
 
-function isImgurAlbumData(value: unknown): value is ImgurAlbumData {
+function isImgurAlbumData(value: unknown): value is ImgurAlbumData
+{
 	return isRecord(value);
 }
 
-function extractDataField(value: unknown): unknown {
+function extractDataField(value: unknown): unknown
+{
 	return isRecord(value) ? value.data : undefined;
 }
 
-export async function resolveImgurImage(parsedUrl: ParsedImgurUrl, clientId: string): Promise<ImgurApiResponse> {
-	const headers = {
+export async function resolveImgurImage(parsedUrl: ParsedImgurUrl, clientId: string): Promise<ImgurApiResponse>
+{
+	const headers =
+	{
 		Authorization: `Client-ID ${clientId}`,
 		'User-Agent': 'FactorioPrints/1.0',
 	};
 
 	// Nested helper functions
-	function extractExtension(link: string | undefined): string {
+	function extractExtension(link: string | undefined): string
+	{
 		const match = link?.match(FILE_EXTENSION_REGEX);
 		return match ? match[1] : 'png';
 	}
 
-	function buildImageResponse(imageData: ImgurImageData): ImgurApiResponse {
+	function buildImageResponse(imageData: ImgurImageData): ImgurApiResponse
+	{
 		const extension = extractExtension(imageData.link);
 
 		return {
 			success: true,
-			data: {
+			data:
+			{
 				id: imageData.id,
 				type: imageData.type != null && imageData.type.length > 0 ? imageData.type : `image/${extension}`,
 				extension,
@@ -79,8 +92,10 @@ export async function resolveImgurImage(parsedUrl: ParsedImgurUrl, clientId: str
 		};
 	}
 
-	function buildAlbumResponse(albumData: ImgurAlbumData): ImgurApiResponse {
-		if (!(albumData.images && albumData.images.length > 0)) {
+	function buildAlbumResponse(albumData: ImgurAlbumData): ImgurApiResponse
+	{
+		if (!(albumData.images && albumData.images.length > 0))
+		{
 			return {
 				success: false,
 				error: 'Album is empty',
@@ -91,13 +106,15 @@ export async function resolveImgurImage(parsedUrl: ParsedImgurUrl, clientId: str
 		const extension = extractExtension(firstImage.link);
 		const warnings = [...parsedUrl.warnings];
 
-		if (albumData.images.length > 1) {
+		if (albumData.images.length > 1)
+		{
 			warnings.push(`Album contains ${albumData.images.length} images - using first image`);
 		}
 
 		return {
 			success: true,
-			data: {
+			data:
+			{
 				id: firstImage.id,
 				type: firstImage.type != null && firstImage.type.length > 0 ? firstImage.type : `image/${extension}`,
 				extension,
@@ -110,15 +127,18 @@ export async function resolveImgurImage(parsedUrl: ParsedImgurUrl, clientId: str
 		};
 	}
 
-	function handleApiError(status: number): ImgurApiResponse {
-		if (status === 404) {
+	function handleApiError(status: number): ImgurApiResponse
+	{
+		if (status === 404)
+		{
 			return {
 				success: false,
 				error: 'Image or album not found',
 			};
 		}
 
-		if (status === 403) {
+		if (status === 403)
+		{
 			return {
 				success: false,
 				error: 'Access denied - image may be private',
@@ -131,25 +151,41 @@ export async function resolveImgurImage(parsedUrl: ParsedImgurUrl, clientId: str
 		};
 	}
 
-	try {
+	try
+	{
 		// Try single image first
-		const singleImageResponse = await fetch(`https://api.imgur.com/3/image/${parsedUrl.id}`, {headers});
+		const singleImageResponse = await fetch(
+			`https://api.imgur.com/3/image/${parsedUrl.id}`,
+			{
+				headers,
+			},
+		);
 
-		if (singleImageResponse.ok) {
+		if (singleImageResponse.ok)
+		{
 			const imageData = extractDataField(await singleImageResponse.json());
-			if (isImgurImageData(imageData)) {
+			if (isImgurImageData(imageData))
+			{
 				return buildImageResponse(imageData);
 			}
 			return handleApiError(singleImageResponse.status);
 		}
 
 		// If single image fails and this looks like it could be an album, try album API
-		if (parsedUrl.isFromAlbum || singleImageResponse.status === 404) {
-			const albumResponse = await fetch(`https://api.imgur.com/3/album/${parsedUrl.id}`, {headers});
+		if (parsedUrl.isFromAlbum || singleImageResponse.status === 404)
+		{
+			const albumResponse = await fetch(
+				`https://api.imgur.com/3/album/${parsedUrl.id}`,
+				{
+					headers,
+				},
+			);
 
-			if (albumResponse.ok) {
+			if (albumResponse.ok)
+			{
 				const albumData = extractDataField(await albumResponse.json());
-				if (isImgurAlbumData(albumData)) {
+				if (isImgurAlbumData(albumData))
+				{
 					return buildAlbumResponse(albumData);
 				}
 				return handleApiError(albumResponse.status);
@@ -159,7 +195,9 @@ export async function resolveImgurImage(parsedUrl: ParsedImgurUrl, clientId: str
 		}
 
 		return handleApiError(singleImageResponse.status);
-	} catch (error) {
+	}
+	catch (error)
+	{
 		console.error('resolveImgurImage error:', error);
 		return {
 			success: false,

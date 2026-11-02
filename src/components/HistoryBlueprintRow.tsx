@@ -22,8 +22,10 @@ const SIGNAL_TYPES = new Set<string>([
 	'space-location',
 ]);
 
-function toSignalType(type: string | undefined): SignalType | undefined {
-	if (type != null && SIGNAL_TYPES.has(type)) {
+function toSignalType(type: string | undefined): SignalType | undefined
+{
+	if (type != null && SIGNAL_TYPES.has(type))
+	{
 		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- membership checked against SIGNAL_TYPES set above
 		return type as SignalType;
 	}
@@ -37,15 +39,19 @@ import {BlueprintTableCheckbox} from './history/table/BlueprintTableCheckbox';
 import {formatDate} from './history/utils/dateUtils';
 import {ButtonGreen} from './ui/ButtonGreen';
 
-interface HistoryBlueprintRowProps {
+interface HistoryBlueprintRowProps
+{
 	blueprint: DatabaseBlueprint;
 	isSelected: boolean;
 	onToggleSelection: (sha: string) => void;
 }
 
-export function HistoryBlueprintRow({blueprint, isSelected, onToggleSelection}: HistoryBlueprintRowProps) {
-	const handleKeyDown = (event: React.KeyboardEvent) => {
-		if (event.key === 'Enter' || event.key === ' ') {
+export function HistoryBlueprintRow({blueprint, isSelected, onToggleSelection}: HistoryBlueprintRowProps)
+{
+	const handleKeyDown = (event: React.KeyboardEvent) =>
+	{
+		if (event.key === 'Enter' || event.key === ' ')
+		{
 			event.preventDefault();
 			onToggleSelection(blueprint.metadata.sha);
 		}
@@ -56,7 +62,8 @@ export function HistoryBlueprintRow({blueprint, isSelected, onToggleSelection}: 
 			type="button"
 			key={blueprint.metadata.sha}
 			className={`history-blueprint-item ${isSelected ? 'selected' : ''}`}
-			onClick={() => {
+			onClick={() =>
+			{
 				onToggleSelection(blueprint.metadata.sha);
 			}}
 			onKeyDown={handleKeyDown}
@@ -66,14 +73,22 @@ export function HistoryBlueprintRow({blueprint, isSelected, onToggleSelection}: 
 			{/* Checkbox column */}
 			<BlueprintTableCheckbox
 				isSelected={isSelected}
-				onToggle={() => {
+				onToggle={() =>
+				{
 					onToggleSelection(blueprint.metadata.sha);
 				}}
 			/>
 
 			{/* Type column */}
 			<div className="history-type-container">
-				<FactorioIcon icon={{type: 'item', name: blueprint.gameData.type.replace(/_/g, '-')}} size="small" />
+				<FactorioIcon
+					icon={
+					{
+						type: 'item',
+						name: blueprint.gameData.type.replace(/_/g, '-'),
+					}}
+					size="small"
+				/>
 			</div>
 
 			{/* Version column */}
@@ -90,11 +105,24 @@ export function HistoryBlueprintRow({blueprint, isSelected, onToggleSelection}: 
 				{blueprint.gameData.icons.map((icon) => (
 					<FactorioIcon
 						key={`${icon.type ?? 'item'}-${icon.name}`}
-						icon={{type: toSignalType(icon.type), name: icon.name}}
+						icon={
+						{
+							type: toSignalType(icon.type),
+							name: icon.name,
+						}}
 						size="small"
 					/>
 				))}
-				{blueprint.gameData.icons.length === 0 && <span style={{opacity: 0.5}}>No icon</span>}
+				{blueprint.gameData.icons.length === 0 && (
+					<span
+						style={
+						{
+							opacity: 0.5,
+						}}
+					>
+						No icon
+					</span>
+				)}
 			</div>
 
 			{/* Label column */}
@@ -102,7 +130,14 @@ export function HistoryBlueprintRow({blueprint, isSelected, onToggleSelection}: 
 				{blueprint.gameData.label != null && blueprint.gameData.label !== '' ? (
 					<RichText text={blueprint.gameData.label} iconSize="small" />
 				) : (
-					<span style={{opacity: 0.5}}>No label</span>
+					<span
+						style={
+						{
+							opacity: 0.5,
+						}}
+					>
+						No label
+					</span>
 				)}
 			</div>
 
@@ -128,7 +163,8 @@ Updated: ${new Date(blueprint.metadata.lastUpdatedOn).toLocaleString()}`}
 				<Link
 					to="/"
 					data-testid="blueprint-open"
-					search={{
+					search={
+					{
 						pasted: blueprint.metadata.data,
 						selection: blueprint.metadata.selection,
 						focusTextarea: true,

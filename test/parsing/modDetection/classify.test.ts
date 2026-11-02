@@ -3,21 +3,47 @@ import {describe, expect, it} from 'vite-plus/test';
 import {classify} from '../../../src/parsing/modDetection/classify';
 import type {ExtractedNames, ModDatabase} from '../../../src/parsing/modDetection/types';
 
-const database: ModDatabase = {
+const database: ModDatabase =
+{
 	generatedAt: '2000-01-01',
 	factoriolabCommit: '0000000000000000000000000000000000000000',
 	factorioDataVersion: '0.0.0',
 	license: 'Test data',
 	sources: [
-		{id: 'base', label: 'Factorio 2.0'},
-		{id: 'space-age', label: 'Space Age', dlc: true},
-		{id: 'quality', label: 'Quality', dlc: true},
-		{id: 'elevated-rails', label: 'Elevated Rails', dlc: true},
-		{id: 'kr2', label: 'Krastorio 2'},
-		{id: 'sxp', label: 'Space Exploration Postprocess'},
-		{id: 'se', label: 'Space Exploration'},
+		{
+			id: 'base',
+			label: 'Factorio 2.0',
+		},
+		{
+			id: 'space-age',
+			label: 'Space Age',
+			dlc: true,
+		},
+		{
+			id: 'quality',
+			label: 'Quality',
+			dlc: true,
+		},
+		{
+			id: 'elevated-rails',
+			label: 'Elevated Rails',
+			dlc: true,
+		},
+		{
+			id: 'kr2',
+			label: 'Krastorio 2',
+		},
+		{
+			id: 'sxp',
+			label: 'Space Exploration Postprocess',
+		},
+		{
+			id: 'se',
+			label: 'Space Exploration',
+		},
 	],
-	names: {
+	names:
+	{
 		'transport-belt': 1,
 		'base-and-kr': 17,
 		foundry: 2,
@@ -31,7 +57,8 @@ const database: ModDatabase = {
 		'ambiguous-a': 48,
 		'ambiguous-b': 48,
 	},
-	prefixes: {
+	prefixes:
+	{
 		's-': 'Short Prefix',
 		'se-': 'Space Exploration',
 		'kr-': 'Krastorio 2',
@@ -40,13 +67,15 @@ const database: ModDatabase = {
 
 function extracted(
 	names: string[],
-	options: {
+	options:
+	{
 		hasNonNormalQuality?: boolean;
 		hasPlanetSignals?: boolean;
 		hasSpaceLocationSignals?: boolean;
 		version?: string;
 	} = {},
-): ExtractedNames {
+): ExtractedNames
+{
 	return {
 		names: new Map(
 			names.map((name) => [
@@ -57,7 +86,8 @@ function extracted(
 				},
 			]),
 		),
-		flags: {
+		flags:
+		{
 			hasNonNormalQuality: options.hasNonNormalQuality ?? false,
 			hasPlanetSignals: options.hasPlanetSignals ?? false,
 			hasSpaceLocationSignals: options.hasSpaceLocationSignals ?? false,
@@ -66,184 +96,256 @@ function extracted(
 	};
 }
 
-describe('classify', () => {
-	it('classifies base names and lets the base bit win over mod bits', () => {
-		expect(classify(extracted(['transport-belt', 'base-and-kr']), database)).toStrictEqual({
-			verdicts: [
-				{
-					source: 'base',
-					label: 'Factorio 2.0',
-					confidence: 'high',
-					matchCount: 2,
-					exampleNames: ['base-and-kr', 'transport-belt'],
-				},
-			],
-			unknownNames: [],
-			warnings: [],
-		});
+describe('classify', () =>
+{
+	it('classifies base names and lets the base bit win over mod bits', () =>
+	{
+		expect(classify(extracted(['transport-belt', 'base-and-kr']), database)).toStrictEqual(
+			{
+				verdicts: [
+					{
+						source: 'base',
+						label: 'Factorio 2.0',
+						confidence: 'high',
+						matchCount: 2,
+						exampleNames: ['base-and-kr', 'transport-belt'],
+					},
+				],
+				unknownNames: [],
+				warnings: [],
+			},
+		);
 	});
 
-	it('splits DLC evidence and promotes definitive flags to high confidence', () => {
+	it('splits DLC evidence and promotes definitive flags to high confidence', () =>
+	{
 		expect(
 			classify(
-				extracted(['foundry', 'quality-module-3', 'rail-ramp'], {
-					hasNonNormalQuality: true,
-					hasPlanetSignals: true,
-				}),
+				extracted(
+					['foundry', 'quality-module-3', 'rail-ramp'],
+					{
+						hasNonNormalQuality: true,
+						hasPlanetSignals: true,
+					},
+				),
 				database,
 			),
-		).toStrictEqual({
-			verdicts: [
-				{
-					source: 'space-age',
-					label: 'Space Age',
-					confidence: 'high',
-					matchCount: 1,
-					exampleNames: ['foundry'],
-				},
-				{
-					source: 'quality',
-					label: 'Quality',
-					confidence: 'high',
-					matchCount: 1,
-					exampleNames: ['quality-module-3'],
-				},
-				{
-					source: 'elevated-rails',
-					label: 'Elevated Rails',
-					confidence: 'medium',
-					matchCount: 1,
-					exampleNames: ['rail-ramp'],
-				},
-			],
-			unknownNames: [],
-			warnings: [],
-		});
+		).toStrictEqual(
+			{
+				verdicts: [
+					{
+						source: 'space-age',
+						label: 'Space Age',
+						confidence: 'high',
+						matchCount: 1,
+						exampleNames: ['foundry'],
+					},
+					{
+						source: 'quality',
+						label: 'Quality',
+						confidence: 'high',
+						matchCount: 1,
+						exampleNames: ['quality-module-3'],
+					},
+					{
+						source: 'elevated-rails',
+						label: 'Elevated Rails',
+						confidence: 'medium',
+						matchCount: 1,
+						exampleNames: ['rail-ramp'],
+					},
+				],
+				unknownNames: [],
+				warnings: [],
+			},
+		);
 	});
 
-	it('uses greedy set cover and exclusive evidence to resolve multi-mod names', () => {
-		expect(classify(extracted(['ambiguous-a', 'kr-exclusive', 'ambiguous-b']), database)).toStrictEqual({
-			verdicts: [
-				{
-					source: 'kr2',
-					label: 'Krastorio 2',
-					confidence: 'medium',
-					matchCount: 3,
-					exampleNames: ['ambiguous-a', 'ambiguous-b', 'kr-exclusive'],
-				},
-			],
-			unknownNames: [],
-			warnings: [],
-		});
+	it('uses greedy set cover and exclusive evidence to resolve multi-mod names', () =>
+	{
+		expect(classify(extracted(['ambiguous-a', 'kr-exclusive', 'ambiguous-b']), database)).toStrictEqual(
+			{
+				verdicts: [
+					{
+						source: 'kr2',
+						label: 'Krastorio 2',
+						confidence: 'medium',
+						matchCount: 3,
+						exampleNames: ['ambiguous-a', 'ambiguous-b', 'kr-exclusive'],
+					},
+				],
+				unknownNames: [],
+				warnings: [],
+			},
+		);
 	});
 
-	it('assigns high confidence after three exclusive matches', () => {
-		expect(classify(extracted(['kr-exclusive-c', 'kr-exclusive-a', 'kr-exclusive-b']), database)).toStrictEqual({
-			verdicts: [
-				{
-					source: 'kr2',
-					label: 'Krastorio 2',
-					confidence: 'high',
-					matchCount: 3,
-					exampleNames: ['kr-exclusive-a', 'kr-exclusive-b', 'kr-exclusive-c'],
-				},
-			],
-			unknownNames: [],
-			warnings: [],
-		});
+	it('assigns high confidence after three exclusive matches', () =>
+	{
+		expect(classify(extracted(['kr-exclusive-c', 'kr-exclusive-a', 'kr-exclusive-b']), database)).toStrictEqual(
+			{
+				verdicts: [
+					{
+						source: 'kr2',
+						label: 'Krastorio 2',
+						confidence: 'high',
+						matchCount: 3,
+						exampleNames: ['kr-exclusive-a', 'kr-exclusive-b', 'kr-exclusive-c'],
+					},
+				],
+				unknownNames: [],
+				warnings: [],
+			},
+		);
 	});
 
-	it('uses the longest unknown-name prefix and keeps unhinted names unknown', () => {
-		expect(classify(extracted(['se-test-machine', 'made-up-machine']), database)).toStrictEqual({
-			verdicts: [
-				{
-					source: 'se',
-					label: 'Space Exploration',
-					confidence: 'low',
-					matchCount: 1,
-					exampleNames: ['se-test-machine'],
-				},
-			],
-			unknownNames: [
-				{name: 'made-up-machine', prefixHint: undefined},
-				{name: 'se-test-machine', prefixHint: 'Space Exploration'},
-			],
-			warnings: [],
-		});
+	it('uses the longest unknown-name prefix and keeps unhinted names unknown', () =>
+	{
+		expect(classify(extracted(['se-test-machine', 'made-up-machine']), database)).toStrictEqual(
+			{
+				verdicts: [
+					{
+						source: 'se',
+						label: 'Space Exploration',
+						confidence: 'low',
+						matchCount: 1,
+						exampleNames: ['se-test-machine'],
+					},
+				],
+				unknownNames: [
+					{
+						name: 'made-up-machine',
+						prefixHint: undefined,
+					},
+					{
+						name: 'se-test-machine',
+						prefixHint: 'Space Exploration',
+					},
+				],
+				warnings: [],
+			},
+		);
 	});
 
-	it('reports unknown names when no source or prefix matches', () => {
-		expect(classify(extracted(['made-up-machine']), database)).toStrictEqual({
-			verdicts: [],
-			unknownNames: [{name: 'made-up-machine', prefixHint: undefined}],
-			warnings: [],
-		});
+	it('reports unknown names when no source or prefix matches', () =>
+	{
+		expect(classify(extracted(['made-up-machine']), database)).toStrictEqual(
+			{
+				verdicts: [],
+				unknownNames: [
+					{
+						name: 'made-up-machine',
+						prefixHint: undefined,
+					},
+				],
+				warnings: [],
+			},
+		);
 	});
 
-	it('warns when pre-2.0 blueprint versions contain DLC evidence', () => {
-		expect(classify(extracted(['foundry'], {version: '1.1.110.0'}), database)).toStrictEqual({
-			verdicts: [
-				{
-					source: 'space-age',
-					label: 'Space Age',
-					confidence: 'medium',
-					matchCount: 1,
-					exampleNames: ['foundry'],
-				},
-			],
-			unknownNames: [],
-			warnings: ['Blueprint version 1.1.110.0 predates Factorio 2.0, but Space Age evidence is present.'],
-		});
+	it('warns when pre-2.0 blueprint versions contain DLC evidence', () =>
+	{
+		expect(
+			classify(
+				extracted(
+					['foundry'],
+					{
+						version: '1.1.110.0',
+					},
+				),
+				database,
+			),
+		).toStrictEqual(
+			{
+				verdicts: [
+					{
+						source: 'space-age',
+						label: 'Space Age',
+						confidence: 'medium',
+						matchCount: 1,
+						exampleNames: ['foundry'],
+					},
+				],
+				unknownNames: [],
+				warnings: ['Blueprint version 1.1.110.0 predates Factorio 2.0, but Space Age evidence is present.'],
+			},
+		);
 	});
 
-	it('uses Factorio 1.1 evidence only for pre-2.0 blueprints or names nothing newer explains', () => {
-		const versionedDatabase: ModDatabase = {
+	it('uses Factorio 1.1 evidence only for pre-2.0 blueprints or names nothing newer explains', () =>
+	{
+		const versionedDatabase: ModDatabase =
+		{
 			...database,
 			sources: [
-				{id: 'base', label: 'Factorio 2.0'},
-				{id: 'space-age', label: 'Space Age', dlc: true},
-				{id: 'base-1.1', label: 'Factorio 1.1 and earlier'},
+				{
+					id: 'base',
+					label: 'Factorio 2.0',
+				},
+				{
+					id: 'space-age',
+					label: 'Space Age',
+					dlc: true,
+				},
+				{
+					id: 'base-1.1',
+					label: 'Factorio 1.1 and earlier',
+				},
 			],
 			// stack-inserter is a Space Age entity in 2.0 but was the vanilla bulk inserter in 1.1.
 			// signal-A existed in 1.1 too, but only the 2.0 data lists it.
-			names: {'stack-inserter': 6, 'signal-A': 1, 'filter-inserter': 4},
+			names:
+			{
+				'stack-inserter': 6,
+				'signal-A': 1,
+				'filter-inserter': 4,
+			},
 		};
 
-		expect({
-			spaceAgeBlueprint: classify(extracted(['stack-inserter']), versionedDatabase).verdicts,
-			legacyBlueprint: classify(
-				extracted(['stack-inserter', 'signal-A'], {version: '1.1.110.0'}),
-				versionedDatabase,
-			).verdicts,
-			removedNameInNewBlueprint: classify(extracted(['filter-inserter']), versionedDatabase).verdicts,
-		}).toStrictEqual({
-			spaceAgeBlueprint: [
-				{
-					source: 'space-age',
-					label: 'Space Age',
-					confidence: 'medium',
-					matchCount: 1,
-					exampleNames: ['stack-inserter'],
-				},
-			],
-			legacyBlueprint: [
-				{
-					source: 'base-1.1',
-					label: 'Factorio 1.1 and earlier',
-					confidence: 'high',
-					matchCount: 2,
-					exampleNames: ['signal-A', 'stack-inserter'],
-				},
-			],
-			removedNameInNewBlueprint: [
-				{
-					source: 'base-1.1',
-					label: 'Factorio 1.1 and earlier',
-					confidence: 'high',
-					matchCount: 1,
-					exampleNames: ['filter-inserter'],
-				},
-			],
-		});
+		expect(
+			{
+				spaceAgeBlueprint: classify(extracted(['stack-inserter']), versionedDatabase).verdicts,
+				legacyBlueprint: classify(
+					extracted(
+						['stack-inserter', 'signal-A'],
+						{
+							version: '1.1.110.0',
+						},
+					),
+					versionedDatabase,
+				).verdicts,
+				removedNameInNewBlueprint: classify(extracted(['filter-inserter']), versionedDatabase).verdicts,
+			},
+		).toStrictEqual(
+			{
+				spaceAgeBlueprint: [
+					{
+						source: 'space-age',
+						label: 'Space Age',
+						confidence: 'medium',
+						matchCount: 1,
+						exampleNames: ['stack-inserter'],
+					},
+				],
+				legacyBlueprint: [
+					{
+						source: 'base-1.1',
+						label: 'Factorio 1.1 and earlier',
+						confidence: 'high',
+						matchCount: 2,
+						exampleNames: ['signal-A', 'stack-inserter'],
+					},
+				],
+				removedNameInNewBlueprint: [
+					{
+						source: 'base-1.1',
+						label: 'Factorio 1.1 and earlier',
+						confidence: 'high',
+						matchCount: 1,
+						exampleNames: ['filter-inserter'],
+					},
+				],
+			},
+		);
 	});
 });

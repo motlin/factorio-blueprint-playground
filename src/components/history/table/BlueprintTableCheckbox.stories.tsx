@@ -3,10 +3,12 @@ import {expect, fn, userEvent, within} from 'storybook/test';
 
 import {BlueprintTableCheckbox} from './BlueprintTableCheckbox';
 
-const meta: Meta<typeof BlueprintTableCheckbox> = {
+const meta: Meta<typeof BlueprintTableCheckbox> =
+{
 	title: 'History/Table/BlueprintTableCheckbox',
 	component: BlueprintTableCheckbox,
-	parameters: {
+	parameters:
+	{
 		layout: 'centered',
 	},
 	tags: ['autodocs'],
@@ -15,26 +17,33 @@ const meta: Meta<typeof BlueprintTableCheckbox> = {
 export default meta;
 type Story = StoryObj<typeof BlueprintTableCheckbox>;
 
-export const Unchecked: Story = {
-	args: {
+export const Unchecked: Story =
+{
+	args:
+	{
 		isSelected: false,
 		onToggle: fn(),
 	},
 };
 
-export const Checked: Story = {
-	args: {
+export const Checked: Story =
+{
+	args:
+	{
 		isSelected: true,
 		onToggle: fn(),
 	},
 };
 
-export const ToggleInteraction: Story = {
-	args: {
+export const ToggleInteraction: Story =
+{
+	args:
+	{
 		isSelected: false,
 		onToggle: fn(),
 	},
-	play: async ({canvasElement, args}) => {
+	play: async ({canvasElement, args}) =>
+	{
 		const canvas = within(canvasElement);
 		const checkbox = canvas.getByTestId('blueprint-checkbox');
 

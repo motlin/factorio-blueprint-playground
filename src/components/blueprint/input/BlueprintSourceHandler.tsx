@@ -4,13 +4,19 @@ import {useCallback, useEffect, useRef} from 'react';
 
 const routeApi = getRouteApi('/');
 
-interface BlueprintSourceHandlerProps {
+interface BlueprintSourceHandlerProps
+{
 	pasted?: string;
 	autoFocus?: boolean;
 }
 
-const BlueprintSourceHandler = ({pasted, autoFocus = false}: BlueprintSourceHandlerProps) => {
-	const navigate = useNavigate({from: routeApi.id});
+const BlueprintSourceHandler = ({pasted, autoFocus = false}: BlueprintSourceHandlerProps) =>
+{
+	const navigate = useNavigate(
+		{
+			from: routeApi.id,
+		},
+	);
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 
 	/**
@@ -18,22 +24,39 @@ const BlueprintSourceHandler = ({pasted, autoFocus = false}: BlueprintSourceHand
 	 * Wraps the async navigation logic in a synchronous handler to satisfy React's onChange type.
 	 */
 	const handleChange = useCallback(
-		(e: React.ChangeEvent<HTMLTextAreaElement>) => {
+		(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+		{
 			e.preventDefault();
 			const pastedRaw = e.target.value;
 			const pastedValue = pastedRaw.trim();
 
-			void (async () => {
-				if (pastedValue === '') {
-					await navigate({
-						search: (prev) => ({...prev, pasted: undefined, selection: undefined}),
-					});
+			void (async () =>
+			{
+				if (pastedValue === '')
+				{
+					await navigate(
+						{
+							search: (prev) => (
+							{
+								...prev,
+								pasted: undefined,
+								selection: undefined,
+							}),
+						},
+					);
 					return;
 				}
 
-				await navigate({
-					search: (prev) => ({...prev, pasted: pastedValue, selection: ''}),
-				});
+				await navigate(
+					{
+						search: (prev) => (
+						{
+							...prev,
+							pasted: pastedValue,
+							selection: '',
+						}),
+					},
+				);
 			})();
 		},
 		[navigate],
@@ -42,13 +65,16 @@ const BlueprintSourceHandler = ({pasted, autoFocus = false}: BlueprintSourceHand
 	/**
 	 * Handles focus events by selecting all text in the textarea.
 	 */
-	const handleFocus = useCallback((e: React.FocusEvent<HTMLTextAreaElement>) => {
+	const handleFocus = useCallback((e: React.FocusEvent<HTMLTextAreaElement>) =>
+	{
 		e.preventDefault();
 		e.currentTarget.select();
 	}, []);
 
-	useEffect(() => {
-		if (autoFocus && textareaRef.current) {
+	useEffect(() =>
+	{
+		if (autoFocus && textareaRef.current)
+		{
 			textareaRef.current.focus();
 		}
 	}, [autoFocus]);

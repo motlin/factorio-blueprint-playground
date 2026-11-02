@@ -2,12 +2,14 @@ import {ButtonGreen} from '../../ui/ButtonGreen';
 import {InsetDark} from '../../ui/InsetDark';
 import {Panel} from '../../ui/Panel';
 
-interface BlueprintErrorFallbackProps {
+interface BlueprintErrorFallbackProps
+{
 	error: Error;
 	resetErrorBoundary: () => void;
 }
 
-export function BlueprintErrorFallback({error, resetErrorBoundary}: BlueprintErrorFallbackProps) {
+export function BlueprintErrorFallback({error, resetErrorBoundary}: BlueprintErrorFallbackProps)
+{
 	return (
 		<Panel title="Blueprint Error">
 			<InsetDark>

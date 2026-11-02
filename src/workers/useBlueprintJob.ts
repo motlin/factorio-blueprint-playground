@@ -3,7 +3,16 @@ import {useEffect, useState} from 'react';
 import type {BlueprintString} from '../parsing/types';
 import type {BlueprintJobRunner} from './blueprintJobRunner';
 
-export type BlueprintJobState<Result> = {result: Result} | {error: string} | undefined;
+export type BlueprintJobState<Result> =
+	|
+	  {
+			result: Result;
+	  }
+	|
+	  {
+			error: string;
+	  }
+	| undefined;
 
 /**
  * Runs a job for the blueprint and cancels it when the blueprint changes. Results are tagged with
@@ -12,22 +21,47 @@ export type BlueprintJobState<Result> = {result: Result} | {error: string} | und
 export function useBlueprintJob<Result>(
 	blueprint: BlueprintString | undefined,
 	run: BlueprintJobRunner<Result>,
-): BlueprintJobState<Result> {
-	const [settled, setSettled] = useState<{blueprint: BlueprintString; state: BlueprintJobState<Result>}>();
+): BlueprintJobState<Result>
+{
+	const [settled, setSettled] = useState<
+	{
+		blueprint: BlueprintString;
+		state: BlueprintJobState<Result>;
+	}>();
 
-	useEffect(() => {
+	useEffect(() =>
+	{
 		if (blueprint === undefined) return undefined;
 		const controller = new AbortController();
 		run(blueprint, controller.signal).then(
-			(result) => {
-				setSettled({blueprint, state: {result}});
+			(result) =>
+			{
+				setSettled(
+					{
+						blueprint,
+						state:
+						{
+							result,
+						},
+					},
+				);
 			},
-			(error: unknown) => {
+			(error: unknown) =>
+			{
 				if (controller.signal.aborted) return;
-				setSettled({blueprint, state: {error: error instanceof Error ? error.message : String(error)}});
+				setSettled(
+					{
+						blueprint,
+						state:
+						{
+							error: error instanceof Error ? error.message : String(error),
+						},
+					},
+				);
 			},
 		);
-		return () => {
+		return () =>
+		{
 			controller.abort();
 		};
 	}, [blueprint, run]);

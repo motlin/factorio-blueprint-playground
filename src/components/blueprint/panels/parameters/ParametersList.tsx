@@ -3,11 +3,13 @@ import {InsetDark} from '../../../ui/InsetDark';
 
 import {ParameterRow} from './ParameterRow';
 
-interface ParametersListProps {
+interface ParametersListProps
+{
 	parameters: Parameter[];
 }
 
-export const ParametersList = ({parameters}: ParametersListProps) => {
+export const ParametersList = ({parameters}: ParametersListProps) =>
+{
 	if (!parameters.length) return null;
 
 	return (

@@ -1,9 +1,11 @@
-export interface RouteError {
+export interface RouteError
+{
 	message: string;
 	status?: number;
 }
 
-export function ErrorComponent({error}: {error: RouteError}) {
+export function ErrorComponent({error}: {error: RouteError})
+{
 	return (
 		<div className="panel alert alert-error">
 			<h2>Error</h2>

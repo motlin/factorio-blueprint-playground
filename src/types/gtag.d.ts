@@ -1,5 +1,7 @@
-declare global {
-	interface Window {
+declare global
+{
+	interface Window
+	{
 		dataLayer: unknown[];
 		gtag?: (...args: unknown[]) => void;
 	}

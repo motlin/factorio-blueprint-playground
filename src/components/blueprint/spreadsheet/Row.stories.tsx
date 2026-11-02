@@ -3,16 +3,24 @@ import type {Meta, StoryObj} from '@storybook/react-vite';
 import {Cell} from './Cell';
 import {Row} from './Row';
 
-const meta: Meta<typeof Row> = {
+const meta: Meta<typeof Row> =
+{
 	title: 'Blueprint/Spreadsheet/Row',
 	component: Row,
-	parameters: {
+	parameters:
+	{
 		layout: 'centered',
 	},
 	tags: ['autodocs'],
 	decorators: [
 		(StoryComponent) => (
-			<div className="spreadsheet-container" style={{minWidth: '600px'}}>
+			<div
+				className="spreadsheet-container"
+				style={
+				{
+					minWidth: '600px',
+				}}
+			>
 				<StoryComponent />
 			</div>
 		),
@@ -22,8 +30,10 @@ const meta: Meta<typeof Row> = {
 export default meta;
 type Story = StoryObj<typeof Row>;
 
-export const Default: Story = {
-	args: {
+export const Default: Story =
+{
+	args:
+	{
 		children: (
 			<>
 				<Cell>Column 1</Cell>
@@ -34,8 +44,10 @@ export const Default: Story = {
 	},
 };
 
-export const WithMixedAlignment: Story = {
-	args: {
+export const WithMixedAlignment: Story =
+{
+	args:
+	{
 		children: (
 			<>
 				<Cell align="left">Left</Cell>
@@ -46,8 +58,10 @@ export const WithMixedAlignment: Story = {
 	},
 };
 
-export const WithFixedAndGrowable: Story = {
-	args: {
+export const WithFixedAndGrowable: Story =
+{
+	args:
+	{
 		children: (
 			<>
 				<Cell width="100px">Fixed</Cell>

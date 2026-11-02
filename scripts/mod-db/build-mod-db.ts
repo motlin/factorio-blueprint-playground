@@ -2,7 +2,8 @@ import {gzipSync} from 'node:zlib';
 import {mkdir, readFile, writeFile} from 'node:fs/promises';
 
 import {FACTORIO_DATA_PROTOTYPE_FILES, FACTORIOLAB_DATASETS, parseSourceLock} from './sources';
-import {
+import
+{
 	extractHiddenPlaceResults,
 	extractPrototypeNames,
 	parseBaseSupplement,
@@ -15,30 +16,36 @@ import {
 const OUTPUT_URL = new URL('../../src/generated/mod-db.json', import.meta.url);
 const SOURCE_LOCK_URL = new URL('source-lock.json', import.meta.url);
 
-async function fetchDataset(id: string, commit: string): Promise<FactorioLabDataset> {
+async function fetchDataset(id: string, commit: string): Promise<FactorioLabDataset>
+{
 	const url = `https://raw.githubusercontent.com/factoriolab/factoriolab/${commit}/public/data/${id}/data.json`;
 	const response = await fetch(url);
-	if (!response.ok) {
+	if (!response.ok)
+	{
 		throw new Error(`FactorioLab dataset ${id} returned ${response.status.toString()} ${response.statusText}.`);
 	}
 	const data: unknown = await response.json();
 	return parseFactorioLabDataset(data);
 }
 
-async function fetchText(url: string, label: string): Promise<string> {
+async function fetchText(url: string, label: string): Promise<string>
+{
 	const response = await fetch(url);
-	if (!response.ok) {
+	if (!response.ok)
+	{
 		throw new Error(`${label} returned ${response.status.toString()} ${response.statusText}.`);
 	}
 	return response.text();
 }
 
-async function fetchPrototypeNames(root: string, files: readonly string[]): Promise<string[]> {
+async function fetchPrototypeNames(root: string, files: readonly string[]): Promise<string[]>
+{
 	const sources = await Promise.all(files.map(async (file) => fetchText(`${root}/${file}`, `Factorio ${file}`)));
 	return [...new Set(sources.flatMap((source) => extractPrototypeNames(source)))].sort();
 }
 
-async function readJson(url: URL): Promise<unknown> {
+async function readJson(url: URL): Promise<unknown>
+{
 	return JSON.parse(await readFile(url, 'utf8')) as unknown;
 }
 
@@ -62,19 +69,24 @@ const [
 	fetchPrototypeNames(factorioDataRoot, FACTORIO_DATA_PROTOTYPE_FILES.quality),
 ]);
 const datasets = new Map(datasetEntries);
-for (const [id, dataset] of datasets) {
+for (const [id, dataset] of datasets)
+{
 	const source = FACTORIOLAB_DATASETS.find((candidate) => candidate.id === id);
 	const isCurrentRelease = source?.role === 'base' || source?.role === 'space-age';
-	if (isCurrentRelease && dataset.version.base !== sourceLock.factorioData.version) {
+	if (isCurrentRelease && dataset.version.base !== sourceLock.factorioData.version)
+	{
 		throw new Error(
 			`FactorioLab dataset ${id} uses Factorio ${dataset.version.base}, expected ${sourceLock.factorioData.version}.`,
 		);
 	}
 }
-function datasetsWithRole(role: (typeof FACTORIOLAB_DATASETS)[number]['role']): FactorioLabDataset[] {
-	return FACTORIOLAB_DATASETS.filter((source) => source.role === role).map(({id}) => {
+function datasetsWithRole(role: (typeof FACTORIOLAB_DATASETS)[number]['role']): FactorioLabDataset[]
+{
+	return FACTORIOLAB_DATASETS.filter((source) => source.role === role).map(({id}) =>
+	{
 		const dataset = datasets.get(id);
-		if (dataset === undefined) {
+		if (dataset === undefined)
+		{
 			throw new Error(`Missing fetched FactorioLab dataset: ${id}`);
 		}
 		return dataset;
@@ -83,40 +95,57 @@ function datasetsWithRole(role: (typeof FACTORIOLAB_DATASETS)[number]['role']): 
 const baseDatasets = datasetsWithRole('base');
 const spaceAgeDatasets = datasetsWithRole('space-age');
 const legacyDatasets = datasetsWithRole('legacy');
-const modDatasets = FACTORIOLAB_DATASETS.flatMap((source) => {
-	if (source.role !== 'mod') {
+const modDatasets = FACTORIOLAB_DATASETS.flatMap((source) =>
+{
+	if (source.role !== 'mod')
+	{
 		return [];
 	}
 	const dataset = datasets.get(source.id);
-	if (dataset === undefined) {
+	if (dataset === undefined)
+	{
 		throw new Error(`Missing fetched FactorioLab dataset: ${source.id}`);
 	}
-	return [{id: source.id, label: source.label, dataset}];
+	return [
+		{
+			id: source.id,
+			label: source.label,
+			dataset,
+		},
+	];
 });
 
 const supplement = parseBaseSupplement(await readJson(new URL('base-supplement.json', import.meta.url)));
 const prefixes = parsePrefixes(await readJson(new URL('prefix-heuristics.json', import.meta.url)));
-const database = transformDatasets({
-	baseDatasets,
-	spaceAgeDatasets,
-	legacyDatasets,
-	modDatasets,
-	supplement,
-	mapEditorNames: extractHiddenPlaceResults(baseItemSource),
-	spaceAgeMapEditorNames: extractHiddenPlaceResults(spaceAgeItemSource),
-	prototypeNames: {
-		base: basePrototypeNames,
-		spaceAge: spaceAgePrototypeNames,
-		quality: qualityPrototypeNames,
+const database = transformDatasets(
+	{
+		baseDatasets,
+		spaceAgeDatasets,
+		legacyDatasets,
+		modDatasets,
+		supplement,
+		mapEditorNames: extractHiddenPlaceResults(baseItemSource),
+		spaceAgeMapEditorNames: extractHiddenPlaceResults(spaceAgeItemSource),
+		prototypeNames:
+		{
+			base: basePrototypeNames,
+			spaceAge: spaceAgePrototypeNames,
+			quality: qualityPrototypeNames,
+		},
+		prefixes,
+		generatedAt: sourceLock.factorioLab.committedAt.slice(0, 10),
+		factoriolabCommit: sourceLock.factorioLab.commit,
+		factorioDataVersion: sourceLock.factorioData.version,
 	},
-	prefixes,
-	generatedAt: sourceLock.factorioLab.committedAt.slice(0, 10),
-	factoriolabCommit: sourceLock.factorioLab.commit,
-	factorioDataVersion: sourceLock.factorioData.version,
-});
+);
 const output = `${JSON.stringify(database, undefined, '\t')}\n`;
 
-await mkdir(new URL('.', OUTPUT_URL), {recursive: true});
+await mkdir(
+	new URL('.', OUTPUT_URL),
+	{
+		recursive: true,
+	},
+);
 await writeFile(OUTPUT_URL, output, 'utf8');
 
 console.log(

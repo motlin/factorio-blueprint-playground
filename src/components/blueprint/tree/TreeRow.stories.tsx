@@ -3,16 +3,23 @@ import {fn} from 'storybook/test';
 
 import {TreeRow} from './TreeRow';
 
-const meta: Meta<typeof TreeRow> = {
+const meta: Meta<typeof TreeRow> =
+{
 	title: 'Blueprint/Tree/TreeRow',
 	component: TreeRow,
-	parameters: {
+	parameters:
+	{
 		layout: 'centered',
 	},
 	tags: ['autodocs'],
 	decorators: [
 		(StoryComponent) => (
-			<div style={{minWidth: '400px'}}>
+			<div
+				style={
+				{
+					minWidth: '400px',
+				}}
+			>
 				<StoryComponent />
 			</div>
 		),
@@ -22,18 +29,37 @@ const meta: Meta<typeof TreeRow> = {
 export default meta;
 type Story = StoryObj<typeof TreeRow>;
 
-export const BlueprintNode: Story = {
-	args: {
-		node: {
+export const BlueprintNode: Story =
+{
+	args:
+	{
+		node:
+		{
 			path: '0',
-			blueprint: {
-				blueprint: {
+			blueprint:
+			{
+				blueprint:
+				{
 					item: 'blueprint',
 					version: 562949954076673,
 					label: 'Iron Smelting',
 					icons: [
-						{index: 1, signal: {type: 'item', name: 'iron-plate'}},
-						{index: 2, signal: {type: 'entity', name: 'electric-furnace'}},
+						{
+							index: 1,
+							signal:
+							{
+								type: 'item',
+								name: 'iron-plate',
+							},
+						},
+						{
+							index: 2,
+							signal:
+							{
+								type: 'entity',
+								name: 'electric-furnace',
+							},
+						},
 					],
 				},
 			},
@@ -46,16 +72,30 @@ export const BlueprintNode: Story = {
 	},
 };
 
-export const SelectedNode: Story = {
-	args: {
-		node: {
+export const SelectedNode: Story =
+{
+	args:
+	{
+		node:
+		{
 			path: '0',
-			blueprint: {
-				blueprint: {
+			blueprint:
+			{
+				blueprint:
+				{
 					item: 'blueprint',
 					version: 562949954076673,
 					label: 'Selected Blueprint',
-					icons: [{index: 1, signal: {type: 'item', name: 'copper-plate'}}],
+					icons: [
+						{
+							index: 1,
+							signal:
+							{
+								type: 'item',
+								name: 'copper-plate',
+							},
+						},
+					],
 				},
 			},
 			children: [],
@@ -67,16 +107,30 @@ export const SelectedNode: Story = {
 	},
 };
 
-export const ActiveNode: Story = {
-	args: {
-		node: {
+export const ActiveNode: Story =
+{
+	args:
+	{
+		node:
+		{
 			path: '0',
-			blueprint: {
-				blueprint: {
+			blueprint:
+			{
+				blueprint:
+				{
 					item: 'blueprint',
 					version: 562949954076673,
 					label: 'Active Blueprint',
-					icons: [{index: 1, signal: {type: 'item', name: 'steel-plate'}}],
+					icons: [
+						{
+							index: 1,
+							signal:
+							{
+								type: 'item',
+								name: 'steel-plate',
+							},
+						},
+					],
 				},
 			},
 			children: [],
@@ -88,12 +142,17 @@ export const ActiveNode: Story = {
 	},
 };
 
-export const IndentedNode: Story = {
-	args: {
-		node: {
+export const IndentedNode: Story =
+{
+	args:
+	{
+		node:
+		{
 			path: '0.1',
-			blueprint: {
-				blueprint: {
+			blueprint:
+			{
+				blueprint:
+				{
 					item: 'blueprint',
 					version: 562949954076673,
 					label: 'Nested Blueprint',
@@ -108,18 +167,37 @@ export const IndentedNode: Story = {
 	},
 };
 
-export const BlueprintBookNode: Story = {
-	args: {
-		node: {
+export const BlueprintBookNode: Story =
+{
+	args:
+	{
+		node:
+		{
 			path: '0',
-			blueprint: {
-				blueprint_book: {
+			blueprint:
+			{
+				blueprint_book:
+				{
 					item: 'blueprint-book',
 					version: 562949954076673,
 					label: 'Factory Book',
 					icons: [
-						{index: 1, signal: {type: 'item', name: 'automation-science-pack'}},
-						{index: 2, signal: {type: 'item', name: 'logistic-science-pack'}},
+						{
+							index: 1,
+							signal:
+							{
+								type: 'item',
+								name: 'automation-science-pack',
+							},
+						},
+						{
+							index: 2,
+							signal:
+							{
+								type: 'item',
+								name: 'logistic-science-pack',
+							},
+						},
 					],
 					blueprints: [],
 				},
@@ -133,12 +211,17 @@ export const BlueprintBookNode: Story = {
 	},
 };
 
-export const NoLabel: Story = {
-	args: {
-		node: {
+export const NoLabel: Story =
+{
+	args:
+	{
+		node:
+		{
 			path: '0',
-			blueprint: {
-				blueprint: {
+			blueprint:
+			{
+				blueprint:
+				{
 					item: 'blueprint',
 					version: 562949954076673,
 				},
@@ -152,16 +235,30 @@ export const NoLabel: Story = {
 	},
 };
 
-export const WithRichTextLabel: Story = {
-	args: {
-		node: {
+export const WithRichTextLabel: Story =
+{
+	args:
+	{
+		node:
+		{
 			path: '0',
-			blueprint: {
-				blueprint: {
+			blueprint:
+			{
+				blueprint:
+				{
 					item: 'blueprint',
 					version: 562949954076673,
 					label: '[color=green]Green Circuit[/color] Factory [item=electronic-circuit]',
-					icons: [{index: 1, signal: {type: 'item', name: 'electronic-circuit'}}],
+					icons: [
+						{
+							index: 1,
+							signal:
+							{
+								type: 'item',
+								name: 'electronic-circuit',
+							},
+						},
+					],
 				},
 			},
 			children: [],

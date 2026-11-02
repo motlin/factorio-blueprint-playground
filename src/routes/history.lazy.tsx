@@ -34,27 +34,36 @@ const SIGNAL_TYPES = new Set<string>([
 	'space-location',
 ]);
 
-function toSignalType(type: string | undefined): SignalType | undefined {
-	if (type != null && SIGNAL_TYPES.has(type)) {
+function toSignalType(type: string | undefined): SignalType | undefined
+{
+	if (type != null && SIGNAL_TYPES.has(type))
+	{
 		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- membership checked against SIGNAL_TYPES set above
 		return type as SignalType;
 	}
 	return undefined;
 }
 
-export const Route = createLazyFileRoute('/history')({
-	component: History,
-});
+export const Route = createLazyFileRoute('/history')(
+	{
+		component: History,
+	},
+);
 
-function History() {
+function History()
+{
 	const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set<string>());
 	const [error, setError] = useState<Error | null>(null);
 
-	const blueprints = useLiveQuery<DatabaseBlueprint[]>(async () => {
-		try {
+	const blueprints = useLiveQuery<DatabaseBlueprint[]>(async () =>
+	{
+		try
+		{
 			const result = await db.blueprints.orderBy('metadata.lastUpdatedOn').reverse().toArray();
 			return result;
-		} catch (loadError: unknown) {
+		}
+		catch (loadError: unknown)
+		{
 			logger.error(
 				'Failed to load blueprint history',
 				loadError instanceof Error ? loadError : new Error(String(loadError)),
@@ -69,36 +78,46 @@ function History() {
 
 	const isLoading = blueprints === undefined;
 
-	const toggleSelection = (sha: string): void => {
-		setSelectedItems((prev: Set<string>) => {
+	const toggleSelection = (sha: string): void =>
+	{
+		setSelectedItems((prev: Set<string>) =>
+		{
 			const newSelection = new Set<string>(prev);
-			if (newSelection.has(sha)) {
+			if (newSelection.has(sha))
+			{
 				newSelection.delete(sha);
-			} else {
+			}
+			else
+			{
 				newSelection.add(sha);
 			}
 			return newSelection;
 		});
 	};
 
-	const selectAll = (): void => {
+	const selectAll = (): void =>
+	{
 		if (blueprints == null) return;
 		const shaArray = blueprints.map((bp: DatabaseBlueprint): string => bp.metadata.sha);
 		setSelectedItems(new Set<string>(shaArray));
 	};
 
-	const selectNone = (): void => {
+	const selectNone = (): void =>
+	{
 		setSelectedItems(new Set<string>());
 	};
 
-	const downloadAsBook = (): void => {
-		try {
+	const downloadAsBook = (): void =>
+	{
+		try
+		{
 			if (blueprints == null) return;
 			const selectedBlueprints = blueprints.filter((bp: DatabaseBlueprint) => selectedItems.has(bp.metadata.sha));
 			if (selectedBlueprints.length === 0) return;
 
 			// If only one blueprint is selected, download it directly
-			if (selectedBlueprints.length === 1) {
+			if (selectedBlueprints.length === 1)
+			{
 				const blueprint = selectedBlueprints[0];
 				const label = blueprint.gameData.label;
 				const filename = label != null && label !== '' ? label : 'blueprint';
@@ -116,7 +135,8 @@ function History() {
 
 			const maxVersion: number = Math.max(0, ...versions);
 
-			const processedBlueprints: BlueprintStringWithIndex[] = parsedBlueprints.map((parsedBp, idx) => ({
+			const processedBlueprints: BlueprintStringWithIndex[] = parsedBlueprints.map((parsedBp, idx) => (
+			{
 				index: idx,
 				...parsedBp,
 			}));
@@ -124,8 +144,10 @@ function History() {
 			const date = new Date();
 			const formattedDate = formatDateForExport(date);
 
-			const blueprintBookData: BlueprintString = {
-				blueprint_book: {
+			const blueprintBookData: BlueprintString =
+			{
+				blueprint_book:
+				{
 					item: 'blueprint-book',
 					label: `https://factorio-blueprint-playground.pages.dev/history Export on ${formattedDate}`,
 					icons: createBookIcons(selectedBlueprints),
@@ -137,7 +159,9 @@ function History() {
 
 			const serializedBook = serializeBlueprint(blueprintBookData);
 			downloadBlueprint(serializedBook, 'blueprint-history-export');
-		} catch (bookError: unknown) {
+		}
+		catch (bookError: unknown)
+		{
 			logger.error(
 				'Failed to create blueprint book',
 				bookError instanceof Error ? bookError : new Error(String(bookError)),
@@ -150,7 +174,8 @@ function History() {
 		}
 	};
 
-	const deleteSelected = async (): Promise<void> => {
+	const deleteSelected = async (): Promise<void> =>
+	{
 		const size: number = selectedItems.size;
 		if (size === 0) return;
 
@@ -160,11 +185,14 @@ function History() {
 
 		if (!confirmed) return;
 
-		try {
+		try
+		{
 			const selectedItemsArray: string[] = Array.from(selectedItems);
 			await db.removeBulkBlueprints(selectedItemsArray);
 			setSelectedItems(new Set<string>());
-		} catch (deleteError: unknown) {
+		}
+		catch (deleteError: unknown)
+		{
 			logger.error(
 				'Failed to delete blueprints',
 				deleteError instanceof Error ? deleteError : new Error(String(deleteError)),
@@ -178,48 +206,66 @@ function History() {
 		}
 	};
 
-	const createBookIcons = (selectedBlueprints: DatabaseBlueprint[]): Icon[] => {
+	const createBookIcons = (selectedBlueprints: DatabaseBlueprint[]): Icon[] =>
+	{
 		const icons: Icon[] = [];
 
 		// Take the first icon from the first 4 blueprints that have icons
-		for (const bp of selectedBlueprints) {
-			if (bp.gameData.icons.length > 0 && icons.length < 4) {
-				icons.push({
-					signal: {
-						type: toSignalType(bp.gameData.icons[0].type) ?? 'item',
-						name: bp.gameData.icons[0].name,
+		for (const bp of selectedBlueprints)
+		{
+			if (bp.gameData.icons.length > 0 && icons.length < 4)
+			{
+				icons.push(
+					{
+						signal:
+						{
+							type: toSignalType(bp.gameData.icons[0].type) ?? 'item',
+							name: bp.gameData.icons[0].name,
+						},
+						index: icons.length + 1,
 					},
-					index: icons.length + 1,
-				});
+				);
 			}
 
 			if (icons.length >= 4) break;
 		}
 
-		if (icons.length === 0) {
-			icons.push({
-				signal: {
-					type: 'item',
-					name: 'blueprint-book',
+		if (icons.length === 0)
+		{
+			icons.push(
+				{
+					signal:
+					{
+						type: 'item',
+						name: 'blueprint-book',
+					},
+					index: 1,
 				},
-				index: 1,
-			});
+			);
 		}
 
 		return icons;
 	};
 
-	if (isLoading) {
+	if (isLoading)
+	{
 		return <LoadingState />;
 	}
 
-	if (error) {
+	if (error)
+	{
 		return (
 			<Panel title="Blueprint History">
 				<ErrorAlert error={error} />
-				<div style={{marginTop: '1rem'}}>
+				<div
+					style={
+					{
+						marginTop: '1rem',
+					}}
+				>
 					<Button
-						onClick={() => {
+						onClick={() =>
+						{
 							setError(null);
 						}}
 					>
@@ -230,7 +276,8 @@ function History() {
 		);
 	}
 
-	if (blueprints.length === 0) {
+	if (blueprints.length === 0)
+	{
 		return <EmptyHistoryState />;
 	}
 

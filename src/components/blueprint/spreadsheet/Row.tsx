@@ -1,9 +1,11 @@
 import type {ReactNode} from 'react';
 
-interface RowProps {
+interface RowProps
+{
 	children: ReactNode;
 }
 
-export const Row = ({children}: RowProps) => {
+export const Row = ({children}: RowProps) =>
+{
 	return <div className="spreadsheet-row">{children}</div>;
 };

@@ -8,18 +8,21 @@ import {TreeRow} from './TreeRow';
 import {buildNode, isNodeActive} from './treeUtils';
 import type {TreeNode} from './types';
 
-interface BlueprintTreeProps {
+interface BlueprintTreeProps
+{
 	rootBlueprint?: BlueprintString;
 	selectedPath: string;
 	onSelect: (path: string) => void;
 }
 
-const BlueprintTreeComponent = ({rootBlueprint, selectedPath, onSelect}: BlueprintTreeProps) => {
+const BlueprintTreeComponent = ({rootBlueprint, selectedPath, onSelect}: BlueprintTreeProps) =>
+{
 	if (!rootBlueprint) return null;
 
 	const tree = buildNode(rootBlueprint, '');
 
-	function renderNode(node: TreeNode, level: number, parent?: TreeNode): ReactNode[] {
+	function renderNode(node: TreeNode, level: number, parent?: TreeNode): ReactNode[]
+	{
 		const rows: ReactNode[] = [];
 
 		const active = isNodeActive(node, parent);
@@ -35,7 +38,8 @@ const BlueprintTreeComponent = ({rootBlueprint, selectedPath, onSelect}: Bluepri
 			/>,
 		);
 
-		node.children.forEach((child) => {
+		node.children.forEach((child) =>
+		{
 			rows.push(...renderNode(child, level + 1, node));
 		});
 

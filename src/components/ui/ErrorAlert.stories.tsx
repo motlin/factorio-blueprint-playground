@@ -2,10 +2,12 @@ import type {Meta, StoryObj} from '@storybook/react-vite';
 
 import {ErrorAlert} from './ErrorAlert';
 
-const meta: Meta<typeof ErrorAlert> = {
+const meta: Meta<typeof ErrorAlert> =
+{
 	title: 'UI/ErrorAlert',
 	component: ErrorAlert,
-	parameters: {
+	parameters:
+	{
 		layout: 'centered',
 	},
 	tags: ['autodocs'],
@@ -14,20 +16,26 @@ const meta: Meta<typeof ErrorAlert> = {
 export default meta;
 type Story = StoryObj<typeof ErrorAlert>;
 
-export const WithStringError: Story = {
-	args: {
+export const WithStringError: Story =
+{
+	args:
+	{
 		error: 'Invalid blueprint string format',
 	},
 };
 
-export const WithErrorObject: Story = {
-	args: {
+export const WithErrorObject: Story =
+{
+	args:
+	{
 		error: new Error('Failed to decode blueprint: Invalid base64 encoding'),
 	},
 };
 
-export const WithStackTrace: Story = {
-	render: () => {
+export const WithStackTrace: Story =
+{
+	render: () =>
+	{
 		const error = new Error('Blueprint parsing failed');
 		error.stack = `Error: Blueprint parsing failed
     at decodeBlueprint (src/parsing/decoder.ts:42:15)
@@ -37,8 +45,10 @@ export const WithStackTrace: Story = {
 	},
 };
 
-export const NoError: Story = {
-	args: {
+export const NoError: Story =
+{
+	args:
+	{
 		error: undefined,
 	},
 };

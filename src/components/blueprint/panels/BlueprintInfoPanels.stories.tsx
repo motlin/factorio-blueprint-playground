@@ -3,19 +3,36 @@ import type {Meta, StoryObj} from '@storybook/react-vite';
 
 import {BlueprintInfoPanels} from './BlueprintInfoPanels';
 
-const queryClient = new QueryClient({defaultOptions: {queries: {retry: false}}});
+const queryClient = new QueryClient(
+	{
+		defaultOptions:
+		{
+			queries:
+			{
+				retry: false,
+			},
+		},
+	},
+);
 
-const meta: Meta<typeof BlueprintInfoPanels> = {
+const meta: Meta<typeof BlueprintInfoPanels> =
+{
 	title: 'Blueprint/Panels/BlueprintInfoPanels',
 	component: BlueprintInfoPanels,
-	parameters: {
+	parameters:
+	{
 		layout: 'centered',
 	},
 	tags: ['autodocs'],
 	decorators: [
 		(StoryComponent) => (
 			<QueryClientProvider client={queryClient}>
-				<div style={{minWidth: '600px'}}>
+				<div
+					style={
+					{
+						minWidth: '600px',
+					}}
+				>
 					<StoryComponent />
 				</div>
 			</QueryClientProvider>
@@ -26,40 +43,89 @@ const meta: Meta<typeof BlueprintInfoPanels> = {
 export default meta;
 type Story = StoryObj<typeof BlueprintInfoPanels>;
 
-export const BlueprintWithContents: Story = {
-	args: {
-		blueprint: {
-			blueprint: {
+export const BlueprintWithContents: Story =
+{
+	args:
+	{
+		blueprint:
+		{
+			blueprint:
+			{
 				item: 'blueprint',
 				version: 562949954076673,
 				entities: [
-					{entity_number: 1, name: 'assembling-machine-3', position: {x: 0, y: 0}},
-					{entity_number: 2, name: 'assembling-machine-3', position: {x: 3, y: 0}},
-					{entity_number: 3, name: 'electric-furnace', position: {x: 6, y: 0}},
+					{
+						entity_number: 1,
+						name: 'assembling-machine-3',
+						position:
+						{
+							x: 0,
+							y: 0,
+						},
+					},
+					{
+						entity_number: 2,
+						name: 'assembling-machine-3',
+						position:
+						{
+							x: 3,
+							y: 0,
+						},
+					},
+					{
+						entity_number: 3,
+						name: 'electric-furnace',
+						position:
+						{
+							x: 6,
+							y: 0,
+						},
+					},
 				],
 			},
 		},
 	},
 };
 
-export const UpgradePlanner: Story = {
-	args: {
-		blueprint: {
-			upgrade_planner: {
+export const UpgradePlanner: Story =
+{
+	args:
+	{
+		blueprint:
+		{
+			upgrade_planner:
+			{
 				item: 'upgrade-planner',
 				version: 562949954076673,
 				label: 'Belt Upgrade',
-				settings: {
+				settings:
+				{
 					mappers: [
 						{
 							index: 0,
-							from: {type: 'entity', name: 'transport-belt'},
-							to: {type: 'entity', name: 'fast-transport-belt'},
+							from:
+							{
+								type: 'entity',
+								name: 'transport-belt',
+							},
+							to:
+							{
+								type: 'entity',
+								name: 'fast-transport-belt',
+							},
 						},
 						{
 							index: 1,
-							from: {type: 'entity', name: 'inserter'},
-							to: {type: 'entity', name: 'fast-inserter'},
+							from:
+							{
+								type: 'entity',
+								name: 'inserter',
+							},
+							to:
+							{
+								type: 'entity',
+								name: 'fast-inserter',
+							},
 						},
 					],
 				},
@@ -68,14 +134,19 @@ export const UpgradePlanner: Story = {
 	},
 };
 
-export const DeconstructionPlanner: Story = {
-	args: {
-		blueprint: {
-			deconstruction_planner: {
+export const DeconstructionPlanner: Story =
+{
+	args:
+	{
+		blueprint:
+		{
+			deconstruction_planner:
+			{
 				item: 'deconstruction-planner',
 				version: 562949954076673,
 				label: 'Clear Trees',
-				settings: {
+				settings:
+				{
 					trees_and_rocks_only: true,
 				},
 			},
@@ -83,10 +154,14 @@ export const DeconstructionPlanner: Story = {
 	},
 };
 
-export const EmptyBlueprint: Story = {
-	args: {
-		blueprint: {
-			blueprint: {
+export const EmptyBlueprint: Story =
+{
+	args:
+	{
+		blueprint:
+		{
+			blueprint:
+			{
 				item: 'blueprint',
 				version: 562949954076673,
 			},
@@ -94,8 +169,10 @@ export const EmptyBlueprint: Story = {
 	},
 };
 
-export const NoBlueprint: Story = {
-	args: {
+export const NoBlueprint: Story =
+{
+	args:
+	{
 		blueprint: undefined,
 	},
 };

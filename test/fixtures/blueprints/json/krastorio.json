@@ -1,5 +1,6 @@
 {
-	"blueprint": {
+	"blueprint":
+	{
 		"item": "blueprint",
 		"version": 562949953421312,
 		"icons": [{"signal": {"type": "item", "name": "kr-imersite-crystal"}, "index": 1}],

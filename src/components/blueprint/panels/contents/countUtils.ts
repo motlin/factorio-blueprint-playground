@@ -2,14 +2,22 @@ import {normalizeItemStacks} from '../../../../parsing/itemStacks';
 import type {Entity, ItemStack, Quality, Tile} from '../../../../parsing/types';
 
 export function countItems<T>(
-	getKey: (item: T) => {name: string; quality?: string} | undefined,
+	getKey: (item: T) =>
+		|
+		  {
+				name: string;
+				quality?: string;
+		  }
+		| undefined,
 	items?: T[],
 	getCount?: (item: T) => number,
-) {
+)
+{
 	const counts = new Map<string, number>();
 	if (!items) return counts;
 
-	for (const item of items) {
+	for (const item of items)
+	{
 		const keyObj = getKey(item);
 		if (!keyObj) continue;
 
@@ -20,25 +28,46 @@ export function countItems<T>(
 	return counts;
 }
 
-export function mapToSortedArray(counts: Map<string, number>): {name: string; quality: Quality; count: number}[] {
-	const parsedArray = Array.from(counts.entries()).map(([key, count]) => {
+export function mapToSortedArray(counts: Map<string, number>):
+{
+	name: string;
+	quality: Quality;
+	count: number;
+}[]
+{
+	const parsedArray = Array.from(counts.entries()).map(([key, count]) =>
+	{
 		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- keys are produced by JSON.stringify of this exact shape in countItems
-		const parsed = JSON.parse(key) as {name: string; quality: Quality};
-		return {...parsed, count};
+		const parsed = JSON.parse(key) as
+		{
+			name: string;
+			quality: Quality;
+		};
+		return {
+			...parsed,
+			count,
+		};
 	});
 	// Sort by count in descending order
 	return parsedArray.sort((a, b) => b.count - a.count);
 }
 
-export const getEntityKey = (entity: Entity) => ({name: entity.name, quality: entity.quality});
+export const getEntityKey = (entity: Entity) => (
+{
+	name: entity.name,
+	quality: entity.quality,
+});
 
-export const getTileKey = (tile: Tile) => ({
+export const getTileKey = (tile: Tile) => (
+{
 	name: tile.name,
 	quality: undefined,
 });
 
-export const getRecipeKey = (entity: Entity) => {
-	if (entity.recipe == null || entity.recipe === '') {
+export const getRecipeKey = (entity: Entity) =>
+{
+	if (entity.recipe == null || entity.recipe === '')
+	{
 		return undefined;
 	}
 	return {
@@ -47,16 +76,19 @@ export const getRecipeKey = (entity: Entity) => {
 	};
 };
 
-export const getItemKey = (item: ItemStack) => {
+export const getItemKey = (item: ItemStack) =>
+{
 	return {
 		name: item.id.name,
 		quality: item.id.quality,
 	};
 };
 
-export const getItemCount = (item: ItemStack): number => {
+export const getItemCount = (item: ItemStack): number =>
+{
 	let total = item.items.grid_count ?? 0;
-	for (const location of item.items.in_inventory ?? []) {
+	for (const location of item.items.in_inventory ?? [])
+	{
 		// A zero or missing count represents a single placed item, so fall back to 1.
 		const count = location.count;
 		total += count != null && count !== 0 ? count : 1;
@@ -67,25 +99,44 @@ export const getItemCount = (item: ItemStack): number => {
 /**
  * Separates modules items (like productivity/speed modules in machines) from inventory items (like fuel, ammo)
  */
-export const processEntitiesItems = (entities?: Entity[]): {moduleItems: ItemStack[]; inventoryItems: ItemStack[]} => {
-	if (!entities) return {moduleItems: [], inventoryItems: []};
+export const processEntitiesItems = (
+	entities?: Entity[],
+):
+{
+	moduleItems: ItemStack[];
+	inventoryItems: ItemStack[];
+} =>
+{
+	if (!entities)
+		return {
+			moduleItems: [],
+			inventoryItems: [],
+		};
 
 	const moduleItems: ItemStack[] = [];
 	const inventoryItems: ItemStack[] = [];
 
-	for (const entity of entities) {
-		for (const item of normalizeItemStacks(entity.items)) {
+	for (const entity of entities)
+	{
+		for (const item of normalizeItemStacks(entity.items))
+		{
 			// Check if the item is in a module slot (inventory type 4 is typically modules)
 			// Other slots: fuel, ammo, etc. are considered inventory items
 			const isModuleItem = (item.items.in_inventory ?? []).some((loc) => loc.inventory === 4);
 
-			if (isModuleItem) {
+			if (isModuleItem)
+			{
 				moduleItems.push(item);
-			} else {
+			}
+			else
+			{
 				inventoryItems.push(item);
 			}
 		}
 	}
 
-	return {moduleItems, inventoryItems};
+	return {
+		moduleItems,
+		inventoryItems,
+	};
 };

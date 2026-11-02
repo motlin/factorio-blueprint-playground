@@ -24,62 +24,88 @@ import {Panel} from './ui/Panel';
 
 const routeApi = getRouteApi('/');
 
-function getFactorioprintsUrl(id?: string): string | undefined {
-	if (id == null || id === '') {
+function getFactorioprintsUrl(id?: string): string | undefined
+{
+	if (id == null || id === '')
+	{
 		return undefined;
 	}
 	return `https://factorioprints.com/view/${id}`;
 }
 
-export function BlueprintPlayground() {
+export function BlueprintPlayground()
+{
 	const {pasted, selection: selectedPath, focusTextarea}: RootSearch = routeApi.useSearch();
 	const loaderData: BlueprintFetchResult = routeApi.useLoaderData();
 
-	const navigate = useNavigate({from: routeApi.id});
+	const navigate = useNavigate(
+		{
+			from: routeApi.id,
+		},
+	);
 	const isSuccess = loaderData?.success === true;
 	const rootBlueprint: BlueprintString | undefined = isSuccess ? loaderData.blueprintString : undefined;
 	const error: Error | undefined = loaderData != null && !loaderData.success ? loaderData.error : undefined;
 	const disqusId: string | undefined = isSuccess ? loaderData.id : undefined;
 
-	React.useEffect(() => {
-		if (error != null) {
+	React.useEffect(() =>
+	{
+		if (error != null)
+		{
 			console.error('Blueprint error:', error);
 		}
 	}, [error]);
 
 	const selectedBlueprint = rootBlueprint == null ? undefined : extractBlueprint(rootBlueprint, selectedPath);
 
-	const existingBlueprint = useLiveQuery(async () => {
+	const existingBlueprint = useLiveQuery(async () =>
+	{
 		if (pasted == null || pasted === '') return null;
 
-		try {
+		try
+		{
 			const sha = await generateSha(pasted);
 			return await db.blueprints.get(sha);
-		} catch (dbError) {
-			logger.error('Error finding blueprint in database', dbError, {
-				context: 'BlueprintPlayground.useLiveQuery',
-				pasted: pasted.substring(0, 100),
-			});
+		}
+		catch (dbError)
+		{
+			logger.error(
+				'Error finding blueprint in database',
+				dbError,
+				{
+					context: 'BlueprintPlayground.useLiveQuery',
+					pasted: pasted.substring(0, 100),
+				},
+			);
 			return null;
 		}
 	}, [pasted]);
 
-	const onSelect = (path: string) => {
-		void navigate({
-			search: (prev) => ({
-				...prev,
-				selection: path,
-			}),
-		});
+	const onSelect = (path: string) =>
+	{
+		void navigate(
+			{
+				search: (prev) => (
+				{
+					...prev,
+					selection: path,
+				}),
+			},
+		);
 
-		if (pasted != null && pasted !== '' && rootBlueprint != null && isSuccess && existingBlueprint != null) {
-			void updateBlueprintMetadata(existingBlueprint.metadata.sha, {
-				selection: path,
-			});
+		if (pasted != null && pasted !== '' && rootBlueprint != null && isSuccess && existingBlueprint != null)
+		{
+			void updateBlueprintMetadata(
+				existingBlueprint.metadata.sha,
+				{
+					selection: path,
+				},
+			);
 		}
 	};
 
-	useEffect(() => {
+	useEffect(() =>
+	{
 		if (
 			selectedPath != null &&
 			selectedPath !== '' &&
@@ -88,10 +114,14 @@ export function BlueprintPlayground() {
 			rootBlueprint != null &&
 			isSuccess &&
 			existingBlueprint != null
-		) {
-			void updateBlueprintMetadata(existingBlueprint.metadata.sha, {
-				selection: selectedPath,
-			});
+		)
+		{
+			void updateBlueprintMetadata(
+				existingBlueprint.metadata.sha,
+				{
+					selection: selectedPath,
+				},
+			);
 		}
 	}, [selectedPath, pasted, rootBlueprint, isSuccess, existingBlueprint]);
 

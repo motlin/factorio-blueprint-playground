@@ -4,16 +4,23 @@ import {Cell} from './Cell';
 import {Row} from './Row';
 import {Spreadsheet} from './Spreadsheet';
 
-const meta: Meta<typeof Spreadsheet> = {
+const meta: Meta<typeof Spreadsheet> =
+{
 	title: 'Blueprint/Spreadsheet/Spreadsheet',
 	component: Spreadsheet,
-	parameters: {
+	parameters:
+	{
 		layout: 'centered',
 	},
 	tags: ['autodocs'],
 	decorators: [
 		(StoryComponent) => (
-			<div style={{minWidth: '600px'}}>
+			<div
+				style={
+				{
+					minWidth: '600px',
+				}}
+			>
 				<StoryComponent />
 			</div>
 		),
@@ -23,8 +30,10 @@ const meta: Meta<typeof Spreadsheet> = {
 export default meta;
 type Story = StoryObj<typeof Spreadsheet>;
 
-export const WithRows: Story = {
-	args: {
+export const WithRows: Story =
+{
+	args:
+	{
 		children: (
 			<>
 				<Row>
@@ -53,21 +62,27 @@ export const WithRows: Story = {
 	},
 };
 
-export const Empty: Story = {
-	args: {
+export const Empty: Story =
+{
+	args:
+	{
 		children: null,
 	},
 };
 
-export const EmptyWithCustomText: Story = {
-	args: {
+export const EmptyWithCustomText: Story =
+{
+	args:
+	{
 		children: null,
 		emptyText: 'No items to display',
 	},
 };
 
-export const SingleRow: Story = {
-	args: {
+export const SingleRow: Story =
+{
+	args:
+	{
 		children: (
 			<Row>
 				<Cell grow>Single row content</Cell>

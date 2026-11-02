@@ -6,32 +6,68 @@ import type {LintFinding} from '../../../src/lint/types';
 import type {Entity, Tile} from '../../../src/parsing/types';
 import {makeBlueprint} from '../helpers';
 
-function entity(entityNumber: number, name: string, x: number, y: number, direction?: number): Entity {
-	return {entity_number: entityNumber, name, position: {x, y}, direction};
+function entity(entityNumber: number, name: string, x: number, y: number, direction?: number): Entity
+{
+	return {
+		entity_number: entityNumber,
+		name,
+		position:
+		{
+			x,
+			y,
+		},
+		direction,
+	};
 }
 
-function runRule(entities: Entity[], major = 2, atEdges = false): LintFinding[] {
-	const blueprint = makeBlueprint(entities, major, {atEdges}).blueprint;
+function runRule(entities: Entity[], major = 2, atEdges = false): LintFinding[]
+{
+	const blueprint = makeBlueprint(
+		entities,
+		major,
+		{
+			atEdges,
+		},
+	).blueprint;
 	if (!blueprint) throw new Error('Expected blueprint test data');
 	return inserterFacingNothingRule.run(buildLintContext(blueprint));
 }
 
-function runRuleOnTiles(entities: Entity[], tiles: Tile[]): LintFinding[] {
+function runRuleOnTiles(entities: Entity[], tiles: Tile[]): LintFinding[]
+{
 	const blueprint = makeBlueprint(entities).blueprint;
 	if (!blueprint) throw new Error('Expected blueprint test data');
-	return inserterFacingNothingRule.run(buildLintContext({...blueprint, tiles}));
+	return inserterFacingNothingRule.run(
+		buildLintContext(
+			{
+				...blueprint,
+				tiles,
+			},
+		),
+	);
 }
 
-function foundation(x: number, y: number): Tile {
-	return {name: 'space-platform-foundation', position: {x, y}};
+function foundation(x: number, y: number): Tile
+{
+	return {
+		name: 'space-platform-foundation',
+		position:
+		{
+			x,
+			y,
+		},
+	};
 }
 
-describe('inserter-facing-nothing rule', () => {
-	test('returns no findings for an empty blueprint', () => {
+describe('inserter-facing-nothing rule', () =>
+{
+	test('returns no findings for an empty blueprint', () =>
+	{
 		expect(runRule([])).toStrictEqual([]);
 	});
 
-	test('accepts pickup and drop tiles occupied by known belts, chests, or machines', () => {
+	test('accepts pickup and drop tiles occupied by known belts, chests, or machines', () =>
+	{
 		const entities = [
 			entity(100, 'assembling-machine-2', -1.5, 0.5),
 			entity(200, 'inserter', 0.5, 0.5, 4),
@@ -41,7 +77,8 @@ describe('inserter-facing-nothing rule', () => {
 		expect(runRule(entities)).toStrictEqual([]);
 	});
 
-	test('reports the missing pickup and drop sides without accepting a known non-target entity', () => {
+	test('reports the missing pickup and drop sides without accepting a known non-target entity', () =>
+	{
 		const entities = [entity(100, 'inserter', 0.5, 0.5, 4), entity(200, 'small-electric-pole', 1.5, 0.5)];
 
 		expect(runRule(entities)).toStrictEqual([
@@ -54,7 +91,8 @@ describe('inserter-facing-nothing rule', () => {
 		]);
 	});
 
-	test('uses long-handed reach, normalizes 1.1 directions, and skips unknown or non-cardinal inserters', () => {
+	test('uses long-handed reach, normalizes 1.1 directions, and skips unknown or non-cardinal inserters', () =>
+	{
 		const entities = [
 			entity(100, 'wooden-chest', -1.5, 0.5),
 			entity(200, 'long-handed-inserter', 0.5, 0.5, 2),
@@ -66,7 +104,8 @@ describe('inserter-facing-nothing rule', () => {
 		expect(runRule(entities, 1)).toStrictEqual([]);
 	});
 
-	test('treats an unknown entity centered on a target tile conservatively', () => {
+	test('treats an unknown entity centered on a target tile conservatively', () =>
+	{
 		const entities = [
 			entity(100, 'alice-modded-machine', -0.5, 0.5),
 			entity(200, 'inserter', 0.5, 0.5, 4),
@@ -76,7 +115,8 @@ describe('inserter-facing-nothing rule', () => {
 		expect(runRule(entities)).toStrictEqual([]);
 	});
 
-	test('accepts wagons on straight rails as the target of loading and unloading inserters', () => {
+	test('accepts wagons on straight rails as the target of loading and unloading inserters', () =>
+	{
 		const entities = [
 			entity(100, 'iron-chest', 0.5, 0.5),
 			entity(200, 'inserter', 0.5, 1.5, 8),
@@ -88,7 +128,8 @@ describe('inserter-facing-nothing rule', () => {
 		expect(runRule(entities)).toStrictEqual([]);
 	});
 
-	test('accepts wagons on Factorio 1.1 straight rails', () => {
+	test('accepts wagons on Factorio 1.1 straight rails', () =>
+	{
 		const entities = [
 			entity(100, 'iron-chest', 0.5, 0.5),
 			entity(200, 'inserter', 0.5, 1.5, 4),
@@ -98,7 +139,8 @@ describe('inserter-facing-nothing rule', () => {
 		expect(runRule(entities, 1)).toStrictEqual([]);
 	});
 
-	test('does not treat diagonal rails as a wagon stop', () => {
+	test('does not treat diagonal rails as a wagon stop', () =>
+	{
 		const entities = [
 			entity(100, 'iron-chest', 0.5, 0.5),
 			entity(200, 'inserter', 0.5, 1.5, 8),
@@ -110,7 +152,8 @@ describe('inserter-facing-nothing rule', () => {
 		]);
 	});
 
-	test('accepts turrets, crushers, recyclers, and Factorio 1.1 logistic chests as targets', () => {
+	test('accepts turrets, crushers, recyclers, and Factorio 1.1 logistic chests as targets', () =>
+	{
 		const entities = [
 			entity(100, 'gun-turret', 0, 0),
 			entity(200, 'inserter', 1.5, 0.5, 4),
@@ -126,7 +169,8 @@ describe('inserter-facing-nothing rule', () => {
 		expect(runRule(entities)).toStrictEqual([]);
 	});
 
-	test('assumes a nearby modded entity of unknown size is the target', () => {
+	test('assumes a nearby modded entity of unknown size is the target', () =>
+	{
 		const entities = [
 			entity(100, 'iron-chest', 0.5, 0.5),
 			entity(200, 'inserter', 0.5, 1.5, 8),
@@ -136,7 +180,8 @@ describe('inserter-facing-nothing rule', () => {
 		expect(runRule(entities)).toStrictEqual([]);
 	});
 
-	test('accepts wagons standing where a station curves', () => {
+	test('accepts wagons standing where a station curves', () =>
+	{
 		const entities = [
 			entity(100, 'steel-chest', 36.5, -4.5),
 			entity(200, 'fast-inserter', 36.5, -5.5, 8),
@@ -147,7 +192,8 @@ describe('inserter-facing-nothing rule', () => {
 	});
 
 	// From the station curve in factorioprints -MFIYLSH60wmZ-pNvcL_, where both rails sit 2.5 tiles off the drop tile.
-	test('accepts wagons standing on the curve beside a station', () => {
+	test('accepts wagons standing on the curve beside a station', () =>
+	{
 		const entities = [
 			entity(100, 'iron-chest', -0.5, 8.5),
 			entity(200, 'fast-inserter', -0.5, 7.5, 8),
@@ -159,7 +205,8 @@ describe('inserter-facing-nothing rule', () => {
 	});
 
 	// Items dropped off a space platform's foundation are destroyed, which players use to void excess.
-	test('accepts an inserter dropping into the void beside a space platform', () => {
+	test('accepts an inserter dropping into the void beside a space platform', () =>
+	{
 		const entities = [entity(100, 'transport-belt', 0.5, 16.5, 0), entity(200, 'bulk-inserter', 0.5, 17.5, 0)];
 		const missingDrop = [
 			{
@@ -170,15 +217,33 @@ describe('inserter-facing-nothing rule', () => {
 			},
 		];
 
-		expect({
-			platform: runRuleOnTiles(entities, [foundation(0, 17), foundation(1, 18)]),
-			foundationUnderDrop: runRuleOnTiles(entities, [foundation(0, 17), foundation(0, 18)]),
-			notPlatform: runRuleOnTiles(entities, [{name: 'concrete', position: {x: 0, y: 17}}]),
-		}).toStrictEqual({platform: [], foundationUnderDrop: missingDrop, notPlatform: missingDrop});
+		expect(
+			{
+				platform: runRuleOnTiles(entities, [foundation(0, 17), foundation(1, 18)]),
+				foundationUnderDrop: runRuleOnTiles(entities, [foundation(0, 17), foundation(0, 18)]),
+				notPlatform: runRuleOnTiles(entities, [
+					{
+						name: 'concrete',
+						position:
+						{
+							x: 0,
+							y: 17,
+						},
+					},
+				]),
+			},
+		).toStrictEqual(
+			{
+				platform: [],
+				foundationUnderDrop: missingDrop,
+				notPlatform: missingDrop,
+			},
+		);
 	});
 
 	// Boilers and turrets, which inserters only ever drop into, sit behind the inserter's direction in real blueprints.
-	test('reads the inserter direction as pointing at its pickup side', () => {
+	test('reads the inserter direction as pointing at its pickup side', () =>
+	{
 		const entities = [entity(100, 'inserter', 0.5, 0.5, 4), entity(200, 'iron-chest', 1.5, 0.5)];
 
 		expect(runRule(entities).map((finding) => finding.message)).toStrictEqual([
@@ -186,7 +251,8 @@ describe('inserter-facing-nothing rule', () => {
 		]);
 	});
 
-	test('assumes a target past the blueprint edge is placed with it, as add-ons do', () => {
+	test('assumes a target past the blueprint edge is placed with it, as add-ons do', () =>
+	{
 		const entities = [
 			entity(100, 'iron-chest', 0.5, 0.5),
 			entity(200, 'long-handed-inserter', 0.5, 2.5, 8),
@@ -197,7 +263,8 @@ describe('inserter-facing-nothing rule', () => {
 	});
 
 	// The railgun's footprint per facing is uncertain, so like a modded entity it counts when nearby.
-	test('accepts a railgun turret in any facing', () => {
+	test('accepts a railgun turret in any facing', () =>
+	{
 		const entities = [
 			entity(100, 'railgun-turret', -23.5, -191.5, 2),
 			entity(200, 'bulk-inserter', -25.5, -192.5, 12),
@@ -207,7 +274,8 @@ describe('inserter-facing-nothing rule', () => {
 		expect(runRule(entities)).toStrictEqual([]);
 	});
 
-	test('treats a row of inserters that all miss the same side as an interface with something placed separately', () => {
+	test('treats a row of inserters that all miss the same side as an interface with something placed separately', () =>
+	{
 		const entities = [
 			...[0.5, 1.5, 2.5].map((x, index) => entity(100 + index, 'iron-chest', x, 0.5)),
 			...[0.5, 1.5, 2.5].map((x, index) => entity(200 + index, 'inserter', x, 1.5, 0)),
@@ -219,12 +287,20 @@ describe('inserter-facing-nothing rule', () => {
 	});
 
 	// Track runs two tiles to the left of a stop's direction of travel in real blueprints.
-	test('treats the track beside a train stop as wagon space when the blueprint has no rails', () => {
+	test('treats the track beside a train stop as wagon space when the blueprint has no rails', () =>
+	{
 		const loader = [entity(100, 'iron-chest', 0.5, 5.5), entity(200, 'inserter', -0.5, 5.5, 4)];
 
-		expect({
-			withStop: runRule([...loader, entity(300, 'train-stop', 0, 0, 0)]),
-			withoutStop: runRule(loader).map((finding) => finding.entityNumbers),
-		}).toStrictEqual({withStop: [], withoutStop: [[200]]});
+		expect(
+			{
+				withStop: runRule([...loader, entity(300, 'train-stop', 0, 0, 0)]),
+				withoutStop: runRule(loader).map((finding) => finding.entityNumbers),
+			},
+		).toStrictEqual(
+			{
+				withStop: [],
+				withoutStop: [[200]],
+			},
+		);
 	});
 });

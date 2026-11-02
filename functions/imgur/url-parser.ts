@@ -3,7 +3,8 @@ const ALBUM_URL_REGEX = /^\/(?:a|gallery)\/([a-zA-Z0-9]+)$/;
 const ALPHANUMERIC_ID_REGEX = /^[a-zA-Z0-9]+$/;
 const PAGE_URL_REGEX = /^\/([a-zA-Z0-9]+)$/;
 
-export interface ParsedImgurUrl {
+export interface ParsedImgurUrl
+{
 	id: string;
 	type?: string;
 	isDirect: boolean;
@@ -12,19 +13,42 @@ export interface ParsedImgurUrl {
 	warnings: string[];
 }
 
-export type ImgurUrlParseResult = {success: true; data: ParsedImgurUrl} | {success: false; error: string};
+export type ImgurUrlParseResult =
+	|
+	  {
+			success: true;
+			data: ParsedImgurUrl;
+	  }
+	|
+	  {
+			success: false;
+			error: string;
+	  };
 
-type PipelineResult<T> = {success: true; data: T} | {success: false; error: string};
+type PipelineResult<T> =
+	|
+	  {
+			success: true;
+			data: T;
+	  }
+	|
+	  {
+			success: false;
+			error: string;
+	  };
 
-interface ValidatedUrl {
+interface ValidatedUrl
+{
 	url: string;
 }
 
-interface ParsedUrl {
+interface ParsedUrl
+{
 	urlObj: URL;
 }
 
-interface ExtractedInfo {
+interface ExtractedInfo
+{
 	id: string;
 	type?: string;
 	isDirect: boolean;
@@ -32,10 +56,13 @@ interface ExtractedInfo {
 	warnings: string[];
 }
 
-export function parseImgurUrl(url: string): ImgurUrlParseResult {
+export function parseImgurUrl(url: string): ImgurUrlParseResult
+{
 	// Nested validation functions
-	function validateUrl(urlString: string): PipelineResult<ValidatedUrl> {
-		if (!urlString) {
+	function validateUrl(urlString: string): PipelineResult<ValidatedUrl>
+	{
+		if (!urlString)
+		{
 			return {
 				success: false,
 				error: 'URL is required and must be a string',
@@ -43,30 +70,48 @@ export function parseImgurUrl(url: string): ImgurUrlParseResult {
 		}
 
 		const trimmedUrl = urlString.trim();
-		if (!trimmedUrl) {
+		if (!trimmedUrl)
+		{
 			return {
 				success: false,
 				error: 'URL cannot be empty',
 			};
 		}
 
-		return {success: true, data: {url: trimmedUrl}};
+		return {
+			success: true,
+			data:
+			{
+				url: trimmedUrl,
+			},
+		};
 	}
 
-	function parseAndValidateUrl(data: ValidatedUrl): PipelineResult<ParsedUrl> {
-		try {
+	function parseAndValidateUrl(data: ValidatedUrl): PipelineResult<ParsedUrl>
+	{
+		try
+		{
 			const urlObj = new URL(data.url);
 			const validDomains = ['imgur.com', 'i.imgur.com', 'm.imgur.com'];
 
-			if (!validDomains.includes(urlObj.hostname)) {
+			if (!validDomains.includes(urlObj.hostname))
+			{
 				return {
 					success: false,
 					error: 'URL must be from imgur.com domain',
 				};
 			}
 
-			return {success: true, data: {urlObj}};
-		} catch {
+			return {
+				success: true,
+				data:
+				{
+					urlObj,
+				},
+			};
+		}
+		catch
+		{
 			return {
 				success: false,
 				error: 'Invalid URL format',
@@ -74,45 +119,72 @@ export function parseImgurUrl(url: string): ImgurUrlParseResult {
 		}
 	}
 
-	function extractImageInfo(data: ParsedUrl): PipelineResult<ExtractedInfo> {
+	function extractImageInfo(data: ParsedUrl): PipelineResult<ExtractedInfo>
+	{
 		const {urlObj} = data;
 
 		// Nested parser functions
-		function parseDirectImageUrl(pathname: string): {id: string; type: string} | null {
+		function parseDirectImageUrl(pathname: string):
+		{
+			id: string;
+			type: string;
+		} | null
+		{
 			const match = pathname.match(DIRECT_IMAGE_URL_REGEX);
 			if (!match) return null;
-			return {id: match[1], type: match[2]};
+			return {
+				id: match[1],
+				type: match[2],
+			};
 		}
 
-		function parseAlbumUrl(pathname: string, hash: string): {id: string; warnings: string[]} | null {
+		function parseAlbumUrl(
+			pathname: string,
+			hash: string,
+		):
+		{
+			id: string;
+			warnings: string[];
+		} | null
+		{
 			const albumMatch = pathname.match(ALBUM_URL_REGEX);
 			if (!albumMatch) return null;
 
 			let id = albumMatch[1];
 			const warnings: string[] = [];
 
-			if (hash) {
+			if (hash)
+			{
 				const hashId = hash.substring(1);
-				if (ALPHANUMERIC_ID_REGEX.test(hashId)) {
+				if (ALPHANUMERIC_ID_REGEX.test(hashId))
+				{
 					id = hashId;
 					warnings.push('Detected hash fragment in album URL - using hash as image ID');
 				}
-			} else {
+			}
+			else
+			{
 				warnings.push('Album URL detected - will use first image');
 			}
 
-			return {id, warnings};
+			return {
+				id,
+				warnings,
+			};
 		}
 
-		function parsePageUrl(pathname: string): string | null {
+		function parsePageUrl(pathname: string): string | null
+		{
 			const match = pathname.match(PAGE_URL_REGEX);
 			return match ? match[1] : null;
 		}
 
 		// Nested handler functions
-		function handleDirectImageUrl(pathname: string): PipelineResult<ExtractedInfo> {
+		function handleDirectImageUrl(pathname: string): PipelineResult<ExtractedInfo>
+		{
 			const parsed = parseDirectImageUrl(pathname);
-			if (!parsed) {
+			if (!parsed)
+			{
 				return {
 					success: false,
 					error: 'Invalid direct image URL format',
@@ -121,7 +193,8 @@ export function parseImgurUrl(url: string): ImgurUrlParseResult {
 
 			return {
 				success: true,
-				data: {
+				data:
+				{
 					id: parsed.id,
 					type: parsed.type,
 					isDirect: true,
@@ -131,12 +204,15 @@ export function parseImgurUrl(url: string): ImgurUrlParseResult {
 			};
 		}
 
-		function handleAlbumOrPageUrl(pathname: string, hash: string): PipelineResult<ExtractedInfo> {
+		function handleAlbumOrPageUrl(pathname: string, hash: string): PipelineResult<ExtractedInfo>
+		{
 			const albumParsed = parseAlbumUrl(pathname, hash);
-			if (albumParsed) {
+			if (albumParsed)
+			{
 				return {
 					success: true,
-					data: {
+					data:
+					{
 						id: albumParsed.id,
 						type: undefined,
 						isDirect: false,
@@ -147,7 +223,8 @@ export function parseImgurUrl(url: string): ImgurUrlParseResult {
 			}
 
 			const pageId = parsePageUrl(pathname);
-			if (pageId == null) {
+			if (pageId == null)
+			{
 				return {
 					success: false,
 					error: 'Invalid Imgur URL format',
@@ -156,7 +233,8 @@ export function parseImgurUrl(url: string): ImgurUrlParseResult {
 
 			return {
 				success: true,
-				data: {
+				data:
+				{
 					id: pageId,
 					type: undefined,
 					isDirect: false,
@@ -166,11 +244,13 @@ export function parseImgurUrl(url: string): ImgurUrlParseResult {
 			};
 		}
 
-		if (urlObj.hostname === 'i.imgur.com') {
+		if (urlObj.hostname === 'i.imgur.com')
+		{
 			return handleDirectImageUrl(urlObj.pathname);
 		}
 
-		if (urlObj.hostname === 'imgur.com' || urlObj.hostname === 'm.imgur.com') {
+		if (urlObj.hostname === 'imgur.com' || urlObj.hostname === 'm.imgur.com')
+		{
 			return handleAlbumOrPageUrl(urlObj.pathname, urlObj.hash);
 		}
 
@@ -180,10 +260,13 @@ export function parseImgurUrl(url: string): ImgurUrlParseResult {
 		};
 	}
 
-	function validateAndNormalize(data: ExtractedInfo): ImgurUrlParseResult {
-		function validateImgurId(id: string): string[] {
+	function validateAndNormalize(data: ExtractedInfo): ImgurUrlParseResult
+	{
+		function validateImgurId(id: string): string[]
+		{
 			const warnings: string[] = [];
-			if (id.length < 5 || id.length > 10) {
+			if (id.length < 5 || id.length > 10)
+			{
 				warnings.push('Image ID length is outside typical range (5-10 characters)');
 			}
 			return warnings;
@@ -197,7 +280,8 @@ export function parseImgurUrl(url: string): ImgurUrlParseResult {
 
 		return {
 			success: true,
-			data: {
+			data:
+			{
 				id: data.id,
 				type: data.type,
 				isDirect: data.isDirect,

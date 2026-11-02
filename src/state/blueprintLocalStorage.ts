@@ -5,20 +5,29 @@ export async function addBlueprint(
 	parsedGameData: Omit<BlueprintGameData, 'createdOn' | 'lastUpdatedOn'>,
 	selection?: string,
 	fetchMethod?: 'url' | 'json' | 'data',
-) {
+)
+{
 	const blueprint = await db.addBlueprint(data, parsedGameData, selection, fetchMethod);
 	return blueprint;
 }
 
 async function updateBlueprint(
 	sha: string,
-	changes: {
+	changes:
+	{
 		metadata?: Partial<Omit<BlueprintStorageMetadata, 'sha'>>;
 		gameData?: Partial<BlueprintGameData>;
 	},
 	updateTimestamp = true,
-) {
-	return await db.updateBlueprint(sha, changes, {updateTimestamp});
+)
+{
+	return await db.updateBlueprint(
+		sha,
+		changes,
+		{
+			updateTimestamp,
+		},
+	);
 }
 
 /**
@@ -29,6 +38,13 @@ async function updateBlueprint(
 export async function updateBlueprintMetadata(
 	sha: string,
 	metadataChanges: Partial<Omit<BlueprintStorageMetadata, 'sha'>>,
-) {
-	return await updateBlueprint(sha, {metadata: metadataChanges}, false);
+)
+{
+	return await updateBlueprint(
+		sha,
+		{
+			metadata: metadataChanges,
+		},
+		false,
+	);
 }
