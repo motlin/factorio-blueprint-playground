@@ -20,23 +20,9 @@ const manualChunks = (id: string): string | undefined => {
 };
 
 export default defineConfig({
-	fmt: {
-		semi: true,
-		singleQuote: true,
-		useTabs: true,
-		tabWidth: 4,
-		printWidth: 120,
-		bracketSpacing: false,
-		trailingComma: 'all',
-		arrowParens: 'always',
-		overrides: [
-			{
-				files: ['**/*.{yaml,yml}'],
-				options: {
-					tabWidth: 2,
-				},
-			},
-		],
+	// Formatting runs through oxfmt-next-line (configured in .oxfmtrc.json), not Vite+'s bundled oxfmt.
+	check: {
+		fmt: false,
 	},
 	lint: {
 		plugins: [],

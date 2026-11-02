@@ -1,0 +1,3 @@
+# Written by scripts/mod-db with JSON.stringify; formatting them would make every regeneration fail pre-commit.
+scripts/mod-db/source-lock.json
+src/generated/mod-db.json
