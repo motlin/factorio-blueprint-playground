@@ -13,39 +13,61 @@ const skipBrowserTests = process.env.CI === 'true' || process.env.SKIP_BROWSER_T
 const tempDir = path.join(__dirname, 'temp');
 const snapshotDir = path.join(__dirname, '__snapshots__');
 
-beforeAll(async () => {
-	await fs.mkdir(tempDir, {recursive: true});
-	await fs.mkdir(snapshotDir, {recursive: true});
+beforeAll(async () =>
+{
+	await fs.mkdir(
+		tempDir,
+		{
+			recursive: true,
+		},
+	);
+	await fs.mkdir(
+		snapshotDir,
+		{
+			recursive: true,
+		},
+	);
 
-	if (skipBrowserTests) {
+	if (skipBrowserTests)
+	{
 		console.warn('Skipping browser tests');
 		return;
 	}
 
-	try {
-		browser = await chromium.launch({
-			headless: true,
-		});
+	try
+	{
+		browser = await chromium.launch(
+			{
+				headless: true,
+			},
+		);
 		page = await browser.newPage();
-	} catch (error) {
+	}
+	catch (error)
+	{
 		console.warn('Browser tests skipped: Unable to launch browser', error);
 	}
 });
 
-afterAll(async () => {
-	if (browser) {
+afterAll(async () =>
+{
+	if (browser)
+	{
 		await browser.close();
 	}
 
 	const files = await fs.readdir(tempDir);
-	for (const file of files) {
-		if (file.endsWith('-temp.html') || file.endsWith('-temp.png')) {
+	for (const file of files)
+	{
+		if (file.endsWith('-temp.html') || file.endsWith('-temp.png'))
+		{
 			await fs.unlink(path.join(tempDir, file));
 		}
 	}
 }, 30_000);
 
-async function renderToHtmlFile(html: string, testName: string): Promise<string> {
+async function renderToHtmlFile(html: string, testName: string): Promise<string>
+{
 	const factorioCssPath = path.resolve(__dirname, '../../src/styles/factorio-a76ef767.css');
 	const mainCssPath = path.resolve(__dirname, '../../src/styles/main.css');
 	const factorioIconCssPath = path.resolve(__dirname, '../../src/components/core/icons/FactorioIcon.module.css');
@@ -69,7 +91,8 @@ async function renderToHtmlFile(html: string, testName: string): Promise<string>
         </style>
         <style>
             /* Transform CSS module classes to match runtime behavior */
-            ${factorioIconCss.replace(/\.[a-zA-Z0-9_]+/g, (match) => {
+            ${factorioIconCss.replace(/\.[a-zA-Z0-9_]+/g, (match) =>
+			{
 				// Keep the CSS selectors but use data-attribute selectors to match the HTML
 				return `[class*="${match.slice(1)}"]`;
 			})}
@@ -86,13 +109,16 @@ async function renderToHtmlFile(html: string, testName: string): Promise<string>
 	return filePath;
 }
 
-export async function compareScreenshots(testName: string, html: string, selector = '#root'): Promise<void> {
-	if (skipBrowserTests) {
+export async function compareScreenshots(testName: string, html: string, selector = '#root'): Promise<void>
+{
+	if (skipBrowserTests)
+	{
 		console.warn(`Browser tests are disabled, skipping visual test for "${testName}"`);
 		return;
 	}
 
-	if (!page) {
+	if (!page)
+	{
 		console.warn(`Browser is not initialized, skipping visual test for "${testName}"`);
 		return;
 	}
@@ -106,36 +132,56 @@ export async function compareScreenshots(testName: string, html: string, selecto
 	await page.waitForSelector(selector);
 
 	const element = await page.$(selector);
-	if (!element) {
+	if (!element)
+	{
 		throw new Error(`Element ${selector} not found`);
 	}
 
-	await element.screenshot({path: tempPath});
+	await element.screenshot(
+		{
+			path: tempPath,
+		},
+	);
 
-	try {
+	try
+	{
 		const baselineBuffer = await fs.readFile(snapshotPath);
 		const currentBuffer = await fs.readFile(tempPath);
 
 		const baseline = PNG.sync.read(baselineBuffer);
 		const current = PNG.sync.read(currentBuffer);
 
-		if (baseline.width !== current.width || baseline.height !== current.height) {
+		if (baseline.width !== current.width || baseline.height !== current.height)
+		{
 			throw new Error(
 				`Screenshot dimensions mismatch for ${testName}: ` +
 					`baseline ${baseline.width}x${baseline.height} vs current ${current.width}x${current.height}`,
 			);
 		}
 
-		const diff = new PNG({width: baseline.width, height: baseline.height});
-		const mismatchedPixels = pixelmatch(baseline.data, current.data, diff.data, baseline.width, baseline.height, {
-			threshold: 0.1,
-		});
+		const diff = new PNG(
+			{
+				width: baseline.width,
+				height: baseline.height,
+			},
+		);
+		const mismatchedPixels = pixelmatch(
+			baseline.data,
+			current.data,
+			diff.data,
+			baseline.width,
+			baseline.height,
+			{
+				threshold: 0.1,
+			},
+		);
 
 		const totalPixels = baseline.width * baseline.height;
 		const mismatchPercentage = (mismatchedPixels / totalPixels) * 100;
 
 		// Allow up to 0.1% pixel difference to account for anti-aliasing variations
-		if (mismatchPercentage > 0.1) {
+		if (mismatchPercentage > 0.1)
+		{
 			const diffPath = path.join(tempDir, `${testName}-diff.png`);
 			await fs.writeFile(diffPath, PNG.sync.write(diff));
 			throw new Error(
@@ -145,12 +191,17 @@ export async function compareScreenshots(testName: string, html: string, selecto
 		}
 
 		await fs.unlink(tempPath);
-	} catch (error: unknown) {
-		if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+	}
+	catch (error: unknown)
+	{
+		if (error instanceof Error && 'code' in error && error.code === 'ENOENT')
+		{
 			// No baseline exists, create it
 			await fs.rename(tempPath, snapshotPath);
 			console.warn(`Created new baseline for ${testName}`);
-		} else {
+		}
+		else
+		{
 			throw error;
 		}
 	}

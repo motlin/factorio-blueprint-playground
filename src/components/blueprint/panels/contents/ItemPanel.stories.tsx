@@ -2,16 +2,23 @@ import type {Meta, StoryObj} from '@storybook/react-vite';
 
 import {ItemPanel} from './ItemPanel';
 
-const meta: Meta<typeof ItemPanel> = {
+const meta: Meta<typeof ItemPanel> =
+{
 	title: 'Blueprint/Panels/Contents/ItemPanel',
 	component: ItemPanel,
-	parameters: {
+	parameters:
+	{
 		layout: 'centered',
 	},
 	tags: ['autodocs'],
 	decorators: [
 		(StoryComponent) => (
-			<div style={{minWidth: '400px'}}>
+			<div
+				style={
+				{
+					minWidth: '400px',
+				}}
+			>
 				<StoryComponent />
 			</div>
 		),
@@ -23,10 +30,21 @@ type Story = StoryObj<typeof ItemPanel>;
 
 // ItemPanel expects the Map keys produced by countItems: JSON.stringify({name, quality}).
 const countMap = (entries: [string, number][]): Map<string, number> =>
-	new Map(entries.map(([name, count]) => [JSON.stringify({name}), count]));
+	new Map(
+		entries.map(([name, count]) => [
+			JSON.stringify(
+				{
+					name,
+				},
+			),
+			count,
+		]),
+	);
 
-export const ItemsList: Story = {
-	args: {
+export const ItemsList: Story =
+{
+	args:
+	{
 		title: 'Items',
 		items: countMap([
 			['iron-plate', 100],
@@ -37,8 +55,10 @@ export const ItemsList: Story = {
 	},
 };
 
-export const FluidsList: Story = {
-	args: {
+export const FluidsList: Story =
+{
+	args:
+	{
 		title: 'Fluids',
 		items: countMap([
 			['water', 1000],
@@ -49,8 +69,10 @@ export const FluidsList: Story = {
 	},
 };
 
-export const EntitiesList: Story = {
-	args: {
+export const EntitiesList: Story =
+{
+	args:
+	{
 		title: 'Entities',
 		items: countMap([
 			['assembling-machine-3', 10],
@@ -61,16 +83,20 @@ export const EntitiesList: Story = {
 	},
 };
 
-export const SingleItem: Story = {
-	args: {
+export const SingleItem: Story =
+{
+	args:
+	{
 		title: 'Single Item',
 		items: countMap([['iron-plate', 42]]),
 		type: 'item',
 	},
 };
 
-export const EmptyList: Story = {
-	args: {
+export const EmptyList: Story =
+{
+	args:
+	{
 		title: 'Empty Items',
 		items: new Map(),
 		type: 'item',

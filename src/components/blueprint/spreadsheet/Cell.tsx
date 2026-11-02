@@ -1,6 +1,7 @@
 import type {CSSProperties, ReactNode} from 'react';
 
-interface CellProps {
+interface CellProps
+{
 	children: ReactNode;
 	// Allows cell to grow
 	grow?: boolean;
@@ -12,13 +13,16 @@ interface CellProps {
 	align?: 'left' | 'center' | 'right';
 }
 
-export const Cell = ({children, grow = false, shrink = false, width, align = 'left'}: CellProps) => {
+export const Cell = ({children, grow = false, shrink = false, width, align = 'left'}: CellProps) =>
+{
 	const classNames = ['spreadsheet-cell'];
-	if (!grow) {
+	if (!grow)
+	{
 		classNames.push('spreadsheet-cell-fixed');
 	}
 
-	const style: CSSProperties = {
+	const style: CSSProperties =
+	{
 		flexGrow: grow ? 1 : 0,
 		flexShrink: shrink ? 1 : 0,
 		width,

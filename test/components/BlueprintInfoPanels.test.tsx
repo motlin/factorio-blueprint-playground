@@ -6,19 +6,25 @@ import {BlueprintInfoPanels} from '../../src/components/blueprint/panels/Bluepri
 import type {BlueprintString} from '../../src/parsing/types';
 import '../../test/setup';
 
-function renderPanels(element: ReactElement) {
+function renderPanels(element: ReactElement)
+{
 	return render(element);
 }
 
-describe('BlueprintInfoPanels', () => {
-	test('renders nothing when no blueprint is provided', () => {
+describe('BlueprintInfoPanels', () =>
+{
+	test('renders nothing when no blueprint is provided', () =>
+	{
 		const {container} = renderPanels(<BlueprintInfoPanels />);
 		expect(container).toBeEmptyDOMElement();
 	});
 
-	test('renders ContentsPanel for regular blueprint', () => {
-		const blueprint: BlueprintString = {
-			blueprint: {
+	test('renders ContentsPanel for regular blueprint', () =>
+	{
+		const blueprint: BlueprintString =
+		{
+			blueprint:
+			{
 				item: 'blueprint',
 				version: 281479275675648,
 				label: 'Test Blueprint',
@@ -26,7 +32,11 @@ describe('BlueprintInfoPanels', () => {
 					{
 						entity_number: 1,
 						name: 'assembling-machine-2',
-						position: {x: 0, y: 0},
+						position:
+						{
+							x: 0,
+							y: 0,
+						},
 					},
 				],
 			},
@@ -41,19 +51,25 @@ describe('BlueprintInfoPanels', () => {
 		expect(screen.queryByText('Entity Filters')).not.toBeInTheDocument();
 	});
 
-	test('renders UpgradePlannerPanel for upgrade planner', () => {
-		const blueprint: BlueprintString = {
-			upgrade_planner: {
+	test('renders UpgradePlannerPanel for upgrade planner', () =>
+	{
+		const blueprint: BlueprintString =
+		{
+			upgrade_planner:
+			{
 				item: 'upgrade-planner',
 				version: 281479275675648,
-				settings: {
+				settings:
+				{
 					mappers: [
 						{
-							from: {
+							from:
+							{
 								type: 'entity',
 								name: 'transport-belt',
 							},
-							to: {
+							to:
+							{
 								type: 'entity',
 								name: 'fast-transport-belt',
 							},
@@ -73,12 +89,16 @@ describe('BlueprintInfoPanels', () => {
 		expect(screen.queryByText('Entity Filters')).not.toBeInTheDocument();
 	});
 
-	test('renders DeconstructionPlannerPanel for deconstruction planner', () => {
-		const blueprint: BlueprintString = {
-			deconstruction_planner: {
+	test('renders DeconstructionPlannerPanel for deconstruction planner', () =>
+	{
+		const blueprint: BlueprintString =
+		{
+			deconstruction_planner:
+			{
 				item: 'deconstruction-planner',
 				version: 281479275675648,
-				settings: {
+				settings:
+				{
 					entity_filter_mode: 1,
 					entity_filters: [
 						{
@@ -99,17 +119,21 @@ describe('BlueprintInfoPanels', () => {
 		expect(screen.queryByText('Upgrade Mappings')).not.toBeInTheDocument();
 	});
 
-	test('memoization prevents re-renders with same props', () => {
+	test('memoization prevents re-renders with same props', () =>
+	{
 		// Create a test component that counts renders
 		let renderCount = 0;
 
-		function TestComponent({blueprint: blueprintProp}: {blueprint?: BlueprintString}) {
+		function TestComponent({blueprint: blueprintProp}: {blueprint?: BlueprintString})
+		{
 			renderCount++;
 			return <BlueprintInfoPanels blueprint={blueprintProp} />;
 		}
 
-		const blueprint: BlueprintString = {
-			blueprint: {
+		const blueprint: BlueprintString =
+		{
+			blueprint:
+			{
 				item: 'blueprint',
 				version: 281479275675648,
 				label: 'Test Blueprint',
@@ -117,7 +141,11 @@ describe('BlueprintInfoPanels', () => {
 					{
 						entity_number: 1,
 						name: 'assembling-machine-2',
-						position: {x: 0, y: 0},
+						position:
+						{
+							x: 0,
+							y: 0,
+						},
 					},
 				],
 			},
@@ -134,8 +162,10 @@ describe('BlueprintInfoPanels', () => {
 		expect(screen.getByText('Entities')).toBeInTheDocument();
 
 		// Re-render with different props
-		const newBlueprint: BlueprintString = {
-			blueprint: {
+		const newBlueprint: BlueprintString =
+		{
+			blueprint:
+			{
 				item: 'blueprint',
 				version: 281479275675648,
 				label: 'Different Blueprint',
@@ -143,7 +173,11 @@ describe('BlueprintInfoPanels', () => {
 					{
 						entity_number: 1,
 						name: 'inserter',
-						position: {x: 0, y: 0},
+						position:
+						{
+							x: 0,
+							y: 0,
+						},
 					},
 				],
 			},

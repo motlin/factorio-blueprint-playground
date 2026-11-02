@@ -2,10 +2,12 @@ import type {Meta, StoryObj} from '@storybook/react-vite';
 
 import FilterCondition from './FilterCondition';
 
-const meta: Meta<typeof FilterCondition> = {
+const meta: Meta<typeof FilterCondition> =
+{
 	title: 'Blueprint/Panels/Deconstruction/FilterCondition',
 	component: FilterCondition,
-	parameters: {
+	parameters:
+	{
 		layout: 'centered',
 	},
 	tags: ['autodocs'],
@@ -14,18 +16,24 @@ const meta: Meta<typeof FilterCondition> = {
 export default meta;
 type Story = StoryObj<typeof FilterCondition>;
 
-export const BasicFilter: Story = {
-	args: {
-		filter: {
+export const BasicFilter: Story =
+{
+	args:
+	{
+		filter:
+		{
 			index: 1,
 			name: 'iron-plate',
 		},
 	},
 };
 
-export const WithCount: Story = {
-	args: {
-		filter: {
+export const WithCount: Story =
+{
+	args:
+	{
+		filter:
+		{
 			index: 1,
 			name: 'iron-plate',
 			count: 100,
@@ -33,9 +41,12 @@ export const WithCount: Story = {
 	},
 };
 
-export const WithComparator: Story = {
-	args: {
-		filter: {
+export const WithComparator: Story =
+{
+	args:
+	{
+		filter:
+		{
 			index: 1,
 			name: 'copper-plate',
 			comparator: '>',
@@ -44,9 +55,12 @@ export const WithComparator: Story = {
 	},
 };
 
-export const WithQuality: Story = {
-	args: {
-		filter: {
+export const WithQuality: Story =
+{
+	args:
+	{
+		filter:
+		{
 			index: 1,
 			name: 'iron-plate',
 			quality: 'legendary',
@@ -54,9 +68,12 @@ export const WithQuality: Story = {
 	},
 };
 
-export const WithCountRange: Story = {
-	args: {
-		filter: {
+export const WithCountRange: Story =
+{
+	args:
+	{
+		filter:
+		{
 			index: 1,
 			name: 'steel-plate',
 			count: 10,
@@ -65,9 +82,12 @@ export const WithCountRange: Story = {
 	},
 };
 
-export const FullFilter: Story = {
-	args: {
-		filter: {
+export const FullFilter: Story =
+{
+	args:
+	{
+		filter:
+		{
 			index: 1,
 			name: 'electronic-circuit',
 			comparator: '>=',

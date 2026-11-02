@@ -2,16 +2,23 @@ import type {Meta, StoryObj} from '@storybook/react-vite';
 
 import {ExportActions} from './ExportActions';
 
-const meta: Meta<typeof ExportActions> = {
+const meta: Meta<typeof ExportActions> =
+{
 	title: 'Blueprint/Export/ExportActions',
 	component: ExportActions,
-	parameters: {
+	parameters:
+	{
 		layout: 'centered',
 	},
 	tags: ['autodocs'],
 	decorators: [
 		(StoryComponent) => (
-			<div style={{minWidth: '500px'}}>
+			<div
+				style={
+				{
+					minWidth: '500px',
+				}}
+			>
 				<StoryComponent />
 			</div>
 		),
@@ -21,10 +28,14 @@ const meta: Meta<typeof ExportActions> = {
 export default meta;
 type Story = StoryObj<typeof ExportActions>;
 
-export const Default: Story = {
-	args: {
-		blueprint: {
-			blueprint: {
+export const Default: Story =
+{
+	args:
+	{
+		blueprint:
+		{
+			blueprint:
+			{
 				item: 'blueprint',
 				version: 562949954076673,
 				label: 'Iron Smelting',
@@ -34,10 +45,14 @@ export const Default: Story = {
 	},
 };
 
-export const WithPath: Story = {
-	args: {
-		blueprint: {
-			blueprint: {
+export const WithPath: Story =
+{
+	args:
+	{
+		blueprint:
+		{
+			blueprint:
+			{
 				item: 'blueprint',
 				version: 562949954076673,
 				label: 'Iron Smelting',
@@ -48,10 +63,14 @@ export const WithPath: Story = {
 	},
 };
 
-export const BlueprintBook: Story = {
-	args: {
-		blueprint: {
-			blueprint_book: {
+export const BlueprintBook: Story =
+{
+	args:
+	{
+		blueprint:
+		{
+			blueprint_book:
+			{
 				item: 'blueprint-book',
 				version: 562949954076673,
 				label: 'Factory Collection',
@@ -62,8 +81,10 @@ export const BlueprintBook: Story = {
 	},
 };
 
-export const NoBlueprint: Story = {
-	args: {
+export const NoBlueprint: Story =
+{
+	args:
+	{
 		blueprint: undefined,
 		title: 'Empty',
 	},

@@ -1,5 +1,6 @@
 {
-	"blueprint": {
+	"blueprint":
+	{
 		"item": "blueprint",
 		"version": 562949953421312,
 		"icons": [{"signal": {"type": "item", "name": "transport-belt"}, "index": 1}],
@@ -13,8 +14,10 @@
 				"entity_number": 2,
 				"name": "decider-combinator",
 				"position": {"x": 2, "y": 0},
-				"control_behavior": {
-					"decider_conditions": {
+				"control_behavior":
+				{
+					"decider_conditions":
+					{
 						"conditions": [
 							{
 								"first_signal": {"type": "virtual", "name": "signal-each"},

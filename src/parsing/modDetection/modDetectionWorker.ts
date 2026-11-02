@@ -6,6 +6,7 @@ import type {ModDatabase} from './types';
 // The database and the scan of a megabase book are both large, so detection runs here instead of on the page's thread.
 const database: ModDatabase = databaseJson;
 
-self.addEventListener('message', (event: MessageEvent<BlueprintJobRequest>) => {
+self.addEventListener('message', (event: MessageEvent<BlueprintJobRequest>) =>
+{
 	self.postMessage(handleModDetectionRequest(event.data, database));
 });

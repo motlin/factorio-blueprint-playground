@@ -21,37 +21,45 @@ import type {BlueprintString} from '../../src/parsing/types';
 const corpusDirectory = process.env.CORPUS_DIR;
 const files = corpusDirectory === undefined ? [] : readdirSync(corpusDirectory).filter((file) => file.endsWith('.txt'));
 
-function* selectableBlueprints(blueprint: BlueprintString): Generator<BlueprintString> {
+function* selectableBlueprints(blueprint: BlueprintString): Generator<BlueprintString>
+{
 	yield blueprint;
-	for (const child of blueprint.blueprint_book?.blueprints ?? []) {
+	for (const child of blueprint.blueprint_book?.blueprints ?? [])
+	{
 		yield* selectableBlueprints(child);
 	}
 }
 
 const database = databaseJson as ModDatabase;
 
-function renderOnce(element: ReactElement) {
+function renderOnce(element: ReactElement)
+{
 	render(element);
 	cleanup();
 }
 
 // Unmounted panels with pending effects stay reachable until a timer turn runs, and these tests never yield;
 // without this wait, the heap grows across the corpus until the run runs out of memory.
-afterEach(async () => {
+afterEach(async () =>
+{
 	cleanup();
-	await new Promise<void>((resolve) => {
+	await new Promise<void>((resolve) =>
+	{
 		setTimeout(resolve, 50);
 	});
 });
 
-describe.skipIf(files.length === 0)('blueprint corpus', () => {
+describe.skipIf(files.length === 0)('blueprint corpus', () =>
+{
 	test.each(files)(
 		'renders every selectable blueprint in %s',
-		(file) => {
+		(file) =>
+		{
 			const encoded = readFileSync(join(corpusDirectory ?? '', file), 'utf8').trim();
 			const root = deserializeBlueprint(encoded);
 			renderOnce(<BlueprintTree rootBlueprint={root} selectedPath="" onSelect={() => undefined} />);
-			for (const selected of selectableBlueprints(root)) {
+			for (const selected of selectableBlueprints(root))
+			{
 				// The panels report lint and detection failures quietly and finish after this render,
 				// so call both directly to surface them.
 				lintBlueprint(selected);

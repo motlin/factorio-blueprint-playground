@@ -5,7 +5,8 @@ import {Panel} from '../../../ui/Panel';
 
 import {ParametersList} from './ParametersList';
 
-const ParametersPanelComponent = ({blueprintString}: {blueprintString?: BlueprintString}) => {
+const ParametersPanelComponent = ({blueprintString}: {blueprintString?: BlueprintString}) =>
+{
 	const parameters = blueprintString?.blueprint?.parameters;
 	if (parameters == null || parameters.length === 0) return null;
 

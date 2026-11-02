@@ -8,18 +8,21 @@ import {Spreadsheet} from '../../spreadsheet/Spreadsheet';
 
 import FilterRowsDisplay from './FilterRowsDisplay';
 
-function getFilterModeText(mode?: number): string {
+function getFilterModeText(mode?: number): string
+{
 	if (mode === 1) return 'Banned list: Remove only filtered items';
 	return 'Allowed list: Remove everything except filtered items';
 }
 
-const DeconstructionPlannerPanelComponent = ({blueprint}: {blueprint: BlueprintString}) => {
+const DeconstructionPlannerPanelComponent = ({blueprint}: {blueprint: BlueprintString}) =>
+{
 	const planner: DeconstructionPlanner | undefined = blueprint.deconstruction_planner;
 	if (!planner) return null;
 
 	const settings = planner.settings ?? {};
 
-	const getTileSelectionText = (mode?: 1 | 2 | 3): string => {
+	const getTileSelectionText = (mode?: 1 | 2 | 3): string =>
+	{
 		if (mode === 2) return 'Never deconstruct tiles';
 		if (mode === 3) return 'Always deconstruct tiles';
 		return 'Default tile behavior';

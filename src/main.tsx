@@ -8,30 +8,40 @@ import {routeTree} from './routeTree.gen';
 import './styles/factorio-a76ef767.css';
 import './styles/main.css';
 
-const queryClient = new QueryClient({
-	defaultOptions: {
-		queries: {
-			staleTime: Infinity,
-			gcTime: Infinity,
+const queryClient = new QueryClient(
+	{
+		defaultOptions:
+		{
+			queries:
+			{
+				staleTime: Infinity,
+				gcTime: Infinity,
+			},
 		},
 	},
-});
+);
 
-const router = createRouter({
-	routeTree: routeTree,
-	context: {
-		queryClient,
+const router = createRouter(
+	{
+		routeTree: routeTree,
+		context:
+		{
+			queryClient,
+		},
 	},
-});
+);
 
-declare module '@tanstack/react-router' {
-	interface Register {
+declare module '@tanstack/react-router'
+{
+	interface Register
+	{
 		router: typeof router;
 	}
 }
 
 const rootElement = document.getElementById('app');
-if (rootElement && !rootElement.innerHTML) {
+if (rootElement && !rootElement.innerHTML)
+{
 	const root = createRoot(rootElement);
 	root.render(
 		<StrictMode>
@@ -45,14 +55,19 @@ if (rootElement && !rootElement.innerHTML) {
 	);
 }
 
-if (typeof window.gtag === 'function') {
+if (typeof window.gtag === 'function')
+{
 	window.gtag('event', 'page_view');
 }
 
-if ('requestIdleCallback' in window) {
-	window.requestIdleCallback(() => {
-		void router.preloadRoute({
-			to: '/history',
-		});
+if ('requestIdleCallback' in window)
+{
+	window.requestIdleCallback(() =>
+	{
+		void router.preloadRoute(
+			{
+				to: '/history',
+			},
+		);
 	});
 }

@@ -1,5 +1,6 @@
 {
-	"version": {
+	"version":
+	{
 		"base": "2.1.0",
 		"elevated-rails": "2.1.0",
 		"quality": "2.1.0",

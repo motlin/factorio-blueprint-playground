@@ -13,19 +13,29 @@ function grid(
 	spacing: number,
 	origin: number,
 	firstNumber: number,
-): Entity[] {
-	return Array.from({length: count}, (_, index) => ({
-		entity_number: firstNumber + index,
-		name,
-		position: {
-			x: origin + (index % columns) * spacing + 0.5,
-			y: origin + Math.floor(index / columns) * spacing + 0.5,
+): Entity[]
+{
+	return Array.from(
+		{
+			length: count,
 		},
-	}));
+		(_, index) => (
+		{
+			entity_number: firstNumber + index,
+			name,
+			position:
+			{
+				x: origin + (index % columns) * spacing + 0.5,
+				y: origin + Math.floor(index / columns) * spacing + 0.5,
+			},
+		}),
+	);
 }
 
-describe('power pole coverage at megabase scale', () => {
-	test('finishes quickly with many poles and many powered entities', () => {
+describe('power pole coverage at megabase scale', () =>
+{
+	test('finishes quickly with many poles and many powered entities', () =>
+	{
 		// Small poles 5 apart leave no gaps in their 5x5 supply areas.
 		const poles = grid('small-electric-pole', 10_000, 100, 5, 0, 1);
 		const covered = grid('inserter', 50_000, 240, 2, 0, 20_001);
@@ -38,6 +48,16 @@ describe('power pole coverage at megabase scale', () => {
 		const findings = powerPoleCoverageRule.run(context);
 		const elapsed = performance.now() - start;
 
-		expect({unpowered: findings.length, fast: elapsed < 1_500}).toStrictEqual({unpowered: 100, fast: true});
+		expect(
+			{
+				unpowered: findings.length,
+				fast: elapsed < 1_500,
+			},
+		).toStrictEqual(
+			{
+				unpowered: 100,
+				fast: true,
+			},
+		);
 	});
 });

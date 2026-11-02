@@ -4,39 +4,58 @@ import {answerBlueprintJob, type BlueprintJobRequest, type BlueprintJobResponse}
 import {lintBlueprint} from './engine';
 import type {LintFinding} from './types';
 
-export interface LocatedLintFinding extends LintFinding {
+export interface LocatedLintFinding extends LintFinding
+{
 	// Selection path of the finding's blueprint, relative to the linted blueprint; '' is the blueprint itself.
 	path: string;
 	blueprintLabel: string | undefined;
 	// The first flagged entity, so the page can show it without indexing every entity itself.
-	entity: {name: string; quality: Quality; position: Entity['position']} | undefined;
+	entity:
+		|
+		  {
+				name: string;
+				quality: Quality;
+				position: Entity['position'];
+		  }
+		| undefined;
 }
 
-function* blueprintsWithPaths(blueprint: BlueprintString, path = ''): Generator<[BlueprintString, string]> {
+function* blueprintsWithPaths(blueprint: BlueprintString, path = ''): Generator<[BlueprintString, string]>
+{
 	yield [blueprint, path];
-	for (const [index, child] of (blueprint.blueprint_book?.blueprints ?? []).entries()) {
+	for (const [index, child] of (blueprint.blueprint_book?.blueprints ?? []).entries())
+	{
 		yield* blueprintsWithPaths(child, path === '' ? `${index + 1}` : `${path}.${index + 1}`);
 	}
 }
 
-export function lintBlueprintTree(blueprint: BlueprintString): LocatedLintFinding[] {
-	return [...blueprintsWithPaths(blueprint)].flatMap(([node, path]) => {
+export function lintBlueprintTree(blueprint: BlueprintString): LocatedLintFinding[]
+{
+	return [...blueprintsWithPaths(blueprint)].flatMap(([node, path]) =>
+	{
 		const findings = lintBlueprint(node);
 		if (findings.length === 0) return [];
 		const entityByNumber = new Map(node.blueprint?.entities?.map((entity) => [entity.entity_number, entity]));
-		return findings.map((finding) => {
+		return findings.map((finding) =>
+		{
 			const entity =
 				finding.entityNumbers.length === 0 ? undefined : entityByNumber.get(finding.entityNumbers[0]);
 			return {
 				...finding,
 				path,
 				blueprintLabel: node.blueprint?.label,
-				entity: entity && {name: entity.name, quality: entity.quality, position: entity.position},
+				entity: entity &&
+				{
+					name: entity.name,
+					quality: entity.quality,
+					position: entity.position,
+				},
 			};
 		});
 	});
 }
 
-export function handleLintRequest(request: BlueprintJobRequest): BlueprintJobResponse<LocatedLintFinding[]> {
+export function handleLintRequest(request: BlueprintJobRequest): BlueprintJobResponse<LocatedLintFinding[]>
+{
 	return answerBlueprintJob(request, lintBlueprintTree);
 }

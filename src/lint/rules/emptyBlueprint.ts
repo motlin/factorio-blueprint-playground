@@ -1,9 +1,11 @@
 import type {LintRule} from '../types';
 
-export const emptyBlueprintRule: LintRule = {
+export const emptyBlueprintRule: LintRule =
+{
 	id: 'empty-blueprint',
 	severity: 'info',
-	run(context) {
+	run(context)
+	{
 		if (context.entities.length > 0 || (context.blueprint.tiles?.length ?? 0) > 0) return [];
 
 		return [

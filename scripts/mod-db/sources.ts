@@ -4,47 +4,117 @@ import type {ModSource} from '../../src/parsing/modDetection/types';
 
 const commitSchema = z.string().regex(/^[0-9a-f]{40}$/);
 
-const sourceLockSchema = z.object({
-	factorioLab: z.object({
-		commit: commitSchema,
-		committedAt: z.iso.datetime(),
-	}),
-	factorioData: z.object({
-		version: z.string().regex(/^\d+\.\d+\.\d+$/),
-		commit: commitSchema,
-	}),
-});
+const sourceLockSchema = z.object(
+	{
+		factorioLab: z.object(
+			{
+				commit: commitSchema,
+				committedAt: z.iso.datetime(),
+			},
+		),
+		factorioData: z.object(
+			{
+				version: z.string().regex(/^\d+\.\d+\.\d+$/),
+				commit: commitSchema,
+			},
+		),
+	},
+);
 
 export type SourceLock = z.infer<typeof sourceLockSchema>;
 
-export function parseSourceLock(value: unknown): SourceLock {
+export function parseSourceLock(value: unknown): SourceLock
+{
 	return sourceLockSchema.parse(value);
 }
 
 export const FACTORIOLAB_DATASETS = [
-	{id: '2.0', role: 'base'},
-	{id: '2.1', role: 'base'},
-	{id: '1.0', role: 'legacy'},
-	{id: '1.1', role: 'legacy'},
-	{id: 'spa', role: 'space-age'},
+	{
+		id: '2.0',
+		role: 'base',
+	},
+	{
+		id: '2.1',
+		role: 'base',
+	},
+	{
+		id: '1.0',
+		role: 'legacy',
+	},
+	{
+		id: '1.1',
+		role: 'legacy',
+	},
+	{
+		id: 'spa',
+		role: 'space-age',
+	},
 	// Space Age with the recipe names Factorio 2.1 introduces, such as iron-ore-melting.
-	{id: '2x1', role: 'space-age'},
-	{id: 'kr2', role: 'mod', label: 'Krastorio 2'},
-	{id: 'kr2sxp', role: 'mod', label: 'Krastorio 2 + Space Exploration'},
-	{id: 'sxp', role: 'mod', label: 'Space Exploration'},
-	{id: 'bob', role: 'mod', label: "Bob's Mods"},
-	{id: 'bobang', role: 'mod', label: "Bob's & Angel's"},
-	{id: 'pys', role: 'mod', label: 'Pyanodons'},
-	{id: 'pysalf', role: 'mod', label: 'Pyanodons + Alien Life'},
-	{id: 'ir3', role: 'mod', label: 'Industrial Revolution 3'},
-	{id: 'aai', role: 'mod', label: 'AAI Industry'},
-	{id: 'nls', role: 'mod', label: 'Nullius'},
-	{id: 'sea', role: 'mod', label: 'Sea Block'},
+	{
+		id: '2x1',
+		role: 'space-age',
+	},
+	{
+		id: 'kr2',
+		role: 'mod',
+		label: 'Krastorio 2',
+	},
+	{
+		id: 'kr2sxp',
+		role: 'mod',
+		label: 'Krastorio 2 + Space Exploration',
+	},
+	{
+		id: 'sxp',
+		role: 'mod',
+		label: 'Space Exploration',
+	},
+	{
+		id: 'bob',
+		role: 'mod',
+		label: "Bob's Mods",
+	},
+	{
+		id: 'bobang',
+		role: 'mod',
+		label: "Bob's & Angel's",
+	},
+	{
+		id: 'pys',
+		role: 'mod',
+		label: 'Pyanodons',
+	},
+	{
+		id: 'pysalf',
+		role: 'mod',
+		label: 'Pyanodons + Alien Life',
+	},
+	{
+		id: 'ir3',
+		role: 'mod',
+		label: 'Industrial Revolution 3',
+	},
+	{
+		id: 'aai',
+		role: 'mod',
+		label: 'AAI Industry',
+	},
+	{
+		id: 'nls',
+		role: 'mod',
+		label: 'Nullius',
+	},
+	{
+		id: 'sea',
+		role: 'mod',
+		label: 'Sea Block',
+	},
 ] as const;
 
 // Prototype definitions whose literal names FactorioLab omits: entities, tiles, fluids, signals, and tool items.
 // Names that Lua builds at load time live in base-supplement.json instead.
-export const FACTORIO_DATA_PROTOTYPE_FILES = {
+export const FACTORIO_DATA_PROTOTYPE_FILES =
+{
 	base: [
 		'core/prototypes/unknown.lua',
 		'base/prototypes/item.lua',
@@ -94,14 +164,41 @@ export const FACTORIOLAB_LICENSE =
 	'Data derived from FactorioLab, Copyright (c) 2020-2026 Doug Broad, under the MIT License. https://github.com/factoriolab/factoriolab';
 
 export const MOD_SOURCES = [
-	{id: 'base', label: 'Factorio 2.0 / 2.1'},
-	{id: 'space-age', label: 'Space Age', dlc: true},
-	{id: 'quality', label: 'Quality', dlc: true},
-	{id: 'elevated-rails', label: 'Elevated Rails', dlc: true},
-	{id: 'base-1.1', label: 'Factorio 1.1 and earlier'},
+	{
+		id: 'base',
+		label: 'Factorio 2.0 / 2.1',
+	},
+	{
+		id: 'space-age',
+		label: 'Space Age',
+		dlc: true,
+	},
+	{
+		id: 'quality',
+		label: 'Quality',
+		dlc: true,
+	},
+	{
+		id: 'elevated-rails',
+		label: 'Elevated Rails',
+		dlc: true,
+	},
+	{
+		id: 'base-1.1',
+		label: 'Factorio 1.1 and earlier',
+	},
 ] satisfies ModSource[];
 
 export const EDITOR_SOURCES = [
-	{id: 'map-editor', label: 'Map editor', editor: true},
-	{id: 'space-age-map-editor', label: 'Space Age map editor', dlc: true, editor: true},
+	{
+		id: 'map-editor',
+		label: 'Map editor',
+		editor: true,
+	},
+	{
+		id: 'space-age-map-editor',
+		label: 'Space Age map editor',
+		dlc: true,
+		editor: true,
+	},
 ] satisfies ModSource[];

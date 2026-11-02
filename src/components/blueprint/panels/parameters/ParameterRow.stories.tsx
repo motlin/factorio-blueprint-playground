@@ -2,16 +2,24 @@ import type {Meta, StoryObj} from '@storybook/react-vite';
 
 import {ParameterRow} from './ParameterRow';
 
-const meta: Meta<typeof ParameterRow> = {
+const meta: Meta<typeof ParameterRow> =
+{
 	title: 'Blueprint/Panels/Parameters/ParameterRow',
 	component: ParameterRow,
-	parameters: {
+	parameters:
+	{
 		layout: 'centered',
 	},
 	tags: ['autodocs'],
 	decorators: [
 		(StoryComponent) => (
-			<div style={{minWidth: '800px', padding: '16px'}}>
+			<div
+				style={
+				{
+					minWidth: '800px',
+					padding: '16px',
+				}}
+			>
 				<StoryComponent />
 			</div>
 		),
@@ -21,9 +29,12 @@ const meta: Meta<typeof ParameterRow> = {
 export default meta;
 type Story = StoryObj<typeof ParameterRow>;
 
-export const NumberParameter: Story = {
-	args: {
-		param: {
+export const NumberParameter: Story =
+{
+	args:
+	{
+		param:
+		{
 			type: 'number',
 			name: 'count',
 			number: '100',
@@ -32,9 +43,12 @@ export const NumberParameter: Story = {
 	},
 };
 
-export const NumberWithVariable: Story = {
-	args: {
-		param: {
+export const NumberWithVariable: Story =
+{
+	args:
+	{
+		param:
+		{
 			type: 'number',
 			name: 'stack-size',
 			number: '50',
@@ -44,9 +58,12 @@ export const NumberWithVariable: Story = {
 	},
 };
 
-export const NumberWithFormula: Story = {
-	args: {
-		param: {
+export const NumberWithFormula: Story =
+{
+	args:
+	{
+		param:
+		{
 			type: 'number',
 			name: 'total',
 			number: '200',
@@ -56,9 +73,12 @@ export const NumberWithFormula: Story = {
 	},
 };
 
-export const IdParameter: Story = {
-	args: {
-		param: {
+export const IdParameter: Story =
+{
+	args:
+	{
+		param:
+		{
 			type: 'id',
 			name: 'item',
 			id: 'iron-plate',
@@ -67,9 +87,12 @@ export const IdParameter: Story = {
 	},
 };
 
-export const VirtualSignalId: Story = {
-	args: {
-		param: {
+export const VirtualSignalId: Story =
+{
+	args:
+	{
+		param:
+		{
 			type: 'id',
 			name: 'signal',
 			id: 'signal-A',
@@ -78,9 +101,12 @@ export const VirtualSignalId: Story = {
 	},
 };
 
-export const NonParametrised: Story = {
-	args: {
-		param: {
+export const NonParametrised: Story =
+{
+	args:
+	{
+		param:
+		{
 			type: 'number',
 			name: 'constant',
 			number: '42',
@@ -90,9 +116,12 @@ export const NonParametrised: Story = {
 	},
 };
 
-export const WithIngredientOf: Story = {
-	args: {
-		param: {
+export const WithIngredientOf: Story =
+{
+	args:
+	{
+		param:
+		{
 			type: 'id',
 			name: 'ingredient',
 			id: 'copper-plate',

@@ -8,19 +8,41 @@ import type {BlueprintString} from '../../src/parsing/types';
 import {type BlueprintJobRunner, inlineRunner} from '../../src/workers/blueprintJobRunner';
 import '../../test/setup';
 
-const database: ModDatabase = {
+const database: ModDatabase =
+{
 	generatedAt: '2000-01-01',
 	factoriolabCommit: '0000000000000000000000000000000000000000',
 	factorioDataVersion: '0.0.0',
 	license: 'Test data',
 	sources: [
-		{id: 'base', label: 'Factorio 2.0'},
-		{id: 'space-age', label: 'Space Age', dlc: true},
-		{id: 'quality', label: 'Quality', dlc: true},
-		{id: 'map-editor', label: 'Map editor', editor: true},
-		{id: 'space-age-map-editor', label: 'Space Age map editor', dlc: true, editor: true},
+		{
+			id: 'base',
+			label: 'Factorio 2.0',
+		},
+		{
+			id: 'space-age',
+			label: 'Space Age',
+			dlc: true,
+		},
+		{
+			id: 'quality',
+			label: 'Quality',
+			dlc: true,
+		},
+		{
+			id: 'map-editor',
+			label: 'Map editor',
+			editor: true,
+		},
+		{
+			id: 'space-age-map-editor',
+			label: 'Space Age map editor',
+			dlc: true,
+			editor: true,
+		},
 	],
-	names: {
+	names:
+	{
 		'transport-belt': 1,
 		'display-panel': 1,
 		'automation-science-pack': 1,
@@ -29,44 +51,77 @@ const database: ModDatabase = {
 		'infinity-chest': 8,
 		'turbo-loader': 16,
 	},
-	prefixes: {
+	prefixes:
+	{
 		'se-': 'Space Exploration',
 	},
 };
 
-const vanillaBlueprint: BlueprintString = {
-	blueprint: {
+const vanillaBlueprint: BlueprintString =
+{
+	blueprint:
+	{
 		item: 'blueprint',
 		version: 562949954076673,
-		entities: [{entity_number: 1, name: 'transport-belt', position: {x: 0, y: 0}}],
+		entities: [
+			{
+				entity_number: 1,
+				name: 'transport-belt',
+				position:
+				{
+					x: 0,
+					y: 0,
+				},
+			},
+		],
 	},
 };
 
 const detect = inlineRunner((blueprint) => detectMods(blueprint, database));
 
 const neverDetects: BlueprintJobRunner<DetectionResult> = async () =>
-	new Promise<DetectionResult>((resolve) => {
+	new Promise<DetectionResult>((resolve) =>
+	{
 		void resolve;
 	});
 
-async function renderDetected(blueprint: BlueprintString) {
+async function renderDetected(blueprint: BlueprintString)
+{
 	const rendered = render(<ModDetectionPanel blueprint={blueprint} detect={detect} />);
 	await screen.findByText('Blueprint requirements');
 	return rendered;
 }
 
-describe('ModDetectionPanel', () => {
-	it('renders display panels with unconditional icons', async () => {
-		const blueprint: BlueprintString = {
-			blueprint: {
+describe('ModDetectionPanel', () =>
+{
+	it('renders display panels with unconditional icons', async () =>
+	{
+		const blueprint: BlueprintString =
+		{
+			blueprint:
+			{
 				item: 'blueprint',
 				version: 562949953421312,
 				entities: [
 					{
 						entity_number: 1,
 						name: 'display-panel',
-						position: {x: 0, y: 0},
-						control_behavior: {parameters: [{icon: {name: 'automation-science-pack'}}]},
+						position:
+						{
+							x: 0,
+							y: 0,
+						},
+						control_behavior:
+						{
+							parameters: [
+								{
+									icon:
+									{
+										name: 'automation-science-pack',
+									},
+								},
+							],
+						},
 					},
 				],
 			},
@@ -78,38 +133,72 @@ describe('ModDetectionPanel', () => {
 		);
 	});
 
-	it('shows a loading row while detection is running', () => {
+	it('shows a loading row while detection is running', () =>
+	{
 		const {container} = render(<ModDetectionPanel blueprint={vanillaBlueprint} detect={neverDetects} />);
 
 		expect(container.textContent).toBe('Mod DetectionChecking mod requirements…');
 	});
 
-	it('shows the loading row instead of a stale result when the blueprint changes', async () => {
+	it('shows the loading row instead of a stale result when the blueprint changes', async () =>
+	{
 		const {container, rerender} = await renderDetected(vanillaBlueprint);
 		const before = container.textContent;
 
-		rerender(<ModDetectionPanel blueprint={{...vanillaBlueprint}} detect={neverDetects} />);
+		rerender(
+			<ModDetectionPanel
+				blueprint={
+				{
+					...vanillaBlueprint,
+				}}
+				detect={neverDetects}
+			/>,
+		);
 
-		expect({before, after: container.textContent}).toStrictEqual({
-			before: 'Mod DetectionBlueprint requirementsVanilla 2.0Factorio 2.0high confidence1 matching nametransport-belt',
-			after: 'Mod DetectionChecking mod requirements…',
-		});
+		expect(
+			{
+				before,
+				after: container.textContent,
+			},
+		).toStrictEqual(
+			{
+				before: 'Mod DetectionBlueprint requirementsVanilla 2.0Factorio 2.0high confidence1 matching nametransport-belt',
+				after: 'Mod DetectionChecking mod requirements…',
+			},
+		);
 	});
 
-	it('renders nothing when detection fails', async () => {
+	it('renders nothing when detection fails', async () =>
+	{
 		const failing: BlueprintJobRunner<DetectionResult> = async () => Promise.reject(new Error('boom'));
 		const {container} = render(<ModDetectionPanel blueprint={vanillaBlueprint} detect={failing} />);
 
-		await waitFor(() => {
+		await waitFor(() =>
+		{
 			expect(container.textContent).toBe('');
 		});
 	});
 
-	it('renders a blueprint with a schedule stop that omits wait conditions', async () => {
-		const blueprint: BlueprintString = {
-			blueprint: {
+	it('renders a blueprint with a schedule stop that omits wait conditions', async () =>
+	{
+		const blueprint: BlueprintString =
+		{
+			blueprint:
+			{
 				...vanillaBlueprint.blueprint!,
-				schedules: [{locomotives: [1], schedule: {records: [{station: 'Example station'}]}}],
+				schedules: [
+					{
+						locomotives: [1],
+						schedule:
+						{
+							records: [
+								{
+									station: 'Example station',
+								},
+							],
+						},
+					},
+				],
 			},
 		};
 		const {container} = await renderDetected(blueprint);
@@ -119,18 +208,33 @@ describe('ModDetectionPanel', () => {
 		);
 	});
 
-	it('summarizes the verdict and lists source evidence', async () => {
-		const blueprint: BlueprintString = {
-			blueprint: {
+	it('summarizes the verdict and lists source evidence', async () =>
+	{
+		const blueprint: BlueprintString =
+		{
+			blueprint:
+			{
 				item: 'blueprint',
 				version: 562949954076673,
 				entities: [
-					{entity_number: 1, name: 'foundry', position: {x: 0, y: 0}},
+					{
+						entity_number: 1,
+						name: 'foundry',
+						position:
+						{
+							x: 0,
+							y: 0,
+						},
+					},
 					{
 						entity_number: 2,
 						name: 'quality-module-3',
 						quality: 'legendary',
-						position: {x: 2, y: 0},
+						position:
+						{
+							x: 2,
+							y: 0,
+						},
 					},
 				],
 			},
@@ -139,56 +243,112 @@ describe('ModDetectionPanel', () => {
 
 		expect(screen.getByText('Requires Space Age + Quality')).toBeInTheDocument();
 		expect(
-			screen.getAllByRole('group').map((group) => ({
+			screen.getAllByRole('group').map((group) => (
+			{
 				summary: group.querySelector('summary')?.textContent,
 				names: within(group)
 					.getAllByRole('listitem')
 					.map((item) => item.textContent),
 			})),
 		).toStrictEqual([
-			{summary: 'Space Agemedium confidence1 matching name', names: ['foundry']},
-			{summary: 'Qualityhigh confidence1 matching name', names: ['quality-module-3']},
+			{
+				summary: 'Space Agemedium confidence1 matching name',
+				names: ['foundry'],
+			},
+			{
+				summary: 'Qualityhigh confidence1 matching name',
+				names: ['quality-module-3'],
+			},
 		]);
 	});
 
-	it('identifies base and Space Age map editor entities separately from vanilla', async () => {
-		const blueprint: BlueprintString = {
-			blueprint: {
+	it('identifies base and Space Age map editor entities separately from vanilla', async () =>
+	{
+		const blueprint: BlueprintString =
+		{
+			blueprint:
+			{
 				item: 'blueprint',
 				version: 562949954076673,
 				entities: [
-					{entity_number: 100, name: 'infinity-chest', position: {x: 0, y: 0}},
-					{entity_number: 200, name: 'turbo-loader', position: {x: 2, y: 0}},
+					{
+						entity_number: 100,
+						name: 'infinity-chest',
+						position:
+						{
+							x: 0,
+							y: 0,
+						},
+					},
+					{
+						entity_number: 200,
+						name: 'turbo-loader',
+						position:
+						{
+							x: 2,
+							y: 0,
+						},
+					},
 				],
 			},
 		};
 		await renderDetected(blueprint);
 
-		expect({
-			headline: screen.getByText('Contains base + Space Age map editor entities').textContent,
-			sources: screen.getAllByRole('group').map((group) => ({
-				summary: group.querySelector('summary')?.textContent,
-				names: within(group)
-					.getAllByRole('listitem')
-					.map((item) => item.textContent),
-			})),
-		}).toStrictEqual({
-			headline: 'Contains base + Space Age map editor entities',
-			sources: [
-				{summary: 'Map editorEditorhigh confidence1 matching name', names: ['infinity-chest']},
-				{summary: 'Space Age map editorEditorhigh confidence1 matching name', names: ['turbo-loader']},
-			],
-		});
+		expect(
+			{
+				headline: screen.getByText('Contains base + Space Age map editor entities').textContent,
+				sources: screen.getAllByRole('group').map((group) => (
+				{
+					summary: group.querySelector('summary')?.textContent,
+					names: within(group)
+						.getAllByRole('listitem')
+						.map((item) => item.textContent),
+				})),
+			},
+		).toStrictEqual(
+			{
+				headline: 'Contains base + Space Age map editor entities',
+				sources: [
+					{
+						summary: 'Map editorEditorhigh confidence1 matching name',
+						names: ['infinity-chest'],
+					},
+					{
+						summary: 'Space Age map editorEditorhigh confidence1 matching name',
+						names: ['turbo-loader'],
+					},
+				],
+			},
+		);
 	});
 
-	it('lists unknown names and their prefix hints', async () => {
-		const blueprint: BlueprintString = {
-			blueprint: {
+	it('lists unknown names and their prefix hints', async () =>
+	{
+		const blueprint: BlueprintString =
+		{
+			blueprint:
+			{
 				item: 'blueprint',
 				version: 562949954076673,
 				entities: [
-					{entity_number: 1, name: 'invented-assembler', position: {x: 0, y: 0}},
-					{entity_number: 2, name: 'se-imaginary-beacon', position: {x: 2, y: 0}},
+					{
+						entity_number: 1,
+						name: 'invented-assembler',
+						position:
+						{
+							x: 0,
+							y: 0,
+						},
+					},
+					{
+						entity_number: 2,
+						name: 'se-imaginary-beacon',
+						position:
+						{
+							x: 2,
+							y: 0,
+						},
+					},
 				],
 			},
 		};
@@ -200,7 +360,8 @@ describe('ModDetectionPanel', () => {
 			).textContent,
 		).toBe('Requires Space Exploration — low confidence, 1 matching name · Likely modded — 2 unknown names');
 		expect(
-			screen.getAllByRole('group').map((group) => ({
+			screen.getAllByRole('group').map((group) => (
+			{
 				summary: group.querySelector('summary')?.textContent,
 				names: within(group)
 					.getAllByRole('listitem')

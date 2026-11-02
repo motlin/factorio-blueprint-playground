@@ -3,13 +3,15 @@ import {HistoryBlueprintRow} from '../../HistoryBlueprintRow';
 
 import {TableHeader} from './TableHeader';
 
-interface BlueprintHistoryTableProps {
+interface BlueprintHistoryTableProps
+{
 	blueprints: DatabaseBlueprint[];
 	selectedItems: Set<string>;
 	toggleSelection: (sha: string) => void;
 }
 
-export function BlueprintHistoryTable({blueprints, selectedItems, toggleSelection}: BlueprintHistoryTableProps) {
+export function BlueprintHistoryTable({blueprints, selectedItems, toggleSelection}: BlueprintHistoryTableProps)
+{
 	return (
 		<div className="history-grid">
 			<TableHeader label="" />
@@ -21,7 +23,8 @@ export function BlueprintHistoryTable({blueprints, selectedItems, toggleSelectio
 			<TableHeader label="Updated" />
 			<TableHeader label="Actions" />
 
-			{blueprints.map((blueprint: DatabaseBlueprint) => {
+			{blueprints.map((blueprint: DatabaseBlueprint) =>
+			{
 				const isSelected = selectedItems.has(blueprint.metadata.sha);
 				return (
 					<HistoryBlueprintRow

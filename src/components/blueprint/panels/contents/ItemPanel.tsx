@@ -9,23 +9,45 @@ import {TextCell} from '../../spreadsheet/TextCell';
 
 import {mapToSortedArray} from './countUtils';
 
-interface ItemPanelProps {
+interface ItemPanelProps
+{
 	title: string;
 	items: Map<string, number>;
 	type: SignalType;
 }
 
-const ItemPanelComponent = ({title, items, type}: ItemPanelProps) => {
+const ItemPanelComponent = ({title, items, type}: ItemPanelProps) =>
+{
 	if (!items.size) return null;
 
-	const sortedItems: {name: string; quality: Quality; count: number}[] = mapToSortedArray(items);
+	const sortedItems:
+	{
+		name: string;
+		quality: Quality;
+		count: number;
+	}[] = mapToSortedArray(items);
 
 	return (
 		<Panel title={title}>
 			<Spreadsheet>
 				{sortedItems.map(({name, quality, count}) => (
-					<Row key={JSON.stringify({type, name, quality})}>
-						<IconCell icon={{type, name, quality}} />
+					<Row
+						key={JSON.stringify(
+							{
+								type,
+								name,
+								quality,
+							},
+						)}
+					>
+						<IconCell
+							icon={
+							{
+								type,
+								name,
+								quality,
+							}}
+						/>
 						<TextCell grow>{name}</TextCell>
 						<TextCell width="80px" align="right" grow={false}>
 							{count}

@@ -1,11 +1,13 @@
-export const POWER_POLE_SUPPLY_HALF_WIDTH = {
+export const POWER_POLE_SUPPLY_HALF_WIDTH =
+{
 	'big-electric-pole': 2,
 	'medium-electric-pole': 3.5,
 	'small-electric-pole': 2.5,
 	substation: 9,
 } as const satisfies Record<string, number>;
 
-export const POWERED_ENTITY_NAMES = {
+export const POWERED_ENTITY_NAMES =
+{
 	accumulator: true,
 	'agricultural-tower': true,
 	'arithmetic-combinator': true,

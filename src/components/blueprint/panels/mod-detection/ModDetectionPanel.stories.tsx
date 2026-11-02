@@ -5,20 +5,45 @@ import type {DetectionResult, ModDatabase} from '../../../../parsing/modDetectio
 import {type BlueprintJobRunner, inlineRunner} from '../../../../workers/blueprintJobRunner';
 import {ModDetectionPanel} from './ModDetectionPanel';
 
-const database: ModDatabase = {
+const database: ModDatabase =
+{
 	generatedAt: '2000-01-01',
 	factoriolabCommit: '0000000000000000000000000000000000000000',
 	factorioDataVersion: '0.0.0',
 	license: 'Story data',
 	sources: [
-		{id: 'base', label: 'Factorio 2.0'},
-		{id: 'space-age', label: 'Space Age', dlc: true},
-		{id: 'quality', label: 'Quality', dlc: true},
-		{id: 'map-editor', label: 'Map editor', editor: true},
-		{id: 'space-age-map-editor', label: 'Space Age map editor', dlc: true, editor: true},
-		{id: 'kr2', label: 'Krastorio 2'},
+		{
+			id: 'base',
+			label: 'Factorio 2.0',
+		},
+		{
+			id: 'space-age',
+			label: 'Space Age',
+			dlc: true,
+		},
+		{
+			id: 'quality',
+			label: 'Quality',
+			dlc: true,
+		},
+		{
+			id: 'map-editor',
+			label: 'Map editor',
+			editor: true,
+		},
+		{
+			id: 'space-age-map-editor',
+			label: 'Space Age map editor',
+			dlc: true,
+			editor: true,
+		},
+		{
+			id: 'kr2',
+			label: 'Krastorio 2',
+		},
 	],
-	names: {
+	names:
+	{
 		'transport-belt': 1,
 		foundry: 2,
 		'quality-module-3': 4,
@@ -28,7 +53,8 @@ const database: ModDatabase = {
 		'kr-imersite-crystal': 32,
 		'kr-singularity-beacon': 32,
 	},
-	prefixes: {
+	prefixes:
+	{
 		'kr-': 'Krastorio 2',
 		'se-': 'Space Exploration',
 	},
@@ -37,21 +63,32 @@ const database: ModDatabase = {
 const detect = inlineRunner((blueprint) => detectMods(blueprint, database));
 
 const neverDetects: BlueprintJobRunner<DetectionResult> = async () =>
-	new Promise<DetectionResult>((resolve) => {
+	new Promise<DetectionResult>((resolve) =>
+	{
 		void resolve;
 	});
 
-const meta: Meta<typeof ModDetectionPanel> = {
+const meta: Meta<typeof ModDetectionPanel> =
+{
 	title: 'Blueprint/Panels/Mod Detection/ModDetectionPanel',
 	component: ModDetectionPanel,
-	parameters: {
+	parameters:
+	{
 		layout: 'centered',
 	},
 	tags: ['autodocs'],
-	args: {detect},
+	args:
+	{
+		detect,
+	},
 	decorators: [
 		(StoryComponent) => (
-			<div style={{minWidth: '500px'}}>
+			<div
+				style={
+				{
+					minWidth: '500px',
+				}}
+			>
 				<StoryComponent />
 			</div>
 		),
@@ -61,10 +98,14 @@ const meta: Meta<typeof ModDetectionPanel> = {
 export default meta;
 type Story = StoryObj<typeof ModDetectionPanel>;
 
-export const Loading: Story = {
-	args: {
-		blueprint: {
-			blueprint: {
+export const Loading: Story =
+{
+	args:
+	{
+		blueprint:
+		{
+			blueprint:
+			{
 				item: 'blueprint',
 				version: 562949954076673,
 			},
@@ -73,31 +114,25 @@ export const Loading: Story = {
 	},
 };
 
-export const Vanilla: Story = {
-	args: {
-		blueprint: {
-			blueprint: {
-				item: 'blueprint',
-				version: 562949954076673,
-				entities: [{entity_number: 1, name: 'transport-belt', position: {x: 0, y: 0}}],
-			},
-		},
-	},
-};
-
-export const SpaceAge: Story = {
-	args: {
-		blueprint: {
-			blueprint: {
+export const Vanilla: Story =
+{
+	args:
+	{
+		blueprint:
+		{
+			blueprint:
+			{
 				item: 'blueprint',
 				version: 562949954076673,
 				entities: [
-					{entity_number: 1, name: 'foundry', position: {x: 0, y: 0}},
 					{
-						entity_number: 2,
-						name: 'quality-module-3',
-						quality: 'legendary',
-						position: {x: 2, y: 0},
+						entity_number: 1,
+						name: 'transport-belt',
+						position:
+						{
+							x: 0,
+							y: 0,
+						},
 					},
 				],
 			},
@@ -105,46 +140,150 @@ export const SpaceAge: Story = {
 	},
 };
 
-export const Modded: Story = {
-	args: {
-		blueprint: {
-			blueprint: {
+export const SpaceAge: Story =
+{
+	args:
+	{
+		blueprint:
+		{
+			blueprint:
+			{
 				item: 'blueprint',
 				version: 562949954076673,
 				entities: [
-					{entity_number: 1, name: 'kr-advanced-assembler', position: {x: 0, y: 0}},
-					{entity_number: 2, name: 'kr-imersite-crystal', position: {x: 2, y: 0}},
-					{entity_number: 3, name: 'kr-singularity-beacon', position: {x: 4, y: 0}},
+					{
+						entity_number: 1,
+						name: 'foundry',
+						position:
+						{
+							x: 0,
+							y: 0,
+						},
+					},
+					{
+						entity_number: 2,
+						name: 'quality-module-3',
+						quality: 'legendary',
+						position:
+						{
+							x: 2,
+							y: 0,
+						},
+					},
 				],
 			},
 		},
 	},
 };
 
-export const MapEditor: Story = {
-	args: {
-		blueprint: {
-			blueprint: {
+export const Modded: Story =
+{
+	args:
+	{
+		blueprint:
+		{
+			blueprint:
+			{
 				item: 'blueprint',
 				version: 562949954076673,
 				entities: [
-					{entity_number: 1, name: 'infinity-chest', position: {x: 0, y: 0}},
-					{entity_number: 2, name: 'turbo-loader', position: {x: 2, y: 0}},
+					{
+						entity_number: 1,
+						name: 'kr-advanced-assembler',
+						position:
+						{
+							x: 0,
+							y: 0,
+						},
+					},
+					{
+						entity_number: 2,
+						name: 'kr-imersite-crystal',
+						position:
+						{
+							x: 2,
+							y: 0,
+						},
+					},
+					{
+						entity_number: 3,
+						name: 'kr-singularity-beacon',
+						position:
+						{
+							x: 4,
+							y: 0,
+						},
+					},
 				],
 			},
 		},
 	},
 };
 
-export const Unknowns: Story = {
-	args: {
-		blueprint: {
-			blueprint: {
+export const MapEditor: Story =
+{
+	args:
+	{
+		blueprint:
+		{
+			blueprint:
+			{
 				item: 'blueprint',
 				version: 562949954076673,
 				entities: [
-					{entity_number: 1, name: 'invented-assembler', position: {x: 0, y: 0}},
-					{entity_number: 2, name: 'se-imaginary-beacon', position: {x: 2, y: 0}},
+					{
+						entity_number: 1,
+						name: 'infinity-chest',
+						position:
+						{
+							x: 0,
+							y: 0,
+						},
+					},
+					{
+						entity_number: 2,
+						name: 'turbo-loader',
+						position:
+						{
+							x: 2,
+							y: 0,
+						},
+					},
+				],
+			},
+		},
+	},
+};
+
+export const Unknowns: Story =
+{
+	args:
+	{
+		blueprint:
+		{
+			blueprint:
+			{
+				item: 'blueprint',
+				version: 562949954076673,
+				entities: [
+					{
+						entity_number: 1,
+						name: 'invented-assembler',
+						position:
+						{
+							x: 0,
+							y: 0,
+						},
+					},
+					{
+						entity_number: 2,
+						name: 'se-imaginary-beacon',
+						position:
+						{
+							x: 2,
+							y: 0,
+						},
+					},
 				],
 			},
 		},

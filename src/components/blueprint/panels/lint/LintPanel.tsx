@@ -12,28 +12,39 @@ import {Panel} from '../../../ui/Panel';
 
 import styles from './LintPanel.module.css';
 
-interface LintPanelProps {
+interface LintPanelProps
+{
 	blueprint: BlueprintString;
 	selectedPath?: string;
 	onSelect?: (path: string) => void;
 }
 
-const SEVERITY_ORDER: Record<LintSeverity, number> = {error: 0, warning: 1, info: 2, good: 3};
+const SEVERITY_ORDER: Record<LintSeverity, number> =
+{
+	error: 0,
+	warning: 1,
+	info: 2,
+	good: 3,
+};
 
 // Megabase blueprints can produce over 100,000 findings; rendering them all hangs the page.
 const MAXIMUM_LISTED_FINDINGS = 100;
 
-function firstEntityNumber(finding: LintFinding): number {
+function firstEntityNumber(finding: LintFinding): number
+{
 	return finding.entityNumbers[0] ?? Number.MAX_SAFE_INTEGER;
 }
 
 // Keeps each blueprint's findings together, in book order, with the most severe first.
-function sortFindings(findings: LocatedLintFinding[]): LocatedLintFinding[] {
+function sortFindings(findings: LocatedLintFinding[]): LocatedLintFinding[]
+{
 	const pathOrder = new Map<string, number>();
-	for (const finding of findings) {
+	for (const finding of findings)
+	{
 		if (!pathOrder.has(finding.path)) pathOrder.set(finding.path, pathOrder.size);
 	}
-	return [...findings].sort((first, second) => {
+	return [...findings].sort((first, second) =>
+	{
 		const pathDifference = (pathOrder.get(first.path) ?? 0) - (pathOrder.get(second.path) ?? 0);
 		if (pathDifference !== 0) return pathDifference;
 		const severityDifference = SEVERITY_ORDER[first.severity] - SEVERITY_ORDER[second.severity];
@@ -44,43 +55,65 @@ function sortFindings(findings: LocatedLintFinding[]): LocatedLintFinding[] {
 	});
 }
 
-function severityCounts(findings: LintFinding[]): {severity: LintSeverity; count: number}[] {
-	return (['error', 'warning', 'info', 'good'] as const).flatMap((severity) => {
+function severityCounts(findings: LintFinding[]):
+{
+	severity: LintSeverity;
+	count: number;
+}[]
+{
+	return (['error', 'warning', 'info', 'good'] as const).flatMap((severity) =>
+	{
 		const count = findings.filter((finding) => finding.severity === severity).length;
-		return count === 0 ? [] : [{severity, count}];
+		return count === 0
+			? []
+			: [
+					{
+						severity,
+						count,
+					},
+				];
 	});
 }
 
-function countLabel(severity: LintSeverity, count: number): string {
+function countLabel(severity: LintSeverity, count: number): string
+{
 	if (severity === 'info' || severity === 'good') return `${count} ${severity}`;
 	return `${count} ${severity}${count === 1 ? '' : 's'}`;
 }
 
-function entityPosition(entity: LocatedLintFinding['entity']): string | undefined {
+function entityPosition(entity: LocatedLintFinding['entity']): string | undefined
+{
 	return entity ? `(${entity.position.x}, ${entity.position.y})` : undefined;
 }
 
-function groupByPath(findings: LocatedLintFinding[]): LocatedLintFinding[][] {
+function groupByPath(findings: LocatedLintFinding[]): LocatedLintFinding[][]
+{
 	const groups: LocatedLintFinding[][] = [];
-	for (const finding of findings) {
+	for (const finding of findings)
+	{
 		const group = groups.at(-1);
-		if (group?.[0]?.path === finding.path) {
+		if (group?.[0]?.path === finding.path)
+		{
 			group.push(finding);
-		} else {
+		}
+		else
+		{
 			groups.push([finding]);
 		}
 	}
 	return groups;
 }
 
-function absolutePath(selectedPath: string | undefined, path: string): string {
+function absolutePath(selectedPath: string | undefined, path: string): string
+{
 	return selectedPath === undefined || selectedPath === '' ? path : `${selectedPath}.${path}`;
 }
 
 const runSortedLint: BlueprintJobRunner<LocatedLintFinding[]> = async (blueprint, signal) =>
 	sortFindings(await runLint(blueprint, signal));
 
-function FindingRow({finding}: {finding: LocatedLintFinding}) {
+function FindingRow({finding}: {finding: LocatedLintFinding})
+{
 	const position = entityPosition(finding.entity);
 	return (
 		<li className={styles.finding}>
@@ -92,7 +125,12 @@ function FindingRow({finding}: {finding: LocatedLintFinding}) {
 					size="small"
 					icon={
 						finding.entity
-							? {type: 'entity', name: finding.entity.name, quality: finding.entity.quality}
+							?
+								{
+									type: 'entity',
+									name: finding.entity.name,
+									quality: finding.entity.quality,
+								}
 							: undefined
 					}
 				/>
@@ -103,14 +141,16 @@ function FindingRow({finding}: {finding: LocatedLintFinding}) {
 	);
 }
 
-const LintPanelComponent = ({blueprint, selectedPath, onSelect}: LintPanelProps) => {
+const LintPanelComponent = ({blueprint, selectedPath, onSelect}: LintPanelProps) =>
+{
 	const result = useBlueprintJob(
 		blueprint.blueprint || blueprint.blueprint_book ? blueprint : undefined,
 		runSortedLint,
 	);
 
 	if (!blueprint.blueprint && !blueprint.blueprint_book) return null;
-	if (result === undefined) {
+	if (result === undefined)
+	{
 		return (
 			<Panel title="Lint">
 				<p data-testid="lint-checking" className={styles.note}>
@@ -119,7 +159,8 @@ const LintPanelComponent = ({blueprint, selectedPath, onSelect}: LintPanelProps)
 			</Panel>
 		);
 	}
-	if ('error' in result) {
+	if ('error' in result)
+	{
 		return (
 			<Panel title="Lint">
 				<p role="alert" className={styles.note}>
@@ -141,7 +182,8 @@ const LintPanelComponent = ({blueprint, selectedPath, onSelect}: LintPanelProps)
 					</span>
 				))}
 			</div>
-			{groupByPath(findings.slice(0, MAXIMUM_LISTED_FINDINGS)).map((group) => {
+			{groupByPath(findings.slice(0, MAXIMUM_LISTED_FINDINGS)).map((group) =>
+			{
 				const {path, blueprintLabel} = group[0];
 				const target = absolutePath(selectedPath, path);
 				return (

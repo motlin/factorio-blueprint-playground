@@ -2,16 +2,24 @@ import type {Meta, StoryObj} from '@storybook/react-vite';
 
 import {IconCell} from './IconCell';
 
-const meta: Meta<typeof IconCell> = {
+const meta: Meta<typeof IconCell> =
+{
 	title: 'Blueprint/Spreadsheet/IconCell',
 	component: IconCell,
-	parameters: {
+	parameters:
+	{
 		layout: 'centered',
 	},
 	tags: ['autodocs'],
 	decorators: [
 		(StoryComponent) => (
-			<div className="spreadsheet-container" style={{minWidth: '200px'}}>
+			<div
+				className="spreadsheet-container"
+				style={
+				{
+					minWidth: '200px',
+				}}
+			>
 				<StoryComponent />
 			</div>
 		),
@@ -21,18 +29,24 @@ const meta: Meta<typeof IconCell> = {
 export default meta;
 type Story = StoryObj<typeof IconCell>;
 
-export const ItemIcon: Story = {
-	args: {
-		icon: {
+export const ItemIcon: Story =
+{
+	args:
+	{
+		icon:
+		{
 			type: 'item',
 			name: 'iron-plate',
 		},
 	},
 };
 
-export const ItemIconWithLabel: Story = {
-	args: {
-		icon: {
+export const ItemIconWithLabel: Story =
+{
+	args:
+	{
+		icon:
+		{
 			type: 'item',
 			name: 'copper-plate',
 		},
@@ -40,9 +54,12 @@ export const ItemIconWithLabel: Story = {
 	},
 };
 
-export const FluidIcon: Story = {
-	args: {
-		icon: {
+export const FluidIcon: Story =
+{
+	args:
+	{
+		icon:
+		{
 			type: 'fluid',
 			name: 'water',
 		},
@@ -50,9 +67,12 @@ export const FluidIcon: Story = {
 	},
 };
 
-export const EntityIcon: Story = {
-	args: {
-		icon: {
+export const EntityIcon: Story =
+{
+	args:
+	{
+		icon:
+		{
 			type: 'entity',
 			name: 'assembling-machine-3',
 		},
@@ -60,9 +80,12 @@ export const EntityIcon: Story = {
 	},
 };
 
-export const VirtualSignalIcon: Story = {
-	args: {
-		icon: {
+export const VirtualSignalIcon: Story =
+{
+	args:
+	{
+		icon:
+		{
 			type: 'virtual-signal',
 			name: 'signal-A',
 		},
@@ -70,9 +93,12 @@ export const VirtualSignalIcon: Story = {
 	},
 };
 
-export const WithQuality: Story = {
-	args: {
-		icon: {
+export const WithQuality: Story =
+{
+	args:
+	{
+		icon:
+		{
 			type: 'item',
 			name: 'iron-plate',
 			quality: 'legendary',

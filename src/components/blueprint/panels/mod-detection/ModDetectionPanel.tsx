@@ -10,27 +10,33 @@ import {Panel} from '../../../ui/Panel';
 const DLC_SOURCE_IDS = new Set(['space-age', 'quality', 'elevated-rails']);
 const EDITOR_SOURCE_IDS = new Set(['map-editor', 'space-age-map-editor']);
 
-interface ModDetectionPanelProps {
+interface ModDetectionPanelProps
+{
 	blueprint?: BlueprintString;
 	// Tests and stories swap in a runner with their own database.
 	detect?: BlueprintJobRunner<DetectionResult>;
 }
 
-function pluralized(count: number, singular: string, plural = `${singular}s`): string {
+function pluralized(count: number, singular: string, plural = `${singular}s`): string
+{
 	return `${count} ${count === 1 ? singular : plural}`;
 }
 
-function overallConfidence(verdicts: Verdict[]): Confidence {
-	if (verdicts.some((verdict) => verdict.confidence === 'low')) {
+function overallConfidence(verdicts: Verdict[]): Confidence
+{
+	if (verdicts.some((verdict) => verdict.confidence === 'low'))
+	{
 		return 'low';
 	}
-	if (verdicts.some((verdict) => verdict.confidence === 'medium')) {
+	if (verdicts.some((verdict) => verdict.confidence === 'medium'))
+	{
 		return 'medium';
 	}
 	return 'high';
 }
 
-function verdictSummary(result: DetectionResult): string {
+function verdictSummary(result: DetectionResult): string
+{
 	const requiredVerdicts = result.verdicts.filter(
 		(verdict) =>
 			verdict.source !== 'base' && verdict.source !== 'base-1.1' && !EDITOR_SOURCE_IDS.has(verdict.source),
@@ -38,11 +44,15 @@ function verdictSummary(result: DetectionResult): string {
 	const editorVerdicts = result.verdicts.filter((verdict) => EDITOR_SOURCE_IDS.has(verdict.source));
 	const parts: string[] = [];
 
-	if (requiredVerdicts.length > 0) {
+	if (requiredVerdicts.length > 0)
+	{
 		const labels = requiredVerdicts.map((verdict) => verdict.label).join(' + ');
-		if (requiredVerdicts.every((verdict) => DLC_SOURCE_IDS.has(verdict.source))) {
+		if (requiredVerdicts.every((verdict) => DLC_SOURCE_IDS.has(verdict.source)))
+		{
 			parts.push(`Requires ${labels}`);
-		} else {
+		}
+		else
+		{
 			const matchCount = requiredVerdicts.reduce((total, verdict) => total + verdict.matchCount, 0);
 			parts.push(
 				`Requires ${labels} — ${overallConfidence(requiredVerdicts)} confidence, ${pluralized(matchCount, 'matching name')}`,
@@ -50,30 +60,39 @@ function verdictSummary(result: DetectionResult): string {
 		}
 	}
 
-	if (editorVerdicts.length > 0) {
+	if (editorVerdicts.length > 0)
+	{
 		const hasBaseEditor = editorVerdicts.some((verdict) => verdict.source === 'map-editor');
 		const hasSpaceAgeEditor = editorVerdicts.some((verdict) => verdict.source === 'space-age-map-editor');
-		if (hasBaseEditor && hasSpaceAgeEditor) {
+		if (hasBaseEditor && hasSpaceAgeEditor)
+		{
 			parts.push('Contains base + Space Age map editor entities');
-		} else if (hasSpaceAgeEditor) {
+		}
+		else if (hasSpaceAgeEditor)
+		{
 			parts.push('Contains Space Age map editor entities');
-		} else {
+		}
+		else
+		{
 			parts.push('Contains map editor entities');
 		}
 	}
 
-	if (result.unknownNames.length > 0) {
+	if (result.unknownNames.length > 0)
+	{
 		parts.push(`Likely modded — ${pluralized(result.unknownNames.length, 'unknown name')}`);
 	}
 
-	if (parts.length > 0) {
+	if (parts.length > 0)
+	{
 		return parts.join(' · ');
 	}
 
 	return result.verdicts.some((verdict) => verdict.source === 'base-1.1') ? 'Vanilla 1.1' : 'Vanilla 2.0';
 }
 
-function VerdictBreakdown({verdict}: {verdict: Verdict}) {
+function VerdictBreakdown({verdict}: {verdict: Verdict})
+{
 	const isEditor = EDITOR_SOURCE_IDS.has(verdict.source);
 	return (
 		<details className="mod-detection__source">
@@ -97,7 +116,8 @@ function VerdictBreakdown({verdict}: {verdict: Verdict}) {
 	);
 }
 
-function DetectionDetails({result}: {result: DetectionResult}) {
+function DetectionDetails({result}: {result: DetectionResult})
+{
 	const hasRequirements = result.verdicts.some(
 		(verdict) => verdict.source !== 'base' && verdict.source !== 'base-1.1',
 	);
@@ -154,13 +174,16 @@ function DetectionDetails({result}: {result: DetectionResult}) {
 	);
 }
 
-const ModDetectionPanelComponent = ({blueprint, detect = runModDetection}: ModDetectionPanelProps) => {
+const ModDetectionPanelComponent = ({blueprint, detect = runModDetection}: ModDetectionPanelProps) =>
+{
 	const detection = useBlueprintJob(blueprint, detect);
 
-	if (blueprint === undefined || (detection !== undefined && 'error' in detection)) {
+	if (blueprint === undefined || (detection !== undefined && 'error' in detection))
+	{
 		return null;
 	}
-	if (detection === undefined) {
+	if (detection === undefined)
+	{
 		return (
 			<Panel title="Mod Detection">
 				<div className="panel-hole mod-detection">

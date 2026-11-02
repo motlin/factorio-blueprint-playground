@@ -2,35 +2,47 @@ import type {Meta, StoryObj} from '@storybook/react-vite';
 
 import {Version} from './Version';
 
-const meta: Meta<typeof Version> = {
+const meta: Meta<typeof Version> =
+{
 	title: 'Core/Version',
 	component: Version,
-	parameters: {
+	parameters:
+	{
 		layout: 'centered',
 	},
 	tags: ['autodocs'],
-	argTypes: {
-		number: {control: 'number'},
+	argTypes:
+	{
+		number:
+		{
+			control: 'number',
+		},
 	},
 };
 
 export default meta;
 type Story = StoryObj<typeof Version>;
 
-export const Factorio1_1: Story = {
-	args: {
+export const Factorio1_1: Story =
+{
+	args:
+	{
 		number: 281479275741184,
 	},
 };
 
-export const Factorio2_0: Story = {
-	args: {
+export const Factorio2_0: Story =
+{
+	args:
+	{
 		number: 562949954076672,
 	},
 };
 
-export const Factorio2_1: Story = {
-	args: {
+export const Factorio2_1: Story =
+{
+	args:
+	{
 		number: 562954248388608,
 	},
 };

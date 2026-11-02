@@ -2,16 +2,23 @@ import type {Meta, StoryObj} from '@storybook/react-vite';
 
 import {ParametersList} from './ParametersList';
 
-const meta: Meta<typeof ParametersList> = {
+const meta: Meta<typeof ParametersList> =
+{
 	title: 'Blueprint/Panels/Parameters/ParametersList',
 	component: ParametersList,
-	parameters: {
+	parameters:
+	{
 		layout: 'centered',
 	},
 	tags: ['autodocs'],
 	decorators: [
 		(StoryComponent) => (
-			<div style={{minWidth: '800px'}}>
+			<div
+				style={
+				{
+					minWidth: '800px',
+				}}
+			>
 				<StoryComponent />
 			</div>
 		),
@@ -21,8 +28,10 @@ const meta: Meta<typeof ParametersList> = {
 export default meta;
 type Story = StoryObj<typeof ParametersList>;
 
-export const SingleParameter: Story = {
-	args: {
+export const SingleParameter: Story =
+{
+	args:
+	{
 		parameters: [
 			{
 				type: 'number',
@@ -33,8 +42,10 @@ export const SingleParameter: Story = {
 	},
 };
 
-export const MultipleParameters: Story = {
-	args: {
+export const MultipleParameters: Story =
+{
+	args:
+	{
 		parameters: [
 			{
 				type: 'number',
@@ -57,8 +68,10 @@ export const MultipleParameters: Story = {
 	},
 };
 
-export const MixedParameters: Story = {
-	args: {
+export const MixedParameters: Story =
+{
+	args:
+	{
 		parameters: [
 			{
 				type: 'id',
@@ -80,8 +93,10 @@ export const MixedParameters: Story = {
 	},
 };
 
-export const EmptyList: Story = {
-	args: {
+export const EmptyList: Story =
+{
+	args:
+	{
 		parameters: [],
 	},
 };

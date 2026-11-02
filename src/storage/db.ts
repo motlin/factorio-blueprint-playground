@@ -4,13 +4,15 @@ import {parseVersion3} from '../parsing/blueprintParser.ts';
 
 export type DatabaseBlueprintType = 'blueprint' | 'blueprint_book' | 'upgrade_planner' | 'deconstruction_planner';
 
-export interface DatabaseBlueprintIcon {
+export interface DatabaseBlueprintIcon
+{
 	// Defaults to 'item' if not specified
 	type?: string;
 	name: string;
 }
 
-export interface BlueprintGameData {
+export interface BlueprintGameData
+{
 	type: DatabaseBlueprintType;
 	label?: string;
 	description?: string;
@@ -19,7 +21,8 @@ export interface BlueprintGameData {
 	icons: DatabaseBlueprintIcon[];
 }
 
-export interface BlueprintStorageMetadata {
+export interface BlueprintStorageMetadata
+{
 	// SHA-256 hash of the data string (used as primary key)
 	sha: string;
 	createdOn: number;
@@ -31,12 +34,14 @@ export interface BlueprintStorageMetadata {
 	fetchMethod?: 'url' | 'json' | 'data';
 }
 
-export interface DatabaseBlueprint {
+export interface DatabaseBlueprint
+{
 	metadata: BlueprintStorageMetadata;
 	gameData: BlueprintGameData;
 }
 
-export async function generateSha(data: string): Promise<string> {
+export async function generateSha(data: string): Promise<string>
+{
 	const encoder = new TextEncoder();
 	const dataBuffer = encoder.encode(data);
 
@@ -47,17 +52,27 @@ export async function generateSha(data: string): Promise<string> {
 		.join('');
 }
 
-class BlueprintDatabase extends Dexie {
+class BlueprintDatabase extends Dexie
+{
 	blueprints!: Table<DatabaseBlueprint, string>;
-	recent!: Table<{id: string; sha: string}, string>;
+	recent!: Table<
+		{
+			id: string;
+			sha: string;
+		},
+		string
+	>;
 
-	constructor() {
+	constructor()
+	{
 		super('blueprint-db');
 
-		this.version(1).stores({
-			blueprints: 'metadata.sha, metadata.createdOn, metadata.lastUpdatedOn',
-			recent: 'id',
-		});
+		this.version(1).stores(
+			{
+				blueprints: 'metadata.sha, metadata.createdOn, metadata.lastUpdatedOn',
+				recent: 'id',
+			},
+		);
 	}
 
 	async addBlueprint(
@@ -65,12 +80,15 @@ class BlueprintDatabase extends Dexie {
 		parsedGameData: Omit<BlueprintGameData, 'createdOn' | 'lastUpdatedOn'>,
 		selection?: string,
 		fetchMethod?: 'url' | 'json' | 'data',
-	): Promise<DatabaseBlueprint> {
+	): Promise<DatabaseBlueprint>
+	{
 		const sha = await generateSha(data);
 
 		const now = Date.now();
-		const blueprint: DatabaseBlueprint = {
-			metadata: {
+		const blueprint: DatabaseBlueprint =
+		{
+			metadata:
+			{
 				sha,
 				createdOn: now,
 				lastUpdatedOn: now,
@@ -86,51 +104,74 @@ class BlueprintDatabase extends Dexie {
 		return blueprint;
 	}
 
-	async updateMostRecent(sha: string): Promise<void> {
-		await this.recent.put({id: '__most_recent', sha});
+	async updateMostRecent(sha: string): Promise<void>
+	{
+		await this.recent.put(
+			{
+				id: '__most_recent',
+				sha,
+			},
+		);
 	}
 
-	async getMostRecent(): Promise<DatabaseBlueprint | null> {
-		try {
+	async getMostRecent(): Promise<DatabaseBlueprint | null>
+	{
+		try
+		{
 			const recentRecord = await this.recent.get('__most_recent');
-			if (recentRecord === undefined || recentRecord.sha === '') {
+			if (recentRecord === undefined || recentRecord.sha === '')
+			{
 				return null;
 			}
 
 			return await this.getBlueprint(recentRecord.sha);
-		} catch (error) {
+		}
+		catch (error)
+		{
 			logger.error('Error getting most recent blueprint', error);
 			return null;
 		}
 	}
 
-	async findBlueprintByData(data: string): Promise<DatabaseBlueprint | null> {
+	async findBlueprintByData(data: string): Promise<DatabaseBlueprint | null>
+	{
 		const sha = await generateSha(data);
 		return this.getBlueprint(sha);
 	}
 
 	async updateBlueprint(
 		sha: string,
-		changes: {
+		changes:
+		{
 			metadata?: Partial<Omit<BlueprintStorageMetadata, 'sha'>>;
 			gameData?: Partial<BlueprintGameData>;
 		},
-		options?: {
+		options?:
+		{
 			updateTimestamp?: boolean;
 		},
-	): Promise<DatabaseBlueprint | null> {
+	): Promise<DatabaseBlueprint | null>
+	{
 		const blueprint = await this.getBlueprint(sha);
 		if (!blueprint) return null;
 
 		const shouldUpdateTimestamp = options?.updateTimestamp ?? true;
 
-		const updated = {
-			metadata: {
+		const updated =
+		{
+			metadata:
+			{
 				...blueprint.metadata,
 				...(changes.metadata ?? {}),
-				...(shouldUpdateTimestamp ? {lastUpdatedOn: Date.now()} : {}),
+				...(shouldUpdateTimestamp
+					?
+						{
+							lastUpdatedOn: Date.now(),
+						}
+					: {}),
 			},
-			gameData: {
+			gameData:
+			{
 				...blueprint.gameData,
 				...(changes.gameData ?? {}),
 			},
@@ -138,37 +179,46 @@ class BlueprintDatabase extends Dexie {
 
 		await this.blueprints.put(updated);
 
-		if (shouldUpdateTimestamp) {
+		if (shouldUpdateTimestamp)
+		{
 			await this.updateMostRecent(sha);
 		}
 
 		return updated;
 	}
 
-	async getBlueprint(sha: string): Promise<DatabaseBlueprint | null> {
+	async getBlueprint(sha: string): Promise<DatabaseBlueprint | null>
+	{
 		const blueprint = await this.blueprints.get(sha);
 		return blueprint ?? null;
 	}
 
-	async removeBlueprint(sha: string): Promise<void> {
+	async removeBlueprint(sha: string): Promise<void>
+	{
 		await this.blueprints.delete(sha);
 	}
 
-	async removeBulkBlueprints(shas: string[]): Promise<void> {
+	async removeBulkBlueprints(shas: string[]): Promise<void>
+	{
 		await this.blueprints.bulkDelete(shas);
 	}
 
-	async listBlueprints(): Promise<DatabaseBlueprint[]> {
-		try {
+	async listBlueprints(): Promise<DatabaseBlueprint[]>
+	{
+		try
+		{
 			return await this.blueprints.orderBy('metadata.lastUpdatedOn').reverse().toArray();
-		} catch (error) {
+		}
+		catch (error)
+		{
 			logger.error('Error accessing blueprint database', error);
 			await this.clearAll();
 			return [];
 		}
 	}
 
-	async clearAll(): Promise<void> {
+	async clearAll(): Promise<void>
+	{
 		logger.warn('Clearing blueprint database due to structure mismatch');
 		await this.blueprints.clear();
 		await this.recent.clear();
@@ -178,7 +228,8 @@ class BlueprintDatabase extends Dexie {
 export const db = new BlueprintDatabase();
 
 // Utility functions to inspect IndexedDB from browser console
-interface BlueprintDbUtils {
+interface BlueprintDbUtils
+{
 	listAll(): Promise<DatabaseBlueprint[]>;
 	getBySha(sha: string): Promise<DatabaseBlueprint | null>;
 	getMostRecent(): Promise<DatabaseBlueprint | null>;
@@ -187,19 +238,25 @@ interface BlueprintDbUtils {
 	help(): void;
 }
 
-declare global {
-	interface Window {
+declare global
+{
+	interface Window
+	{
 		blueprintDb?: BlueprintDbUtils;
 	}
 }
 
-if (typeof window !== 'undefined') {
-	const blueprintDb: BlueprintDbUtils = {
-		async listAll() {
+if (typeof window !== 'undefined')
+{
+	const blueprintDb: BlueprintDbUtils =
+	{
+		async listAll()
+		{
 			const blueprints = await db.listBlueprints();
 
 			console.table(
-				blueprints.map((bp) => {
+				blueprints.map((bp) =>
+				{
 					const {label, description, gameVersion} = bp.gameData;
 					const {selection} = bp.metadata;
 					return {
@@ -233,33 +290,39 @@ if (typeof window !== 'undefined') {
 			return blueprints;
 		},
 
-		async getBySha(sha: string) {
+		async getBySha(sha: string)
+		{
 			const blueprint = await db.getBlueprint(sha);
 
 			console.log(blueprint);
 			return blueprint;
 		},
 
-		async getMostRecent() {
+		async getMostRecent()
+		{
 			const blueprint = await db.getMostRecent();
 
 			console.log(blueprint);
 			return blueprint;
 		},
 
-		async clearAll() {
-			if (confirm('Are you sure you want to clear all blueprints?')) {
+		async clearAll()
+		{
+			if (confirm('Are you sure you want to clear all blueprints?'))
+			{
 				await db.clearAll();
 
 				console.log('Database cleared');
 			}
 		},
 
-		formatDate(timestamp: number) {
+		formatDate(timestamp: number)
+		{
 			return new Date(timestamp).toLocaleString();
 		},
 
-		help() {
+		help()
+		{
 			console.log(`
 Blueprint Database Utilities
 
@@ -284,7 +347,8 @@ const blueprint = await window.blueprintDb.getBySha("a1b2c3...");
 
 	window.blueprintDb = blueprintDb;
 
-	if (import.meta.env.DEV) {
+	if (import.meta.env.DEV)
+	{
 		console.log('Blueprint database utilities available at window.blueprintDb (try window.blueprintDb.help())');
 	}
 }

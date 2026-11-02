@@ -5,15 +5,18 @@ import type {LintFinding, LintRule} from '../types';
 import type {CoverageSource} from './coverage';
 import {CoverageIndex, isEntityCovered} from './coverage';
 
-function isPowerPole(name: string): name is keyof typeof POWER_POLE_SUPPLY_HALF_WIDTH {
+function isPowerPole(name: string): name is keyof typeof POWER_POLE_SUPPLY_HALF_WIDTH
+{
 	return Object.hasOwn(POWER_POLE_SUPPLY_HALF_WIDTH, name);
 }
 
-function isPoweredEntity(name: string): boolean {
+function isPoweredEntity(name: string): boolean
+{
 	return Object.hasOwn(POWERED_ENTITY_NAMES, name);
 }
 
-function finding(rule: LintRule, entity: Entity): LintFinding {
+function finding(rule: LintRule, entity: Entity): LintFinding
+{
 	return {
 		ruleId: rule.id,
 		severity: rule.severity,
@@ -24,13 +27,20 @@ function finding(rule: LintRule, entity: Entity): LintFinding {
 
 const NEAR_COMPLETE_COVERAGE = 0.9;
 
-export const powerPoleCoverageRule: LintRule = {
+export const powerPoleCoverageRule: LintRule =
+{
 	id: 'power-pole-coverage',
 	severity: 'warning',
-	run(context) {
+	run(context)
+	{
 		const poles: CoverageSource[] = context.entities.flatMap((entity) =>
 			isPowerPole(entity.name) && isCardinal(context.direction(entity))
-				? [{entity, halfWidth: POWER_POLE_SUPPLY_HALF_WIDTH[entity.name]}]
+				? [
+						{
+							entity,
+							halfWidth: POWER_POLE_SUPPLY_HALF_WIDTH[entity.name],
+						},
+					]
 				: [],
 		);
 
@@ -53,7 +63,8 @@ export const powerPoleCoverageRule: LintRule = {
 		// A neighboring copy of a tileable design can power entities this close to the edge.
 		const reach = poles.reduce((widest, pole) => Math.max(widest, pole.halfWidth), 0);
 		const {minX, maxX, minY, maxY} = context.bounds;
-		return uncovered.flatMap((entity) => {
+		return uncovered.flatMap((entity) =>
+		{
 			const {x, y} = entity.position;
 			const nearEdge = x - minX <= reach || maxX - x <= reach || y - minY <= reach || maxY - y <= reach;
 			return nearEdge ? [] : [finding(this, entity)];

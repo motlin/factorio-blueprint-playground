@@ -4,10 +4,21 @@ import {BlueprintError} from '../../parsing/blueprintParser';
 
 type ErrorType = Error | string | undefined;
 
-const formatError = (error: ErrorType): {message: string; stack?: string} => {
-	if (error == null || error === '') return {message: 'Unknown Error'};
+const formatError = (
+	error: ErrorType,
+):
+{
+	message: string;
+	stack?: string;
+} =>
+{
+	if (error == null || error === '')
+		return {
+			message: 'Unknown Error',
+		};
 
-	if (error instanceof Error) {
+	if (error instanceof Error)
+	{
 		return {
 			message: error.message,
 			// Blueprint errors describe bad input, so a stack trace would only add noise.
@@ -15,10 +26,13 @@ const formatError = (error: ErrorType): {message: string; stack?: string} => {
 		};
 	}
 
-	return {message: error};
+	return {
+		message: error,
+	};
 };
 
-export const ErrorAlert = ({error}: {error: ErrorType}) => {
+export const ErrorAlert = ({error}: {error: ErrorType}) =>
+{
 	if (error == null || error === '') return null;
 
 	const {message, stack} = formatError(error);

@@ -2,23 +2,30 @@ import type {SignalID, SignalType} from '../../../parsing/types';
 
 import styles from './FactorioIcon.module.css';
 
-function getUrlType(type: SignalType) {
-	if (type === 'virtual') {
+function getUrlType(type: SignalType)
+{
+	if (type === 'virtual')
+	{
 		return 'virtual-signal';
-	} else if (type === 'planet') {
+	}
+	else if (type === 'planet')
+	{
 		return 'space-location';
 	}
 	return type;
 }
 
-interface FactorioIconProps {
+interface FactorioIconProps
+{
 	id?: string;
 	icon?: SignalID;
 	size: 'small' | 'large';
 }
 
-function getQualityNode(icon: SignalID) {
-	if (!icon.quality) {
+function getQualityNode(icon: SignalID)
+{
+	if (!icon.quality)
+	{
 		return null;
 	}
 
@@ -34,8 +41,10 @@ function getQualityNode(icon: SignalID) {
 	);
 }
 
-export const FactorioIcon = ({id, icon, size}: FactorioIconProps) => {
-	if (icon?.name === undefined) {
+export const FactorioIcon = ({id, icon, size}: FactorioIconProps) =>
+{
+	if (icon?.name === undefined)
+	{
 		return null;
 	}
 
@@ -62,11 +71,13 @@ export const FactorioIcon = ({id, icon, size}: FactorioIconProps) => {
 	);
 };
 
-interface PlaceholderProps {
+interface PlaceholderProps
+{
 	size: string;
 }
 
-export const Placeholder = ({size}: PlaceholderProps) => {
+export const Placeholder = ({size}: PlaceholderProps) =>
+{
 	const sizeClass = size === 'small' ? styles.smallSquare : styles.largeSquare;
 
 	return (

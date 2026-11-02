@@ -2,10 +2,12 @@ import type {Meta, StoryObj} from '@storybook/react-vite';
 
 import {LoadingState} from './LoadingState';
 
-const meta: Meta<typeof LoadingState> = {
+const meta: Meta<typeof LoadingState> =
+{
 	title: 'History/Views/LoadingState',
 	component: LoadingState,
-	parameters: {
+	parameters:
+	{
 		layout: 'centered',
 	},
 	tags: ['autodocs'],

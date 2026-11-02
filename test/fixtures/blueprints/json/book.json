@@ -1,29 +1,35 @@
 {
-	"blueprint_book": {
+	"blueprint_book":
+	{
 		"blueprints": [
 			{
-				"blueprint": {
-					"snap-to-grid": {
+				"blueprint":
+				{
+					"snap-to-grid":
+					{
 						"x": 2,
 						"y": 1
 					},
 					"absolute-snapping": true,
 					"icons": [
 						{
-							"signal": {
+							"signal":
+							{
 								"type": "virtual",
 								"name": "signal-any-quality"
 							},
 							"index": 1
 						},
 						{
-							"signal": {
+							"signal":
+							{
 								"name": "parameter-0"
 							},
 							"index": 2
 						},
 						{
-							"signal": {
+							"signal":
+							{
 								"type": "entity",
 								"name": "lightning",
 								"quality": "uncommon"
@@ -35,12 +41,15 @@
 						{
 							"entity_number": 1,
 							"name": "constant-combinator",
-							"position": {
+							"position":
+							{
 								"x": 1.5,
 								"y": 0.5
 							},
-							"control_behavior": {
-								"sections": {
+							"control_behavior":
+							{
+								"sections":
+								{
 									"sections": [
 										{
 											"index": 1,
@@ -64,12 +73,15 @@
 						{
 							"entity_number": 2,
 							"name": "constant-combinator",
-							"position": {
+							"position":
+							{
 								"x": 0.5,
 								"y": 0.5
 							},
-							"control_behavior": {
-								"sections": {
+							"control_behavior":
+							{
+								"sections":
+								{
 									"sections": [
 										{
 											"index": 1,
@@ -106,12 +118,14 @@
 						{
 							"entity_number": 3,
 							"name": "bulk-inserter",
-							"position": {
+							"position":
+							{
 								"x": 1.5,
 								"y": 1.5
 							},
 							"direction": 8,
-							"control_behavior": {
+							"control_behavior":
+							{
 								"circuit_read_hand_contents": true,
 								"circuit_hand_read_mode": 1
 							},
@@ -131,14 +145,18 @@
 						{
 							"entity_number": 4,
 							"name": "inserter",
-							"position": {
+							"position":
+							{
 								"x": 0.5,
 								"y": 1.5
 							},
-							"control_behavior": {
+							"control_behavior":
+							{
 								"circuit_enabled": true,
-								"circuit_condition": {
-									"first_signal": {
+								"circuit_condition":
+								{
+									"first_signal":
+									{
 										"type": "virtual",
 										"name": "signal-heart",
 										"quality": "uncommon"
@@ -147,8 +165,10 @@
 									"comparator": "<"
 								},
 								"connect_to_logistic_network": true,
-								"logistic_condition": {
-									"first_signal": {
+								"logistic_condition":
+								{
+									"first_signal":
+									{
 										"name": "parameter-1",
 										"quality": "rare"
 									},
@@ -186,7 +206,8 @@
 						{
 							"type": "id",
 							"id": "parameter-0",
-							"quality-condition": {
+							"quality-condition":
+							{
 								"quality": "normal",
 								"comparator": "="
 							}
@@ -212,7 +233,8 @@
 						{
 							"type": "id",
 							"id": "parameter-1",
-							"quality-condition": {
+							"quality-condition":
+							{
 								"quality": "normal",
 								"comparator": "="
 							}
@@ -225,29 +247,34 @@
 				"index": 0
 			},
 			{
-				"blueprint": {
+				"blueprint":
+				{
 					"description": "Quality alone: [quality=normal]\nNormal quality: [item=iron-plate,quality=normal]\nQuality on item: [entity=small-biter,quality=uncommon]\n[color=red]Red[/color] text\n[color=1,0,0]Red[/color] text\n[color=255,0,0]Red[/color] text\n[color=#ff0000]Red[/color] text\n[font=default-bold]Bold text[/font]    ",
 					"icons": [
 						{
-							"signal": {
+							"signal":
+							{
 								"name": "assembling-machine-2"
 							},
 							"index": 1
 						},
 						{
-							"signal": {
+							"signal":
+							{
 								"name": "assembling-machine-2"
 							},
 							"index": 2
 						},
 						{
-							"signal": {
+							"signal":
+							{
 								"name": "parameter-1"
 							},
 							"index": 3
 						},
 						{
-							"signal": {
+							"signal":
+							{
 								"name": "parameter-0"
 							},
 							"index": 4
@@ -257,14 +284,18 @@
 						{
 							"entity_number": 1,
 							"name": "assembling-machine-2",
-							"position": {
+							"position":
+							{
 								"x": 193.5,
 								"y": -36.5
 							},
-							"control_behavior": {
+							"control_behavior":
+							{
 								"circuit_enabled": true,
-								"circuit_condition": {
-									"first_signal": {
+								"circuit_condition":
+								{
+									"first_signal":
+									{
 										"name": "parameter-0"
 									},
 									"constant": 10,
@@ -278,7 +309,8 @@
 						{
 							"entity_number": 2,
 							"name": "fast-inserter",
-							"position": {
+							"position":
+							{
 								"x": 195.5,
 								"y": -36.5
 							},
@@ -287,11 +319,13 @@
 						{
 							"entity_number": 3,
 							"name": "assembling-machine-2",
-							"position": {
+							"position":
+							{
 								"x": 197.5,
 								"y": -36.5
 							},
-							"control_behavior": {
+							"control_behavior":
+							{
 								"read_ingredients": true
 							},
 							"recipe": "parameter-1",
@@ -300,7 +334,8 @@
 						{
 							"entity_number": 4,
 							"name": "fast-inserter",
-							"position": {
+							"position":
+							{
 								"x": 192.5,
 								"y": -34.5
 							}
@@ -308,7 +343,8 @@
 						{
 							"entity_number": 5,
 							"name": "fast-inserter",
-							"position": {
+							"position":
+							{
 								"x": 194.5,
 								"y": -34.5
 							},
@@ -317,7 +353,8 @@
 						{
 							"entity_number": 6,
 							"name": "fast-inserter",
-							"position": {
+							"position":
+							{
 								"x": 198.5,
 								"y": -34.5
 							},
@@ -326,31 +363,38 @@
 						{
 							"entity_number": 7,
 							"name": "passive-provider-chest",
-							"position": {
+							"position":
+							{
 								"x": 192.5,
 								"y": -33.5
 							},
-							"control_behavior": {
+							"control_behavior":
+							{
 								"circuit_condition_enabled": false
 							}
 						},
 						{
 							"entity_number": 8,
 							"name": "arithmetic-combinator",
-							"position": {
+							"position":
+							{
 								"x": 193.5,
 								"y": -34
 							},
 							"direction": 8,
-							"control_behavior": {
-								"arithmetic_conditions": {
-									"first_signal": {
+							"control_behavior":
+							{
+								"arithmetic_conditions":
+								{
+									"first_signal":
+									{
 										"type": "virtual",
 										"name": "signal-each"
 									},
 									"second_constant": 5,
 									"operation": "*",
-									"output_signal": {
+									"output_signal":
+									{
 										"type": "virtual",
 										"name": "signal-each"
 									}
@@ -360,15 +404,18 @@
 						{
 							"entity_number": 9,
 							"name": "requester-chest",
-							"position": {
+							"position":
+							{
 								"x": 194.5,
 								"y": -33.5
 							},
-							"control_behavior": {
+							"control_behavior":
+							{
 								"circuit_mode_of_operation": 1,
 								"circuit_condition_enabled": false
 							},
-							"request_filters": {
+							"request_filters":
+							{
 								"sections": [
 									{
 										"index": 1
@@ -379,20 +426,25 @@
 						{
 							"entity_number": 10,
 							"name": "arithmetic-combinator",
-							"position": {
+							"position":
+							{
 								"x": 197.5,
 								"y": -34
 							},
 							"direction": 8,
-							"control_behavior": {
-								"arithmetic_conditions": {
-									"first_signal": {
+							"control_behavior":
+							{
+								"arithmetic_conditions":
+								{
+									"first_signal":
+									{
 										"type": "virtual",
 										"name": "signal-each"
 									},
 									"second_constant": 5,
 									"operation": "*",
-									"output_signal": {
+									"output_signal":
+									{
 										"type": "virtual",
 										"name": "signal-each"
 									}
@@ -402,15 +454,18 @@
 						{
 							"entity_number": 11,
 							"name": "requester-chest",
-							"position": {
+							"position":
+							{
 								"x": 198.5,
 								"y": -33.5
 							},
-							"control_behavior": {
+							"control_behavior":
+							{
 								"circuit_mode_of_operation": 1,
 								"circuit_condition_enabled": false
 							},
-							"request_filters": {
+							"request_filters":
+							{
 								"sections": [
 									{
 										"index": 1
@@ -431,7 +486,8 @@
 							"type": "id",
 							"name": "Primary",
 							"id": "parameter-0",
-							"quality-condition": {
+							"quality-condition":
+							{
 								"quality": "normal",
 								"comparator": "="
 							}
@@ -440,7 +496,8 @@
 							"type": "id",
 							"name": "Secondary",
 							"id": "parameter-1",
-							"quality-condition": {
+							"quality-condition":
+							{
 								"quality": "normal",
 								"comparator": "="
 							},
@@ -469,11 +526,13 @@
 				"index": 1
 			},
 			{
-				"blueprint": {
+				"blueprint":
+				{
 					"description": "Space icons:[entity=small-metallic-asteroid][recipe=carbonic-asteroid-reprocessing][entity=big-oxide-asteroid][item=metallic-asteroid-chunk][recipe=metallic-asteroid-crushing][recipe=advanced-thruster-fuel]\nPlanets: [planet=nauvis][planet=vulcanus][planet=gleba][planet=fulgora][planet=aquilo][space-location=solar-system-edge][space-location=shattered-planet]",
 					"icons": [
 						{
-							"signal": {
+							"signal":
+							{
 								"type": "space-location",
 								"name": "solar-system-edge"
 							},
@@ -484,14 +543,17 @@
 						{
 							"entity_number": 1,
 							"name": "roboport",
-							"position": {
+							"position":
+							{
 								"x": 22,
 								"y": 8
 							},
-							"control_behavior": {
+							"control_behavior":
+							{
 								"read_robot_stats": true
 							},
-							"request_filters": {
+							"request_filters":
+							{
 								"sections": [
 									{
 										"index": 1
@@ -507,17 +569,21 @@
 				"index": 2
 			},
 			{
-				"upgrade_planner": {
-					"settings": {
+				"upgrade_planner":
+				{
+					"settings":
+					{
 						"mappers": [
 							{
-								"from": {
+								"from":
+								{
 									"type": "entity",
 									"name": "wooden-chest",
 									"quality": "normal",
 									"comparator": "="
 								},
-								"to": {
+								"to":
+								{
 									"type": "entity",
 									"name": "iron-chest",
 									"module_limit": 0,
@@ -526,13 +592,15 @@
 								"index": 0
 							},
 							{
-								"from": {
+								"from":
+								{
 									"type": "entity",
 									"name": "wooden-chest",
 									"quality": "normal",
 									"comparator": "="
 								},
-								"to": {
+								"to":
+								{
 									"type": "entity",
 									"name": "steel-chest",
 									"module_limit": 0,
@@ -541,13 +609,15 @@
 								"index": 4
 							},
 							{
-								"from": {
+								"from":
+								{
 									"type": "entity",
 									"name": "train-stop",
 									"quality": "normal",
 									"comparator": "≠"
 								},
-								"to": {
+								"to":
+								{
 									"type": "entity",
 									"name": "train-stop",
 									"module_limit": 0,
@@ -556,13 +626,15 @@
 								"index": 5
 							},
 							{
-								"from": {
+								"from":
+								{
 									"type": "item",
 									"name": "wood",
 									"quality": "normal",
 									"comparator": "="
 								},
-								"to": {
+								"to":
+								{
 									"type": "item",
 									"name": "wood",
 									"quality": "legendary",
@@ -572,13 +644,15 @@
 								"index": 7
 							},
 							{
-								"from": {
+								"from":
+								{
 									"type": "entity",
 									"name": "transport-belt",
 									"quality": "rare",
 									"comparator": "<"
 								},
-								"to": {
+								"to":
+								{
 									"type": "entity",
 									"name": "turbo-transport-belt",
 									"quality": "legendary",
@@ -588,13 +662,15 @@
 								"index": 8
 							},
 							{
-								"from": {
+								"from":
+								{
 									"type": "entity",
 									"name": "rail-signal",
 									"quality": "normal",
 									"comparator": "="
 								},
-								"to": {
+								"to":
+								{
 									"type": "entity",
 									"name": "rail-chain-signal",
 									"module_limit": 0,
@@ -603,18 +679,21 @@
 								"index": 9
 							},
 							{
-								"from": {
+								"from":
+								{
 									"type": "item",
 									"name": "quality-module",
 									"quality": "normal",
 									"comparator": "=",
-									"module_filter": {
+									"module_filter":
+									{
 										"name": "beacon",
 										"quality": "normal",
 										"comparator": "="
 									}
 								},
-								"to": {
+								"to":
+								{
 									"type": "item",
 									"name": "quality-module-3",
 									"module_limit": 0,
@@ -623,13 +702,15 @@
 								"index": 10
 							},
 							{
-								"from": {
+								"from":
+								{
 									"type": "item",
 									"name": "rocket-fuel",
 									"quality": "normal",
 									"comparator": "="
 								},
-								"to": {
+								"to":
+								{
 									"type": "item",
 									"name": "nuclear-fuel",
 									"module_limit": 0,
@@ -638,11 +719,13 @@
 								"index": 11
 							},
 							{
-								"from": {
+								"from":
+								{
 									"type": "entity",
 									"name": "fast-transport-belt"
 								},
-								"to": {
+								"to":
+								{
 									"type": "entity",
 									"name": "express-transport-belt",
 									"module_limit": 0,
@@ -651,13 +734,15 @@
 								"index": 12
 							},
 							{
-								"from": {
+								"from":
+								{
 									"type": "entity",
 									"name": "active-provider-chest",
 									"quality": "normal",
 									"comparator": "="
 								},
-								"to": {
+								"to":
+								{
 									"type": "entity",
 									"name": "steel-chest",
 									"module_limit": 0,
@@ -666,16 +751,19 @@
 								"index": 13
 							},
 							{
-								"from": {
+								"from":
+								{
 									"type": "item",
 									"name": "empty-module-slot",
-									"module_filter": {
+									"module_filter":
+									{
 										"name": "biolab",
 										"quality": "normal",
 										"comparator": "="
 									}
 								},
-								"to": {
+								"to":
+								{
 									"type": "item",
 									"name": "quality-module-3",
 									"module_limit": 0,
@@ -684,13 +772,15 @@
 								"index": 14
 							},
 							{
-								"from": {
+								"from":
+								{
 									"type": "entity",
 									"name": "lab",
 									"quality": "normal",
 									"comparator": "="
 								},
-								"to": {
+								"to":
+								{
 									"type": "entity",
 									"name": "lab",
 									"module_limit": 0,
@@ -707,13 +797,15 @@
 								"index": 15
 							},
 							{
-								"from": {
+								"from":
+								{
 									"type": "entity",
 									"name": "burner-inserter",
 									"quality": "normal",
 									"comparator": "="
 								},
-								"to": {
+								"to":
+								{
 									"type": "entity",
 									"name": "stack-inserter",
 									"module_limit": 0,
@@ -722,13 +814,15 @@
 								"index": 16
 							},
 							{
-								"from": {
+								"from":
+								{
 									"type": "entity",
 									"name": "steel-chest",
 									"quality": "normal",
 									"comparator": "="
 								},
-								"to": {
+								"to":
+								{
 									"type": "entity",
 									"name": "passive-provider-chest",
 									"module_limit": 0,
@@ -737,13 +831,15 @@
 								"index": 17
 							},
 							{
-								"from": {
+								"from":
+								{
 									"type": "entity",
 									"name": "small-electric-pole",
 									"quality": "normal",
 									"comparator": "="
 								},
-								"to": {
+								"to":
+								{
 									"type": "entity",
 									"name": "small-electric-pole",
 									"module_limit": 0,
@@ -752,11 +848,13 @@
 								"index": 20
 							},
 							{
-								"from": {
+								"from":
+								{
 									"type": "entity",
 									"name": "assembling-machine-2"
 								},
-								"to": {
+								"to":
+								{
 									"type": "entity",
 									"name": "assembling-machine-3",
 									"module_limit": 0,
@@ -779,13 +877,15 @@
 								"index": 22
 							},
 							{
-								"from": {
+								"from":
+								{
 									"type": "entity",
 									"name": "substation",
 									"quality": "normal",
 									"comparator": "="
 								},
-								"to": {
+								"to":
+								{
 									"type": "entity",
 									"name": "substation",
 									"quality": "legendary",
@@ -795,11 +895,13 @@
 								"index": 24
 							},
 							{
-								"from": {
+								"from":
+								{
 									"type": "entity",
 									"name": "straight-rail"
 								},
-								"to": {
+								"to":
+								{
 									"type": "entity",
 									"name": "straight-rail",
 									"module_limit": 0,
@@ -808,13 +910,15 @@
 								"index": 28
 							},
 							{
-								"from": {
+								"from":
+								{
 									"type": "entity",
 									"name": "elevated-straight-rail",
 									"quality": "normal",
 									"comparator": "="
 								},
-								"to": {
+								"to":
+								{
 									"type": "entity",
 									"name": "elevated-straight-rail",
 									"quality": "epic",
@@ -827,19 +931,22 @@
 						"description": "([item=upgrade-planner]) Upgrade Planner Torture Test",
 						"icons": [
 							{
-								"signal": {
+								"signal":
+								{
 									"name": "upgrade-planner"
 								},
 								"index": 1
 							},
 							{
-								"signal": {
+								"signal":
+								{
 									"name": "upgrade-planner"
 								},
 								"index": 2
 							},
 							{
-								"signal": {
+								"signal":
+								{
 									"name": "upgrade-planner"
 								},
 								"index": 4
@@ -853,8 +960,10 @@
 				"index": 3
 			},
 			{
-				"deconstruction_planner": {
-					"settings": {
+				"deconstruction_planner":
+				{
+					"settings":
+					{
 						"entity_filters": [
 							{
 								"name": "tile-ghost",
@@ -893,13 +1002,15 @@
 						"description": "([item=deconstruction-planner]) Deconstruction torture test\n\nwhitelist, whitelist, always",
 						"icons": [
 							{
-								"signal": {
+								"signal":
+								{
 									"name": "deconstruction-planner"
 								},
 								"index": 2
 							},
 							{
-								"signal": {
+								"signal":
+								{
 									"name": "deconstruction-planner"
 								},
 								"index": 4
@@ -913,8 +1024,10 @@
 				"index": 4
 			},
 			{
-				"deconstruction_planner": {
-					"settings": {
+				"deconstruction_planner":
+				{
+					"settings":
+					{
 						"entity_filter_mode": 1,
 						"entity_filters": [
 							{
@@ -949,13 +1062,15 @@
 		"description": "Blueprint torture test\n\n[img=item.iron-plate]\n[img=quantity-time]\n[img=utility/played_green]\n\n[item=iron-plate]    \n[entity=small-biter]    \n[technology=logistics]    \n[recipe=basic-oil-processing]    \n[item-group=combat]    \n[fluid=water]    \n[tile=grass-3]    \n[virtual-signal=signal-A]    \n[achievement=minions]    \n[gps=0,0]    \n[special-item=blueprint_string]    \n[armor=Player]    \n[train=93]    \n[train-stop=100]    \n[tooltip=Hover to see \"Iron plate\",item-name.iron-plate]    ",
 		"icons": [
 			{
-				"signal": {
+				"signal":
+				{
 					"name": "blueprint-book"
 				},
 				"index": 1
 			},
 			{
-				"signal": {
+				"signal":
+				{
 					"type": "virtual",
 					"name": "signal-skull"
 				},

@@ -1,7 +1,8 @@
 // src/parsing/BlueprintWrapper.ts
 import type {Blueprint, BlueprintBook, BlueprintString, DeconstructionPlanner, Icon, UpgradePlanner} from './types';
 
-export interface BlueprintInfo {
+export interface BlueprintInfo
+{
 	type: 'blueprint' | 'blueprint-book' | 'upgrade-planner' | 'deconstruction-planner';
 	content: Blueprint | BlueprintBook | UpgradePlanner | DeconstructionPlanner;
 	label?: string;
@@ -10,14 +11,17 @@ export interface BlueprintInfo {
 	version: number;
 }
 
-export class BlueprintWrapper {
+export class BlueprintWrapper
+{
 	private readonly data: BlueprintString;
 
-	constructor(blueprint: BlueprintString) {
+	constructor(blueprint: BlueprintString)
+	{
 		this.data = blueprint;
 	}
 
-	getInfo(): BlueprintInfo {
+	getInfo(): BlueprintInfo
+	{
 		const content = this.getContent();
 		return {
 			type: this.getType(),
@@ -29,7 +33,8 @@ export class BlueprintWrapper {
 		};
 	}
 
-	getType(): BlueprintInfo['type'] {
+	getType(): BlueprintInfo['type']
+	{
 		if (this.data.blueprint) return 'blueprint';
 		if (this.data.blueprint_book) return 'blueprint-book';
 		if (this.data.upgrade_planner) return 'upgrade-planner';
@@ -37,7 +42,8 @@ export class BlueprintWrapper {
 		throw new Error('Invalid blueprint: no recognized type found');
 	}
 
-	getContent(): BlueprintInfo['content'] {
+	getContent(): BlueprintInfo['content']
+	{
 		if (this.data.blueprint) return this.data.blueprint;
 		if (this.data.blueprint_book) return this.data.blueprint_book;
 		if (this.data.upgrade_planner) return this.data.upgrade_planner;
@@ -45,37 +51,48 @@ export class BlueprintWrapper {
 		throw new Error('Invalid blueprint: no content found');
 	}
 
-	getLabel(): BlueprintInfo['label'] {
+	getLabel(): BlueprintInfo['label']
+	{
 		return this.getContent().label;
 	}
 
-	getDescription(): BlueprintInfo['description'] {
-		if (this.data.blueprint) {
+	getDescription(): BlueprintInfo['description']
+	{
+		if (this.data.blueprint)
+		{
 			return this.data.blueprint.description;
 		}
-		if (this.data.blueprint_book) {
+		if (this.data.blueprint_book)
+		{
 			return this.data.blueprint_book.description;
 		}
-		if (this.data.upgrade_planner) {
+		if (this.data.upgrade_planner)
+		{
 			return this.data.upgrade_planner.settings?.description;
 		}
-		if (this.data.deconstruction_planner) {
+		if (this.data.deconstruction_planner)
+		{
 			return this.data.deconstruction_planner.settings?.description;
 		}
 		throw new Error('Invalid blueprint: no content found');
 	}
 
-	getIcons(): Icon[] {
-		if (this.data.blueprint) {
+	getIcons(): Icon[]
+	{
+		if (this.data.blueprint)
+		{
 			return this.data.blueprint.icons ?? [];
 		}
-		if (this.data.blueprint_book) {
+		if (this.data.blueprint_book)
+		{
 			return this.data.blueprint_book.icons ?? [];
 		}
-		if (this.data.upgrade_planner) {
+		if (this.data.upgrade_planner)
+		{
 			return this.data.upgrade_planner.settings?.icons ?? [];
 		}
-		if (this.data.deconstruction_planner) {
+		if (this.data.deconstruction_planner)
+		{
 			return this.data.deconstruction_planner.settings?.icons ?? [];
 		}
 		throw new Error('Invalid blueprint: no content found');
@@ -83,7 +100,8 @@ export class BlueprintWrapper {
 
 	// Used via `wrapper.getVersion()` in routes/history.lazy.tsx; fallow's class-member analysis misses the `.map()` indirection.
 	// fallow-ignore-next-line unused-class-member
-	getVersion(): number {
+	getVersion(): number
+	{
 		return this.getContent().version;
 	}
 }

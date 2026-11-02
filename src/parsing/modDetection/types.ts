@@ -1,23 +1,27 @@
 export type NameKind = 'signal' | 'entity' | 'recipe' | 'item' | 'tile' | 'any';
 
-export interface ExtractedName {
+export interface ExtractedName
+{
 	kinds: Set<NameKind>;
 	count: number;
 }
 
-export interface ExtractionFlags {
+export interface ExtractionFlags
+{
 	hasNonNormalQuality: boolean;
 	hasPlanetSignals: boolean;
 	hasSpaceLocationSignals: boolean;
 }
 
-export interface ExtractedNames {
+export interface ExtractedNames
+{
 	names: Map<string, ExtractedName>;
 	flags: ExtractionFlags;
 	version: string | undefined;
 }
 
-export interface ModSource {
+export interface ModSource
+{
 	id: string;
 	label: string;
 	dlc?: boolean;
@@ -25,7 +29,8 @@ export interface ModSource {
 	mods?: Partial<Record<string, string>>;
 }
 
-export interface ModDatabase {
+export interface ModDatabase
+{
 	generatedAt: string;
 	factoriolabCommit: string;
 	factorioDataVersion: string;
@@ -37,7 +42,8 @@ export interface ModDatabase {
 
 export type Confidence = 'high' | 'medium' | 'low';
 
-export interface Verdict {
+export interface Verdict
+{
 	source: string;
 	label: string;
 	confidence: Confidence;
@@ -45,12 +51,14 @@ export interface Verdict {
 	exampleNames: string[];
 }
 
-export interface UnknownName {
+export interface UnknownName
+{
 	name: string;
 	prefixHint: string | undefined;
 }
 
-export interface DetectionResult {
+export interface DetectionResult
+{
 	verdicts: Verdict[];
 	unknownNames: UnknownName[];
 	warnings: string[];

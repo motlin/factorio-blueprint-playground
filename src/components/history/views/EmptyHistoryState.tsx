@@ -2,7 +2,8 @@ import {InsetDark} from '../../ui/InsetDark';
 import {InsetLight} from '../../ui/InsetLight';
 import {Panel} from '../../ui/Panel';
 
-export function EmptyHistoryState() {
+export function EmptyHistoryState()
+{
 	return (
 		<Panel title="Blueprint History">
 			<InsetLight>

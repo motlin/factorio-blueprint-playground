@@ -6,13 +6,15 @@ import {Spreadsheet} from '../../spreadsheet/Spreadsheet';
 
 import FilterCondition from './FilterCondition';
 
-interface FilterRowsProps {
+interface FilterRowsProps
+{
 	filters: Filter[];
 	type: SignalType;
 	label: string;
 }
 
-const FilterRowsDisplay = ({filters, type, label}: FilterRowsProps) => {
+const FilterRowsDisplay = ({filters, type, label}: FilterRowsProps) =>
+{
 	if (filters.length === 0) return null;
 
 	return (
@@ -28,7 +30,8 @@ const FilterRowsDisplay = ({filters, type, label}: FilterRowsProps) => {
 							<Row key={`${filter.name}-${filter.index}`}>
 								<Cell width="48px" grow={false}>
 									<FactorioIcon
-										icon={{
+										icon={
+										{
 											type,
 											name: filter.name,
 											quality: filter.quality,

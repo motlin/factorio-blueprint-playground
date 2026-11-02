@@ -2,22 +2,30 @@ import {render, screen, waitFor} from '@testing-library/react';
 import {useEffect, useState} from 'react';
 import {describe, expect, it} from 'vite-plus/test';
 
-function SimplifiedHistory() {
+function SimplifiedHistory()
+{
 	const [isLoading, setIsLoading] = useState<boolean>(true);
-	type BlueprintEntry = {
+	type BlueprintEntry =
+	{
 		createdOn: number;
 		lastUpdatedOn: number;
 		data: string;
 		type: string;
 		label: string;
 		gameVersion: string;
-		icons: Array<{type: string; name: string}>;
+		icons: Array<
+		{
+			type: string;
+			name: string;
+		}>;
 	};
 	const [blueprints, setBlueprints] = useState<BlueprintEntry[]>([]);
 	const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set<number>());
 
-	useEffect(() => {
-		const timer = setTimeout(() => {
+	useEffect(() =>
+	{
+		const timer = setTimeout(() =>
+		{
 			setIsLoading(false);
 			setBlueprints([
 				{
@@ -27,7 +35,12 @@ function SimplifiedHistory() {
 					type: 'blueprint',
 					label: 'Test Blueprint 1',
 					gameVersion: '1.1.0',
-					icons: [{type: 'item', name: 'transport-belt'}],
+					icons: [
+						{
+							type: 'item',
+							name: 'transport-belt',
+						},
+					],
 				},
 				{
 					createdOn: 1614000000000,
@@ -36,29 +49,41 @@ function SimplifiedHistory() {
 					type: 'blueprint_book',
 					label: 'Test Blueprint Book',
 					gameVersion: '1.1.0',
-					icons: [{type: 'item', name: 'blueprint-book'}],
+					icons: [
+						{
+							type: 'item',
+							name: 'blueprint-book',
+						},
+					],
 				},
 			]);
 		}, 10);
 
-		return () => {
+		return () =>
+		{
 			clearTimeout(timer);
 		};
 	}, []);
 
-	const toggleSelection = (id: number): void => {
-		setSelectedItems((prev: Set<number>) => {
+	const toggleSelection = (id: number): void =>
+	{
+		setSelectedItems((prev: Set<number>) =>
+		{
 			const newSelection = new Set<number>(prev);
-			if (newSelection.has(id)) {
+			if (newSelection.has(id))
+			{
 				newSelection.delete(id);
-			} else {
+			}
+			else
+			{
 				newSelection.add(id);
 			}
 			return newSelection;
 		});
 	};
 
-	if (isLoading) {
+	if (isLoading)
+	{
 		return (
 			<div data-testid="panel">
 				<div data-testid="inset-light">Loading blueprint history...</div>
@@ -78,13 +103,15 @@ function SimplifiedHistory() {
 			</div>
 
 			<div>
-				{blueprints.map((bp) => {
+				{blueprints.map((bp) =>
+				{
 					const createdOn = bp.createdOn;
 					return (
 						<button
 							key={createdOn}
 							data-testid="blueprint-item"
-							onClick={(): void => {
+							onClick={(): void =>
+							{
 								toggleSelection(createdOn);
 							}}
 							type="button"
@@ -92,7 +119,8 @@ function SimplifiedHistory() {
 							<input
 								type="checkbox"
 								checked={selectedItems.has(createdOn)}
-								onChange={(e): void => {
+								onChange={(e): void =>
+								{
 									e.stopPropagation();
 									toggleSelection(createdOn);
 								}}
@@ -110,14 +138,17 @@ function SimplifiedHistory() {
 	);
 }
 
-describe('History Component Tests', () => {
-	it('loads and displays blueprints', async () => {
+describe('History Component Tests', () =>
+{
+	it('loads and displays blueprints', async () =>
+	{
 		render(<SimplifiedHistory />);
 
 		const loadingElement = screen.getByText('Loading blueprint history...');
 		expect(loadingElement).toBeInTheDocument();
 
-		await waitFor(() => {
+		await waitFor(() =>
+		{
 			const loadingElementAfterWait = screen.queryByText('Loading blueprint history...');
 			expect(loadingElementAfterWait).not.toBeInTheDocument();
 		});
@@ -130,10 +161,12 @@ describe('History Component Tests', () => {
 		expect(richTexts[1].textContent).toBe('Test Blueprint Book');
 	});
 
-	it('shows disabled action buttons initially', async () => {
+	it('shows disabled action buttons initially', async () =>
+	{
 		render(<SimplifiedHistory />);
 
-		await waitFor(() => {
+		await waitFor(() =>
+		{
 			const loadingElement = screen.queryByText('Loading blueprint history...');
 			expect(loadingElement).not.toBeInTheDocument();
 		});

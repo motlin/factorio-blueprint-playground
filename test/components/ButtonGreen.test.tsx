@@ -9,9 +9,11 @@ import '../../test/setup';
  * Test suite for ButtonGreen component.
  * Verifies button rendering, click handling, disabled states, and icon integration.
  */
-describe('ButtonGreen Component', () => {
+describe('ButtonGreen Component', () =>
+{
 	// Test basic rendering and structure
-	it('renders with correct base styles', () => {
+	it('renders with correct base styles', () =>
+	{
 		const {container} = render(<ButtonGreen onClick={() => undefined}>Test Button</ButtonGreen>);
 
 		const button = container.firstChild as HTMLButtonElement;
@@ -22,7 +24,8 @@ describe('ButtonGreen Component', () => {
 	});
 
 	// Test click handler functionality
-	it('calls onClick handler when clicked', () => {
+	it('calls onClick handler when clicked', () =>
+	{
 		const handleClick = vi.fn<(e: React.MouseEvent<HTMLButtonElement>) => void>();
 		const {container} = render(<ButtonGreen onClick={handleClick}>Clickable Button</ButtonGreen>);
 
@@ -36,7 +39,8 @@ describe('ButtonGreen Component', () => {
 	});
 
 	// Test children rendering
-	it('renders children correctly', () => {
+	it('renders children correctly', () =>
+	{
 		const {getByText, container} = render(
 			<ButtonGreen onClick={() => undefined}>
 				<span>Button Text</span>

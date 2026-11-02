@@ -2,21 +2,26 @@ import JSON5 from 'json5';
 import {describe, expect, it} from 'vite-plus/test';
 import type {BlueprintString} from '../../src/parsing/types';
 
-describe('JSON5 blueprint parsing', () => {
-	const validBlueprint: BlueprintString = {
-		blueprint: {
+describe('JSON5 blueprint parsing', () =>
+{
+	const validBlueprint: BlueprintString =
+	{
+		blueprint:
+		{
 			item: 'blueprint',
 			version: 281479275675648,
 		},
 	};
 
-	it('parses standard JSON', () => {
+	it('parses standard JSON', () =>
+	{
 		const input = JSON.stringify(validBlueprint);
 		const result = JSON5.parse(input);
 		expect(result).toEqual(validBlueprint);
 	});
 
-	it('parses JSON5 with trailing commas', () => {
+	it('parses JSON5 with trailing commas', () =>
+	{
 		const input = `{
 			"blueprint": {
 				"item": "blueprint",
@@ -27,7 +32,8 @@ describe('JSON5 blueprint parsing', () => {
 		expect(result).toEqual(validBlueprint);
 	});
 
-	it('parses JSON5 with comments', () => {
+	it('parses JSON5 with comments', () =>
+	{
 		const input = `{
 			// This is a blueprint
 			"blueprint": {
@@ -40,7 +46,8 @@ describe('JSON5 blueprint parsing', () => {
 		expect(result).toEqual(validBlueprint);
 	});
 
-	it('parses JSON5 with unquoted keys', () => {
+	it('parses JSON5 with unquoted keys', () =>
+	{
 		const input = `{
 			blueprint: {
 				item: "blueprint",
@@ -51,7 +58,8 @@ describe('JSON5 blueprint parsing', () => {
 		expect(result).toEqual(validBlueprint);
 	});
 
-	it('parses JSON5 with single-quoted strings', () => {
+	it('parses JSON5 with single-quoted strings', () =>
+	{
 		const input = `{
 			'blueprint': {
 				'item': 'blueprint',

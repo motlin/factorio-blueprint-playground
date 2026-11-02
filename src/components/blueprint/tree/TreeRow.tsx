@@ -7,7 +7,8 @@ import {RichText} from '../../core/text/RichText';
 
 import type {TreeNode} from './types';
 
-export interface TreeRowProps {
+export interface TreeRowProps
+{
 	node: TreeNode;
 	indentLevel: number;
 	isSelected: boolean;
@@ -15,12 +16,15 @@ export interface TreeRowProps {
 	onSelect: (path: string) => void;
 }
 
-export const TreeRow = ({node, indentLevel, isSelected, isActive, onSelect}: TreeRowProps) => {
+export const TreeRow = ({node, indentLevel, isSelected, isActive, onSelect}: TreeRowProps) =>
+{
 	const wrapper = new BlueprintWrapper(node.blueprint);
 
-	function getIconElement(index: number) {
+	function getIconElement(index: number)
+	{
 		const icon: Icon | undefined = wrapper.getIcons().find((i) => i.index === index);
-		if (icon) {
+		if (icon)
+		{
 			return <FactorioIcon key={index} icon={icon.signal} size={'small'} />;
 		}
 		return <Placeholder key={index} size={'small'} />;
@@ -32,13 +36,16 @@ export const TreeRow = ({node, indentLevel, isSelected, isActive, onSelect}: Tre
 
 	const indentPx = (indentLevel * 32).toString();
 
-	const handleClick = (e: React.MouseEvent) => {
+	const handleClick = (e: React.MouseEvent) =>
+	{
 		e.preventDefault();
 		onSelect(node.path);
 	};
 
-	const handleKeyDown = (e: React.KeyboardEvent) => {
-		if (e.key === 'Enter' || e.key === ' ') {
+	const handleKeyDown = (e: React.KeyboardEvent) =>
+	{
+		if (e.key === 'Enter' || e.key === ' ')
+		{
 			e.preventDefault();
 			onSelect(node.path);
 		}
@@ -47,7 +54,8 @@ export const TreeRow = ({node, indentLevel, isSelected, isActive, onSelect}: Tre
 	return (
 		<div
 			className={classes}
-			style={{
+			style={
+			{
 				paddingLeft: `${indentPx}px`,
 			}}
 			onClick={handleClick}
@@ -56,7 +64,14 @@ export const TreeRow = ({node, indentLevel, isSelected, isActive, onSelect}: Tre
 			role="treeitem"
 		>
 			<div className="flex flex-items-center">
-				<FactorioIcon icon={{type: 'item', name: wrapper.getType()}} size={'small'} />
+				<FactorioIcon
+					icon={
+					{
+						type: 'item',
+						name: wrapper.getType(),
+					}}
+					size={'small'}
+				/>
 				<div className="separator" />
 			</div>
 

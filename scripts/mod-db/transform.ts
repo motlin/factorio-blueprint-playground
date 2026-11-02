@@ -3,35 +3,44 @@ import {z} from 'zod';
 import type {ModDatabase} from '../../src/parsing/modDetection/types';
 import {EDITOR_SOURCES, FACTORIOLAB_LICENSE, MOD_SOURCES} from './sources';
 
-const prototypeSchema = z.object({id: z.string().min(1)});
+const prototypeSchema = z.object(
+	{
+		id: z.string().min(1),
+	},
+);
 
-const factorioLabDatasetSchema = z.object({
-	version: z.record(z.string(), z.string()),
-	items: z.array(prototypeSchema),
-	recipes: z.array(prototypeSchema),
-	locations: z
-		.array(prototypeSchema)
-		.nullish()
-		.transform((locations) => locations ?? []),
-	qualities: z
-		.array(prototypeSchema)
-		.nullish()
-		.transform((qualities) => qualities ?? []),
-});
+const factorioLabDatasetSchema = z.object(
+	{
+		version: z.record(z.string(), z.string()),
+		items: z.array(prototypeSchema),
+		recipes: z.array(prototypeSchema),
+		locations: z
+			.array(prototypeSchema)
+			.nullish()
+			.transform((locations) => locations ?? []),
+		qualities: z
+			.array(prototypeSchema)
+			.nullish()
+			.transform((qualities) => qualities ?? []),
+	},
+);
 
-const baseSupplementSchema = z.object({
-	base: z.array(z.string().min(1)),
-	spaceAge: z.array(z.string().min(1)),
-	quality: z.array(z.string().min(1)),
-	elevatedRails: z.array(z.string().min(1)),
-	legacy: z.array(z.string().min(1)),
-});
+const baseSupplementSchema = z.object(
+	{
+		base: z.array(z.string().min(1)),
+		spaceAge: z.array(z.string().min(1)),
+		quality: z.array(z.string().min(1)),
+		elevatedRails: z.array(z.string().min(1)),
+		legacy: z.array(z.string().min(1)),
+	},
+);
 
 const prefixesSchema = z.record(z.string().min(1), z.string().min(1));
 
 export type FactorioLabDataset = z.infer<typeof factorioLabDatasetSchema>;
 
-export interface BaseSupplement {
+export interface BaseSupplement
+{
 	base: string[];
 	spaceAge: string[];
 	quality: string[];
@@ -39,11 +48,13 @@ export interface BaseSupplement {
 	legacy: string[];
 }
 
-interface TransformInput {
+interface TransformInput
+{
 	baseDatasets: FactorioLabDataset[];
 	spaceAgeDatasets: FactorioLabDataset[];
 	legacyDatasets: FactorioLabDataset[];
-	modDatasets: {
+	modDatasets:
+	{
 		id: string;
 		label: string;
 		dataset: FactorioLabDataset;
@@ -51,7 +62,8 @@ interface TransformInput {
 	supplement: BaseSupplement;
 	mapEditorNames: string[];
 	spaceAgeMapEditorNames: string[];
-	prototypeNames: {
+	prototypeNames:
+	{
 		base: string[];
 		spaceAge: string[];
 		quality: string[];
@@ -62,7 +74,8 @@ interface TransformInput {
 	factorioDataVersion: string;
 }
 
-enum LuaTokenKind {
+enum LuaTokenKind
+{
 	Identifier,
 	String,
 	OpeningBrace,
@@ -71,109 +84,185 @@ enum LuaTokenKind {
 	Concatenation,
 }
 
-interface LuaToken {
+interface LuaToken
+{
 	kind: LuaTokenKind;
 	value: string;
 }
 
-interface PrototypeFrame {
+interface PrototypeFrame
+{
 	prototypeType: string | undefined;
 	name: string | undefined;
 	nestedNames: string[];
 }
 
-interface LuaTableFrame {
+interface LuaTableFrame
+{
 	hidden: boolean;
 	prototypeType: string | undefined;
 	placeResults: Set<string>;
 }
 
-function longBracketClosing(source: string, start: number): {closing: string; contentStart: number} | undefined {
-	if (source[start] !== '[') {
+function longBracketClosing(
+	source: string,
+	start: number,
+):
+	|
+	  {
+			closing: string;
+			contentStart: number;
+	  }
+	| undefined
+{
+	if (source[start] !== '[')
+	{
 		return undefined;
 	}
 	let cursor = start + 1;
-	while (source[cursor] === '=') {
+	while (source[cursor] === '=')
+	{
 		cursor += 1;
 	}
-	if (source[cursor] !== '[') {
+	if (source[cursor] !== '[')
+	{
 		return undefined;
 	}
 	const equals = source.slice(start + 1, cursor);
-	return {closing: `]${equals}]`, contentStart: cursor + 1};
+	return {
+		closing: `]${equals}]`,
+		contentStart: cursor + 1,
+	};
 }
 
-function tokenizeLua(source: string): LuaToken[] {
+function tokenizeLua(source: string): LuaToken[]
+{
 	const tokens: LuaToken[] = [];
 	let cursor = 0;
-	while (cursor < source.length) {
+	while (cursor < source.length)
+	{
 		const character = source[cursor] ?? '';
-		if (/\s/.test(character)) {
+		if (/\s/.test(character))
+		{
 			cursor += 1;
 			continue;
 		}
-		if (character === '-' && source[cursor + 1] === '-') {
+		if (character === '-' && source[cursor + 1] === '-')
+		{
 			const blockComment = longBracketClosing(source, cursor + 2);
-			if (blockComment === undefined) {
+			if (blockComment === undefined)
+			{
 				const lineEnd = source.indexOf('\n', cursor + 2);
 				cursor = lineEnd < 0 ? source.length : lineEnd + 1;
 				continue;
 			}
 			const commentEnd = source.indexOf(blockComment.closing, blockComment.contentStart);
-			if (commentEnd < 0) {
+			if (commentEnd < 0)
+			{
 				throw new Error('Unterminated Lua block comment.');
 			}
 			cursor = commentEnd + blockComment.closing.length;
 			continue;
 		}
-		if (character === '"' || character === "'") {
+		if (character === '"' || character === "'")
+		{
 			const quote = character;
 			let value = '';
 			cursor += 1;
-			while (cursor < source.length && source[cursor] !== quote) {
-				if (source[cursor] === '\\') {
+			while (cursor < source.length && source[cursor] !== quote)
+			{
+				if (source[cursor] === '\\')
+				{
 					cursor += 1;
-					if (cursor >= source.length) {
+					if (cursor >= source.length)
+					{
 						throw new Error('Unterminated Lua string escape.');
 					}
 				}
 				value += source[cursor];
 				cursor += 1;
 			}
-			if (source[cursor] !== quote) {
+			if (source[cursor] !== quote)
+			{
 				throw new Error('Unterminated Lua string.');
 			}
-			tokens.push({kind: LuaTokenKind.String, value});
+			tokens.push(
+				{
+					kind: LuaTokenKind.String,
+					value,
+				},
+			);
 			cursor += 1;
 			continue;
 		}
 		const longString = longBracketClosing(source, cursor);
-		if (longString !== undefined) {
+		if (longString !== undefined)
+		{
 			const stringEnd = source.indexOf(longString.closing, longString.contentStart);
-			if (stringEnd < 0) {
+			if (stringEnd < 0)
+			{
 				throw new Error('Unterminated Lua long string.');
 			}
-			tokens.push({kind: LuaTokenKind.String, value: source.slice(longString.contentStart, stringEnd)});
+			tokens.push(
+				{
+					kind: LuaTokenKind.String,
+					value: source.slice(longString.contentStart, stringEnd),
+				},
+			);
 			cursor = stringEnd + longString.closing.length;
 			continue;
 		}
-		if (/[A-Za-z_]/.test(character)) {
+		if (/[A-Za-z_]/.test(character))
+		{
 			const start = cursor;
 			cursor += 1;
-			while (/[A-Za-z0-9_]/.test(source[cursor] ?? '')) {
+			while (/[A-Za-z0-9_]/.test(source[cursor] ?? ''))
+			{
 				cursor += 1;
 			}
-			tokens.push({kind: LuaTokenKind.Identifier, value: source.slice(start, cursor)});
+			tokens.push(
+				{
+					kind: LuaTokenKind.Identifier,
+					value: source.slice(start, cursor),
+				},
+			);
 			continue;
 		}
-		if (character === '{') {
-			tokens.push({kind: LuaTokenKind.OpeningBrace, value: character});
-		} else if (character === '}') {
-			tokens.push({kind: LuaTokenKind.ClosingBrace, value: character});
-		} else if (character === '=') {
-			tokens.push({kind: LuaTokenKind.Equals, value: character});
-		} else if (character === '.' && source[cursor + 1] === '.') {
-			tokens.push({kind: LuaTokenKind.Concatenation, value: '..'});
+		if (character === '{')
+		{
+			tokens.push(
+				{
+					kind: LuaTokenKind.OpeningBrace,
+					value: character,
+				},
+			);
+		}
+		else if (character === '}')
+		{
+			tokens.push(
+				{
+					kind: LuaTokenKind.ClosingBrace,
+					value: character,
+				},
+			);
+		}
+		else if (character === '=')
+		{
+			tokens.push(
+				{
+					kind: LuaTokenKind.Equals,
+					value: character,
+				},
+			);
+		}
+		else if (character === '.' && source[cursor + 1] === '.')
+		{
+			tokens.push(
+				{
+					kind: LuaTokenKind.Concatenation,
+					value: '..',
+				},
+			);
 			cursor += 1;
 		}
 		cursor += 1;
@@ -181,117 +270,164 @@ function tokenizeLua(source: string): LuaToken[] {
 	return tokens;
 }
 
-export function extractHiddenPlaceResults(source: string): string[] {
+export function extractHiddenPlaceResults(source: string): string[]
+{
 	const frames: LuaTableFrame[] = [];
 	const placeResults = new Set<string>();
 	const tokens = tokenizeLua(source);
 
-	for (let index = 0; index < tokens.length; index += 1) {
+	for (let index = 0; index < tokens.length; index += 1)
+	{
 		const token = tokens[index];
-		if (token.kind === LuaTokenKind.OpeningBrace) {
-			frames.push({hidden: false, prototypeType: undefined, placeResults: new Set()});
+		if (token.kind === LuaTokenKind.OpeningBrace)
+		{
+			frames.push(
+				{
+					hidden: false,
+					prototypeType: undefined,
+					placeResults: new Set(),
+				},
+			);
 			continue;
 		}
-		if (token.kind === LuaTokenKind.ClosingBrace) {
+		if (token.kind === LuaTokenKind.ClosingBrace)
+		{
 			const frame = frames.pop();
-			if (frame === undefined) {
+			if (frame === undefined)
+			{
 				throw new Error('Unexpected closing brace in Lua source.');
 			}
-			if (frame.hidden && frame.prototypeType !== undefined) {
-				for (const placeResult of frame.placeResults) {
+			if (frame.hidden && frame.prototypeType !== undefined)
+			{
+				for (const placeResult of frame.placeResults)
+				{
 					placeResults.add(placeResult);
 				}
 			}
 			continue;
 		}
-		if (token.kind !== LuaTokenKind.Identifier || tokens[index + 1]?.kind !== LuaTokenKind.Equals) {
+		if (token.kind !== LuaTokenKind.Identifier || tokens[index + 1]?.kind !== LuaTokenKind.Equals)
+		{
 			continue;
 		}
 		const frame = frames.at(-1);
 		const value = tokens.at(index + 2);
-		if (frame === undefined || value === undefined) {
+		if (frame === undefined || value === undefined)
+		{
 			continue;
 		}
-		if (token.value === 'hidden' && value.kind === LuaTokenKind.Identifier && value.value === 'true') {
+		if (token.value === 'hidden' && value.kind === LuaTokenKind.Identifier && value.value === 'true')
+		{
 			frame.hidden = true;
-		} else if (token.value === 'type' && value.kind === LuaTokenKind.String) {
+		}
+		else if (token.value === 'type' && value.kind === LuaTokenKind.String)
+		{
 			frame.prototypeType = value.value;
-		} else if (token.value === 'place_result' && value.kind === LuaTokenKind.String) {
+		}
+		else if (token.value === 'place_result' && value.kind === LuaTokenKind.String)
+		{
 			frame.placeResults.add(value.value);
 		}
 	}
 
-	if (frames.length > 0) {
+	if (frames.length > 0)
+	{
 		throw new Error('Unclosed table in Lua source.');
 	}
 	return [...placeResults].sort();
 }
 
-export function extractPrototypeNames(source: string): string[] {
+export function extractPrototypeNames(source: string): string[]
+{
 	const frames: PrototypeFrame[] = [];
 	const names = new Set<string>();
 	const tokens = tokenizeLua(source);
 
-	for (let index = 0; index < tokens.length; index += 1) {
+	for (let index = 0; index < tokens.length; index += 1)
+	{
 		const token = tokens[index];
-		if (token.kind === LuaTokenKind.OpeningBrace) {
-			frames.push({prototypeType: undefined, name: undefined, nestedNames: []});
+		if (token.kind === LuaTokenKind.OpeningBrace)
+		{
+			frames.push(
+				{
+					prototypeType: undefined,
+					name: undefined,
+					nestedNames: [],
+				},
+			);
 			continue;
 		}
-		if (token.kind === LuaTokenKind.ClosingBrace) {
+		if (token.kind === LuaTokenKind.ClosingBrace)
+		{
 			const frame = frames.pop();
-			if (frame === undefined) {
+			if (frame === undefined)
+			{
 				throw new Error('Unexpected closing brace in Lua source.');
 			}
 			const frameNames =
 				frame.prototypeType !== undefined && frame.name !== undefined ? [frame.name] : frame.nestedNames;
 			const parent = frames.at(-1);
-			if (parent === undefined) {
-				for (const name of frameNames) {
+			if (parent === undefined)
+			{
+				for (const name of frameNames)
+				{
 					names.add(name);
 				}
-			} else {
+			}
+			else
+			{
 				parent.nestedNames.push(...frameNames);
 			}
 			continue;
 		}
-		if (token.kind !== LuaTokenKind.Identifier || tokens[index + 1]?.kind !== LuaTokenKind.Equals) {
+		if (token.kind !== LuaTokenKind.Identifier || tokens[index + 1]?.kind !== LuaTokenKind.Equals)
+		{
 			continue;
 		}
 		const frame = frames.at(-1);
 		const value = tokens.at(index + 2);
-		if (frame === undefined || value?.kind !== LuaTokenKind.String) {
+		if (frame === undefined || value?.kind !== LuaTokenKind.String)
+		{
 			continue;
 		}
-		if (tokens[index + 3]?.kind === LuaTokenKind.Concatenation) {
+		if (tokens[index + 3]?.kind === LuaTokenKind.Concatenation)
+		{
 			continue;
 		}
-		if (token.value === 'type') {
+		if (token.value === 'type')
+		{
 			frame.prototypeType = value.value;
-		} else if (token.value === 'name') {
+		}
+		else if (token.value === 'name')
+		{
 			frame.name = value.value;
 		}
 	}
 
-	if (frames.length > 0) {
+	if (frames.length > 0)
+	{
 		throw new Error('Unclosed table in Lua source.');
 	}
 	return [...names].sort();
 }
 
-export function parseFactorioLabDataset(value: unknown): FactorioLabDataset {
+export function parseFactorioLabDataset(value: unknown): FactorioLabDataset
+{
 	return factorioLabDatasetSchema.parse(value);
 }
 
-export function parseBaseSupplement(value: unknown): BaseSupplement {
+export function parseBaseSupplement(value: unknown): BaseSupplement
+{
 	return baseSupplementSchema.parse(value);
 }
 
-export function parsePrefixes(value: unknown): Record<string, string> {
+export function parsePrefixes(value: unknown): Record<string, string>
+{
 	return prefixesSchema.parse(value);
 }
 
-function collectNames(dataset: FactorioLabDataset): Set<string> {
+function collectNames(dataset: FactorioLabDataset): Set<string>
+{
 	return new Set(
 		[...dataset.items, ...dataset.recipes, ...dataset.locations, ...dataset.qualities].map(
 			(prototype) => prototype.id,
@@ -299,32 +435,40 @@ function collectNames(dataset: FactorioLabDataset): Set<string> {
 	);
 }
 
-function sourceMask(sources: ModDatabase['sources'], sourceId: string): number {
+function sourceMask(sources: ModDatabase['sources'], sourceId: string): number
+{
 	const sourceIndex = sources.findIndex((source) => source.id === sourceId);
-	if (sourceIndex < 0) {
+	if (sourceIndex < 0)
+	{
 		throw new Error(`Unknown mod source: ${sourceId}`);
 	}
 	return 1 << sourceIndex;
 }
 
-function addNames(names: Map<string, number>, additions: Iterable<string>, mask: number): void {
-	for (const name of additions) {
+function addNames(names: Map<string, number>, additions: Iterable<string>, mask: number): void
+{
+	for (const name of additions)
+	{
 		names.set(name, (names.get(name) ?? 0) | mask);
 	}
 }
 
-function sortedRecord<Value>(entries: Iterable<readonly [string, Value]>): Record<string, Value> {
+function sortedRecord<Value>(entries: Iterable<readonly [string, Value]>): Record<string, Value>
+{
 	return Object.fromEntries([...entries].sort(([left], [right]) => left.localeCompare(right)));
 }
 
-function isElevatedRailsName(name: string): boolean {
+function isElevatedRailsName(name: string): boolean
+{
 	return name === 'rail-ramp' || name === 'rail-support' || name.startsWith('elevated-');
 }
 
-export function transformDatasets(input: TransformInput): ModDatabase {
+export function transformDatasets(input: TransformInput): ModDatabase
+{
 	const sources = [
 		...MOD_SOURCES,
-		...input.modDatasets.map(({id, label, dataset}) => ({
+		...input.modDatasets.map(({id, label, dataset}) => (
+		{
 			id,
 			label,
 			mods: sortedRecord(Object.entries(dataset.version).filter(([modName]) => modName !== 'base')),
@@ -338,8 +482,10 @@ export function transformDatasets(input: TransformInput): ModDatabase {
 	for (const name of [
 		...input.baseDatasets.flatMap((dataset) => [...collectNames(dataset)]),
 		...input.prototypeNames.base,
-	]) {
-		if (!allMapEditorNames.has(name)) {
+	])
+	{
+		if (!allMapEditorNames.has(name))
+		{
 			baseNames.add(name);
 		}
 	}
@@ -348,7 +494,8 @@ export function transformDatasets(input: TransformInput): ModDatabase {
 		...input.spaceAgeDatasets.flatMap((dataset) => [...collectNames(dataset)]),
 		...input.prototypeNames.spaceAge,
 	]);
-	for (const name of allMapEditorNames) {
+	for (const name of allMapEditorNames)
+	{
 		spaceAgeNames.delete(name);
 	}
 	const qualityNames = new Set(
@@ -357,15 +504,22 @@ export function transformDatasets(input: TransformInput): ModDatabase {
 	const names = new Map<string, number>();
 	addNames(names, baseNames, sourceMask(sources, 'base'));
 
-	for (const name of spaceAgeNames) {
-		if (baseNames.has(name)) {
+	for (const name of spaceAgeNames)
+	{
+		if (baseNames.has(name))
+		{
 			continue;
 		}
-		if (qualityNames.has(name) || name.startsWith('quality-module')) {
+		if (qualityNames.has(name) || name.startsWith('quality-module'))
+		{
 			addNames(names, [name], sourceMask(sources, 'quality'));
-		} else if (isElevatedRailsName(name)) {
+		}
+		else if (isElevatedRailsName(name))
+		{
 			addNames(names, [name], sourceMask(sources, 'elevated-rails'));
-		} else {
+		}
+		else
+		{
 			addNames(names, [name], sourceMask(sources, 'space-age'));
 		}
 	}
@@ -376,9 +530,12 @@ export function transformDatasets(input: TransformInput): ModDatabase {
 	addNames(names, input.prototypeNames.quality, sourceMask(sources, 'quality'));
 
 	const legacyNames = new Set(input.supplement.legacy);
-	for (const dataset of input.legacyDatasets) {
-		for (const name of collectNames(dataset)) {
-			if (!allMapEditorNames.has(name)) {
+	for (const dataset of input.legacyDatasets)
+	{
+		for (const name of collectNames(dataset))
+		{
+			if (!allMapEditorNames.has(name))
+			{
 				legacyNames.add(name);
 			}
 		}
@@ -398,7 +555,8 @@ export function transformDatasets(input: TransformInput): ModDatabase {
 		...mapEditorNames,
 		...spaceAgeMapEditorNames,
 	]);
-	for (const {id, dataset} of input.modDatasets) {
+	for (const {id, dataset} of input.modDatasets)
+	{
 		const exclusiveNames = [...collectNames(dataset)].filter((name) => !vanillaNames.has(name));
 		addNames(names, exclusiveNames, sourceMask(sources, id));
 	}

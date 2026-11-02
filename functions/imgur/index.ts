@@ -3,50 +3,66 @@ import {resolveImgurImage} from './api-client';
 import {createJsonResponse, createRequestHandlers} from './http-helpers';
 import {parseImgurUrl} from './url-parser';
 
-interface Env {
+interface Env
+{
 	IMGUR_CLIENT_ID: string;
 	ENVIRONMENT?: string;
 }
 
-function hasStringUrl(value: unknown): value is {url: string} {
+function hasStringUrl(value: unknown): value is
+{
+	url: string;
+}
+{
 	return typeof value === 'object' && value !== null && 'url' in value && typeof value.url === 'string';
 }
 
-async function parseRequestBody(request: {json: () => Promise<unknown>}): Promise<unknown> {
-	try {
+async function parseRequestBody(request: {json: () => Promise<unknown>}): Promise<unknown>
+{
+	try
+	{
 		return await request.json();
-	} catch {
+	}
+	catch
+	{
 		return null;
 	}
 }
 
-async function handleRequest(context: EventContext<Env, string, Record<string, unknown>>) {
+async function handleRequest(context: EventContext<Env, string, Record<string, unknown>>)
+{
 	const {request, env} = context;
 	const originHeader = request.headers.get('Origin');
 
 	const handlers = createRequestHandlers(originHeader);
 
-	if (request.method === 'OPTIONS') {
+	if (request.method === 'OPTIONS')
+	{
 		return handlers.handleCorsPreflightRequest();
 	}
 
-	if (request.method !== 'POST') {
+	if (request.method !== 'POST')
+	{
 		return handlers.handleInvalidMethod();
 	}
 
-	if (!env.IMGUR_CLIENT_ID) {
+	if (!env.IMGUR_CLIENT_ID)
+	{
 		return handlers.handleMissingConfiguration();
 	}
 
-	try {
+	try
+	{
 		const body = await parseRequestBody(request);
 
-		if (!hasStringUrl(body) || body.url.length === 0) {
+		if (!hasStringUrl(body) || body.url.length === 0)
+		{
 			return handlers.handleMissingUrl();
 		}
 
 		const parseResult = parseImgurUrl(body.url);
-		if (!parseResult.success) {
+		if (!parseResult.success)
+		{
 			return createJsonResponse(parseResult, 400, originHeader);
 		}
 
@@ -54,9 +70,18 @@ async function handleRequest(context: EventContext<Env, string, Record<string, u
 		const status = resolveResult.success ? 200 : 400;
 
 		return createJsonResponse(resolveResult, status, originHeader);
-	} catch (error) {
+	}
+	catch (error)
+	{
 		console.error('imgur-resolver request-parsing error:', error);
-		return createJsonResponse({success: false, error: 'Invalid request body'}, 400, originHeader);
+		return createJsonResponse(
+			{
+				success: false,
+				error: 'Invalid request body',
+			},
+			400,
+			originHeader,
+		);
 	}
 }
 

@@ -3,8 +3,10 @@ import {describe, expect, it} from 'vite-plus/test';
 
 import {TableHeader} from '../../src/components/history/table/TableHeader';
 
-describe('TableHeader Component', () => {
-	it('renders with default className', () => {
+describe('TableHeader Component', () =>
+{
+	it('renders with default className', () =>
+	{
 		render(<TableHeader label="Test Header" />);
 
 		const headerElement = screen.getByText('Test Header');
@@ -12,7 +14,8 @@ describe('TableHeader Component', () => {
 		expect(headerElement.className).toBe('history-header');
 	});
 
-	it('renders with custom className', () => {
+	it('renders with custom className', () =>
+	{
 		render(<TableHeader label="Custom Header" className="custom-header" />);
 
 		const headerElement = screen.getByText('Custom Header');
@@ -20,7 +23,8 @@ describe('TableHeader Component', () => {
 		expect(headerElement.className).toBe('custom-header');
 	});
 
-	it('renders empty label', () => {
+	it('renders empty label', () =>
+	{
 		const {container} = render(<TableHeader label="" />);
 
 		const headerElement = container.querySelector('.history-header');

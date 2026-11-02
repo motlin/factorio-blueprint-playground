@@ -2,10 +2,12 @@ import type {Meta, StoryObj} from '@storybook/react-vite';
 
 import {EmptyHistoryState} from './EmptyHistoryState';
 
-const meta: Meta<typeof EmptyHistoryState> = {
+const meta: Meta<typeof EmptyHistoryState> =
+{
 	title: 'History/Views/EmptyHistoryState',
 	component: EmptyHistoryState,
-	parameters: {
+	parameters:
+	{
 		layout: 'centered',
 	},
 	tags: ['autodocs'],

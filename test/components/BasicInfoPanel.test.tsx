@@ -10,27 +10,32 @@ import '../../test/setup';
 // Load the simple.txt blueprint string directly
 const simpleBlueprintString = readFileSync(join(__dirname, '../fixtures/blueprints/txt/simple.txt'), 'utf-8').trim();
 
-describe('BasicInfoPanel memoization test', () => {
-	test('memoization prevents re-renders with same props', () => {
+describe('BasicInfoPanel memoization test', () =>
+{
+	test('memoization prevents re-renders with same props', () =>
+	{
 		// Create components to count renders
 		let memoizedRenderCount = 0;
 		let normalRenderCount = 0;
 
 		// A component that gets memoized and counts renders
-		function MemoCounter(_props: {blueprint?: string}) {
+		function MemoCounter(_props: {blueprint?: string})
+		{
 			memoizedRenderCount++;
 			return <div>Memoized renders: {memoizedRenderCount}</div>;
 		}
 		const MemoizedCounter = React.memo(MemoCounter);
 
 		// A component that doesn't get memoized and counts renders
-		function NormalCounter(_props: {blueprint?: string}) {
+		function NormalCounter(_props: {blueprint?: string})
+		{
 			normalRenderCount++;
 			return <div>Normal renders: {normalRenderCount}</div>;
 		}
 
 		// Create a test component that wraps the normal and memoized components
-		function CountRenders({blueprint}: {blueprint?: string}) {
+		function CountRenders({blueprint}: {blueprint?: string})
+		{
 			return (
 				<>
 					<MemoizedCounter blueprint={blueprint} />
@@ -63,7 +68,8 @@ describe('BasicInfoPanel memoization test', () => {
 		expect(normalRenderCount).toBe(3);
 	});
 
-	test('renders nothing when no blueprint is provided', () => {
+	test('renders nothing when no blueprint is provided', () =>
+	{
 		const {container} = render(<BasicInfoPanel />);
 		expect(container).toBeEmptyDOMElement();
 	});

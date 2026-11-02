@@ -3,7 +3,8 @@
 	"version": "0.0.0",
 	"private": true,
 	"type": "module",
-	"scripts": {
+	"scripts":
+	{
 		"preinstall": "npx only-allow pnpm",
 		"dev": "vp dev",
 		"dev:pages": "wrangler pages dev --proxy=5173 --port=8788",
@@ -32,7 +33,8 @@
 		"build-storybook": "storybook build",
 		"prepare": "VITE_GIT_HOOKS=0 vp config"
 	},
-	"dependencies": {
+	"dependencies":
+	{
 		"@sentry/react": "^11.10.0",
 		"@tanstack/react-query": "^5.102.8",
 		"@tanstack/react-query-devtools": "^5.102.8",
@@ -48,7 +50,8 @@
 		"react-error-boundary": "^6.1.6",
 		"zod": "^4.6.7"
 	},
-	"devDependencies": {
+	"devDependencies":
+	{
 		"@chromatic-com/storybook": "^5.6.0",
 		"@cloudflare/workers-types": "^5.20261104.1",
 		"@playwright/test": "^1.64.1",

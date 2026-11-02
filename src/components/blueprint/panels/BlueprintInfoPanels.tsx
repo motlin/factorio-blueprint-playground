@@ -8,13 +8,15 @@ import {LintPanel} from './lint/LintPanel';
 import {ModDetectionPanel} from './mod-detection/ModDetectionPanel';
 import {UpgradePlannerPanel} from './upgrade/UpgradePlannerPanel';
 
-interface BlueprintInfoPanelsProps {
+interface BlueprintInfoPanelsProps
+{
 	blueprint?: BlueprintString;
 	selectedPath?: string;
 	onSelect?: (path: string) => void;
 }
 
-const BlueprintInfoPanelsComponent = ({blueprint, selectedPath, onSelect}: BlueprintInfoPanelsProps) => {
+const BlueprintInfoPanelsComponent = ({blueprint, selectedPath, onSelect}: BlueprintInfoPanelsProps) =>
+{
 	if (!blueprint) return null;
 	return (
 		<>
