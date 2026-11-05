@@ -40,3 +40,6 @@ src/routeTree.gen.ts
 
 *storybook.log
 storybook-static
+
+.tanstack
+test/visual/temp
