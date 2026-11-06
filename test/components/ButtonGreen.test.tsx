@@ -15,10 +15,21 @@ describe('ButtonGreen Component', () => {
 		const {container} = render(<ButtonGreen onClick={() => undefined}>Test Button</ButtonGreen>);
 
 		const button = container.firstChild as HTMLButtonElement;
-		expect(button).toBeInTheDocument();
-		expect(button).toHaveClass('button-green-right');
-		expect(button.style.display).toBe('inline-flex');
-		expect(button.style.alignItems).toBe('center');
+		expect({
+			alignItems: button.style.alignItems,
+			className: button.className,
+			display: button.style.display,
+			tagName: button.tagName,
+			textContent: button.textContent,
+			type: button.type,
+		}).toStrictEqual({
+			alignItems: 'center',
+			className: 'button-green-right ',
+			display: 'inline-flex',
+			tagName: 'BUTTON',
+			textContent: 'Test Button',
+			type: 'button',
+		});
 	});
 
 	// Test click handler functionality

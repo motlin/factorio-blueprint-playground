@@ -1,0 +1,430 @@
+import {fireEvent, render, screen, waitFor, within} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import {expect, test, vi} from 'vite-plus/test';
+
+import {
+	IconReplacementDialog,
+	type IconReplacementDialogProps,
+} from '../../src/components/blueprint/panels/transform/IconReplacementDialog';
+import type {BlueprintString, SignalID} from '../../src/parsing/types';
+import type {IconReplacement} from '../../src/transform/metadataSubstitution';
+
+const redSignal: SignalID = {type: 'virtual', name: 'signal-red'};
+const blueSignal: SignalID = {type: 'virtual', name: 'signal-blue'};
+const greenSignal: SignalID = {type: 'virtual', name: 'signal-green'};
+
+const rootBlueprint: BlueprintString = {
+	blueprint_book: {
+		item: 'blueprint-book',
+		version: 0,
+		icons: [{index: 1, signal: redSignal}],
+		blueprints: [
+			{
+				index: 100,
+				blueprint_book: {
+					item: 'blueprint-book',
+					version: 0,
+					icons: [{index: 1, signal: greenSignal}],
+					blueprints: [],
+				},
+			},
+		],
+	},
+};
+
+const replacements: IconReplacement[] = [{from: redSignal, to: blueSignal}];
+
+const hiddenSignal: SignalID = {type: 'item', name: 'space-platform-hub'};
+const parameterSignal: SignalID = {type: 'item', name: 'parameter-0'};
+
+const hiddenIconBlueprint: BlueprintString = {
+	blueprint: {
+		item: 'blueprint',
+		version: 0,
+		icons: [
+			{index: 1, signal: hiddenSignal},
+			{index: 2, signal: parameterSignal},
+		],
+	},
+};
+
+const tileSignal: SignalID = {type: 'tile', name: 'landfill'};
+const entitySignal: SignalID = {type: 'entity', name: 'assembling-machine-2'};
+
+function singleIconBlueprint(signal: SignalID): BlueprintString {
+	return {blueprint: {item: 'blueprint', version: 0, icons: [{index: 1, signal}]}};
+}
+
+async function chooseSignal(user: ReturnType<typeof userEvent.setup>, label: string) {
+	await user.click(screen.getByRole('button', {name: `Choose ${label}`}));
+	const confirm = screen.queryByRole('button', {name: 'Confirm'});
+	if (confirm !== null) {
+		await user.click(confirm);
+	}
+}
+
+async function openTargetPicker(user: ReturnType<typeof userEvent.setup>, category?: string): Promise<HTMLElement> {
+	await user.click(screen.getByRole('button', {name: 'Choose target icon'}));
+	const picker = screen.getByRole('dialog', {name: 'Choose target icon'});
+	if (category !== undefined) {
+		await user.click(within(picker).getByRole('tab', {name: category}));
+	}
+	return picker;
+}
+
+async function stageSourceAndOpenTargetPicker(
+	user: ReturnType<typeof userEvent.setup>,
+	signal: SignalID,
+	sourceName: string,
+): Promise<HTMLElement> {
+	await user.click(screen.getByRole('button', {name: 'Choose source icon'}));
+	await user.click(
+		within(screen.getByRole('dialog', {name: 'Choose source icon used here'})).getByRole('button', {
+			name: `Choose ${sourceName}`,
+		}),
+	);
+	expect(screen.getByRole('button', {name: 'Choose source icon'}).getAttribute('title')).toBe(
+		`${sourceName}\n${signal.type ?? 'item'}:${signal.name}`,
+	);
+	return openTargetPicker(user);
+}
+
+test('uses root icons as sources and preserves mappings while incomplete choices are dismissed', async () => {
+	const user = userEvent.setup();
+	const onChange = vi.fn<IconReplacementDialogProps['onChange']>();
+	render(
+		<IconReplacementDialog
+			onChange={onChange}
+			onClose={vi.fn<IconReplacementDialogProps['onClose']>()}
+			replacements={replacements}
+			rootBlueprint={rootBlueprint}
+		/>,
+	);
+
+	const mapping = screen.getByRole('button', {name: 'Remove replacement for Signal red'}).parentElement;
+	if (mapping === null) {
+		throw new Error('The committed icon mapping row was not rendered.');
+	}
+	expect({
+		activeElement: document.activeElement?.getAttribute('aria-label'),
+		count: mapping.querySelector('strong')?.textContent,
+		endpointClasses: ['Edit source, currently Signal red', 'Edit target, currently Signal blue'].map(
+			(name) => screen.getByRole('button', {name}).parentElement?.className,
+		),
+		names: [...mapping.querySelectorAll('.icon-replacement-editor__name')].map((element) => element.textContent),
+		titles: ['Edit source, currently Signal red', 'Edit target, currently Signal blue'].map((name) =>
+			screen.getByRole('button', {name}).getAttribute('title'),
+		),
+	}).toStrictEqual({
+		activeElement: 'Choose source icon',
+		count: '1',
+		endpointClasses: ['icon-replacement-editor__endpoint', 'icon-replacement-editor__endpoint'],
+		names: ['Signal red', 'Signal blue'],
+		titles: ['Signal red\nvirtual:signal-red', 'Signal blue\nvirtual:signal-blue'],
+	});
+
+	await user.click(screen.getByRole('button', {name: 'Choose source icon'}));
+	expect(
+		within(screen.getByRole('dialog', {name: 'Choose source icon used here'}))
+			.getAllByRole('button')
+			.map((button) => button.getAttribute('aria-label'))
+			.filter((label): label is string => label?.startsWith('Choose ') === true),
+	).toStrictEqual(['Choose Signal green']);
+
+	fireEvent.keyDown(window, {key: 'q', code: 'KeyQ'});
+	await waitFor(() => {
+		expect(document.activeElement?.getAttribute('aria-label')).toBe('Choose source icon');
+	});
+	const replacementDialog = screen.getByRole('dialog', {name: 'Icon Replacements'});
+	expect({
+		activeElement: document.activeElement?.getAttribute('aria-label'),
+		committedMapping: screen
+			.getByRole('button', {name: 'Remove replacement for Signal red'})
+			.getAttribute('aria-label'),
+		replacementDialogInert: replacementDialog.inert,
+		picker: screen.queryByRole('dialog', {name: 'Choose source icon used here'}),
+	}).toStrictEqual({
+		activeElement: 'Choose source icon',
+		committedMapping: 'Remove replacement for Signal red',
+		replacementDialogInert: false,
+		picker: null,
+	});
+
+	await user.click(screen.getByRole('button', {name: 'Choose source icon'}));
+	await chooseSignal(user, 'Signal green');
+	const signalTargetPicker = await openTargetPicker(user, 'Signals');
+	expect({
+		blue: within(signalTargetPicker).getByRole('button', {name: 'Choose Signal blue'}).getAttribute('title'),
+		yellow: within(signalTargetPicker).getByRole('button', {name: 'Choose Signal yellow'}).getAttribute('title'),
+	}).toStrictEqual({
+		blue: 'Signal blue\nvirtual:signal-blue',
+		yellow: 'Signal yellow\nvirtual:signal-yellow',
+	});
+
+	fireEvent.keyDown(window, {key: 'Escape', code: 'Escape'});
+	expect({
+		clearSource: screen.getByRole('button', {name: 'Dismiss new replacement'}).getAttribute('aria-label'),
+		committedMapping: screen
+			.getByRole('button', {name: 'Remove replacement for Signal red'})
+			.getAttribute('aria-label'),
+		picker: screen.queryByRole('dialog', {name: 'Choose target icon'}),
+	}).toStrictEqual({
+		clearSource: 'Dismiss new replacement',
+		committedMapping: 'Remove replacement for Signal red',
+		picker: null,
+	});
+
+	await user.click(screen.getByRole('button', {name: 'Dismiss new replacement'}));
+	expect({
+		clearSource: screen.queryByRole('button', {name: 'Dismiss new replacement'}),
+		targetDisabled: screen.getByRole('button', {name: 'Choose target icon'}).getAttribute('aria-disabled'),
+	}).toStrictEqual({
+		clearSource: null,
+		targetDisabled: 'false',
+	});
+
+	await user.click(screen.getByRole('button', {name: 'Choose source icon'}));
+	await chooseSignal(user, 'Signal green');
+	await openTargetPicker(user, 'Signals');
+	await chooseSignal(user, 'Signal yellow');
+
+	expect(onChange).toHaveBeenCalledExactlyOnceWith([
+		{from: redSignal, to: blueSignal},
+		{from: greenSignal, to: {type: 'virtual', name: 'signal-yellow'}},
+	]);
+});
+
+test('edits existing replacement endpoints in place through the nested pickers', async () => {
+	const user = userEvent.setup();
+	const onChange = vi.fn<IconReplacementDialogProps['onChange']>();
+	render(
+		<IconReplacementDialog
+			onChange={onChange}
+			onClose={vi.fn<IconReplacementDialogProps['onClose']>()}
+			replacements={replacements}
+			rootBlueprint={rootBlueprint}
+		/>,
+	);
+
+	await user.click(screen.getByRole('button', {name: 'Edit target, currently Signal blue'}));
+	const targetPicker = screen.getByRole('dialog', {name: 'Choose target icon'});
+	await user.click(within(targetPicker).getByRole('button', {name: 'Choose Signal yellow'}));
+	expect(onChange).toHaveBeenLastCalledWith([{from: redSignal, to: {type: 'virtual', name: 'signal-yellow'}}]);
+
+	await user.click(screen.getByRole('button', {name: 'Edit source, currently Signal red'}));
+	const sourcePicker = screen.getByRole('dialog', {name: 'Choose source icon used here'});
+	expect(
+		within(sourcePicker)
+			.getAllByRole('button')
+			.map((button) => button.getAttribute('aria-label'))
+			.filter((label): label is string => label?.startsWith('Choose ') === true),
+	).toStrictEqual(['Choose Signal red', 'Choose Signal green']);
+	await user.click(within(sourcePicker).getByRole('button', {name: 'Choose Signal green'}));
+	expect(onChange).toHaveBeenLastCalledWith([{from: greenSignal, to: blueSignal}]);
+});
+
+test('starts a new replacement from the target endpoint without silently committing', async () => {
+	const user = userEvent.setup();
+	const onChange = vi.fn<IconReplacementDialogProps['onChange']>();
+	render(
+		<IconReplacementDialog
+			onChange={onChange}
+			onClose={vi.fn<IconReplacementDialogProps['onClose']>()}
+			replacements={[]}
+			rootBlueprint={rootBlueprint}
+		/>,
+	);
+
+	const targetPicker = await openTargetPicker(user, 'Signals');
+	await user.click(within(targetPicker).getByRole('button', {name: 'Choose Signal yellow'}));
+	expect({
+		committed: onChange.mock.calls,
+		dismiss: screen.getByRole('button', {name: 'Dismiss new replacement'}).getAttribute('aria-label'),
+	}).toStrictEqual({
+		committed: [],
+		dismiss: 'Dismiss new replacement',
+	});
+
+	await user.click(screen.getByRole('button', {name: 'Choose source icon'}));
+	await user.click(
+		within(screen.getByRole('dialog', {name: 'Choose source icon used here'})).getByRole('button', {
+			name: 'Choose Signal red',
+		}),
+	);
+	expect(onChange).toHaveBeenCalledExactlyOnceWith([{from: redSignal, to: {type: 'virtual', name: 'signal-yellow'}}]);
+});
+
+function pickerOptionLabels(picker: HTMLElement): string[] {
+	return within(picker)
+		.getAllByRole('button')
+		.map((button) => button.getAttribute('aria-label'))
+		.filter((label): label is string => label?.startsWith('Choose ') === true);
+}
+
+test("offers the blueprint's own hidden and parameter icons as replacement sources", async () => {
+	const user = userEvent.setup();
+	const onChange = vi.fn<IconReplacementDialogProps['onChange']>();
+	render(
+		<IconReplacementDialog
+			onChange={onChange}
+			onClose={vi.fn<IconReplacementDialogProps['onClose']>()}
+			replacements={[]}
+			rootBlueprint={hiddenIconBlueprint}
+		/>,
+	);
+
+	await user.click(screen.getByRole('button', {name: 'Choose source icon'}));
+	const sourcePicker = screen.getByRole('dialog', {name: 'Choose source icon used here'});
+	expect({
+		hidden: pickerOptionLabels(sourcePicker),
+		tabs: within(sourcePicker)
+			.getAllByRole('tab')
+			.map((tab) => tab.getAttribute('aria-label')),
+	}).toStrictEqual({
+		hidden: ['Choose Space platform hub'],
+		tabs: ['Production', 'Unsorted'],
+	});
+
+	await user.click(within(sourcePicker).getByRole('tab', {name: 'Unsorted'}));
+	expect(pickerOptionLabels(sourcePicker)).toStrictEqual(['Choose Parameter 0']);
+
+	await user.click(within(sourcePicker).getByRole('tab', {name: 'Production'}));
+	await user.click(within(sourcePicker).getByRole('button', {name: 'Choose Space platform hub'}));
+	expect({
+		committed: onChange.mock.calls,
+		source: screen.getByRole('button', {name: 'Choose source icon'}).getAttribute('title'),
+	}).toStrictEqual({
+		committed: [],
+		source: 'Space platform hub\nitem:space-platform-hub',
+	});
+});
+
+test('shows the current hidden source as selected while editing a mapping', async () => {
+	const user = userEvent.setup();
+	render(
+		<IconReplacementDialog
+			onChange={vi.fn<IconReplacementDialogProps['onChange']>()}
+			onClose={vi.fn<IconReplacementDialogProps['onClose']>()}
+			replacements={[{from: hiddenSignal, to: {type: 'item', name: 'iron-chest'}}]}
+			rootBlueprint={hiddenIconBlueprint}
+		/>,
+	);
+
+	await user.click(screen.getByRole('button', {name: 'Edit source, currently Space platform hub'}));
+	const sourcePicker = screen.getByRole('dialog', {name: 'Choose source icon used here'});
+	expect({
+		options: pickerOptionLabels(sourcePicker),
+		selected: within(sourcePicker)
+			.getByRole('button', {name: 'Choose Space platform hub'})
+			.getAttribute('aria-pressed'),
+	}).toStrictEqual({
+		options: ['Choose Space platform hub'],
+		selected: 'true',
+	});
+});
+
+const itemIronPlate: SignalID = {type: 'item', name: 'iron-plate'};
+const recipeIronPlate: SignalID = {type: 'recipe', name: 'iron-plate'};
+const copperPlate: SignalID = {type: 'item', name: 'copper-plate'};
+
+const nameTwinIconBlueprint: BlueprintString = {
+	blueprint: {
+		item: 'blueprint',
+		version: 0,
+		icons: [
+			{index: 1, signal: itemIronPlate},
+			{index: 2, signal: recipeIronPlate},
+		],
+	},
+};
+
+test('keeps an item and its recipe name twin separate while editing a mapping source', async () => {
+	const user = userEvent.setup();
+	const onChange = vi.fn<IconReplacementDialogProps['onChange']>();
+	render(
+		<IconReplacementDialog
+			onChange={onChange}
+			onClose={vi.fn<IconReplacementDialogProps['onClose']>()}
+			replacements={[{from: recipeIronPlate, to: copperPlate}]}
+			rootBlueprint={nameTwinIconBlueprint}
+		/>,
+	);
+
+	await user.click(screen.getByRole('button', {name: 'Edit source, currently Iron plate'}));
+	const sourcePicker = screen.getByRole('dialog', {name: 'Choose source icon used here'});
+	const recipeOption = within(sourcePicker).getByRole('button', {name: 'Choose Iron plate'});
+	expect({
+		pressed: recipeOption.getAttribute('aria-pressed'),
+		tabs: within(sourcePicker)
+			.getAllByRole('tab')
+			.map((tab) => tab.getAttribute('aria-label')),
+		title: recipeOption.getAttribute('title'),
+	}).toStrictEqual({
+		pressed: 'true',
+		tabs: ['Intermediate products', 'Unsorted'],
+		title: 'Iron plate\nrecipe:iron-plate',
+	});
+
+	await user.click(within(sourcePicker).getByRole('tab', {name: 'Intermediate products'}));
+	const itemOption = within(sourcePicker).getByRole('button', {name: 'Choose Iron plate'});
+	expect({
+		pressed: itemOption.getAttribute('aria-pressed'),
+		title: itemOption.getAttribute('title'),
+	}).toStrictEqual({
+		pressed: 'false',
+		title: 'Iron plate\nitem:iron-plate',
+	});
+
+	await user.click(itemOption);
+	expect(onChange).toHaveBeenCalledExactlyOnceWith([{from: itemIronPlate, to: copperPlate}]);
+});
+
+test('offers replacement targets for a tile-typed source icon', async () => {
+	const user = userEvent.setup();
+	const onChange = vi.fn<IconReplacementDialogProps['onChange']>();
+	render(
+		<IconReplacementDialog
+			onChange={onChange}
+			onClose={vi.fn<IconReplacementDialogProps['onClose']>()}
+			replacements={[]}
+			rootBlueprint={singleIconBlueprint(tileSignal)}
+		/>,
+	);
+
+	const targetPicker = await stageSourceAndOpenTargetPicker(user, tileSignal, 'Landfill');
+	expect({
+		empty: within(targetPicker).queryByLabelText('Nothing found'),
+		landfill: within(targetPicker).getByRole('button', {name: 'Choose Landfill'}).getAttribute('title'),
+	}).toStrictEqual({
+		empty: null,
+		landfill: 'Landfill\nitem:landfill',
+	});
+
+	await user.click(within(targetPicker).getByRole('button', {name: 'Choose Landfill'}));
+	expect(onChange).toHaveBeenCalledExactlyOnceWith([{from: tileSignal, to: {type: 'item', name: 'landfill'}}]);
+});
+
+test('offers replacement targets for an entity-typed source icon', async () => {
+	const user = userEvent.setup();
+	const onChange = vi.fn<IconReplacementDialogProps['onChange']>();
+	render(
+		<IconReplacementDialog
+			onChange={onChange}
+			onClose={vi.fn<IconReplacementDialogProps['onClose']>()}
+			replacements={[]}
+			rootBlueprint={singleIconBlueprint(entitySignal)}
+		/>,
+	);
+
+	const targetPicker = await stageSourceAndOpenTargetPicker(user, entitySignal, 'Assembling machine 2');
+	expect({
+		empty: within(targetPicker).queryByLabelText('Nothing found'),
+		woodenChest: within(targetPicker).getByRole('button', {name: 'Choose Wooden chest'}).getAttribute('title'),
+	}).toStrictEqual({
+		empty: null,
+		woodenChest: 'Wooden chest\nitem:wooden-chest',
+	});
+
+	await user.click(within(targetPicker).getByRole('button', {name: 'Choose Wooden chest'}));
+	expect(onChange).toHaveBeenCalledExactlyOnceWith([{from: entitySignal, to: {type: 'item', name: 'wooden-chest'}}]);
+});

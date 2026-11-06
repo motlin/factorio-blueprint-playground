@@ -1,0 +1,414 @@
+import {useCallback, useMemo, useState} from 'react';
+
+import type {BlueprintString, Parameter, SignalID} from '../../../../parsing/types';
+import {updateNestedBlueprint} from '../../../../transform/applyAtPath';
+import {flattenBook, sortBookByLabel} from '../../../../transform/bookOps';
+import {
+	applyBlueprintEditorMetadata,
+	applyBlueprintParameters,
+	applyBlueprintSnapGrid,
+	BlueprintEditorSourceMode,
+	blueprintEditorMetadata,
+	blueprintParameters,
+	blueprintSnapGrid,
+	type BlueprintSnapGrid,
+} from '../../../../transform/blueprintEditor';
+import {type BlueprintComponentRemovalKey, removeBlueprintComponents} from '../../../../transform/componentRemoval';
+import {
+	blueprintFilterAnalysis,
+	stripEntities,
+	stripFuel,
+	stripModules,
+	stripStationNames,
+	stripTiles,
+	stripTrains,
+	stripVehicles,
+} from '../../../../transform/strip';
+import type {PlacedUpgradePlanner} from './BlueprintEditorToolbar';
+
+interface UseBlueprintEditorDraftOptions {
+	blueprint?: BlueprintString;
+	rootBlueprint?: BlueprintString;
+	selectedPath: string;
+	capturedOnSpacePlatform: boolean;
+	sourceMode: BlueprintEditorSourceMode;
+}
+
+export {BlueprintEditorSourceMode} from '../../../../transform/blueprintEditor';
+
+export interface BlueprintEditorCommitAction {
+	caption: string;
+	kind: BlueprintEditorCommitActionKind;
+	scopeDescription: string;
+}
+
+export enum BlueprintEditorCommitActionKind {
+	Create = 'create',
+	SaveChild = 'save-child',
+	SaveRoot = 'save-root',
+}
+
+export enum BlueprintEditorCommitState {
+	Clean = 'clean',
+	Invalid = 'invalid',
+	Pending = 'pending',
+	Ready = 'ready',
+}
+
+export interface BlueprintEditorContext {
+	caption: string;
+	contextLabel: string;
+}
+
+function blueprintEditorContext(
+	blueprint: BlueprintString | undefined,
+	selectedPath: string,
+	sourceMode: BlueprintEditorSourceMode,
+): BlueprintEditorContext {
+	if (selectedPath !== '') {
+		return {
+			caption: 'Blueprint in the blueprint library',
+			contextLabel: 'Child blueprint record',
+		};
+	}
+	if (sourceMode === BlueprintEditorSourceMode.CapturedDraft) {
+		return {
+			caption: 'Set up new blueprint',
+			contextLabel: 'New blueprint',
+		};
+	}
+	if (blueprint?.blueprint_book !== undefined) {
+		return {
+			caption: 'Blueprint book in the blueprint library',
+			contextLabel: 'Blueprint library record',
+		};
+	}
+	return {
+		caption: 'Blueprint item',
+		contextLabel: 'Existing blueprint',
+	};
+}
+
+function blueprintEditorCommitAction(
+	selectedPath: string,
+	sourceMode: BlueprintEditorSourceMode,
+): BlueprintEditorCommitAction {
+	if (selectedPath !== '') {
+		return {
+			caption: 'Save blueprint',
+			kind: BlueprintEditorCommitActionKind.SaveChild,
+			scopeDescription: 'Saves this child in its containing book. The whole book remains the loaded result.',
+		};
+	}
+	if (sourceMode === BlueprintEditorSourceMode.CapturedDraft) {
+		return {
+			caption: 'Create blueprint',
+			kind: BlueprintEditorCommitActionKind.Create,
+			scopeDescription: 'Creates this captured draft as the loaded root blueprint.',
+		};
+	}
+	return {
+		caption: 'Save blueprint',
+		kind: BlueprintEditorCommitActionKind.SaveRoot,
+		scopeDescription: 'Saves changes to this loaded root blueprint.',
+	};
+}
+
+function sourceMetadata(blueprint: BlueprintString | undefined) {
+	if (blueprint === undefined || (blueprint.blueprint === undefined && blueprint.blueprint_book === undefined)) {
+		return {description: '', icons: [], label: ''};
+	}
+	return blueprintEditorMetadata(blueprint);
+}
+
+/**
+ * Transaction state derived from Factorio 2.1.12's setup model:
+ *
+ * - Opening creates a session-local copy of title, description, icons, snapping,
+ *   parameters, components, and conditional filters.
+ * - Child confirmations change that copy. They do not mutate the loaded source.
+ * - A clean close ends the session. X and Escape share the same close request; a
+ *   dirty request enters confirmation, keeping returns to the same draft, and
+ *   discarding resets it before closing.
+ * - The draft selected entry is reinserted at `selectedPath`, preserving its
+ *   containing root book. The returned commit function is the only path across
+ *   the editor boundary.
+ *
+ * `sourceMode` is explicit session/record identity. A captured draft is not
+ * inferred from its editable label: empty labels are valid on existing records.
+ * This maps BlueprintToBeSetup::isNewBlueprintItem and BlueprintViewMode to
+ * browser state.
+ */
+export function useBlueprintEditorDraft({
+	blueprint,
+	rootBlueprint,
+	selectedPath,
+	capturedOnSpacePlatform,
+	sourceMode,
+}: UseBlueprintEditorDraftOptions) {
+	const filterAnalysis = useMemo(
+		() => blueprintFilterAnalysis(blueprint ?? {}, sourceMode, capturedOnSpacePlatform),
+		[blueprint, capturedOnSpacePlatform, sourceMode],
+	);
+	const metadata = useMemo(() => sourceMetadata(blueprint), [blueprint]);
+	const sourceIcons = useMemo(() => {
+		const slots = Array<SignalID | undefined>(4).fill(undefined);
+		for (const icon of metadata.icons) {
+			if (icon.index >= 1 && icon.index <= slots.length) {
+				slots[icon.index - 1] = icon.signal;
+			}
+		}
+		return slots;
+	}, [metadata.icons]);
+	const sourceSnapGrid = useMemo(
+		() => (blueprint?.blueprint === undefined ? undefined : blueprintSnapGrid(blueprint)),
+		[blueprint],
+	);
+	const sourceParameters = useMemo(
+		() => (blueprint?.blueprint === undefined ? [] : blueprintParameters(blueprint)),
+		[blueprint],
+	);
+	const [blueprintEditorOpen, setBlueprintEditorOpen] = useState(false);
+	const [closeConfirmationOpen, setCloseConfirmationOpen] = useState(false);
+	const [editorLabel, setEditorLabel] = useState(metadata.label);
+	const [editorDescription, setEditorDescription] = useState(metadata.description);
+	const [editorIcons, setEditorIcons] = useState<Array<SignalID | undefined>>(sourceIcons);
+	const [editorSnapGrid, setEditorSnapGrid] = useState<BlueprintSnapGrid | undefined>(sourceSnapGrid);
+	const [editorParameters, setEditorParameters] = useState<Parameter[]>(sourceParameters);
+	const [editorIconPickerIndex, setEditorIconPickerIndex] = useState<number>();
+	const [editorPlacedPlanner, setEditorPlacedPlanner] = useState<PlacedUpgradePlanner>();
+	const [editorPlannerDropError, setEditorPlannerDropError] = useState<string>();
+	const [removedEditorComponents, setRemovedEditorComponents] = useState<Set<BlueprintComponentRemovalKey>>(
+		() => new Set(),
+	);
+	const [stripEntitiesSelected, setStripEntitiesSelected] = useState(!filterAnalysis.defaults.entities);
+	const [stripFuelSelected, setStripFuelSelected] = useState(!filterAnalysis.defaults.fuel);
+	const [stripModulesSelected, setStripModulesSelected] = useState(!filterAnalysis.defaults.modules);
+	const [stripStationNamesSelected, setStripStationNamesSelected] = useState(!filterAnalysis.defaults.stationNames);
+	const [stripTrainsSelected, setStripTrainsSelected] = useState(!filterAnalysis.defaults.trains);
+	const [stripTilesSelected, setStripTilesSelected] = useState(!filterAnalysis.defaults.tiles);
+	const [stripVehiclesSelected, setStripVehiclesSelected] = useState(!filterAnalysis.defaults.vehicles);
+	const [flattenBookSelected, setFlattenBookSelected] = useState(false);
+	const [sortBookSelected, setSortBookSelected] = useState(false);
+
+	const resetBlueprintEditorDraft = useCallback(() => {
+		setEditorLabel(metadata.label);
+		setEditorDescription(metadata.description);
+		setEditorIcons(sourceIcons);
+		setEditorSnapGrid(sourceSnapGrid);
+		setEditorParameters(sourceParameters);
+		setEditorIconPickerIndex(undefined);
+		setEditorPlacedPlanner(undefined);
+		setEditorPlannerDropError(undefined);
+		setRemovedEditorComponents(new Set());
+		setStripEntitiesSelected(!filterAnalysis.defaults.entities);
+		setStripFuelSelected(!filterAnalysis.defaults.fuel);
+		setStripModulesSelected(!filterAnalysis.defaults.modules);
+		setStripStationNamesSelected(!filterAnalysis.defaults.stationNames);
+		setStripTrainsSelected(!filterAnalysis.defaults.trains);
+		setStripTilesSelected(!filterAnalysis.defaults.tiles);
+		setStripVehiclesSelected(!filterAnalysis.defaults.vehicles);
+		setFlattenBookSelected(false);
+		setSortBookSelected(false);
+	}, [filterAnalysis.defaults, metadata.description, metadata.label, sourceIcons, sourceParameters, sourceSnapGrid]);
+
+	const editorDirty = useMemo(
+		() =>
+			editorLabel !== metadata.label ||
+			editorDescription !== metadata.description ||
+			JSON.stringify(editorIcons) !== JSON.stringify(sourceIcons) ||
+			JSON.stringify(editorSnapGrid) !== JSON.stringify(sourceSnapGrid) ||
+			JSON.stringify(editorParameters) !== JSON.stringify(sourceParameters) ||
+			removedEditorComponents.size > 0 ||
+			stripEntitiesSelected !== !filterAnalysis.defaults.entities ||
+			stripFuelSelected !== !filterAnalysis.defaults.fuel ||
+			stripModulesSelected !== !filterAnalysis.defaults.modules ||
+			stripStationNamesSelected !== !filterAnalysis.defaults.stationNames ||
+			stripTrainsSelected !== !filterAnalysis.defaults.trains ||
+			stripTilesSelected !== !filterAnalysis.defaults.tiles ||
+			stripVehiclesSelected !== !filterAnalysis.defaults.vehicles ||
+			flattenBookSelected ||
+			sortBookSelected,
+		[
+			editorDescription,
+			editorIcons,
+			editorLabel,
+			editorParameters,
+			editorSnapGrid,
+			filterAnalysis.defaults,
+			flattenBookSelected,
+			metadata.description,
+			metadata.label,
+			removedEditorComponents,
+			sortBookSelected,
+			sourceIcons,
+			sourceParameters,
+			sourceSnapGrid,
+			stripEntitiesSelected,
+			stripFuelSelected,
+			stripModulesSelected,
+			stripStationNamesSelected,
+			stripTilesSelected,
+			stripTrainsSelected,
+			stripVehiclesSelected,
+		],
+	);
+	const editorCommitAction = useMemo(
+		() => blueprintEditorCommitAction(selectedPath, sourceMode),
+		[selectedPath, sourceMode],
+	);
+	const editorContext = useMemo(
+		() => blueprintEditorContext(blueprint, selectedPath, sourceMode),
+		[blueprint, selectedPath, sourceMode],
+	);
+	const editorDraft = useMemo(() => {
+		if (blueprint === undefined || rootBlueprint === undefined) {
+			return {rootBlueprint: undefined, selectedBlueprint: undefined};
+		}
+		if (!blueprintEditorOpen) {
+			return {rootBlueprint, selectedBlueprint: blueprint};
+		}
+		let selectedBlueprint = blueprint;
+		if (selectedBlueprint.blueprint !== undefined || selectedBlueprint.blueprint_book !== undefined) {
+			selectedBlueprint = applyBlueprintEditorMetadata(selectedBlueprint, {
+				description: editorDescription,
+				icons: editorIcons.flatMap((signal, index) =>
+					signal === undefined ? [] : [{index: index + 1, signal}],
+				),
+				label: editorLabel,
+			});
+		}
+		if (selectedBlueprint.blueprint !== undefined && editorSnapGrid !== undefined) {
+			selectedBlueprint = applyBlueprintSnapGrid(selectedBlueprint, editorSnapGrid);
+		}
+		if (selectedBlueprint.blueprint !== undefined) {
+			selectedBlueprint = applyBlueprintParameters(selectedBlueprint, editorParameters);
+		}
+		selectedBlueprint = removeBlueprintComponents(selectedBlueprint, removedEditorComponents);
+		if (stripTrainsSelected) selectedBlueprint = stripTrains(selectedBlueprint);
+		if (stripVehiclesSelected) selectedBlueprint = stripVehicles(selectedBlueprint);
+		if (stripEntitiesSelected) selectedBlueprint = stripEntities(selectedBlueprint);
+		if (stripModulesSelected) selectedBlueprint = stripModules(selectedBlueprint);
+		if (stripFuelSelected) selectedBlueprint = stripFuel(selectedBlueprint);
+		if (stripStationNamesSelected) selectedBlueprint = stripStationNames(selectedBlueprint);
+		if (stripTilesSelected) selectedBlueprint = stripTiles(selectedBlueprint);
+		if (flattenBookSelected) selectedBlueprint = flattenBook(selectedBlueprint);
+		if (sortBookSelected) selectedBlueprint = sortBookByLabel(selectedBlueprint);
+		return {
+			rootBlueprint: updateNestedBlueprint(rootBlueprint, selectedPath, () => selectedBlueprint) ?? undefined,
+			selectedBlueprint,
+		};
+	}, [
+		blueprint,
+		blueprintEditorOpen,
+		editorDescription,
+		editorIcons,
+		editorLabel,
+		editorParameters,
+		editorSnapGrid,
+		flattenBookSelected,
+		removedEditorComponents,
+		rootBlueprint,
+		selectedPath,
+		sortBookSelected,
+		stripEntitiesSelected,
+		stripFuelSelected,
+		stripModulesSelected,
+		stripStationNamesSelected,
+		stripTilesSelected,
+		stripTrainsSelected,
+		stripVehiclesSelected,
+	]);
+	const editorCommitState =
+		editorDraft.rootBlueprint === undefined
+			? BlueprintEditorCommitState.Invalid
+			: sourceMode === BlueprintEditorSourceMode.ExistingRecord && !editorDirty
+				? BlueprintEditorCommitState.Clean
+				: BlueprintEditorCommitState.Ready;
+
+	const openBlueprintEditor = useCallback(() => {
+		resetBlueprintEditorDraft();
+		setCloseConfirmationOpen(false);
+		setBlueprintEditorOpen(true);
+	}, [resetBlueprintEditorDraft]);
+	const requestCloseBlueprintEditor = useCallback(() => {
+		if (editorDirty) {
+			setCloseConfirmationOpen(true);
+		} else {
+			setBlueprintEditorOpen(false);
+		}
+	}, [editorDirty]);
+	const keepEditingBlueprint = useCallback(() => {
+		setCloseConfirmationOpen(false);
+	}, []);
+	const discardBlueprintEditorDraft = useCallback(() => {
+		resetBlueprintEditorDraft();
+		setCloseConfirmationOpen(false);
+		setBlueprintEditorOpen(false);
+	}, [resetBlueprintEditorDraft]);
+	const closeBlueprintEditor = useCallback(() => {
+		setCloseConfirmationOpen(false);
+		setBlueprintEditorOpen(false);
+	}, []);
+	const commitBlueprintEditorDraft = useCallback(() => {
+		if (editorDraft.rootBlueprint === undefined) {
+			throw new Error('Cannot commit an invalid blueprint draft.');
+		}
+		setCloseConfirmationOpen(false);
+		setBlueprintEditorOpen(false);
+		return editorDraft.rootBlueprint;
+	}, [editorDraft.rootBlueprint]);
+
+	return {
+		blueprintEditorOpen,
+		closeConfirmationOpen,
+		closeBlueprintEditor,
+		commitBlueprintEditorDraft,
+		discardBlueprintEditorDraft,
+		editorCommitAction,
+		editorCommitState,
+		editorContext,
+		editorDescription,
+		editorDirty,
+		editorDraft,
+		editorFilterAnalysis: filterAnalysis,
+		editorIconPickerIndex,
+		editorIcons,
+		editorLabel,
+		editorParameters,
+		editorPlacedPlanner,
+		editorPlannerDropError,
+		editorSnapGrid,
+		flattenBookSelected,
+		keepEditingBlueprint,
+		openBlueprintEditor,
+		removedEditorComponents,
+		requestCloseBlueprintEditor,
+		setEditorDescription,
+		setEditorIconPickerIndex,
+		setEditorIcons,
+		setEditorLabel,
+		setEditorParameters,
+		setEditorPlacedPlanner,
+		setEditorPlannerDropError,
+		setEditorSnapGrid,
+		setFlattenBookSelected,
+		setRemovedEditorComponents,
+		setSortBookSelected,
+		setStripEntitiesSelected,
+		setStripFuelSelected,
+		setStripModulesSelected,
+		setStripStationNamesSelected,
+		setStripTilesSelected,
+		setStripTrainsSelected,
+		setStripVehiclesSelected,
+		sortBookSelected,
+		stripEntitiesSelected,
+		stripFuelSelected,
+		stripModulesSelected,
+		stripStationNamesSelected,
+		stripTilesSelected,
+		stripTrainsSelected,
+		stripVehiclesSelected,
+	};
+}
