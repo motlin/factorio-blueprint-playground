@@ -51,7 +51,15 @@ export const Route = createFileRoute('/')({
 					description: info.description,
 					gameVersion: info.version.toString(),
 					icons: (info.icons ?? []).flatMap(({signal}) =>
-						signal.name === undefined ? [] : [{type: signal.type, name: signal.name}],
+						signal.name === undefined
+							? []
+							: [
+									{
+										type: signal.type,
+										name: signal.name,
+										...(signal.quality === undefined ? {} : {quality: signal.quality}),
+									},
+								],
 					),
 				};
 
