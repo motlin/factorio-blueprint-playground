@@ -1,4 +1,4 @@
-import {fireEvent, render, screen} from '@testing-library/react';
+import {createEvent, fireEvent, render, screen} from '@testing-library/react';
 import {expect, test, vi} from 'vite-plus/test';
 
 import {BlueprintEditorToolbar} from '../../src/components/blueprint/panels/transform/BlueprintEditorToolbar';
@@ -43,7 +43,8 @@ test('renders the supported Factorio editor action with accessible states and a 
 	};
 	fireEvent.dragEnter(heldPlannerSlot, {dataTransfer});
 	const readyDropState = heldPlannerSlot.dataset.dropState;
-	fireEvent.dragOver(heldPlannerSlot, {dataTransfer});
+	const dragOver = createEvent.dragOver(heldPlannerSlot, {dataTransfer});
+	fireEvent(heldPlannerSlot, dragOver);
 	fireEvent.dragLeave(heldPlannerSlot, {dataTransfer, relatedTarget: document.body});
 	fireEvent.click(button);
 	const contextMenuAllowed = fireEvent.contextMenu(button);
@@ -56,7 +57,7 @@ test('renders the supported Factorio editor action with accessible states and a 
 		expanded: button.getAttribute('aria-expanded'),
 		hasPopup: button.getAttribute('aria-haspopup'),
 		heldPlannerSlot: {
-			dropEffect: dataTransfer.dropEffect,
+			dropEffect: (dragOver as DragEvent).dataTransfer?.dropEffect,
 			dropState: heldPlannerSlot.dataset.dropState,
 			pressed: heldPlannerSlot.getAttribute('aria-pressed'),
 			readyDropState,

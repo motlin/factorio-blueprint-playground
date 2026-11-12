@@ -68,7 +68,7 @@ test('enables every grid control while preserving zero and negative draft positi
 	}
 
 	expect({
-		controlDisabledStates: controls.map((control) => control.matches(':disabled')),
+		controlDisabledStates: controls.map((control) => control.matches(':disabled, fieldset:disabled *')),
 		fieldsetControlledByMaster: master.getAttribute('aria-controls') === fieldset.id,
 		fieldsetDisabled: fieldset.disabled,
 		fieldsetSource: fieldset.dataset.factorioSource,
@@ -120,7 +120,7 @@ test('enables every grid control while preserving zero and negative draft positi
 
 	expect({
 		calls: onChange.mock.calls,
-		controlDisabledStates: controls.map((control) => control.matches(':disabled')),
+		controlDisabledStates: controls.map((control) => control.matches(':disabled, fieldset:disabled *')),
 		fieldsetDisabled: fieldset.disabled,
 		values: [width.value, height.value, positionX.value, positionY.value],
 	}).toStrictEqual({

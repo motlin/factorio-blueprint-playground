@@ -64,7 +64,7 @@ test('edits multiline rich text as an unchanged native textarea value', () => {
 		textboxSource: textarea.dataset.factorioSource,
 		textboxStyle: textarea.dataset.factorioStyle,
 		value: textarea.value,
-		wrap: textarea.wrap,
+		wrap: textarea.getAttribute('wrap'),
 	}).toStrictEqual({
 		calls: [[description]],
 		element: 'TEXTAREA',

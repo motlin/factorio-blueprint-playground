@@ -1,5 +1,5 @@
 import {StrictMode, useState} from 'react';
-import {fireEvent, render, screen, waitFor, within} from '@testing-library/react';
+import {createEvent, fireEvent, render, screen, waitFor, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {expect, test, vi} from 'vite-plus/test';
 
@@ -252,10 +252,10 @@ test('reorders complete parameter rows by drag handle or keyboard in evaluation 
 	const dialog = screen.getByRole('dialog', {name: 'Blueprint parametrisation'});
 	const plateHandle = within(dialog).getByRole('button', {name: /^Reorder Plate\./});
 	expect({
-		draggable: plateHandle.draggable,
+		draggable: plateHandle.getAttribute('draggable'),
 		rowStyle: plateHandle.closest('.blueprint-parameterization__row')?.getAttribute('data-factorio-style'),
 	}).toStrictEqual({
-		draggable: true,
+		draggable: 'true',
 		rowStyle: 'blueprint_parameter_frame',
 	});
 
@@ -289,10 +289,11 @@ test('reorders complete parameter rows by drag handle or keyboard in evaluation 
 		throw new Error('Expected Gear parameter row');
 	}
 	fireEvent.dragStart(movedPlateHandle, {dataTransfer});
-	fireEvent.dragOver(gearRow, {dataTransfer});
+	const dragOver = createEvent.dragOver(gearRow, {dataTransfer});
+	fireEvent(gearRow, dragOver);
 	expect({
 		dragging: movedPlateHandle.closest<HTMLElement>('.blueprint-parameterization__row')?.dataset.dragState,
-		dropEffect: dataTransfer.dropEffect,
+		dropEffect: (dragOver as DragEvent).dataTransfer?.dropEffect,
 		target: gearRow.dataset.dragState,
 	}).toStrictEqual({
 		dragging: 'dragging',
