@@ -94,7 +94,7 @@ const DynamicNavigation = () =>
 		<div>
 			<div className="top-bar">
 				<div className="top-bar-inner">
-					<nav>
+					<nav className="site-navigation">
 						<Link
 							to="/"
 							search={
@@ -113,6 +113,17 @@ const DynamicNavigation = () =>
 						</Link>
 						<span className="separator">|</span>
 						<Link
+							to="/library"
+							className="blue nowrap"
+							activeProps={
+							{
+								className: 'yellow bold',
+							}}
+						>
+							Blueprint Library
+						</Link>
+						<span className="separator">|</span>
+						<Link
 							to="/history"
 							className="blue nowrap"
 							activeProps={
@@ -120,7 +131,7 @@ const DynamicNavigation = () =>
 								className: 'yellow bold',
 							}}
 						>
-							History
+							Import History
 						</Link>
 					</nav>
 				</div>

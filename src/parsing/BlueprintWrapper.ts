@@ -98,7 +98,7 @@ export class BlueprintWrapper
 		throw new Error('Invalid blueprint: no content found');
 	}
 
-	// Used via `wrapper.getVersion()` in routes/history.lazy.tsx; fallow's class-member analysis misses the `.map()` indirection.
+	// Used via `wrapper.getVersion()` in transform/bookOps.ts; fallow's class-member analysis misses the `.map()` indirection.
 	// fallow-ignore-next-line unused-class-member
 	getVersion(): number
 	{
