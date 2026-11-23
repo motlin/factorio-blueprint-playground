@@ -67,8 +67,8 @@ importers:
         specifier: ^5.6.0
         version: 5.6.0(storybook@10.6.7(@types/react@19.3.0)(prettier@3.9.6)(react@19.3.1)(vite-plus@0.2.9(@types/node@26.6.6)(@vitest/browser-playwright@5.1.0(@voidzero-dev/vite-plus-core@0.2.9(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(typescript@7.0.2))(@voidzero-dev/vite-plus-test@0.1.24)(playwright@1.65.0))(@vitest/coverage-v8@5.1.0)(@voidzero-dev/vite-plus-core@0.2.9(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(typescript@7.0.2))(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(jsdom@30.0.1)(tsx@4.23.15)(typescript@7.0.2)))
       '@cloudflare/workers-types':
-        specifier: ^5.20261112.1
-        version: 5.20261112.1
+        specifier: ^5.20261116.1
+        version: 5.20261116.1
       '@playwright/test':
         specifier: ^1.65.0
         version: 1.65.0
@@ -176,7 +176,7 @@ importers:
         version: '@voidzero-dev/vite-plus-test@0.1.24(@types/node@26.6.6)(@vitest/coverage-v8@5.1.0)(@voidzero-dev/vite-plus-core@0.2.9(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(typescript@7.0.2))(esbuild@0.28.2)(happy-dom@21.0.4)(jiti@2.7.0)(jsdom@30.0.1)(tsx@4.23.15)(typescript@7.0.2)'
       wrangler:
         specifier: ^4.160.1
-        version: 4.160.1(@cloudflare/workers-types@5.20261112.1)(@types/node@26.6.6)
+        version: 4.160.1(@cloudflare/workers-types@5.20261116.1)(@types/node@26.6.6)
 
 packages:
 
@@ -380,8 +380,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@cloudflare/workers-types@5.20261112.1':
-    resolution: {integrity: sha512-FhkAlCQ+J/pV89nhehVaarhlvZFz+ybUsePmIDN1yfI7PMmpjwdxV663e9qu+G+oQSw9oM8u5sVmheNBFn4tnw==}
+  '@cloudflare/workers-types@5.20261116.1':
+    resolution: {integrity: sha512-bym4dNT9Hnm+goedLTTTH85T6S4wOJJaOpKgk9MlEGU18/JKsChN+wHvSWUAIy5YVSm6LnuaUu3d3N4K0m8Dtg==}
 
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
@@ -4047,9 +4047,11 @@ packages:
 
   yuku-codegen@0.5.48:
     resolution: {integrity: sha512-p7HxD5Xl4jzDzqMrGePAOeSHmRY4g58h4HuGq15weQFPxuPWd/W6e7nqp/+Lea6JfpOdBwJOAyXFqIZ/J9Zfnw==}
+    deprecated: 'Yuku is now one package with one core. Use "yuku" instead: https://yuku.fyi/javascript/. Existing installs keep working but get no more fixes.'
 
   yuku-parser@0.5.48:
     resolution: {integrity: sha512-OWBfhrpgK9+/4+IXG9oT8Bao4AhViQA7vdyNNH7EUg8dQYgwa70XtIBWTpCEme1P1ECyoDNYkn0wT63f8XRcVA==}
+    deprecated: 'Yuku is now one package with one core. Use "yuku" instead: https://yuku.fyi/javascript/. Existing installs keep working but get no more fixes.'
 
   zod@4.6.7:
     resolution: {integrity: sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==}
@@ -4316,7 +4318,7 @@ snapshots:
   '@cloudflare/workerd-windows-64@1.20261110.1':
     optional: true
 
-  '@cloudflare/workers-types@5.20261112.1': {}
+  '@cloudflare/workers-types@5.20261116.1': {}
 
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
@@ -7551,7 +7553,7 @@ snapshots:
       '@cloudflare/workerd-linux-arm64': 1.20261110.1
       '@cloudflare/workerd-windows-64': 1.20261110.1
 
-  wrangler@4.160.1(@cloudflare/workers-types@5.20261112.1)(@types/node@26.6.6):
+  wrangler@4.160.1(@cloudflare/workers-types@5.20261116.1)(@types/node@26.6.6):
     dependencies:
       '@cloudflare/kv-asset-handler': 0.5.0
       '@cloudflare/unenv-preset': 2.16.2(unenv@2.0.0-rc.24)(workerd@1.20261110.1)
@@ -7563,7 +7565,7 @@ snapshots:
       unenv: 2.0.0-rc.24
       workerd: 1.20261110.1
     optionalDependencies:
-      '@cloudflare/workers-types': 5.20261112.1
+      '@cloudflare/workers-types': 5.20261116.1
       fsevents: 2.3.3
     transitivePeerDependencies:
       - '@types/node'
