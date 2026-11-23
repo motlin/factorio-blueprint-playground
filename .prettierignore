@@ -1,3 +1,5 @@
 # Written by scripts/mod-db with JSON.stringify; formatting them would make every regeneration fail pre-commit.
 scripts/mod-db/source-lock.json
 src/generated/mod-db.json
+# Written by scripts/game-ui-spec with serializeGameUiSpec; its test requires the file to match that output byte for byte.
+src/generated/game-ui-spec.json

@@ -1,8 +1,7 @@
 {
 	"schemaVersion": 1,
 	"sourceVersion": "2.1.12",
-	"provenance":
-	{
+	"provenance": {
 		"repository": "wube/Factorio",
 		"tag": "2.1.12",
 		"commit": "4f08bb3d5d556d152784853c61f0996b7f11ffc9",
@@ -169,8 +168,7 @@
 				"blob": "ce72bcfe7c639c8b0046cba58ac4ba8dc5a81c1e"
 			}
 		],
-		"priorArt":
-		{
+		"priorArt": {
 			"repository": "teoxoy/factorio-blueprint-editor",
 			"commit": "2bfc95e662cad19e2de89e72016181ca96fdbea6",
 			"license": "MIT",
@@ -254,15 +252,13 @@
 		}
 	],
 	"qualityComparators": [">", "<", "=", "≥", "≤", "≠"],
-	"labels":
-	{
+	"labels": {
 		"anyQuality": "Any quality",
 		"qualitySelectionTooltip": "Quality: __1__",
 		"upgradeFrom": "From",
 		"upgradeTo": "To"
 	},
-	"signals":
-	{
+	"signals": {
 		"typeOrder": ["item", "entity", "fluid", "virtual", "recipe", "space-location", "quality"],
 		"categories": [
 			{
@@ -908,8 +904,7 @@
 		],
 		"subgroupStartsNewRow": true
 	},
-	"upgrades":
-	{
+	"upgrades": {
 		"groups": [
 			{
 				"name": "accumulator",
@@ -1696,21 +1691,18 @@
 			}
 		]
 	},
-	"upgradePlanner":
-	{
+	"upgradePlanner": {
 		"mappingsPerRow": 4,
 		"minimumMappingRows": 4
 	},
-	"utilityConstants":
-	{
+	"utilityConstants": {
 		"blueprintBigSlotsPerRow": 6,
 		"blueprintSmallSlotsPerRow": 10,
 		"selectGroupRowCount": 6,
 		"selectSlotRowCount": 10,
 		"qualitySelectorDropdownThreshold": 6
 	},
-	"styles":
-	{
+	"styles": {
 		"blueprintRecordSlotPadding": 4,
 		"blueprintRecordSlotSize": 80,
 		"defaultTableHorizontalSpacing": 4,
@@ -1745,8 +1737,7 @@
 		"tooltipFrameOpacity": 0.88,
 		"tooltipLabelMaximalWidth": 356,
 		"tooltipLabelMinimalWidth": 50,
-		"bindings":
-		{
+		"bindings": {
 			"slotButton": "slot_button",
 			"filterSlotTable": "filter_slot_table",
 			"deepSlotsScrollPane": "deep_slots_scroll_pane",
