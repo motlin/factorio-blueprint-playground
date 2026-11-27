@@ -76,7 +76,7 @@
 		"@vitest/coverage-v8": "^5.1.1",
 		"eslint": "^10.15.0",
 		"eslint-plugin-storybook": "^10.6.7",
-		"fallow": "^3.43.2",
+		"fallow": "^3.45.0",
 		"happy-dom": "^21.0.4",
 		"markdownlint-cli2": "^0.24.1",
 		"pixelmatch": "^8.0.0",
