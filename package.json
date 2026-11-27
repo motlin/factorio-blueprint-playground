@@ -78,7 +78,7 @@
 		"eslint-plugin-storybook": "^10.6.7",
 		"fallow": "^3.45.0",
 		"happy-dom": "^21.0.4",
-		"markdownlint-cli2": "^0.24.1",
+		"markdownlint-cli2": "^0.24.2",
 		"pixelmatch": "^8.0.0",
 		"playwright": "^1.65.1",
 		"pngjs": "^7.0.0",
